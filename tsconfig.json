@@ -14,15 +14,14 @@
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
-    "baseUrl": ".",
     "paths": {
-      "@dopecute/ui/*": ["packages/ui/src/*"],
-      "@dopecute/types/*": ["packages/types/src/*"],
-      "@dopecute/config/*": ["packages/config/src/*"],
-      "@dopecute/database/*": ["packages/database/src/*"],
-      "@dopecute/auth/*": ["packages/auth/src/*"],
-      "@dopecute/payments/*": ["packages/payments/src/*"],
-      "@dopecute/email/*": ["packages/email/src/*"]
+      "@dopecute/ui/*": ["./packages/ui/src/*"],
+      "@dopecute/types/*": ["./packages/types/src/*"],
+      "@dopecute/config/*": ["./packages/config/src/*"],
+      "@dopecute/database/*": ["./packages/database/src/*"],
+      "@dopecute/auth/*": ["./packages/auth/src/*"],
+      "@dopecute/payments/*": ["./packages/payments/src/*"],
+      "@dopecute/email/*": ["./packages/email/src/*"]
     }
   },
   "include": ["apps/**/*", "packages/**/*"],

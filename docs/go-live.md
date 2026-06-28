@@ -3,8 +3,9 @@
 ## 1. Pre-Flight
 
 1. Complete all checks in `docs/production-checklist.md`.
-2. Confirm latest `main` commit is green in CI (`web-ci` + deployment workflow readiness).
-3. Confirm Vercel production environment variables are present and up to date.
+2. Complete preproduction validation runbook in `docs/preprod-validation.md`.
+3. Confirm latest `main` commit is green in CI (`web-ci` + deployment workflow readiness).
+4. Confirm Vercel production environment variables are present and up to date.
 
 ## 2. Database Preparation
 

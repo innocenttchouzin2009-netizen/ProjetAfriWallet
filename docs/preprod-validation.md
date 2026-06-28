@@ -1,84 +1,130 @@
 # Preproduction Validation Runbook
 
-## Scope
-
 No new features during this phase.
 Goal: validate end-to-end business readiness under realistic conditions.
 
-## 1) Functional Validation
+## Phase 1 - Go Preview
 
-### Customer and checkout flows
+### Infrastructure and secrets
 
-- [ ] Create at least 3 customer accounts.
-- [ ] Place Stripe test-mode orders (minimum: 3).
-- [ ] Place PayPal test-mode orders (minimum: 3).
-- [ ] Verify confirmation emails for each successful order.
-- [ ] Verify order appears in admin orders list.
+- [ ] `DATABASE_URL`
+- [ ] `DIRECT_URL` (if used by Prisma)
+- [ ] `NEXTAUTH_SECRET`
+- [ ] `NEXTAUTH_URL`
+- [ ] `STRIPE_SECRET_KEY`
+- [ ] `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
+- [ ] `STRIPE_WEBHOOK_SECRET`
+- [ ] `PAYPAL_CLIENT_ID`
+- [ ] `PAYPAL_CLIENT_SECRET`
+- [ ] `PAYPAL_WEBHOOK_ID`
+- [ ] Email provider API key
+- [ ] Sentry variables (if enabled)
 
-### Billing and post-order operations
+### Pipeline gates (no skip)
 
-- [ ] Generate and download invoice PDF for test orders.
-- [ ] Execute at least 2 refunds and verify payment provider status.
-- [ ] Validate order status transitions:
-  - [ ] CONFIRMED -> IN_PRODUCTION
-  - [ ] IN_PRODUCTION -> READY
-  - [ ] READY -> SHIPPED
-  - [ ] SHIPPED -> DELIVERED
-- [ ] Simulate one in-store sale using POS flow.
+- [ ] Installation
+- [ ] Lint
+- [ ] Typecheck
+- [ ] Unit tests
+- [ ] E2E tests
+- [ ] Build
+- [ ] `prisma migrate deploy`
+- [ ] Smoke tests
 
-### Operational evidence
+### Preproduction deployment
 
-- [ ] Capture screenshots/log references for each validated scenario.
-- [ ] Store evidence in release notes or QA record.
+- [ ] Dedicated PostgreSQL preproduction database
+- [ ] Dedicated test domain/subdomain
+- [ ] Stripe and PayPal sandbox setup
+- [ ] Sandbox webhooks configured
+- [ ] `web-ci` green
+- [ ] `web-cd` preview green
 
-## 2) Load Validation
+## Phase 2 - Business Validation (20+ scenarios)
 
-### Target scenarios
+### Authentication
 
-- [ ] Multiple simultaneous checkout requests.
-- [ ] Concurrent admin activity (orders filtering/status updates).
-- [ ] Baseline response time and error-rate checks.
+- [ ] Account creation
+- [ ] Login
+- [ ] Logout
+- [ ] Forgot password
+- [ ] Password reset
+- [ ] Role checks
 
-### Suggested command examples
+### Catalog
 
-Run from repository root:
+- [ ] Search
+- [ ] Filters
+- [ ] Add to cart
+- [ ] Studio Designer
+- [ ] Save design
+
+### Payment
+
+- [ ] Stripe success
+- [ ] Stripe cancellation
+- [ ] PayPal success
+- [ ] PayPal cancellation
+- [ ] Webhook processing
+
+### Orders
+
+- [ ] Order creation
+- [ ] Status change
+- [ ] Production flow
+- [ ] Shipping flow
+- [ ] Delivery flow
+
+### Documents
+
+- [ ] Invoice PDF
+- [ ] Delivery note PDF
+
+### Refunds
+
+- [ ] Full refund
+- [ ] Partial refund
+- [ ] Duplicate refund rejected
+
+### POS
+
+- [ ] Basic sale
+- [ ] Sale with discount
+- [ ] Receipt print/export
+
+### Inventory
+
+- [ ] Stock decrement
+- [ ] Out-of-stock rejection
+- [ ] Manual adjustment
+
+### Load and performance
+
+- [ ] Concurrent checkout requests
+- [ ] Concurrent admin sessions
+- [ ] p95 and error-rate baseline accepted
+
+Suggested local load checks:
 
 ```bash
 npx autocannon -c 20 -d 30 -m POST -H "content-type: application/json" -b "{\"customer\":{\"firstName\":\"Load\",\"lastName\":\"Test\",\"email\":\"load@example.com\",\"phone\":\"\"},\"address\":{\"address\":\"1 rue test\",\"postalCode\":\"75001\",\"city\":\"Paris\",\"country\":\"France\"},\"paymentProvider\":\"stripe\",\"items\":[{\"name\":\"Load Cap\",\"quantity\":1,\"unitPrice\":49.9,\"sku\":\"LOAD-001\"}],\"shippingCents\":0,\"discountCents\":0}" http://localhost:3000/api/checkout
-```
-
-```bash
 npx autocannon -c 10 -d 30 "http://localhost:3000/api/admin/orders?limit=100"
 ```
 
-### Acceptance baseline (adjust per environment)
+## Phase 3 - Go Live
 
-- [ ] No sustained 5xx bursts.
-- [ ] p95 latency remains acceptable for checkout/admin endpoints.
-- [ ] No severe resource saturation on app/database.
+Proceed only when all are true:
 
-## 3) Preproduction Deployment Validation
+- [ ] 100% critical scenarios validated
+- [ ] No blocking bug
+- [ ] No E2E regression
 
-### Environment
+Release commands:
 
-- [ ] Dedicated PostgreSQL preproduction database.
-- [ ] Dedicated test domain/subdomain.
-- [ ] Stripe/PayPal test credentials configured.
-- [ ] Webhooks configured to preproduction endpoints.
-
-### Pipeline and deployment
-
-- [ ] CI pipeline green (`web-ci`).
-- [ ] CD preview deployment works (`web-cd`).
-- [ ] Migration guard passes (`prisma migrate deploy`).
-- [ ] Smoke checks pass on deployed preview URL.
-
-### Final prelaunch decision
-
-- [ ] Functional tests complete.
-- [ ] Load tests complete.
-- [ ] Preprod deployment validated.
-- [ ] Issues triaged/fixed or explicitly accepted.
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
 
 ## Related Docs
 

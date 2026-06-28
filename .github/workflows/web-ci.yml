@@ -11,6 +11,9 @@ on:
 jobs:
   web-ci:
     runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DIRECT_URL: ${{ secrets.DIRECT_URL }}
 
     steps:
       - name: Checkout
@@ -25,14 +28,56 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Lint web
+        run: npm run lint --workspace web
+
       - name: Typecheck web
         run: npm run typecheck --workspace web
 
       - name: Unit tests web
         run: npm run test --workspace web
 
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: E2E tests web
+        run: npm run test:e2e --workspace web
+
       - name: Build web
         run: npm run build --workspace web
+
+      - name: Prisma migrate deploy
+        run: npm run prisma:migrate:deploy --workspace web
+
+      - name: Start web server for smoke tests
+        run: |
+          npm run start --workspace web -- -p 3000 > /tmp/web-start.log 2>&1 &
+          echo $! > /tmp/web-start.pid
+
+      - name: Smoke tests
+        run: |
+          for i in {1..30}; do
+            if curl -fsS "http://127.0.0.1:3000/" >/dev/null; then
+              break
+            fi
+            sleep 2
+          done
+
+          curl -fsS "http://127.0.0.1:3000/" >/dev/null
+          curl -fsS "http://127.0.0.1:3000/checkout" >/dev/null
+
+          status=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:3000/api/health")
+          if [ "$status" != "200" ] && [ "$status" != "503" ]; then
+            echo "Unexpected health status: $status"
+            exit 1
+          fi
+
+      - name: Stop web server
+        if: always()
+        run: |
+          if [ -f /tmp/web-start.pid ]; then
+            kill $(cat /tmp/web-start.pid) || true
+          fi
 
       - name: Playwright E2E discovery
         run: npm run test:e2e --workspace web -- --list

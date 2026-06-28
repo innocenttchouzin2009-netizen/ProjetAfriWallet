@@ -63,3 +63,12 @@ Record the following in release notes:
 - migration version applied,
 - validation evidence for order/refund/shipping/invoice,
 - backup verification evidence.
+
+## 8. Final Release Tag
+
+When all go-live criteria are met:
+
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```

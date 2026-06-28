@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install dependencies
+        run: |
+          cd apps/web
+          npm ci
+      - name: Run lint
+        run: |
+          cd apps/web
+          npm run lint
+      - name: Run typecheck
+        run: |
+          cd apps/web
+          npm run typecheck
+      - name: Run tests
+        run: |
+          cd apps/web
+          npm run test

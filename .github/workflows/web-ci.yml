@@ -1,0 +1,38 @@
+name: Web CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  web-ci:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck web
+        run: npm run typecheck --workspace web
+
+      - name: Unit tests web
+        run: npm run test --workspace web
+
+      - name: Build web
+        run: npm run build --workspace web
+
+      - name: Playwright E2E discovery
+        run: npm run test:e2e --workspace web -- --list

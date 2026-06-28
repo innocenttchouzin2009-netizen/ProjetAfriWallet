@@ -1,0 +1,82 @@
+'use client';
+
+import dynamic from 'next/dynamic';
+import CategoryCard from '@/components/CategoryCard';
+import ProductFilters from '@/components/ProductFilters';
+import SectionTitle from '@/components/SectionTitle';
+import ShoppingCart from '@/components/ShoppingCart';
+import Hero from '@/components/Hero';
+import Footer from '@/components/Footer';
+import { useProducts } from '@/features/catalog/hooks/useProducts';
+
+const ProductGrid = dynamic(() => import('@/features/catalog/components/ProductGrid'));
+
+export default function ShopPage() {
+  const { products, loading, error, params, setParams, total, categories, colors } = useProducts({ pageSize: 12, page: 1 });
+  const currentPage = params.page ?? 1;
+  const pageSize = params.pageSize ?? 12;
+  const pageCount = Math.max(1, Math.ceil(total / pageSize));
+
+  return (
+    <main className="min-h-screen bg-[#0D0D0D] px-6 py-24 text-white md:px-16">
+      <Hero />
+
+      <section className="mx-auto mt-20 max-w-6xl">
+        <SectionTitle title="Boutique" subtitle="Collections premium Dope&Cute Studio" />
+
+        <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+          <div className="space-y-6">
+            <div className="grid gap-6 md:grid-cols-3">
+              <CategoryCard title="Baseball Cap" />
+              <CategoryCard title="Snapback" />
+              <CategoryCard title="Trucker" />
+            </div>
+
+            <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
+              <div className="space-y-6">
+                <SectionTitle title="Nos meilleurs produits" />
+                <ProductGrid products={products} loading={loading} error={error} />
+                <div className="flex flex-col gap-4 rounded-3xl border border-white/10 bg-white/5 p-6 text-white sm:flex-row sm:items-center sm:justify-between">
+                  <div className="space-y-1">
+                    <div>{total} produits trouvés</div>
+                    <div className="text-sm text-white/70">Page {currentPage} sur {pageCount}</div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-3">
+                    <button
+                      type="button"
+                      className="rounded-full border border-white/10 px-4 py-2 text-sm transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
+                      onClick={() => setParams({ ...params, page: Math.max(1, currentPage - 1) })}
+                      disabled={currentPage <= 1}
+                    >
+                      Précédent
+                    </button>
+                    <button
+                      type="button"
+                      className="rounded-full border border-white/10 px-4 py-2 text-sm transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
+                      onClick={() => setParams({ ...params, page: Math.min(pageCount, currentPage + 1) })}
+                      disabled={currentPage >= pageCount}
+                    >
+                      Suivant
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <ProductFilters
+                params={params}
+                categories={categories}
+                colors={colors}
+                onChange={(next) => setParams({ ...params, ...next })}
+                onReset={() => setParams({ page: 1, pageSize: 12 })}
+              />
+            </div>
+          </div>
+
+          <ShoppingCart />
+        </div>
+      </section>
+
+      <Footer />
+    </main>
+  );
+}

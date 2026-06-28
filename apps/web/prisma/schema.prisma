@@ -1,0 +1,150 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  MANAGER
+  PRODUCTION
+  VENDOR
+  SUPPORT
+  CLIENT
+}
+
+enum OrderStatus {
+  DRAFT
+  CONFIRMED
+  IN_PRODUCTION
+  READY
+  SHIPPED
+  DELIVERED
+  CANCELED
+}
+
+model User {
+  id           String        @id @default(cuid())
+  email        String        @unique
+  passwordHash String
+  firstName    String
+  lastName     String
+  role         UserRole      @default(CLIENT)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  addresses    Address[]
+  orders       Order[]
+  savedDesigns SavedDesign[]
+  auditLogs    AuditLog[]
+}
+
+model Address {
+  id         String   @id @default(cuid())
+  userId     String
+  label      String?
+  line1      String
+  line2      String?
+  city       String
+  postalCode String
+  country    String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orders     Order[]
+
+  @@index([userId])
+}
+
+model Product {
+  id          String           @id @default(cuid())
+  name        String
+  slug        String           @unique
+  description String?
+  isActive    Boolean          @default(true)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  variants    ProductVariant[]
+}
+
+model ProductVariant {
+  id         String      @id @default(cuid())
+  productId  String
+  name       String
+  sku        String      @unique
+  priceCents Int
+  stock      Int         @default(0)
+  isActive   Boolean     @default(true)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  product    Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  orderItems OrderItem[]
+
+  @@index([productId])
+}
+
+model Order {
+  id                  String      @id @default(cuid())
+  userId               String
+  shippingAddressId    String?
+  status               OrderStatus @default(DRAFT)
+  subtotalCents        Int
+  discountCents        Int        @default(0)
+  shippingCents        Int        @default(0)
+  totalCents           Int
+  paymentMethod        String?
+  paymentReference     String?
+  createdAt            DateTime   @default(now())
+  updatedAt            DateTime   @updatedAt
+  user                 User       @relation(fields: [userId], references: [id], onDelete: Restrict)
+  shippingAddress      Address?   @relation(fields: [shippingAddressId], references: [id], onDelete: SetNull)
+  items                OrderItem[]
+
+  @@index([userId])
+  @@index([shippingAddressId])
+}
+
+model OrderItem {
+  id               String         @id @default(cuid())
+  orderId          String
+  productVariantId String
+  quantity         Int
+  unitPriceCents   Int
+  totalPriceCents  Int
+  createdAt        DateTime       @default(now())
+  order            Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productVariant   ProductVariant @relation(fields: [productVariantId], references: [id], onDelete: Restrict)
+
+  @@index([orderId])
+  @@index([productVariantId])
+}
+
+model SavedDesign {
+  id           String   @id @default(cuid())
+  userId       String
+  name         String
+  previewUrl   String?
+  configJson   String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  userId      String?
+  action      String
+  entity      String
+  entityId    String?
+  payloadJson String?
+  ipAddress   String?
+  createdAt   DateTime @default(now())
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([entity])
+}

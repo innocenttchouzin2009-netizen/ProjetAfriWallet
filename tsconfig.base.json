@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "target": "es2020",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": false,
+    "skipLibCheck": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "baseUrl": ".",
+    "paths": {
+      "@dopecute/ui/*": ["packages/ui/src/*"],
+      "@dopecute/types/*": ["packages/types/src/*"],
+      "@dopecute/config/*": ["packages/config/src/*"],
+      "@dopecute/database/*": ["packages/database/src/*"],
+      "@dopecute/auth/*": ["packages/auth/src/*"],
+      "@dopecute/payments/*": ["packages/payments/src/*"],
+      "@dopecute/email/*": ["packages/email/src/*"]
+    }
+  },
+  "include": ["apps/**/*", "packages/**/*"],
+  "exclude": ["node_modules", ".turbo", "dist"]
+}

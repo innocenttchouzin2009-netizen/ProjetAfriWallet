@@ -1,0 +1,1 @@
+type Props = {  title: string;  subtitle?: string;};export default function SectionTitle({  title,  subtitle,}: Props) {  return (    <div className="mb-12">      {subtitle && (        <p className="uppercase tracking-[0.4em] text-[#C8A45C] text-sm">          {subtitle}        </p>      )}      <h2 className="mt-3 text-4xl font-black">        {title}      </h2>    </div>  );}

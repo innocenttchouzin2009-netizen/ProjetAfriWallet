@@ -6,8 +6,8 @@ const csp = [
   "frame-ancestors 'none'",
   "script-src 'self' 'unsafe-inline' https://js.stripe.com https://www.paypal.com https://www.paypalobjects.com",
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: https://www.paypal.com https://www.paypalobjects.com",
-  "connect-src 'self' https://api.stripe.com https://js.stripe.com https://checkout.stripe.com https://www.paypal.com https://www.paypalobjects.com",
+  "img-src 'self' data: https://www.paypal.com https://www.paypalobjects.com https://res.cloudinary.com",
+  "connect-src 'self' https://api.stripe.com https://js.stripe.com https://checkout.stripe.com https://www.paypal.com https://www.paypalobjects.com https://api.cloudinary.com",
   "frame-src 'self' https://js.stripe.com https://checkout.stripe.com https://www.paypal.com",
   "form-action 'self' https://checkout.stripe.com https://www.paypal.com",
 ].join('; ');
@@ -48,12 +48,16 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   images: {
-    domains: ['images.unsplash.com'],
+    domains: ['images.unsplash.com', 'res.cloudinary.com'],
     formats: ['image/avif', 'image/webp'],
     remotePatterns: [
       {
         protocol: 'https',
         hostname: 'images.unsplash.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
       },
     ],
   },

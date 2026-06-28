@@ -16,9 +16,15 @@ export default function AdminProductsPage() {
     updateProduct,
     removeProduct,
     startEditing,
+    uploadProductImage,
+    deleteProductImage,
+    setPrimaryImage,
+    uploading,
     resetForm,
     stats,
   } = useAdminProducts();
+
+  const editingProduct = editingId ? products.find((product) => product.id === editingId) : undefined;
 
   const handleSubmit = () => {
     if (editingId) {
@@ -57,9 +63,23 @@ export default function AdminProductsPage() {
       <div className="mt-8 grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
         <AdminProductForm
           values={formValues}
+          images={editingProduct?.images ?? []}
+          uploading={uploading}
           onChange={setFormValues}
           onSubmit={handleSubmit}
           onCancel={resetForm}
+          onUploadImage={(file) => {
+            if (!editingId) return;
+            void uploadProductImage(editingId, file);
+          }}
+          onDeleteImage={(imageId) => {
+            if (!editingId) return;
+            void deleteProductImage(editingId, imageId);
+          }}
+          onSetPrimaryImage={(imageId) => {
+            if (!editingId) return;
+            void setPrimaryImage(editingId, imageId);
+          }}
           editingId={editingId}
         />
 

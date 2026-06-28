@@ -9,6 +9,7 @@ export const dynamic = 'force-dynamic';
 
 const AdminProductSchema = z.object({
   name: z.string().min(1),
+  description: z.string().max(4000).optional(),
   category: z.string().min(1).optional(),
   sku: z.string().min(1),
   price: z.coerce.number().nonnegative(),
@@ -25,21 +26,35 @@ function categoryFromSlug(slug: string): string {
 function toAdminProduct(product: {
   id: string;
   name: string;
+  description: string | null;
   slug: string;
   isActive: boolean;
   variants: { sku: string; priceCents: number; stock: number }[];
+  images: { id: string; url: string; publicId: string | null; isPrimary: boolean; sortOrder: number }[];
 }) {
   const primaryVariant = product.variants[0];
   const stock = product.variants.reduce((sum, variant) => sum + variant.stock, 0);
+  const orderedImages = [...product.images].sort((a, b) => {
+    if (a.isPrimary !== b.isPrimary) return a.isPrimary ? -1 : 1;
+    return a.sortOrder - b.sortOrder;
+  });
 
   return {
     id: product.id,
     name: product.name,
+    description: product.description ?? '',
     price: (primaryVariant?.priceCents ?? 0) / 100,
     stock,
     category: categoryFromSlug(product.slug),
     sku: primaryVariant?.sku ?? product.id,
     active: product.isActive,
+    primaryImageUrl: orderedImages[0]?.url ?? null,
+    images: orderedImages.map((image) => ({
+      id: image.id,
+      url: image.url,
+      publicId: image.publicId,
+      isPrimary: image.isPrimary,
+    })),
   };
 }
 
@@ -51,6 +66,9 @@ export async function GET(request: NextRequest) {
     include: {
       variants: {
         orderBy: { createdAt: 'asc' },
+      },
+      images: {
+        orderBy: [{ isPrimary: 'desc' }, { sortOrder: 'asc' }, { createdAt: 'asc' }],
       },
     },
     orderBy: {
@@ -71,7 +89,7 @@ export async function POST(request: NextRequest) {
     data: {
       name: String(body.name ?? '').trim(),
       slug: `${String(body.category ?? 'product').trim().toLowerCase()}-${Date.now()}`,
-      description: `${String(body.name ?? '').trim()} - fiche produit admin`,
+      description: String(body.description ?? '').trim() || `${String(body.name ?? '').trim()} - fiche produit admin`,
       isActive: Boolean(body.active),
       variants: {
         create: [
@@ -87,6 +105,9 @@ export async function POST(request: NextRequest) {
     },
     include: {
       variants: true,
+      images: {
+        orderBy: [{ isPrimary: 'desc' }, { sortOrder: 'asc' }, { createdAt: 'asc' }],
+      },
     },
   });
 

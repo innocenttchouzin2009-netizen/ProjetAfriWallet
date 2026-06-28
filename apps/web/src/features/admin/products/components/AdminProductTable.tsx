@@ -15,6 +15,7 @@ export default function AdminProductTable({ products, onEdit, onDelete }: AdminP
         <thead className="bg-black/20 text-white/60">
           <tr>
             <th className="px-4 py-3">Produit</th>
+            <th className="px-4 py-3">Image</th>
             <th className="px-4 py-3">SKU</th>
             <th className="px-4 py-3">Catégorie</th>
             <th className="px-4 py-3">Prix</th>
@@ -28,6 +29,14 @@ export default function AdminProductTable({ products, onEdit, onDelete }: AdminP
             <tr key={product.id} className="border-t border-white/10">
               <td className="px-4 py-4">
                 <p className="font-semibold text-white">{product.name}</p>
+                {product.description ? <p className="mt-1 line-clamp-2 text-xs text-white/60">{product.description}</p> : null}
+              </td>
+              <td className="px-4 py-4">
+                {product.primaryImageUrl ? (
+                  <img src={product.primaryImageUrl} alt={product.name} className="h-12 w-12 rounded-lg border border-white/10 object-cover" />
+                ) : (
+                  <span className="text-xs text-white/50">Aucune</span>
+                )}
               </td>
               <td className="px-4 py-4">{product.sku}</td>
               <td className="px-4 py-4">{product.category}</td>

@@ -5,6 +5,7 @@ import type { AdminProduct, AdminProductFormValues } from '../types/admin-produc
 
 const emptyForm: AdminProductFormValues = {
   name: '',
+  description: '',
   price: 0,
   stock: 0,
   category: '',
@@ -12,12 +13,29 @@ const emptyForm: AdminProductFormValues = {
   active: true,
 };
 
+function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        resolve(reader.result);
+        return;
+      }
+
+      reject(new Error('Invalid file payload'));
+    };
+    reader.onerror = () => reject(new Error('Unable to read file'));
+    reader.readAsDataURL(file);
+  });
+}
+
 export function useAdminProducts() {
   const [products, setProducts] = useState<AdminProduct[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formValues, setFormValues] = useState<AdminProductFormValues>(emptyForm);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   const loadProducts = async () => {
     setLoading(true);
@@ -57,10 +75,23 @@ export function useAdminProducts() {
     });
 
     if (response.ok) {
+      const created = (await response.json()) as AdminProduct;
       await loadProducts();
+      setEditingId(created.id);
+      setFormValues({
+        name: created.name,
+        description: created.description,
+        price: created.price,
+        stock: created.stock,
+        category: created.category,
+        sku: created.sku,
+        active: created.active,
+      });
+      return;
     }
 
-    resetForm();
+    const body = await response.json().catch(() => ({ message: 'Failed to create product' }));
+    setError(body.message ?? 'Failed to create product');
   };
 
   const updateProduct = async (id: string) => {
@@ -74,9 +105,12 @@ export function useAdminProducts() {
 
     if (response.ok) {
       await loadProducts();
+      setEditingId(id);
+      return;
     }
 
-    resetForm();
+    const body = await response.json().catch(() => ({ message: 'Failed to update product' }));
+    setError(body.message ?? 'Failed to update product');
   };
 
   const removeProduct = async (id: string) => {
@@ -90,12 +124,78 @@ export function useAdminProducts() {
     setEditingId(product.id);
     setFormValues({
       name: product.name,
+      description: product.description,
       price: product.price,
       stock: product.stock,
       category: product.category,
       sku: product.sku,
       active: product.active,
     });
+  };
+
+  const uploadProductImage = async (productId: string, file: File) => {
+    setUploading(true);
+    setError(null);
+
+    try {
+      const fileAsDataUrl = await fileToDataUrl(file);
+      const uploadResponse = await fetch('/api/admin/uploads/cloudinary', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ file: fileAsDataUrl, fileName: file.name }),
+      });
+
+      if (!uploadResponse.ok) {
+        const body = await uploadResponse.json().catch(() => ({ message: 'Upload failed' }));
+        throw new Error(body.message ?? 'Upload failed');
+      }
+
+      const uploaded = (await uploadResponse.json()) as { url: string; publicId: string };
+
+      const imageResponse = await fetch(`/api/admin/products/${productId}/images`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: uploaded.url, publicId: uploaded.publicId }),
+      });
+
+      if (!imageResponse.ok) {
+        const body = await imageResponse.json().catch(() => ({ message: 'Image save failed' }));
+        throw new Error(body.message ?? 'Image save failed');
+      }
+
+      await loadProducts();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown upload error');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const deleteProductImage = async (productId: string, imageId: string) => {
+    const response = await fetch(`/api/admin/products/${productId}/images/${imageId}`, { method: 'DELETE' });
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({ message: 'Failed to delete image' }));
+      setError(body.message ?? 'Failed to delete image');
+      return;
+    }
+
+    await loadProducts();
+  };
+
+  const setPrimaryImage = async (productId: string, imageId: string) => {
+    const response = await fetch(`/api/admin/products/${productId}/images/${imageId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ isPrimary: true }),
+    });
+
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({ message: 'Failed to set main image' }));
+      setError(body.message ?? 'Failed to set main image');
+      return;
+    }
+
+    await loadProducts();
   };
 
   const stats = useMemo(() => {
@@ -117,6 +217,10 @@ export function useAdminProducts() {
     updateProduct,
     removeProduct,
     startEditing,
+    uploadProductImage,
+    deleteProductImage,
+    setPrimaryImage,
+    uploading,
     resetForm,
     stats,
     refresh: loadProducts,

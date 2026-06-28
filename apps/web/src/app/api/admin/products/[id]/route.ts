@@ -9,6 +9,7 @@ export const dynamic = 'force-dynamic';
 
 const AdminProductUpdateSchema = z.object({
   name: z.string().min(1).optional(),
+  description: z.string().max(4000).optional(),
   sku: z.string().min(1).optional(),
   price: z.coerce.number().nonnegative().optional(),
   stock: z.coerce.number().int().nonnegative().optional(),
@@ -24,21 +25,35 @@ function categoryFromSlug(slug: string): string {
 function toAdminProduct(product: {
   id: string;
   name: string;
+  description: string | null;
   slug: string;
   isActive: boolean;
   variants: { sku: string; priceCents: number; stock: number }[];
+  images: { id: string; url: string; publicId: string | null; isPrimary: boolean; sortOrder: number }[];
 }) {
   const primaryVariant = product.variants[0];
   const stock = product.variants.reduce((sum, variant) => sum + variant.stock, 0);
+  const orderedImages = [...product.images].sort((a, b) => {
+    if (a.isPrimary !== b.isPrimary) return a.isPrimary ? -1 : 1;
+    return a.sortOrder - b.sortOrder;
+  });
 
   return {
     id: product.id,
     name: product.name,
+    description: product.description ?? '',
     price: (primaryVariant?.priceCents ?? 0) / 100,
     stock,
     category: categoryFromSlug(product.slug),
     sku: primaryVariant?.sku ?? product.id,
     active: product.isActive,
+    primaryImageUrl: orderedImages[0]?.url ?? null,
+    images: orderedImages.map((image) => ({
+      id: image.id,
+      url: image.url,
+      publicId: image.publicId,
+      isPrimary: image.isPrimary,
+    })),
   };
 }
 
@@ -56,7 +71,12 @@ export async function PUT(request: NextRequest, { params }: Params) {
 
   const existing = await prisma.product.findUnique({
     where: { id: params.id },
-    include: { variants: { orderBy: { createdAt: 'asc' } } },
+    include: {
+      variants: { orderBy: { createdAt: 'asc' } },
+      images: {
+        orderBy: [{ isPrimary: 'desc' }, { sortOrder: 'asc' }, { createdAt: 'asc' }],
+      },
+    },
   });
 
   if (!existing) {
@@ -69,6 +89,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
     where: { id: params.id },
     data: {
       name: String(body.name ?? existing.name).trim(),
+      description: body.description === undefined ? existing.description : String(body.description).trim(),
       isActive: body.active === undefined ? existing.isActive : Boolean(body.active),
       variants: primaryVariant
         ? {
@@ -95,6 +116,9 @@ export async function PUT(request: NextRequest, { params }: Params) {
     include: {
       variants: {
         orderBy: { createdAt: 'asc' },
+      },
+      images: {
+        orderBy: [{ isPrimary: 'desc' }, { sortOrder: 'asc' }, { createdAt: 'asc' }],
       },
     },
   });

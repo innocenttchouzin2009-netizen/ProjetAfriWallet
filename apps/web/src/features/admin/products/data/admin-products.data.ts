@@ -1,7 +1,40 @@
 import type { AdminProduct } from '../types/admin-product.types';
 
 export const initialAdminProducts: AdminProduct[] = [
-  { id: 'prod-001', name: 'D&C Signature Black', price: 49.9, stock: 24, category: 'Casquettes', sku: 'CAP-001', active: true },
-  { id: 'prod-002', name: 'Urban Snapback', price: 44.9, stock: 18, category: 'Casquettes', sku: 'CAP-002', active: true },
-  { id: 'prod-003', name: 'Patch Premium', price: 12.0, stock: 42, category: 'Accessoires', sku: 'PATCH-001', active: false },
+  {
+    id: 'prod-001',
+    name: 'D&C Signature Black',
+    description: 'Casquette premium en coton avec broderie logo.',
+    price: 49.9,
+    stock: 24,
+    category: 'Casquettes',
+    sku: 'CAP-001',
+    active: true,
+    primaryImageUrl: null,
+    images: [],
+  },
+  {
+    id: 'prod-002',
+    name: 'Urban Snapback',
+    description: 'Snapback streetwear avec fermeture ajustable.',
+    price: 44.9,
+    stock: 18,
+    category: 'Casquettes',
+    sku: 'CAP-002',
+    active: true,
+    primaryImageUrl: null,
+    images: [],
+  },
+  {
+    id: 'prod-003',
+    name: 'Patch Premium',
+    description: 'Patch brodé thermocollant pour personnalisation textile.',
+    price: 12.0,
+    stock: 42,
+    category: 'Accessoires',
+    sku: 'PATCH-001',
+    active: false,
+    primaryImageUrl: null,
+    images: [],
+  },
 ];

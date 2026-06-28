@@ -21,6 +21,7 @@ const navigationLinks: Partial<Record<AdminNavItem['key'], string>> = {
   orders: '/admin/orders',
   pos: '/admin/pos',
   products: '/admin/products',
+  promotions: '/admin/promotions',
   stock: '/admin/inventory',
   payments: '/admin/payments',
   audit: '/admin/audit',

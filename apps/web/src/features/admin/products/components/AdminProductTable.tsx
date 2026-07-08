@@ -17,6 +17,7 @@ export default function AdminProductTable({ products, onEdit, onDelete }: AdminP
             <th className="px-4 py-3">Produit</th>
             <th className="px-4 py-3">Image</th>
             <th className="px-4 py-3">SKU</th>
+            <th className="px-4 py-3">Fournisseur</th>
             <th className="px-4 py-3">Catégorie</th>
             <th className="px-4 py-3">Prix</th>
             <th className="px-4 py-3">Stock</th>
@@ -39,6 +40,15 @@ export default function AdminProductTable({ products, onEdit, onDelete }: AdminP
                 )}
               </td>
               <td className="px-4 py-4">{product.sku}</td>
+              <td className="px-4 py-4">
+                <p>{product.supplierName || 'N/A'}</p>
+                {product.supplierSku ? <p className="text-xs text-white/50">{product.supplierSku}</p> : null}
+                {product.supplierUrl ? (
+                  <a href={product.supplierUrl} target="_blank" rel="noreferrer" className="text-xs text-sky-300 underline-offset-2 hover:underline">
+                    Ouvrir lien
+                  </a>
+                ) : null}
+              </td>
               <td className="px-4 py-4">{product.category}</td>
               <td className="px-4 py-4">{product.price.toFixed(2)} €</td>
               <td className="px-4 py-4">{product.stock}</td>

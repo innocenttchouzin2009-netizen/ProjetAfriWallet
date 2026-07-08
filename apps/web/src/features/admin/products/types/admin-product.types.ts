@@ -9,6 +9,9 @@ export interface AdminProduct {
   id: string;
   name: string;
   description: string;
+  supplierUrl: string;
+  supplierName: string;
+  supplierSku: string;
   price: number;
   stock: number;
   category: string;
@@ -21,6 +24,9 @@ export interface AdminProduct {
 export interface AdminProductFormValues {
   name: string;
   description: string;
+  supplierUrl: string;
+  supplierName: string;
+  supplierSku: string;
   price: number;
   stock: number;
   category: string;

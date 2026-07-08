@@ -12,6 +12,9 @@ const AdminProductSchema = z.object({
   description: z.string().max(4000).optional(),
   category: z.string().min(1).optional(),
   sku: z.string().min(1),
+  supplierUrl: z.string().url().optional().or(z.literal('')),
+  supplierName: z.string().max(120).optional(),
+  supplierSku: z.string().max(120).optional(),
   price: z.coerce.number().nonnegative(),
   stock: z.coerce.number().int().nonnegative(),
   active: z.boolean(),
@@ -27,9 +30,12 @@ function toAdminProduct(product: {
   id: string;
   name: string;
   description: string | null;
+  supplierUrl: string | null;
+  supplierName: string | null;
+  supplierSku: string | null;
   slug: string;
   isActive: boolean;
-  variants: { sku: string; priceCents: number; stock: number }[];
+  variants: { sku: string; supplierUrl: string | null; supplierName: string | null; supplierSku: string | null; priceCents: number; stock: number }[];
   images: { id: string; url: string; publicId: string | null; isPrimary: boolean; sortOrder: number }[];
 }) {
   const primaryVariant = product.variants[0];
@@ -43,6 +49,9 @@ function toAdminProduct(product: {
     id: product.id,
     name: product.name,
     description: product.description ?? '',
+    supplierUrl: primaryVariant?.supplierUrl ?? product.supplierUrl ?? '',
+    supplierName: primaryVariant?.supplierName ?? product.supplierName ?? '',
+    supplierSku: primaryVariant?.supplierSku ?? product.supplierSku ?? '',
     price: (primaryVariant?.priceCents ?? 0) / 100,
     stock,
     category: categoryFromSlug(product.slug),
@@ -90,12 +99,18 @@ export async function POST(request: NextRequest) {
       name: String(body.name ?? '').trim(),
       slug: `${String(body.category ?? 'product').trim().toLowerCase()}-${Date.now()}`,
       description: String(body.description ?? '').trim() || `${String(body.name ?? '').trim()} - fiche produit admin`,
+      supplierUrl: String(body.supplierUrl ?? '').trim() || null,
+      supplierName: String(body.supplierName ?? '').trim() || null,
+      supplierSku: String(body.supplierSku ?? '').trim() || null,
       isActive: Boolean(body.active),
       variants: {
         create: [
           {
             name: 'Standard',
             sku: String(body.sku ?? '').trim(),
+            supplierUrl: String(body.supplierUrl ?? '').trim() || null,
+            supplierName: String(body.supplierName ?? '').trim() || null,
+            supplierSku: String(body.supplierSku ?? '').trim() || null,
             priceCents: Math.round(Number(body.price ?? 0) * 100),
             stock: Number(body.stock ?? 0),
             isActive: Boolean(body.active),

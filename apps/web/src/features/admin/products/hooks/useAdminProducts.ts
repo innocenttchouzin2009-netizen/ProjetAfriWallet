@@ -6,6 +6,9 @@ import type { AdminProduct, AdminProductFormValues } from '../types/admin-produc
 const emptyForm: AdminProductFormValues = {
   name: '',
   description: '',
+  supplierUrl: '',
+  supplierName: '',
+  supplierSku: '',
   price: 0,
   stock: 0,
   category: '',
@@ -81,6 +84,9 @@ export function useAdminProducts() {
       setFormValues({
         name: created.name,
         description: created.description,
+        supplierUrl: created.supplierUrl,
+        supplierName: created.supplierName,
+        supplierSku: created.supplierSku,
         price: created.price,
         stock: created.stock,
         category: created.category,
@@ -125,6 +131,9 @@ export function useAdminProducts() {
     setFormValues({
       name: product.name,
       description: product.description,
+      supplierUrl: product.supplierUrl,
+      supplierName: product.supplierName,
+      supplierSku: product.supplierSku,
       price: product.price,
       stock: product.stock,
       category: product.category,

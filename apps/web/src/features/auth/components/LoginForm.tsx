@@ -2,16 +2,52 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../hooks/useAuth';
 
 export default function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const { login, loading, error } = useAuth();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const resolveNextPath = () => {
+    const nextParam = searchParams.get('next');
+    if (nextParam && nextParam.startsWith('/')) {
+      return nextParam;
+    }
+    return null;
+  };
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    await login({ email, password });
+    setSuccessMessage(null);
+
+    const user = await login({ email, password });
+    if (!user) return;
+
+    setSuccessMessage('Connexion reussie. Redirection...');
+
+    const redirectWithDelay = (path: string) => {
+      setTimeout(() => {
+        router.push(path);
+      }, 600);
+    };
+
+    const nextPath = resolveNextPath();
+    if (nextPath) {
+      redirectWithDelay(nextPath);
+      return;
+    }
+
+    if (user.role === 'super-admin' || user.role === 'manager' || user.role === 'production' || user.role === 'vendor' || user.role === 'support') {
+      redirectWithDelay('/admin');
+      return;
+    }
+
+    redirectWithDelay('/account');
   };
 
   return (
@@ -22,6 +58,7 @@ export default function LoginForm() {
       </div>
 
       {error ? <p className="rounded-full border border-[#F0B86E]/40 bg-[#F0B86E]/10 px-4 py-3 text-sm text-[#F0B86E]">{error}</p> : null}
+      {successMessage ? <p className="rounded-full border border-[#8ED8A2]/40 bg-[#8ED8A2]/10 px-4 py-3 text-sm text-[#8ED8A2]">{successMessage}</p> : null}
 
       <label className="block text-sm text-white/70">
         Email

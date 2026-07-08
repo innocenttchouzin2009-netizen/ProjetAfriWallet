@@ -9,13 +9,21 @@ function isMutating(method: string) {
 }
 
 function buildCsp() {
+  const isProd = process.env.NODE_ENV === 'production';
+  const scriptSrc = isProd
+    ? "script-src 'self' 'unsafe-inline' https://js.stripe.com https://www.paypal.com"
+    : "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://www.paypal.com";
+  const connectSrc = isProd
+    ? "connect-src 'self' https://api.stripe.com https://www.paypal.com https://www.sandbox.paypal.com"
+    : "connect-src 'self' ws: wss: https://api.stripe.com https://www.paypal.com https://www.sandbox.paypal.com";
+
   const directives = [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' https://js.stripe.com https://www.paypal.com",
+    scriptSrc,
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: https:",
     "font-src 'self' data:",
-    "connect-src 'self' https://api.stripe.com https://www.paypal.com https://www.sandbox.paypal.com",
+    connectSrc,
     "frame-src https://js.stripe.com https://hooks.stripe.com https://www.paypal.com",
     "object-src 'none'",
     "base-uri 'self'",

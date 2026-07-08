@@ -76,6 +76,42 @@ export default function AdminProductForm({
           />
         </label>
 
+        <div className="rounded-[20px] border border-white/10 bg-black/20 p-4 text-sm text-white/70 md:col-span-2">
+          <p className="text-xs uppercase tracking-[0.2em] text-[#C8A45C]">Informations fournisseur</p>
+
+          <div className="mt-3 grid gap-4 md:grid-cols-2">
+            <label className="text-sm text-white/70 md:col-span-2">
+              Lien fournisseur (AliExpress)
+              <input
+                value={values.supplierUrl}
+                onChange={(event) => updateField('supplierUrl', event.target.value)}
+                className="mt-2 w-full rounded-full border border-white/10 bg-black/30 px-4 py-3 text-white"
+                placeholder="https://www.aliexpress.com/item/..."
+              />
+            </label>
+
+            <label className="text-sm text-white/70">
+              Nom fournisseur
+              <input
+                value={values.supplierName}
+                onChange={(event) => updateField('supplierName', event.target.value)}
+                className="mt-2 w-full rounded-full border border-white/10 bg-black/30 px-4 py-3 text-white"
+                placeholder="AliExpress"
+              />
+            </label>
+
+            <label className="text-sm text-white/70">
+              SKU fournisseur
+              <input
+                value={values.supplierSku}
+                onChange={(event) => updateField('supplierSku', event.target.value)}
+                className="mt-2 w-full rounded-full border border-white/10 bg-black/30 px-4 py-3 text-white"
+                placeholder="ALI-12345"
+              />
+            </label>
+          </div>
+        </div>
+
         <label className="text-sm text-white/70">
           SKU
           <input value={values.sku} onChange={(event) => updateField('sku', event.target.value)} className="mt-2 w-full rounded-full border border-white/10 bg-black/30 px-4 py-3 text-white" />

@@ -18,7 +18,8 @@ export const catalogProducts: Product[] = [
     compareAtPrice: 59.9,
     currency: 'EUR',
     images: [
-      { url: '/images/products/signature-black.jpg', alt: 'D&C Signature Black' },
+      { url: '/images/products/black.jpg', alt: 'D&C Signature Black - noir' },
+      { url: '/images/products/navy.jpg', alt: 'D&C Signature Black - navy blue' },
     ],
     variants: [
       {
@@ -74,7 +75,8 @@ export const catalogProducts: Product[] = [
     compareAtPrice: 49.9,
     currency: 'EUR',
     images: [
-      { url: '/images/products/urban-snapback.jpg', alt: 'Urban Snapback' },
+      { url: '/images/products/blue.jpg', alt: 'Urban Snapback - blue' },
+      { url: '/images/products/gray.jpg', alt: 'Urban Snapback - gray' },
     ],
     variants: [
       {
@@ -130,7 +132,8 @@ export const catalogProducts: Product[] = [
     price: 54.9,
     currency: 'EUR',
     images: [
-      { url: '/images/products/camo.jpg', alt: 'Camo Edition' },
+      { url: '/images/products/green.jpg', alt: 'Camo Edition - green' },
+      { url: '/images/products/orange.jpg', alt: 'Camo Edition - orange' },
     ],
     variants: [
       {
@@ -179,7 +182,8 @@ export const catalogProducts: Product[] = [
     compareAtPrice: 55.0,
     currency: 'EUR',
     images: [
-      { url: '/images/products/classic-trucker.jpg', alt: 'Classic Trucker' },
+      { url: '/images/products/red.jpg', alt: 'Classic Trucker - red' },
+      { url: '/images/products/burgundy.jpg', alt: 'Classic Trucker - burgundy' },
     ],
     variants: [
       {
@@ -234,7 +238,7 @@ export const catalogProducts: Product[] = [
     price: 42.9,
     currency: 'EUR',
     images: [
-      { url: '/images/products/washed.jpg', alt: 'Vintage Washed' },
+      { url: '/images/products/pink.jpg', alt: 'Vintage Washed - pink' },
     ],
     variants: [
       {

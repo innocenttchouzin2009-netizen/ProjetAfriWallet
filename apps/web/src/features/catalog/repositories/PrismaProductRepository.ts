@@ -46,6 +46,18 @@ function inferCategory(slug: string) {
     return { id: 'cat-frriviera', name: 'France City Riviera & Alps', slug: 'frriviera' };
   }
 
+  if (head === 'bepremium') {
+    return { id: 'cat-bepremium', name: 'Belgium City Premium', slug: 'bepremium' };
+  }
+
+  if (head === 'beheritage') {
+    return { id: 'cat-beheritage', name: 'Belgium City Heritage', slug: 'beheritage' };
+  }
+
+  if (head === 'beardennes') {
+    return { id: 'cat-beardennes', name: 'Belgium City Ardennes & Coast', slug: 'beardennes' };
+  }
+
   return {
     id: `cat-${head}`,
     name: head.charAt(0).toUpperCase() + head.slice(1),

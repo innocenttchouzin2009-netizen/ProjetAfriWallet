@@ -138,6 +138,54 @@ export default function ShopPage() {
               </div>
             </div>
 
+            <div className="rounded-3xl border border-[#FFD166]/35 bg-gradient-to-br from-[#19120A] via-[#101010] to-[#2A1A1A] p-6 text-white">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.25em] text-[#FFD166]">Dope&Cute Studio</p>
+                  <h3 className="mt-2 text-2xl font-black">Belgique City Collection</h3>
+                  <p className="mt-2 text-sm text-white/75">
+                    Casquettes inspirees des villes belges: Premium, Heritage et Ardennes-Cote.
+                  </p>
+                </div>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <Link
+                    href="/shop/belgique-city"
+                    className="rounded-full border border-[#FFD166] bg-[#FFD166] px-4 py-2 text-center text-sm font-bold text-black transition hover:opacity-90 sm:col-span-2"
+                  >
+                    Page complete Belgique City
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => applyCollection('bepremium')}
+                    className="rounded-full border border-white/20 bg-white/5 px-4 py-2 text-sm font-semibold transition hover:bg-white/10"
+                  >
+                    Premium Cities
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => applyCollection('beheritage')}
+                    className="rounded-full border border-white/20 bg-white/5 px-4 py-2 text-sm font-semibold transition hover:bg-white/10"
+                  >
+                    Heritage Cities
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => applyCollection('beardennes')}
+                    className="rounded-full border border-white/20 bg-white/5 px-4 py-2 text-sm font-semibold transition hover:bg-white/10"
+                  >
+                    Ardennes-Cote
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => applyCollection(undefined)}
+                    className="rounded-full border border-[#FFD166] bg-[#FFD166] px-4 py-2 text-sm font-bold text-black transition hover:opacity-90"
+                  >
+                    Voir toute la boutique
+                  </button>
+                </div>
+              </div>
+            </div>
+
             <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
               <div className="space-y-6">
                 <SectionTitle title="Nos meilleurs produits" />

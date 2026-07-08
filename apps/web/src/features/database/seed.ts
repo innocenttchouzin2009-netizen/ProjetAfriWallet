@@ -3,7 +3,7 @@ import { PrismaClient, UserRole } from '@prisma/client';
 const prisma = new PrismaClient();
 
 type CityCollection = {
-  collection: 'premium' | 'regional' | 'nrw' | 'frpremium' | 'frheritage' | 'frriviera';
+  collection: 'premium' | 'regional' | 'nrw' | 'frpremium' | 'frheritage' | 'frriviera' | 'bepremium' | 'beheritage' | 'beardennes';
   city: string;
   landmark: string;
   priceCents: number;
@@ -76,6 +76,39 @@ const franceCityCollections: CityCollection[] = [
   { collection: 'frriviera', city: 'Perpignan', landmark: 'Castillet fortress motif', priceCents: 5690, stock: 14 },
 ];
 
+const belgiumCityCollections: CityCollection[] = [
+  { collection: 'bepremium', city: 'Brussels', landmark: 'Grand Place and Atomium silhouette', priceCents: 6190, stock: 24 },
+  { collection: 'bepremium', city: 'Antwerp', landmark: 'Cathedral tower and port lines', priceCents: 6090, stock: 22 },
+  { collection: 'bepremium', city: 'Ghent', landmark: 'Graslei quays and Belfry icon', priceCents: 6090, stock: 22 },
+  { collection: 'bepremium', city: 'Bruges', landmark: 'Medieval canal skyline', priceCents: 6190, stock: 20 },
+  { collection: 'bepremium', city: 'Leuven', landmark: 'Town hall gothic facade', priceCents: 5990, stock: 18 },
+  { collection: 'bepremium', city: 'Liege', landmark: 'Stairs of Bueren profile', priceCents: 5990, stock: 18 },
+  { collection: 'bepremium', city: 'Namur', landmark: 'Citadel contour and river junction', priceCents: 5890, stock: 18 },
+  { collection: 'bepremium', city: 'Mons', landmark: 'Belfry and Grand-Place frame', priceCents: 5890, stock: 16 },
+  { collection: 'bepremium', city: 'Charleroi', landmark: 'Industrial heritage linework', priceCents: 5790, stock: 16 },
+  { collection: 'bepremium', city: 'Mechelen', landmark: 'St Rumbold tower silhouette', priceCents: 5890, stock: 16 },
+  { collection: 'beheritage', city: 'Ypres', landmark: 'Menin Gate memorial arch', priceCents: 5690, stock: 15 },
+  { collection: 'beheritage', city: 'Tournai', landmark: 'Notre-Dame cathedral outlines', priceCents: 5690, stock: 15 },
+  { collection: 'beheritage', city: 'Dinant', landmark: 'Citadel and collegiate church', priceCents: 5790, stock: 15 },
+  { collection: 'beheritage', city: 'Spa', landmark: 'Historic thermal architecture', priceCents: 5590, stock: 14 },
+  { collection: 'beheritage', city: 'Kortrijk', landmark: 'Broel towers silhouette', priceCents: 5590, stock: 14 },
+  { collection: 'beheritage', city: 'Aalst', landmark: 'Belfry and carnival heritage motif', priceCents: 5490, stock: 14 },
+  { collection: 'beheritage', city: 'Lier', landmark: 'Zimmer tower profile', priceCents: 5490, stock: 14 },
+  { collection: 'beheritage', city: 'Hasselt', landmark: 'Cathedral and boulevard line', priceCents: 5490, stock: 14 },
+  { collection: 'beheritage', city: 'Nivelles', landmark: 'Collegiate church icon', priceCents: 5390, stock: 14 },
+  { collection: 'beheritage', city: 'Waterloo', landmark: 'Lion mound silhouette', priceCents: 5590, stock: 14 },
+  { collection: 'beardennes', city: 'Ostend', landmark: 'North Sea promenade horizon', priceCents: 5790, stock: 15 },
+  { collection: 'beardennes', city: 'Knokke-Heist', landmark: 'Coastal line and dunes', priceCents: 5890, stock: 14 },
+  { collection: 'beardennes', city: 'Blankenberge', landmark: 'Pier and beachfront outline', priceCents: 5690, stock: 14 },
+  { collection: 'beardennes', city: 'De Haan', landmark: 'Belle Epoque seafront style', priceCents: 5590, stock: 14 },
+  { collection: 'beardennes', city: 'La Roche-en-Ardenne', landmark: 'Castle ruins and river bend', priceCents: 5790, stock: 14 },
+  { collection: 'beardennes', city: 'Durbuy', landmark: 'Old stone streets profile', priceCents: 5690, stock: 14 },
+  { collection: 'beardennes', city: 'Bastogne', landmark: 'WWII memorial linework', priceCents: 5790, stock: 14 },
+  { collection: 'beardennes', city: 'Bouillon', landmark: 'Medieval castle silhouette', priceCents: 5690, stock: 14 },
+  { collection: 'beardennes', city: 'Malmedy', landmark: 'Cathedral and valley frame', priceCents: 5590, stock: 14 },
+  { collection: 'beardennes', city: 'Stavelot', landmark: 'Abbey and race heritage icon', priceCents: 5590, stock: 14 },
+];
+
 function slugify(value: string) {
   return value
     .toLowerCase()
@@ -97,7 +130,13 @@ function buildCityImageDataUrl(collection: CityCollection['collection'], city: s
             ? { start: '#0B1D51', end: '#D72638', accent: '#F4D35E' }
             : collection === 'frheritage'
               ? { start: '#3C1642', end: '#086375', accent: '#F4A259' }
-              : { start: '#1D3557', end: '#457B9D', accent: '#E63946' };
+                : collection === 'frriviera'
+                  ? { start: '#1D3557', end: '#457B9D', accent: '#E63946' }
+                  : collection === 'bepremium'
+                    ? { start: '#111111', end: '#E63946', accent: '#FFD166' }
+                    : collection === 'beheritage'
+                      ? { start: '#1D3557', end: '#6C757D', accent: '#F4A259' }
+                      : { start: '#0B132B', end: '#1C2541', accent: '#5BC0BE' };
 
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1200" viewBox="0 0 1200 1200">
   <defs>
@@ -153,6 +192,7 @@ async function main() {
 
   let germanyCreatedOrUpdatedCount = 0;
   let franceCreatedOrUpdatedCount = 0;
+  let belgiumCreatedOrUpdatedCount = 0;
 
   for (let index = 0; index < germanyCityCollections.length; index += 1) {
     const item = germanyCityCollections[index];
@@ -266,6 +306,62 @@ async function main() {
     franceCreatedOrUpdatedCount += 1;
   }
 
+  for (let index = 0; index < belgiumCityCollections.length; index += 1) {
+    const item = belgiumCityCollections[index];
+    const citySlug = slugify(item.city);
+    const slug = `${item.collection}-${citySlug}-cap`;
+    const padded = String(index + 1).padStart(3, '0');
+    const sku = `CITY-${item.collection.toUpperCase()}-${padded}`;
+    const imageUrl = buildCityImageDataUrl(item.collection, item.city);
+
+    await prisma.product.upsert({
+      where: { slug },
+      update: {
+        name: `${item.city} City Cap`,
+        description: `Dope&Cute Studio Belgium City Collection. Front embroidery: ${item.city}. Landmark line: ${item.landmark}. Back detail: subtle BE tricolor and D&C side logo.`,
+        isActive: true,
+        images: {
+          deleteMany: {},
+          create: [
+            {
+              url: imageUrl,
+              isPrimary: true,
+              sortOrder: 0,
+            },
+          ],
+        },
+      },
+      create: {
+        name: `${item.city} City Cap`,
+        slug,
+        description: `Dope&Cute Studio Belgium City Collection. Front embroidery: ${item.city}. Landmark line: ${item.landmark}. Back detail: subtle BE tricolor and D&C side logo.`,
+        isActive: true,
+        images: {
+          create: [
+            {
+              url: imageUrl,
+              isPrimary: true,
+              sortOrder: 0,
+            },
+          ],
+        },
+        variants: {
+          create: [
+            {
+              name: 'Standard',
+              sku,
+              priceCents: item.priceCents,
+              stock: item.stock,
+              isActive: true,
+            },
+          ],
+        },
+      },
+    });
+
+    belgiumCreatedOrUpdatedCount += 1;
+  }
+
   await prisma.auditLog.create({
     data: {
       userId: admin.id,
@@ -275,12 +371,13 @@ async function main() {
         productId: signatureProduct.id,
         germanyCityCollectionProducts: germanyCreatedOrUpdatedCount,
         franceCityCollectionProducts: franceCreatedOrUpdatedCount,
+        belgiumCityCollectionProducts: belgiumCreatedOrUpdatedCount,
       }),
     },
   });
 
   console.log(
-    `Seed completed with ${germanyCreatedOrUpdatedCount} Germany City and ${franceCreatedOrUpdatedCount} France City Collection products.`,
+    `Seed completed with ${germanyCreatedOrUpdatedCount} Germany City, ${franceCreatedOrUpdatedCount} France City and ${belgiumCreatedOrUpdatedCount} Belgium City Collection products.`,
   );
 }
 

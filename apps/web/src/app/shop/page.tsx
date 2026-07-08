@@ -1,6 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
+import Link from 'next/link';
 import CategoryCard from '@/components/CategoryCard';
 import ProductFilters from '@/components/ProductFilters';
 import SectionTitle from '@/components/SectionTitle';
@@ -17,6 +18,15 @@ export default function ShopPage() {
   const pageSize = params.pageSize ?? 12;
   const pageCount = Math.max(1, Math.ceil(total / pageSize));
 
+  const applyCollection = (category?: string) => {
+    setParams({
+      ...params,
+      category,
+      query: category ? 'City Cap' : params.query,
+      page: 1,
+    });
+  };
+
   return (
     <main className="min-h-screen bg-[#0D0D0D] px-6 py-24 text-white md:px-16">
       <Hero />
@@ -30,6 +40,54 @@ export default function ShopPage() {
               <CategoryCard title="Baseball Cap" />
               <CategoryCard title="Snapback" />
               <CategoryCard title="Trucker" />
+            </div>
+
+            <div className="rounded-3xl border border-[#C8A45C]/30 bg-gradient-to-br from-[#20170A] via-[#111111] to-[#0D0D0D] p-6 text-white">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.25em] text-[#C8A45C]">Dope&Cute Studio</p>
+                  <h3 className="mt-2 text-2xl font-black">Germany City Collection</h3>
+                  <p className="mt-2 text-sm text-white/75">
+                    Casquettes brodees inspirees des villes allemandes: Premium, Regionale et NRW.
+                  </p>
+                </div>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <Link
+                    href="/shop/germany-city"
+                    className="rounded-full border border-[#C8A45C] bg-[#C8A45C] px-4 py-2 text-center text-sm font-bold text-black transition hover:opacity-90 sm:col-span-2"
+                  >
+                    Page complete Germany City
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => applyCollection('premium')}
+                    className="rounded-full border border-white/20 bg-white/5 px-4 py-2 text-sm font-semibold transition hover:bg-white/10"
+                  >
+                    Premium Cities
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => applyCollection('regional')}
+                    className="rounded-full border border-white/20 bg-white/5 px-4 py-2 text-sm font-semibold transition hover:bg-white/10"
+                  >
+                    Regional Cities
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => applyCollection('nrw')}
+                    className="rounded-full border border-white/20 bg-white/5 px-4 py-2 text-sm font-semibold transition hover:bg-white/10"
+                  >
+                    NRW Cities
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => applyCollection(undefined)}
+                    className="rounded-full border border-[#C8A45C] bg-[#C8A45C] px-4 py-2 text-sm font-bold text-black transition hover:opacity-90"
+                  >
+                    Voir toute la boutique
+                  </button>
+                </div>
+              </div>
             </div>
 
             <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">

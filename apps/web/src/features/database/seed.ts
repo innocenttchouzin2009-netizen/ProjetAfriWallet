@@ -52,6 +52,31 @@ function slugify(value: string) {
     .replace(/(^-|-$)/g, '');
 }
 
+function buildCityImageDataUrl(collection: CityCollection['collection'], city: string) {
+  const palette =
+    collection === 'premium'
+      ? { start: '#1A2A6C', end: '#B21F1F', accent: '#FDBB2D' }
+      : collection === 'regional'
+        ? { start: '#0F2027', end: '#2C5364', accent: '#C8A45C' }
+        : { start: '#0B132B', end: '#1C2541', accent: '#E63946' };
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1200" viewBox="0 0 1200 1200">
+  <defs>
+    <linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="${palette.start}" />
+      <stop offset="100%" stop-color="${palette.end}" />
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="1200" fill="url(#g)" />
+  <circle cx="980" cy="220" r="200" fill="${palette.accent}" fill-opacity="0.25" />
+  <circle cx="250" cy="980" r="280" fill="${palette.accent}" fill-opacity="0.15" />
+  <text x="80" y="880" fill="white" font-family="Arial, sans-serif" font-size="150" font-weight="900">${city.toUpperCase()}</text>
+  <text x="84" y="955" fill="${palette.accent}" font-family="Arial, sans-serif" font-size="54" font-weight="700">DOPE&CUTE STUDIO</text>
+</svg>`;
+
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+}
+
 async function main() {
   const admin = await prisma.user.upsert({
     where: { email: 'admin@dopecute.studio' },
@@ -95,6 +120,7 @@ async function main() {
     const slug = `${item.collection}-${citySlug}-cap`;
     const padded = String(index + 1).padStart(3, '0');
     const sku = `CITY-${item.collection.toUpperCase()}-${padded}`;
+    const imageUrl = buildCityImageDataUrl(item.collection, item.city);
 
     await prisma.product.upsert({
       where: { slug },
@@ -102,12 +128,31 @@ async function main() {
         name: `${item.city} City Cap`,
         description: `Dope&Cute Studio Germany City Collection. Front embroidery: ${item.city}. Landmark line: ${item.landmark}. Back detail: subtle DE flag and D&C side logo.`,
         isActive: true,
+        images: {
+          deleteMany: {},
+          create: [
+            {
+              url: imageUrl,
+              isPrimary: true,
+              sortOrder: 0,
+            },
+          ],
+        },
       },
       create: {
         name: `${item.city} City Cap`,
         slug,
         description: `Dope&Cute Studio Germany City Collection. Front embroidery: ${item.city}. Landmark line: ${item.landmark}. Back detail: subtle DE flag and D&C side logo.`,
         isActive: true,
+        images: {
+          create: [
+            {
+              url: imageUrl,
+              isPrimary: true,
+              sortOrder: 0,
+            },
+          ],
+        },
         variants: {
           create: [
             {

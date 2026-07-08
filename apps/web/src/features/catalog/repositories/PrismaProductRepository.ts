@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import type { Product as CatalogProduct, Variant } from '@/features/catalog/types/catalog.types';
-import type { Product as PrismaProduct, ProductVariant } from '@prisma/client';
+import type { Product as PrismaProduct, ProductVariant, ProductImage } from '@prisma/client';
 
 export interface ProductFilters {
   query?: string;
@@ -13,12 +13,25 @@ export interface ProductFilters {
 
 type PrismaProductWithVariants = PrismaProduct & {
   variants: ProductVariant[];
+  images: ProductImage[];
 };
 
 function inferCategory(slug: string) {
   const [head] = slug.split('-');
   if (!head) {
     return { id: 'cat-uncategorized', name: 'Uncategorized', slug: 'uncategorized' };
+  }
+
+  if (head === 'premium') {
+    return { id: 'cat-premium', name: 'Germany City Premium', slug: 'premium' };
+  }
+
+  if (head === 'regional') {
+    return { id: 'cat-regional', name: 'Germany City Regional', slug: 'regional' };
+  }
+
+  if (head === 'nrw') {
+    return { id: 'cat-nrw', name: 'Germany City NRW', slug: 'nrw' };
   }
 
   return {
@@ -44,6 +57,10 @@ function mapVariant(variant: ProductVariant): Variant {
 function mapProduct(product: PrismaProductWithVariants): CatalogProduct {
   const variants = product.variants.map(mapVariant);
   const firstVariant = variants[0];
+  const images = [...product.images].sort((a, b) => {
+    if (a.isPrimary !== b.isPrimary) return a.isPrimary ? -1 : 1;
+    return a.sortOrder - b.sortOrder;
+  });
   const minPrice = variants.length > 0
     ? Math.min(...variants.map((variant) => variant.price))
     : 0;
@@ -61,12 +78,10 @@ function mapProduct(product: PrismaProductWithVariants): CatalogProduct {
     brand: 'Dope&Cute Studio',
     price: minPrice,
     currency: 'EUR',
-    images: [
-      {
-        url: `/images/products/${product.slug}.jpg`,
-        alt: product.name,
-      },
-    ],
+    images: images.map((image) => ({
+      url: image.url,
+      alt: product.name,
+    })),
     variants,
     customizable: false,
     customizationZones: [],
@@ -95,6 +110,7 @@ export class PrismaProductRepository {
     const products = await prisma.product.findMany({
       include: {
         variants: true,
+        images: true,
       },
       orderBy: {
         createdAt: 'desc',
@@ -109,6 +125,7 @@ export class PrismaProductRepository {
       where: { slug },
       include: {
         variants: true,
+        images: true,
       },
     });
 
@@ -190,6 +207,7 @@ export class PrismaProductRepository {
       },
       include: {
         variants: true,
+        images: true,
       },
       orderBy: {
         createdAt: 'desc',

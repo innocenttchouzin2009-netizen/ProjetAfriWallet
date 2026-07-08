@@ -34,6 +34,18 @@ function inferCategory(slug: string) {
     return { id: 'cat-nrw', name: 'Germany City NRW', slug: 'nrw' };
   }
 
+  if (head === 'frpremium') {
+    return { id: 'cat-frpremium', name: 'France City Premium', slug: 'frpremium' };
+  }
+
+  if (head === 'frheritage') {
+    return { id: 'cat-frheritage', name: 'France City Heritage', slug: 'frheritage' };
+  }
+
+  if (head === 'frriviera') {
+    return { id: 'cat-frriviera', name: 'France City Riviera & Alps', slug: 'frriviera' };
+  }
+
   return {
     id: `cat-${head}`,
     name: head.charAt(0).toUpperCase() + head.slice(1),

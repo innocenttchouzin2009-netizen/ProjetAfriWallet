@@ -3,7 +3,7 @@ import { PrismaClient, UserRole } from '@prisma/client';
 const prisma = new PrismaClient();
 
 type CityCollection = {
-  collection: 'premium' | 'regional' | 'nrw';
+  collection: 'premium' | 'regional' | 'nrw' | 'frpremium' | 'frheritage' | 'frriviera';
   city: string;
   landmark: string;
   priceCents: number;
@@ -43,6 +43,39 @@ const germanyCityCollections: CityCollection[] = [
   { collection: 'nrw', city: 'Paderborn', landmark: 'Paderborn Cathedral icon', priceCents: 5190, stock: 14 },
 ];
 
+const franceCityCollections: CityCollection[] = [
+  { collection: 'frpremium', city: 'Paris', landmark: 'Eiffel Tower and Seine skyline', priceCents: 6390, stock: 30 },
+  { collection: 'frpremium', city: 'Lyon', landmark: 'Basilica of Fourviere and old town', priceCents: 6190, stock: 24 },
+  { collection: 'frpremium', city: 'Marseille', landmark: 'Vieux-Port and Notre-Dame de la Garde', priceCents: 6190, stock: 24 },
+  { collection: 'frpremium', city: 'Toulouse', landmark: 'Capitole facade and pink city vibe', priceCents: 6090, stock: 22 },
+  { collection: 'frpremium', city: 'Nice', landmark: 'Promenade des Anglais horizon', priceCents: 6190, stock: 22 },
+  { collection: 'frpremium', city: 'Nantes', landmark: 'Castle of the Dukes silhouette', priceCents: 5990, stock: 20 },
+  { collection: 'frpremium', city: 'Strasbourg', landmark: 'Cathedral and timbered houses', priceCents: 6090, stock: 20 },
+  { collection: 'frpremium', city: 'Montpellier', landmark: 'Place de la Comedie linework', priceCents: 5990, stock: 18 },
+  { collection: 'frpremium', city: 'Bordeaux', landmark: 'Place de la Bourse reflection', priceCents: 6090, stock: 18 },
+  { collection: 'frpremium', city: 'Lille', landmark: 'Old stock exchange icon', priceCents: 5990, stock: 18 },
+  { collection: 'frheritage', city: 'Rouen', landmark: 'Rouen Cathedral profile', priceCents: 5690, stock: 16 },
+  { collection: 'frheritage', city: 'Reims', landmark: 'Coronation cathedral silhouette', priceCents: 5690, stock: 16 },
+  { collection: 'frheritage', city: 'Dijon', landmark: 'Palace of the Dukes contour', priceCents: 5690, stock: 16 },
+  { collection: 'frheritage', city: 'Clermont-Ferrand', landmark: 'Black cathedral skyline', priceCents: 5690, stock: 14 },
+  { collection: 'frheritage', city: 'Tours', landmark: 'Loire chateau spirit', priceCents: 5590, stock: 14 },
+  { collection: 'frheritage', city: 'Orleans', landmark: 'Joan of Arc square motif', priceCents: 5590, stock: 14 },
+  { collection: 'frheritage', city: 'Avignon', landmark: 'Palace of the Popes outline', priceCents: 5590, stock: 14 },
+  { collection: 'frheritage', city: 'Poitiers', landmark: 'Romanesque facade line', priceCents: 5490, stock: 14 },
+  { collection: 'frheritage', city: 'Nancy', landmark: 'Place Stanislas geometry', priceCents: 5590, stock: 14 },
+  { collection: 'frheritage', city: 'Metz', landmark: 'Metz Cathedral stained roof form', priceCents: 5490, stock: 14 },
+  { collection: 'frriviera', city: 'Cannes', landmark: 'Croisette and festival palace lines', priceCents: 5890, stock: 16 },
+  { collection: 'frriviera', city: 'Antibes', landmark: 'Old ramparts and marina', priceCents: 5790, stock: 15 },
+  { collection: 'frriviera', city: 'Saint-Tropez', landmark: 'Harbor masts and bell tower', priceCents: 5890, stock: 15 },
+  { collection: 'frriviera', city: 'Annecy', landmark: 'Canals and alpine frame', priceCents: 5890, stock: 15 },
+  { collection: 'frriviera', city: 'Grenoble', landmark: 'Bastille cable car silhouette', priceCents: 5790, stock: 15 },
+  { collection: 'frriviera', city: 'Chamonix', landmark: 'Mont Blanc ridge profile', priceCents: 5990, stock: 14 },
+  { collection: 'frriviera', city: 'Biarritz', landmark: 'Rocher de la Vierge line', priceCents: 5790, stock: 14 },
+  { collection: 'frriviera', city: 'Bayonne', landmark: 'Nive river and old bridge', priceCents: 5690, stock: 14 },
+  { collection: 'frriviera', city: 'La Rochelle', landmark: 'Old port towers icon', priceCents: 5790, stock: 14 },
+  { collection: 'frriviera', city: 'Perpignan', landmark: 'Castillet fortress motif', priceCents: 5690, stock: 14 },
+];
+
 function slugify(value: string) {
   return value
     .toLowerCase()
@@ -58,7 +91,13 @@ function buildCityImageDataUrl(collection: CityCollection['collection'], city: s
       ? { start: '#1A2A6C', end: '#B21F1F', accent: '#FDBB2D' }
       : collection === 'regional'
         ? { start: '#0F2027', end: '#2C5364', accent: '#C8A45C' }
-        : { start: '#0B132B', end: '#1C2541', accent: '#E63946' };
+        : collection === 'nrw'
+          ? { start: '#0B132B', end: '#1C2541', accent: '#E63946' }
+          : collection === 'frpremium'
+            ? { start: '#0B1D51', end: '#D72638', accent: '#F4D35E' }
+            : collection === 'frheritage'
+              ? { start: '#3C1642', end: '#086375', accent: '#F4A259' }
+              : { start: '#1D3557', end: '#457B9D', accent: '#E63946' };
 
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1200" viewBox="0 0 1200 1200">
   <defs>
@@ -112,7 +151,8 @@ async function main() {
     include: { variants: true },
   });
 
-  let createdOrUpdatedCount = 0;
+  let germanyCreatedOrUpdatedCount = 0;
+  let franceCreatedOrUpdatedCount = 0;
 
   for (let index = 0; index < germanyCityCollections.length; index += 1) {
     const item = germanyCityCollections[index];
@@ -167,7 +207,63 @@ async function main() {
       },
     });
 
-    createdOrUpdatedCount += 1;
+    germanyCreatedOrUpdatedCount += 1;
+  }
+
+  for (let index = 0; index < franceCityCollections.length; index += 1) {
+    const item = franceCityCollections[index];
+    const citySlug = slugify(item.city);
+    const slug = `${item.collection}-${citySlug}-cap`;
+    const padded = String(index + 1).padStart(3, '0');
+    const sku = `CITY-${item.collection.toUpperCase()}-${padded}`;
+    const imageUrl = buildCityImageDataUrl(item.collection, item.city);
+
+    await prisma.product.upsert({
+      where: { slug },
+      update: {
+        name: `${item.city} City Cap`,
+        description: `Dope&Cute Studio France City Collection. Front embroidery: ${item.city}. Landmark line: ${item.landmark}. Back detail: subtle FR tricolor and D&C side logo.`,
+        isActive: true,
+        images: {
+          deleteMany: {},
+          create: [
+            {
+              url: imageUrl,
+              isPrimary: true,
+              sortOrder: 0,
+            },
+          ],
+        },
+      },
+      create: {
+        name: `${item.city} City Cap`,
+        slug,
+        description: `Dope&Cute Studio France City Collection. Front embroidery: ${item.city}. Landmark line: ${item.landmark}. Back detail: subtle FR tricolor and D&C side logo.`,
+        isActive: true,
+        images: {
+          create: [
+            {
+              url: imageUrl,
+              isPrimary: true,
+              sortOrder: 0,
+            },
+          ],
+        },
+        variants: {
+          create: [
+            {
+              name: 'Standard',
+              sku,
+              priceCents: item.priceCents,
+              stock: item.stock,
+              isActive: true,
+            },
+          ],
+        },
+      },
+    });
+
+    franceCreatedOrUpdatedCount += 1;
   }
 
   await prisma.auditLog.create({
@@ -177,12 +273,15 @@ async function main() {
       entity: 'Database',
       payloadJson: JSON.stringify({
         productId: signatureProduct.id,
-        germanyCityCollectionProducts: createdOrUpdatedCount,
+        germanyCityCollectionProducts: germanyCreatedOrUpdatedCount,
+        franceCityCollectionProducts: franceCreatedOrUpdatedCount,
       }),
     },
   });
 
-  console.log(`Seed completed with ${createdOrUpdatedCount} Germany City Collection products.`);
+  console.log(
+    `Seed completed with ${germanyCreatedOrUpdatedCount} Germany City and ${franceCreatedOrUpdatedCount} France City Collection products.`,
+  );
 }
 
 main()

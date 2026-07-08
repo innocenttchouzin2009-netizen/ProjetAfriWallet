@@ -90,6 +90,54 @@ export default function ShopPage() {
               </div>
             </div>
 
+            <div className="rounded-3xl border border-[#5FA8FF]/30 bg-gradient-to-br from-[#091429] via-[#111111] to-[#1B1A32] p-6 text-white">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.25em] text-[#8EC5FF]">Dope&Cute Studio</p>
+                  <h3 className="mt-2 text-2xl font-black">France City Collection</h3>
+                  <p className="mt-2 text-sm text-white/75">
+                    Casquettes inspirees des villes francaises: Premium, Heritage et Riviera-Alpes.
+                  </p>
+                </div>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <Link
+                    href="/shop/france-city"
+                    className="rounded-full border border-[#8EC5FF] bg-[#8EC5FF] px-4 py-2 text-center text-sm font-bold text-black transition hover:opacity-90 sm:col-span-2"
+                  >
+                    Page complete France City
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => applyCollection('frpremium')}
+                    className="rounded-full border border-white/20 bg-white/5 px-4 py-2 text-sm font-semibold transition hover:bg-white/10"
+                  >
+                    Premium Cities
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => applyCollection('frheritage')}
+                    className="rounded-full border border-white/20 bg-white/5 px-4 py-2 text-sm font-semibold transition hover:bg-white/10"
+                  >
+                    Heritage Cities
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => applyCollection('frriviera')}
+                    className="rounded-full border border-white/20 bg-white/5 px-4 py-2 text-sm font-semibold transition hover:bg-white/10"
+                  >
+                    Riviera-Alpes
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => applyCollection(undefined)}
+                    className="rounded-full border border-[#8EC5FF] bg-[#8EC5FF] px-4 py-2 text-sm font-bold text-black transition hover:opacity-90"
+                  >
+                    Voir toute la boutique
+                  </button>
+                </div>
+              </div>
+            </div>
+
             <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
               <div className="space-y-6">
                 <SectionTitle title="Nos meilleurs produits" />

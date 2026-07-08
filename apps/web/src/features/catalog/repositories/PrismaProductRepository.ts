@@ -58,6 +58,30 @@ function inferCategory(slug: string) {
     return { id: 'cat-beardennes', name: 'Belgium City Ardennes & Coast', slug: 'beardennes' };
   }
 
+  if (head === 'chpremium') {
+    return { id: 'cat-chpremium', name: 'Swiss City Premium', slug: 'chpremium' };
+  }
+
+  if (head === 'chheritage') {
+    return { id: 'cat-chheritage', name: 'Swiss City Heritage', slug: 'chheritage' };
+  }
+
+  if (head === 'chalps') {
+    return { id: 'cat-chalps', name: 'Swiss City Alps & Lakes', slug: 'chalps' };
+  }
+
+  if (head === 'chpremium') {
+    return { id: 'cat-chpremium', name: 'Swiss City Premium', slug: 'chpremium' };
+  }
+
+  if (head === 'chheritage') {
+    return { id: 'cat-chheritage', name: 'Swiss City Heritage', slug: 'chheritage' };
+  }
+
+  if (head === 'chalps') {
+    return { id: 'cat-chalps', name: 'Swiss City Alps & Lakes', slug: 'chalps' };
+  }
+
   return {
     id: `cat-${head}`,
     name: head.charAt(0).toUpperCase() + head.slice(1),

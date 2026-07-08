@@ -3,7 +3,7 @@ import { PrismaClient, UserRole } from '@prisma/client';
 const prisma = new PrismaClient();
 
 type CityCollection = {
-  collection: 'premium' | 'regional' | 'nrw' | 'frpremium' | 'frheritage' | 'frriviera' | 'bepremium' | 'beheritage' | 'beardennes';
+  collection: 'premium' | 'regional' | 'nrw' | 'frpremium' | 'frheritage' | 'frriviera' | 'bepremium' | 'beheritage' | 'beardennes' | 'chpremium' | 'chheritage' | 'chalps';
   city: string;
   landmark: string;
   priceCents: number;
@@ -109,6 +109,39 @@ const belgiumCityCollections: CityCollection[] = [
   { collection: 'beardennes', city: 'Stavelot', landmark: 'Abbey and race heritage icon', priceCents: 5590, stock: 14 },
 ];
 
+const switzerlandCityCollections: CityCollection[] = [
+  { collection: 'chpremium', city: 'Zurich', landmark: 'Limmat river and old town skyline', priceCents: 6490, stock: 24 },
+  { collection: 'chpremium', city: 'Geneva', landmark: 'Jet dEau and lake horizon', priceCents: 6490, stock: 24 },
+  { collection: 'chpremium', city: 'Basel', landmark: 'Rhine river and cathedral line', priceCents: 6390, stock: 22 },
+  { collection: 'chpremium', city: 'Bern', landmark: 'Clock tower and arcades silhouette', priceCents: 6390, stock: 22 },
+  { collection: 'chpremium', city: 'Lausanne', landmark: 'Lake view and cathedral hill', priceCents: 6290, stock: 20 },
+  { collection: 'chpremium', city: 'Lucerne', landmark: 'Kapellbrucke and lake reflection', priceCents: 6390, stock: 20 },
+  { collection: 'chpremium', city: 'St. Gallen', landmark: 'Abbey district and textile heritage', priceCents: 6190, stock: 18 },
+  { collection: 'chpremium', city: 'Winterthur', landmark: 'Industrial culture and city grid', priceCents: 6190, stock: 18 },
+  { collection: 'chpremium', city: 'Lugano', landmark: 'Lakefront and palm-lined promenade', priceCents: 6290, stock: 18 },
+  { collection: 'chpremium', city: 'Biel', landmark: 'Lake Biel and bilingual identity', priceCents: 6190, stock: 18 },
+  { collection: 'chheritage', city: 'Fribourg', landmark: 'Medieval bridges and old town steps', priceCents: 5890, stock: 16 },
+  { collection: 'chheritage', city: 'Sion', landmark: 'Hilltop castles and valley frame', priceCents: 5890, stock: 16 },
+  { collection: 'chheritage', city: 'Neuchatel', landmark: 'Lake castle and historic streets', priceCents: 5790, stock: 16 },
+  { collection: 'chheritage', city: 'Schaffhausen', landmark: 'Munot fortress profile', priceCents: 5790, stock: 14 },
+  { collection: 'chheritage', city: 'Solothurn', landmark: 'Baroque facades and cathedral', priceCents: 5790, stock: 14 },
+  { collection: 'chheritage', city: 'Rapperswil-Jona', landmark: 'Lake castle and rose gardens', priceCents: 5690, stock: 14 },
+  { collection: 'chheritage', city: 'Chur', landmark: 'Old streets and alpine gateway', priceCents: 5690, stock: 14 },
+  { collection: 'chheritage', city: 'Thun', landmark: 'Castle tower and lake inlet', priceCents: 5690, stock: 14 },
+  { collection: 'chheritage', city: 'Aarau', landmark: 'Old town roofline and wooden gables', priceCents: 5590, stock: 14 },
+  { collection: 'chheritage', city: 'Zug', landmark: 'Lakefront and historic towers', priceCents: 5790, stock: 14 },
+  { collection: 'chalps', city: 'Interlaken', landmark: 'Jungfrau skyline and lake valley', priceCents: 6390, stock: 16 },
+  { collection: 'chalps', city: 'Davos', landmark: 'High alpine resort ridge', priceCents: 6390, stock: 15 },
+  { collection: 'chalps', city: 'Zermatt', landmark: 'Matterhorn silhouette', priceCents: 6590, stock: 15 },
+  { collection: 'chalps', city: 'Montreux', landmark: 'Lake promenade and mountain backdrop', priceCents: 6290, stock: 15 },
+  { collection: 'chalps', city: 'Grindelwald', landmark: 'Glacier valley and peaks', priceCents: 6490, stock: 14 },
+  { collection: 'chalps', city: 'Gstaad', landmark: 'Chalet roofs and alpine luxury', priceCents: 6490, stock: 14 },
+  { collection: 'chalps', city: 'Verbier', landmark: 'Ski slopes and terrace ridge', priceCents: 6390, stock: 14 },
+  { collection: 'chalps', city: 'Leukerbad', landmark: 'Thermal valley and cliffs', priceCents: 6290, stock: 14 },
+  { collection: 'chalps', city: 'Andermatt', landmark: 'Pass roads and mountain peaks', priceCents: 6390, stock: 14 },
+  { collection: 'chalps', city: 'St. Moritz', landmark: 'Luxury lake resort and alpine line', priceCents: 6590, stock: 14 },
+];
+
 function slugify(value: string) {
   return value
     .toLowerCase()
@@ -136,7 +169,13 @@ function buildCityImageDataUrl(collection: CityCollection['collection'], city: s
                     ? { start: '#111111', end: '#E63946', accent: '#FFD166' }
                     : collection === 'beheritage'
                       ? { start: '#1D3557', end: '#6C757D', accent: '#F4A259' }
-                      : { start: '#0B132B', end: '#1C2541', accent: '#5BC0BE' };
+                                : collection === 'beardennes'
+                                  ? { start: '#0B132B', end: '#1C2541', accent: '#5BC0BE' }
+                                  : collection === 'chpremium'
+                                    ? { start: '#DA291C', end: '#FFFFFF', accent: '#111111' }
+                                    : collection === 'chheritage'
+                                      ? { start: '#8B0000', end: '#CC0000', accent: '#FFFFFF' }
+                                      : { start: '#123B66', end: '#D62828', accent: '#F1FAEE' };
 
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1200" viewBox="0 0 1200 1200">
   <defs>
@@ -193,6 +232,7 @@ async function main() {
   let germanyCreatedOrUpdatedCount = 0;
   let franceCreatedOrUpdatedCount = 0;
   let belgiumCreatedOrUpdatedCount = 0;
+  let switzerlandCreatedOrUpdatedCount = 0;
 
   for (let index = 0; index < germanyCityCollections.length; index += 1) {
     const item = germanyCityCollections[index];
@@ -362,6 +402,62 @@ async function main() {
     belgiumCreatedOrUpdatedCount += 1;
   }
 
+  for (let index = 0; index < switzerlandCityCollections.length; index += 1) {
+    const item = switzerlandCityCollections[index];
+    const citySlug = slugify(item.city);
+    const slug = `${item.collection}-${citySlug}-cap`;
+    const padded = String(index + 1).padStart(3, '0');
+    const sku = `CITY-${item.collection.toUpperCase()}-${padded}`;
+    const imageUrl = buildCityImageDataUrl(item.collection, item.city);
+
+    await prisma.product.upsert({
+      where: { slug },
+      update: {
+        name: `${item.city} City Cap`,
+        description: `Dope&Cute Studio Switzerland City Collection. Front embroidery: ${item.city}. Landmark line: ${item.landmark}. Back detail: subtle CH cross and D&C side logo.`,
+        isActive: true,
+        images: {
+          deleteMany: {},
+          create: [
+            {
+              url: imageUrl,
+              isPrimary: true,
+              sortOrder: 0,
+            },
+          ],
+        },
+      },
+      create: {
+        name: `${item.city} City Cap`,
+        slug,
+        description: `Dope&Cute Studio Switzerland City Collection. Front embroidery: ${item.city}. Landmark line: ${item.landmark}. Back detail: subtle CH cross and D&C side logo.`,
+        isActive: true,
+        images: {
+          create: [
+            {
+              url: imageUrl,
+              isPrimary: true,
+              sortOrder: 0,
+            },
+          ],
+        },
+        variants: {
+          create: [
+            {
+              name: 'Standard',
+              sku,
+              priceCents: item.priceCents,
+              stock: item.stock,
+              isActive: true,
+            },
+          ],
+        },
+      },
+    });
+
+    switzerlandCreatedOrUpdatedCount += 1;
+  }
+
   await prisma.auditLog.create({
     data: {
       userId: admin.id,
@@ -372,12 +468,13 @@ async function main() {
         germanyCityCollectionProducts: germanyCreatedOrUpdatedCount,
         franceCityCollectionProducts: franceCreatedOrUpdatedCount,
         belgiumCityCollectionProducts: belgiumCreatedOrUpdatedCount,
+        switzerlandCityCollectionProducts: switzerlandCreatedOrUpdatedCount,
       }),
     },
   });
 
   console.log(
-    `Seed completed with ${germanyCreatedOrUpdatedCount} Germany City, ${franceCreatedOrUpdatedCount} France City and ${belgiumCreatedOrUpdatedCount} Belgium City Collection products.`,
+    `Seed completed with ${germanyCreatedOrUpdatedCount} Germany City, ${franceCreatedOrUpdatedCount} France City, ${belgiumCreatedOrUpdatedCount} Belgium City and ${switzerlandCreatedOrUpdatedCount} Switzerland City Collection products.`,
   );
 }
 

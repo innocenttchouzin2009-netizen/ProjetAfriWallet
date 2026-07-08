@@ -12,9 +12,14 @@ export interface AdminOrderItem {
   sku: string;
   name: string;
   variantName: string;
+  supplierUrl?: string | null;
+  supplierName?: string | null;
+  supplierSku?: string | null;
   quantity: number;
   unitPriceCents: number;
   totalPriceCents: number;
+  customInitials?: string | null;
+  customLogoUrl?: string | null;
 }
 
 export interface AdminOrder {

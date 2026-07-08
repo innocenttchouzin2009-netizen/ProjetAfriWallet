@@ -63,6 +63,9 @@ model Product {
   name        String
   slug        String           @unique
   description String?
+  supplierUrl String?
+  supplierName String?
+  supplierSku String?
   isActive    Boolean          @default(true)
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
@@ -75,6 +78,9 @@ model ProductVariant {
   productId  String
   name       String
   sku        String      @unique
+  supplierUrl String?
+  supplierName String?
+  supplierSku String?
   priceCents Int
   stock      Int         @default(0)
   isActive   Boolean     @default(true)
@@ -150,6 +156,8 @@ model OrderItem {
   id               String         @id @default(cuid())
   orderId          String
   productVariantId String
+  customInitials   String?
+  customLogoUrl    String?
   quantity         Int
   unitPriceCents   Int
   totalPriceCents  Int

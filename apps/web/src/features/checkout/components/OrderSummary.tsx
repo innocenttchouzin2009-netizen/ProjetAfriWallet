@@ -19,8 +19,16 @@ export default function OrderSummary({ items, subtotal, shippingMethod, itemCoun
 
       <div className="mt-8 space-y-4">
         {items.map((item) => (
-          <div key={item.id} className="flex items-center justify-between text-sm text-white/70">
-            <span>{item.name}</span>
+          <div key={item.id} className="flex items-start justify-between text-sm text-white/70">
+            <div>
+              <div>{item.name}</div>
+              {typeof item.metadata?.customInitials === 'string' && item.metadata.customInitials ? (
+                <div className="text-xs text-[#C8A45C]">Initiales: {item.metadata.customInitials}</div>
+              ) : null}
+              {typeof item.metadata?.customLogoUrl === 'string' && item.metadata.customLogoUrl ? (
+                <div className="text-xs text-[#C8A45C]">Logo perso ajoute</div>
+              ) : null}
+            </div>
             <span>x{item.quantity}</span>
           </div>
         ))}

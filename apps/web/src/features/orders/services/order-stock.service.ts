@@ -6,6 +6,8 @@ export type OrderStockLineInput = {
   quantity: number;
   unitPrice: number;
   name?: string;
+  customInitials?: string;
+  customLogoUrl?: string;
 };
 
 export type OrderStockValidatedLine = {
@@ -14,6 +16,8 @@ export type OrderStockValidatedLine = {
   quantity: number;
   unitPriceCents: number;
   totalPriceCents: number;
+  customInitials?: string;
+  customLogoUrl?: string;
 };
 
 export class OrderStockError extends Error {
@@ -37,9 +41,7 @@ export class OrderStockService {
       throw new OrderStockError('La commande doit contenir au moins un article.');
     }
 
-    const normalized = new Map<string, { quantity: number; unitPrice: number; name?: string }>();
-
-    for (const item of items) {
+    const normalized = items.map((item) => {
       const sku = item.sku?.trim();
       if (!sku) {
         throw new OrderStockError(`SKU requis pour l'article "${item.name ?? 'inconnu'}".`);
@@ -49,22 +51,19 @@ export class OrderStockService {
         throw new OrderStockError(`Quantite invalide pour le SKU ${sku}.`);
       }
 
-      const current = normalized.get(sku);
-      if (current) {
-        current.quantity += item.quantity;
-      } else {
-        normalized.set(sku, {
-          quantity: item.quantity,
-          unitPrice: item.unitPrice,
-          name: item.name,
-        });
-      }
-    }
+      return {
+        sku,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        customInitials: item.customInitials,
+        customLogoUrl: item.customLogoUrl,
+      };
+    });
 
     const variants = await tx.productVariant.findMany({
       where: {
         sku: {
-          in: Array.from(normalized.keys()),
+          in: Array.from(new Set(normalized.map((line) => line.sku))),
         },
       },
     });
@@ -73,20 +72,20 @@ export class OrderStockService {
 
     const validated: OrderStockValidatedLine[] = [];
 
-    for (const [sku, line] of normalized.entries()) {
-      const variant = bySku.get(sku);
+    for (const line of normalized) {
+      const variant = bySku.get(line.sku);
 
       if (!variant) {
-        throw new OrderStockError(`SKU introuvable: ${sku}.`);
+        throw new OrderStockError(`SKU introuvable: ${line.sku}.`);
       }
 
       if (!variant.isActive) {
-        throw new OrderStockError(`SKU inactif: ${sku}.`);
+        throw new OrderStockError(`SKU inactif: ${line.sku}.`);
       }
 
       if (variant.stock < line.quantity) {
         throw new OrderStockError(
-          `Stock insuffisant pour ${sku}. Disponible: ${variant.stock}, demande: ${line.quantity}.`,
+          `Stock insuffisant pour ${line.sku}. Disponible: ${variant.stock}, demande: ${line.quantity}.`,
         );
       }
 
@@ -94,10 +93,12 @@ export class OrderStockService {
 
       validated.push({
         productVariantId: variant.id,
-        sku,
+        sku: line.sku,
         quantity: line.quantity,
         unitPriceCents,
         totalPriceCents: unitPriceCents * line.quantity,
+        customInitials: line.customInitials,
+        customLogoUrl: line.customLogoUrl,
       });
     }
 

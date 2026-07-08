@@ -11,6 +11,8 @@ type OrderLineInput = {
   quantity: number;
   unitPrice: number;
   sku?: string;
+  customInitials?: string;
+  customLogoUrl?: string;
 };
 
 type OnlineOrderInput = {
@@ -50,6 +52,17 @@ function toCents(value: number): number {
 }
 
 export class PrismaOrderRepository {
+  private toOrderItemsCreateData(lines: OrderStockValidatedLine[]) {
+    return lines.map((line) => ({
+      productVariantId: line.productVariantId,
+      quantity: line.quantity,
+      unitPriceCents: line.unitPriceCents,
+      totalPriceCents: line.totalPriceCents,
+      customInitials: line.customInitials,
+      customLogoUrl: line.customLogoUrl,
+    }));
+  }
+
   async createOnlineOrder(input: OnlineOrderInput): Promise<{ id: string }> {
     const subtotalFromInputCents = input.items.reduce((sum, item) => sum + toCents(item.unitPrice) * item.quantity, 0);
     const discountCents = input.discountCents ?? 0;
@@ -102,7 +115,7 @@ export class PrismaOrderRepository {
           paymentMethod: 'card',
           paymentReference: `ONLINE-${Date.now()}`,
           items: {
-            create: lineItems,
+            create: this.toOrderItemsCreateData(lineItems),
           },
         },
       });
@@ -147,7 +160,7 @@ export class PrismaOrderRepository {
           paymentMethod: input.paymentMethod,
           paymentReference: `POS-${Date.now()}`,
           items: {
-            create: lineItems,
+            create: this.toOrderItemsCreateData(lineItems),
           },
         },
       });

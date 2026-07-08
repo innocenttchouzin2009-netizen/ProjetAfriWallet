@@ -1,5 +1,13 @@
 export type CartItemKind = 'product' | 'studio-design';
 
+export interface CartItemMetadata {
+  sku?: string;
+  category?: string;
+  customInitials?: string;
+  customLogoUrl?: string;
+  [key: string]: string | number | boolean | undefined;
+}
+
 export interface CartItem {
   id: string;
   name: string;
@@ -8,7 +16,7 @@ export interface CartItem {
   quantity: number;
   description?: string;
   image?: string;
-  metadata?: Record<string, string | number | boolean | undefined>;
+  metadata?: CartItemMetadata;
 }
 
 export interface CartContextValue {

@@ -31,6 +31,8 @@ const CheckoutSchema = z.object({
     quantity: z.number().int().positive(),
     unitPrice: z.number().positive(),
     sku: z.string().optional(),
+    customInitials: z.string().max(5).optional(),
+    customLogoUrl: z.string().optional(),
   })).min(1),
   shippingCents: z.number().int().nonnegative().optional(),
   discountCents: z.number().int().nonnegative().optional(),

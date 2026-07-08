@@ -110,7 +110,9 @@ export default function AdminOrdersTable({
                 <thead className="bg-white/5 text-white/55">
                   <tr>
                     <th className="px-3 py-2">Article</th>
+                    <th className="px-3 py-2">Personnalisation</th>
                     <th className="px-3 py-2">SKU</th>
+                    <th className="px-3 py-2">Commander chez fournisseur</th>
                     <th className="px-3 py-2">Qte</th>
                     <th className="px-3 py-2">PU</th>
                     <th className="px-3 py-2">Total</th>
@@ -120,7 +122,32 @@ export default function AdminOrdersTable({
                   {order.items.map((item) => (
                     <tr key={item.id} className="border-t border-white/10">
                       <td className="px-3 py-2">{item.name} • {item.variantName}</td>
+                      <td className="px-3 py-2">
+                        {item.customInitials ? <p>Initiales: {item.customInitials}</p> : null}
+                        {item.customLogoUrl ? <p>Logo: Oui</p> : null}
+                        {!item.customInitials && !item.customLogoUrl ? (
+                          <span className="text-white/40">Aucune</span>
+                        ) : null}
+                      </td>
                       <td className="px-3 py-2">{item.sku}</td>
+                      <td className="px-3 py-2">
+                        {item.supplierUrl ? (
+                          <a
+                            href={item.supplierUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex rounded-full border border-sky-300/40 px-3 py-1 text-[11px] text-sky-300 hover:bg-sky-300/10"
+                          >
+                            Commander
+                            {item.supplierName ? `: ${item.supplierName}` : ''}
+                          </a>
+                        ) : (
+                          <span className="text-white/40">Non configure</span>
+                        )}
+                        {item.supplierSku ? (
+                          <p className="mt-1 text-[10px] text-white/45">SKU fournisseur: {item.supplierSku}</p>
+                        ) : null}
+                      </td>
                       <td className="px-3 py-2">{item.quantity}</td>
                       <td className="px-3 py-2">{(item.unitPriceCents / 100).toFixed(2)} €</td>
                       <td className="px-3 py-2">{(item.totalPriceCents / 100).toFixed(2)} €</td>

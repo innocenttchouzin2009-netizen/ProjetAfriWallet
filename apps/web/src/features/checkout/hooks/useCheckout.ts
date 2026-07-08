@@ -91,6 +91,10 @@ export function useCheckout() {
             quantity: item.quantity,
             unitPrice: item.price,
             sku: typeof item.metadata?.sku === 'string' ? item.metadata.sku : undefined,
+            customInitials:
+              typeof item.metadata?.customInitials === 'string' ? item.metadata.customInitials : undefined,
+            customLogoUrl:
+              typeof item.metadata?.customLogoUrl === 'string' ? item.metadata.customLogoUrl : undefined,
           })),
           shippingCents: input.shippingCents,
           discountCents: input.discountCents ?? 0,

@@ -26,6 +26,12 @@ export default function CartPage() {
                   <h2 className="text-2xl font-bold">{item.name}</h2>
                   <p className="mt-2 text-white/60">{item.kind === 'studio-design' ? 'Design Studio' : 'Produit'}</p>
                   {item.description ? <p className="mt-1 text-white/60">{item.description}</p> : null}
+                  {typeof item.metadata?.customInitials === 'string' && item.metadata.customInitials ? (
+                    <p className="mt-1 text-xs text-[#C8A45C]">Initiales: {item.metadata.customInitials}</p>
+                  ) : null}
+                  {typeof item.metadata?.customLogoUrl === 'string' && item.metadata.customLogoUrl ? (
+                    <p className="mt-1 text-xs text-[#C8A45C]">Logo perso ajoute</p>
+                  ) : null}
                 </div>
                 <div className="text-right">
                   <p className="text-2xl font-bold text-[#C8A45C]">

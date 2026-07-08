@@ -3,6 +3,9 @@ apps/web/.next/
 apps/admin/.next/
 apps/*/.next/
 apps/web/.env*
+apps/web/.pgdata/
+apps/web/.postgres.log
+apps/web/.postgres-*.log
 apps/web/dist/
 apps/*/dist/
 apps/*/test-results/

@@ -1,0 +1,16 @@
+{
+  "@@locale": "de",
+  "appName": "AfriWallet",
+  "tagline": "Connecting Africa. Empowering People.",
+  "welcomeTitle": "Willkommen bei AfriWallet",
+  "welcomeSubtitle": "Ihre digitale Finanzidentität, Wallet und Zahlungen in einer sicheren Anwendung.",
+  "createAccount": "Konto erstellen",
+  "signIn": "Anmelden",
+  "chooseLanguage": "Sprache auswählen",
+  "financialDesk": "Financial Desk",
+  "availableBalance": "Verfügbares Guthaben",
+  "send": "Senden",
+  "receive": "Empfangen",
+  "request": "Anfordern",
+  "scan": "Scannen"
+}

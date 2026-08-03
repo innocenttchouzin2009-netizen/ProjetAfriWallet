@@ -4,12 +4,14 @@ public sealed class LedgerEntry
 {
 	public LedgerEntry(
 		Guid entryId,
+		long position,
 		Guid journalId,
 		Guid walletId,
 		Guid transactionId,
 		EntryType entryType,
 		decimal debit,
 		decimal credit,
+		LedgerBalanceCompartment compartment,
 		string currency,
 		string reference,
 		string description,
@@ -22,12 +24,14 @@ public sealed class LedgerEntry
 		string idempotencyKey)
 	{
 		EntryId = entryId;
+		Position = position;
 		JournalId = journalId;
 		WalletId = walletId;
 		TransactionId = transactionId;
 		EntryType = entryType;
 		Debit = debit;
 		Credit = credit;
+		Compartment = compartment;
 		Currency = currency;
 		Reference = reference;
 		Description = description;
@@ -41,12 +45,14 @@ public sealed class LedgerEntry
 	}
 
 	public Guid EntryId { get; }
+	public long Position { get; }
 	public Guid JournalId { get; }
 	public Guid WalletId { get; }
 	public Guid TransactionId { get; }
 	public EntryType EntryType { get; }
 	public decimal Debit { get; }
 	public decimal Credit { get; }
+	public LedgerBalanceCompartment Compartment { get; }
 	public string Currency { get; }
 	public string Reference { get; }
 	public string Description { get; }

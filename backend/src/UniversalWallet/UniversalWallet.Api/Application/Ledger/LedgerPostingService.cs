@@ -87,12 +87,14 @@ public sealed class LedgerPostingService
 		var reversalTransaction = new LedgerTransaction(Guid.CreateVersion7(), LedgerTransactionStatus.Reversed, originalTransaction.Currency, DateTimeOffset.UtcNow, request.Reference, request.CorrelationId, request.PostedBy, request.Awid, request.Session, request.Device, request.IdempotencyKey, originalTransaction.TransactionId);
 		var reversalEntries = originalEntries.Select(entry => new LedgerEntry(
 			Guid.CreateVersion7(),
+			_ledgerRepository.ReserveNextPosition(),
 			entry.JournalId,
 			entry.WalletId,
 			reversalTransaction.TransactionId,
 			entry.EntryType == EntryType.Debit ? EntryType.Credit : EntryType.Debit,
 			entry.Credit,
 			entry.Debit,
+			entry.Compartment,
 			entry.Currency,
 			request.Reference,
 			$"Reversal of {entry.Description}",
@@ -115,12 +117,14 @@ public sealed class LedgerPostingService
 	{
 		return request.Lines.Select(line => new LedgerEntry(
 			Guid.CreateVersion7(),
+			_ledgerRepository.ReserveNextPosition(),
 			_journalRepository.GetOrCreateJournal(line.WalletId, request.Awid, request.Currency).JournalId,
 			line.WalletId,
 			transaction.TransactionId,
 			line.EntryType,
 			line.EntryType == EntryType.Debit ? line.Amount : 0m,
 			line.EntryType == EntryType.Credit ? line.Amount : 0m,
+			line.Compartment,
 			request.Currency,
 			request.Reference,
 			line.Description,

@@ -6,6 +6,7 @@ namespace UniversalWallet.Api.Infrastructure.Ledger;
 public interface ILedgerRepository
 {
 	bool TransactionExists(Guid transactionId);
+	long ReserveNextPosition();
 	IReadOnlyList<LedgerTransaction> GetTransactions();
 	bool TryGetByIdempotencyKey(string idempotencyKey, out LedgerTransaction transaction);
 	LedgerTransaction? GetTransaction(Guid transactionId);

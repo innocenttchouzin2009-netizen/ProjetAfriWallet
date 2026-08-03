@@ -7,6 +7,7 @@ public sealed class LedgerLineRequest
 	public Guid WalletId { get; init; }
 	public EntryType EntryType { get; init; }
 	public decimal Amount { get; init; }
+	public LedgerBalanceCompartment Compartment { get; init; } = LedgerBalanceCompartment.Available;
 	public string Description { get; init; } = string.Empty;
 }
 

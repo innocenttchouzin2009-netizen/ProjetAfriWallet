@@ -1,16 +1,26 @@
+using UniversalWallet.Api.Api.Balance;
+using UniversalWallet.Api.Application.Balance;
 using UniversalWallet.Api.Application.Ledger;
 using UniversalWallet.Api.Api.Ledger;
+using UniversalWallet.Api.Infrastructure.Balance;
 using UniversalWallet.Api.Infrastructure.Ledger;
 using UniversalWallet.Api.WalletEngine;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSingleton<IWalletRepository, InMemoryWalletRepository>();
-builder.Services.AddSingleton<ILedgerRepository, InMemoryLedgerRepository>();
+builder.Services.AddSingleton<IWalletCurrencyReader, WalletCurrencyReader>();
+builder.Services.AddSingleton<InMemoryLedgerRepository>();
+builder.Services.AddSingleton<ILedgerRepository>(sp => sp.GetRequiredService<InMemoryLedgerRepository>());
+builder.Services.AddSingleton<ILedgerProjectionReader>(sp => sp.GetRequiredService<InMemoryLedgerRepository>());
 builder.Services.AddSingleton<ILedgerJournalRepository, InMemoryLedgerJournalRepository>();
 builder.Services.AddSingleton<LedgerValidator>();
 builder.Services.AddSingleton<LedgerPostingService>();
 builder.Services.AddSingleton<PostTransactionHandler>();
 builder.Services.AddSingleton<ReverseTransactionHandler>();
+builder.Services.AddSingleton<IBalanceProjectionRepository, InMemoryBalanceProjectionRepository>();
+builder.Services.AddSingleton<IBalanceSnapshotRepository, InMemoryBalanceSnapshotRepository>();
+builder.Services.AddSingleton<IProjectionVersionRepository, InMemoryProjectionVersionRepository>();
+builder.Services.AddSingleton<BalanceProjectionService>();
 
 var app = builder.Build();
 
@@ -119,6 +129,7 @@ app.MapGet("/api/v1/wallets/{id:guid}/ledger", (Guid id, IWalletRepository repos
 });
 
 app.MapLedgerEndpoints();
+app.MapBalanceEndpoints();
 
 app.Run();
 

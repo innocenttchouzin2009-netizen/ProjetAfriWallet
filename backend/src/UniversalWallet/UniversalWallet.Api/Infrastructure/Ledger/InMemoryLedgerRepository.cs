@@ -1,9 +1,10 @@
+using UniversalWallet.Api.Application.Balance;
 using UniversalWallet.Api.Application.Ledger;
 using UniversalWallet.Api.Domain.Ledger;
 
 namespace UniversalWallet.Api.Infrastructure.Ledger;
 
-public sealed class InMemoryLedgerRepository : ILedgerRepository
+public sealed class InMemoryLedgerRepository : ILedgerRepository, ILedgerProjectionReader
 {
 	private readonly object _sync = new();
 	private readonly Dictionary<Guid, LedgerTransaction> _transactions = new();
@@ -11,12 +12,22 @@ public sealed class InMemoryLedgerRepository : ILedgerRepository
 	private readonly Dictionary<Guid, List<LedgerEntry>> _entriesByWalletId = new();
 	private readonly Dictionary<string, Guid> _idempotencyKeys = new(StringComparer.OrdinalIgnoreCase);
 	private readonly Dictionary<Guid, PostingResult> _resultsByTransactionId = new();
+	private long _positionCounter;
 
 	public bool TransactionExists(Guid transactionId)
 	{
 		lock (_sync)
 		{
 			return _transactions.ContainsKey(transactionId);
+		}
+	}
+
+	public long ReserveNextPosition()
+	{
+		lock (_sync)
+		{
+			_positionCounter++;
+			return _positionCounter;
 		}
 	}
 
@@ -105,6 +116,35 @@ public sealed class InMemoryLedgerRepository : ILedgerRepository
 			_entriesByTransactionId[transaction.TransactionId] = [];
 			_resultsByTransactionId[transaction.TransactionId] = result;
 			_idempotencyKeys[idempotencyKey] = transaction.TransactionId;
+		}
+	}
+
+	public long GetLatestPosition(Guid walletId)
+	{
+		lock (_sync)
+		{
+			var entries = _entriesByWalletId.GetValueOrDefault(walletId, []);
+			return entries.Count == 0 ? 0 : entries.Max(entry => entry.Position);
+		}
+	}
+
+	public IReadOnlyList<LedgerProjectionRecord> ReadWalletEntries(Guid walletId, long fromExclusivePosition)
+	{
+		lock (_sync)
+		{
+			var entries = _entriesByWalletId.GetValueOrDefault(walletId, [])
+				.Where(entry => entry.Position > fromExclusivePosition)
+				.OrderBy(entry => entry.Position)
+				.Select(entry => new LedgerProjectionRecord(
+					entry.WalletId,
+					entry.Position,
+					entry.EntryType == EntryType.Credit ? entry.Credit : -entry.Debit,
+					entry.Currency,
+					entry.Compartment,
+					entry.CreatedAt))
+				.ToList();
+
+			return entries;
 		}
 	}
 }

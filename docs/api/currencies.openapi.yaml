@@ -1,0 +1,80 @@
+openapi: 3.0.3
+info:
+  title: AfriWallet Currency Registry API
+  version: 1.0.0
+paths:
+  /api/v1/currencies:
+    get:
+      summary: List currencies
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Currency'
+  /api/v1/currencies/{code}:
+    get:
+      summary: Get currency
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Currency found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Currency'
+  /api/v1/currencies/{code}/support:
+    get:
+      summary: Check currency support
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Support check result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupportResponse'
+components:
+  schemas:
+    Currency:
+      type: object
+      properties:
+        code:
+          type: string
+        numericCode:
+          type: integer
+        name:
+          type: string
+        minorUnits:
+          type: integer
+        symbol:
+          type: string
+        region:
+          type: string
+        status:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    SupportResponse:
+      type: object
+      properties:
+        code:
+          type: string
+        supported:
+          type: boolean
+        walletCreationAllowed:
+          type: boolean

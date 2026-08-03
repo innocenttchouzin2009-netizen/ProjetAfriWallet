@@ -1,0 +1,86 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v10.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v10.0": {
+      "IdentityService.Api/1.0.0": {
+        "dependencies": {
+          "IdentityService.Application": "1.0.0",
+          "IdentityService.Infrastructure": "1.0.0"
+        },
+        "runtime": {
+          "IdentityService.Api.dll": {}
+        }
+      },
+      "IdentityService.Application/1.0.0": {
+        "dependencies": {
+          "IdentityService.Contracts": "1.0.0",
+          "IdentityService.Domain": "1.0.0"
+        },
+        "runtime": {
+          "IdentityService.Application.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      },
+      "IdentityService.Contracts/1.0.0": {
+        "runtime": {
+          "IdentityService.Contracts.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      },
+      "IdentityService.Domain/1.0.0": {
+        "runtime": {
+          "IdentityService.Domain.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      },
+      "IdentityService.Infrastructure/1.0.0": {
+        "dependencies": {
+          "IdentityService.Application": "1.0.0"
+        },
+        "runtime": {
+          "IdentityService.Infrastructure.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "IdentityService.Api/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "IdentityService.Application/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "IdentityService.Contracts/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "IdentityService.Domain/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "IdentityService.Infrastructure/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

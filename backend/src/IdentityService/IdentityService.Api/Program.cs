@@ -1,42 +1,20 @@
 using System.Security.Claims;
-using IdentityService.Application.Abstractions;
-using IdentityService.Application.Handlers;
-using IdentityService.Application.Services;
-using IdentityService.Contracts.Requests;
-using IdentityService.Contracts.Responses;
-using IdentityService.Domain.Entities;
-using IdentityService.Infrastructure.Repositories;
+using System.Text.Encodings.Web;
+using IdentityService.Api.Engine;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddOpenApi();
 builder.Services.AddHealthChecks();
 builder.Services.AddAuthorization();
 builder.Services.AddAuthentication("Test").AddScheme<AuthenticationSchemeOptions, TestAuthHandler>("Test", _ => { });
 
-builder.Services.AddSingleton<IPinHasher, Pbkdf2PinHasher>();
-builder.Services.AddSingleton(new PinPolicy());
-builder.Services.AddSingleton<IPinCredentialRepository, InMemoryPinCredentialRepository>();
-builder.Services.AddSingleton<ITrustedDeviceRepository, InMemoryTrustedDeviceRepository>();
-builder.Services.AddSingleton<CreatePinHandler>();
-builder.Services.AddSingleton<VerifyPinHandler>();
-builder.Services.AddSingleton<RegisterDeviceHandler>();
-builder.Services.AddSingleton<RevokeDeviceHandler>();
-builder.Services.AddSingleton<LoginHandler>();
-builder.Services.AddSingleton<RefreshSessionHandler>();
-builder.Services.AddSingleton<LogoutHandler>();
-builder.Services.AddSingleton<LogoutAllHandler>();
-builder.Services.AddSingleton<ITokenService>(new JwtTokenService("super-secret-key-123456"));
-builder.Services.AddSingleton<ISessionRepository, InMemorySessionRepository>();
-builder.Services.AddSingleton<IAuthenticationEventRepository, InMemoryAuthenticationEventRepository>();
-builder.Services.AddSingleton<IAuthenticationTimelineRepository, InMemoryAuthenticationTimelineRepository>();
-builder.Services.AddSingleton<IAwidRepository, InMemoryAwidRepository>();
-builder.Services.AddSingleton(new AwidPolicy());
-builder.Services.AddSingleton<CreateAwidHandler>();
-builder.Services.AddSingleton<ChangeAliasHandler>();
-builder.Services.AddSingleton<CheckAliasAvailabilityHandler>();
-builder.Services.AddSingleton<GetAwidProfileHandler>();
+builder.Services.AddSingleton<IIdentityRepository, InMemoryIdentityRepository>();
+builder.Services.AddSingleton<IdentityCardService>();
+builder.Services.AddSingleton<QrTokenService>();
+builder.Services.AddSingleton<PrivacyResolver>();
 
 var app = builder.Build();
 
@@ -46,173 +24,194 @@ app.UseAuthorization();
 app.MapGet("/health/live", () => Results.Ok(new { status = "alive" }));
 app.MapGet("/health/ready", () => Results.Ok(new { status = "ready" }));
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
-app.MapPost("/auth/register", () => Results.Ok(new { userId = Guid.NewGuid().ToString(), status = "PENDING" }));
 
-app.MapPost("/api/v1/auth/pin", async (CreatePinRequest request, CreatePinHandler handler, ClaimsPrincipal user, CancellationToken cancellationToken) =>
+app.MapGet("/api/v1/me/card", (
+    ClaimsPrincipal user,
+    IIdentityRepository repository,
+    IdentityCardService cardService,
+    IdentityCardContext? context) =>
 {
-    var response = await handler.HandleAsync(request, user, cancellationToken);
-    return response.Success ? Results.Ok(response) : Results.BadRequest(response);
-});
-
-app.MapPost("/api/v1/auth/pin/verify", async (VerifyPinRequest request, VerifyPinHandler handler, ClaimsPrincipal user, CancellationToken cancellationToken) =>
-{
-    var response = await handler.HandleAsync(request, user, cancellationToken);
-    return response.Success ? Results.Ok(response) : Results.BadRequest(response);
-});
-
-app.MapPost("/api/v1/devices", async (RegisterDeviceRequest request, RegisterDeviceHandler handler, ClaimsPrincipal user, CancellationToken cancellationToken) =>
-{
-    var response = await handler.HandleAsync(request, user, cancellationToken);
-    return response.Success ? Results.Ok(response) : Results.BadRequest(response);
-});
-
-app.MapGet("/api/v1/devices", async (ITrustedDeviceRepository repository, ClaimsPrincipal user, CancellationToken cancellationToken) =>
-{
-    var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-    if (string.IsNullOrWhiteSpace(userId))
+    var subjectId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+    if (string.IsNullOrWhiteSpace(subjectId))
     {
         return Results.Unauthorized();
     }
 
-    var devices = await repository.ListByUserIdAsync(userId, cancellationToken);
-    return Results.Ok(devices.Select(x => new { x.DeviceId, x.DeviceName, x.Status, x.PublicKey }));
+    var account = repository.GetOrCreateAccount(subjectId);
+    var card = cardService.BuildCard(account, context ?? IdentityCardContext.Personal);
+
+    return Results.Ok(new MeCardResponse
+    {
+        Alias = card.Alias,
+        PublicAwid = card.PublicAwid,
+        DisplayName = card.DisplayName,
+        PrivacyMode = card.PrivacyMode.ToString().ToUpperInvariant(),
+        Theme = card.Theme,
+        Context = card.Context.ToString().ToUpperInvariant(),
+        VerificationBadges = card.VerificationBadges,
+        BusinessName = card.BusinessName,
+        AssociationName = card.AssociationName,
+        BusinessHours = card.BusinessHours,
+        UpdatedAt = card.UpdatedAt
+    });
 });
 
-app.MapPost("/api/v1/devices/{deviceId}/revoke", async (string deviceId, RevokeDeviceHandler handler, ClaimsPrincipal user, CancellationToken cancellationToken) =>
+app.MapGet("/api/v1/me/qr", (
+    ClaimsPrincipal user,
+    IIdentityRepository repository,
+    QrTokenService qrService) =>
 {
-    var response = await handler.HandleAsync(deviceId, user, cancellationToken);
-    return response.Success ? Results.Ok(response) : Results.BadRequest(response);
-});
-
-app.MapPost("/api/v1/auth/login", async (LoginRequest request, LoginHandler handler, ClaimsPrincipal user, CancellationToken cancellationToken) =>
-{
-    var response = await handler.HandleAsync(request, user, cancellationToken);
-    return response.Success ? Results.Ok(response) : Results.BadRequest(response);
-});
-
-app.MapPost("/api/v1/auth/refresh", async (RefreshRequest request, RefreshSessionHandler handler, ClaimsPrincipal user, CancellationToken cancellationToken) =>
-{
-    var response = await handler.HandleAsync(request, user, cancellationToken);
-    return response.Success ? Results.Ok(response) : Results.BadRequest(response);
-});
-
-app.MapPost("/api/v1/auth/logout", async (LogoutRequest request, LogoutHandler handler, ClaimsPrincipal user, CancellationToken cancellationToken) =>
-{
-    var response = await handler.HandleAsync(request, user, cancellationToken);
-    return response.Success ? Results.Ok(response) : Results.BadRequest(response);
-});
-
-app.MapPost("/api/v1/auth/logout-all", async (LogoutAllHandler handler, ClaimsPrincipal user, CancellationToken cancellationToken) =>
-{
-    var response = await handler.HandleAsync(user, cancellationToken);
-    return response.Success ? Results.Ok(response) : Results.BadRequest(response);
-});
-
-app.MapGet("/api/v1/sessions", async (ISessionRepository repository, ClaimsPrincipal user, CancellationToken cancellationToken) =>
-{
-    var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-    if (string.IsNullOrWhiteSpace(userId))
+    var subjectId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+    if (string.IsNullOrWhiteSpace(subjectId))
     {
         return Results.Unauthorized();
     }
 
-    var sessions = await repository.ListByUserIdAsync(userId, cancellationToken);
-    return Results.Ok(sessions.Select(x => new { x.Id, x.DeviceId, x.Status, x.LastActivityAt, x.ExpiresAt }));
+    var permanent = repository.GetPermanentIdentityToken(subjectId);
+    if (permanent is null)
+    {
+        var account = repository.GetOrCreateAccount(subjectId);
+        permanent = qrService.CreateSignedToken(account, QrType.Identity, "IDENTITY_SHARE", null, int.MaxValue, null, null);
+        repository.CreateQrToken(permanent);
+        repository.AddAudit(new AuditEvent { EventType = "QR_CREATED", SubjectId = subjectId, QrId = permanent.Id, Details = "Permanent identity QR created" });
+    }
+
+    return Results.Ok(ToResponse(permanent));
 });
 
-app.MapDelete("/api/v1/sessions/{sessionId}", async (Guid sessionId, LogoutHandler handler, ClaimsPrincipal user, CancellationToken cancellationToken) =>
+app.MapPost("/api/v1/me/qr/temp", (
+    ClaimsPrincipal user,
+    CreateTempQrRequest request,
+    IIdentityRepository repository,
+    QrTokenService qrService) =>
 {
-    var response = await handler.HandleAsync(new LogoutRequest { SessionId = sessionId }, user, cancellationToken);
-    return response.Success ? Results.Ok(response) : Results.BadRequest(response);
-});
-
-app.MapPost("/api/v1/awids", async (CreateAwidRequest request, CreateAwidHandler handler, ClaimsPrincipal user, CancellationToken cancellationToken) =>
-{
-    var response = await handler.HandleAsync(request, user, cancellationToken);
-    return response.Success ? Results.Ok(response) : Results.BadRequest(response);
-});
-
-app.MapPatch("/api/v1/awids/me/alias", async (ChangeAliasRequest request, ChangeAliasHandler handler, ClaimsPrincipal user, CancellationToken cancellationToken) =>
-{
-    var response = await handler.HandleAsync(request, user, cancellationToken);
-    return response.Success ? Results.Ok(response) : Results.BadRequest(response);
-});
-
-app.MapGet("/api/v1/awids/me", async (IAwidRepository repository, ClaimsPrincipal user, CancellationToken cancellationToken) =>
-{
-    var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-    if (string.IsNullOrWhiteSpace(userId))
+    var subjectId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+    if (string.IsNullOrWhiteSpace(subjectId))
     {
         return Results.Unauthorized();
     }
 
-    var awid = await repository.GetBySubjectIdAsync(userId, cancellationToken);
-    return awid is null ? Results.NotFound() : Results.Ok(new { awid.PublicAwid, alias = awid.AliasDisplay, status = awid.Status.ToString().ToUpperInvariant() });
+    var account = repository.GetOrCreateAccount(subjectId);
+    var expiresAt = DateTimeOffset.UtcNow.AddMinutes(Math.Clamp(request.ExpiresInMinutes, 1, 60 * 24));
+    var token = qrService.CreateSignedToken(account, request.Type, request.Purpose, expiresAt, request.MaxUses, request.Amount, request.Currency);
+    repository.CreateQrToken(token);
+    repository.AddAudit(new AuditEvent { EventType = "QR_CREATED", SubjectId = subjectId, QrId = token.Id, Details = $"Temporary {request.Type} QR created" });
+
+    return Results.Ok(ToResponse(token));
 });
 
-app.MapGet("/api/v1/awids/aliases/{alias}/availability", async (string alias, CheckAliasAvailabilityHandler handler, CancellationToken cancellationToken) =>
+app.MapPost("/api/v1/me/qr/payment", (
+    ClaimsPrincipal user,
+    CreatePaymentQrRequest request,
+    IIdentityRepository repository,
+    QrTokenService qrService) =>
 {
-    var response = await handler.HandleAsync(new GetAliasAvailabilityRequest { Alias = alias }, cancellationToken);
-    return response.Success ? Results.Ok(response) : Results.BadRequest(response);
-});
-
-app.MapGet("/api/v1/awids/me/alias/history", async (IAwidRepository repository, ClaimsPrincipal user, CancellationToken cancellationToken) =>
-{
-    var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-    if (string.IsNullOrWhiteSpace(userId))
+    var subjectId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+    if (string.IsNullOrWhiteSpace(subjectId))
     {
         return Results.Unauthorized();
     }
 
-    var history = await repository.ListAliasHistoryAsync(userId, cancellationToken);
-    return Results.Ok(history.Select(x => new
+    if (request.Amount <= 0)
     {
-        previousAlias = $"@{x.PreviousAlias}",
-        newAlias = $"@{x.NewAlias}",
-        x.ChangedAt,
-        x.ReservedUntil
-    }));
+        return Results.BadRequest(new { errorCode = "AMOUNT_INVALID", message = "Amount must be greater than zero" });
+    }
+
+    var account = repository.GetOrCreateAccount(subjectId);
+    var expiresAt = DateTimeOffset.UtcNow.AddMinutes(5);
+    var token = qrService.CreateSignedToken(account, QrType.Payment, "RECEIVE_PAYMENT", expiresAt, 1, request.Amount, request.Currency);
+    repository.CreateQrToken(token);
+    repository.AddAudit(new AuditEvent { EventType = "QR_CREATED", SubjectId = subjectId, QrId = token.Id, Details = "Payment QR created" });
+
+    return Results.Ok(ToResponse(token));
 });
 
-app.MapGet("/api/v1/awids/{publicAwid}", async (string publicAwid, IAwidRepository repository, CancellationToken cancellationToken) =>
+app.MapDelete("/api/v1/me/qr/{id:guid}", (
+    ClaimsPrincipal user,
+    Guid id,
+    IIdentityRepository repository) =>
 {
-    var awid = await repository.GetByPublicAwidAsync(publicAwid, cancellationToken);
-    if (awid is null)
+    var subjectId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+    if (string.IsNullOrWhiteSpace(subjectId))
     {
-        return Results.NotFound(new AwidPublicProfileResponse { Success = false, ErrorCode = "AWID_NOT_FOUND", Message = "AWID not found" });
+        return Results.Unauthorized();
     }
 
-    if (awid.Status is AwidStatus.Suspended or AwidStatus.Closed)
-    {
-        return Results.NotFound(new AwidPublicProfileResponse { Success = false, ErrorCode = "AWID_NOT_FOUND", Message = "AWID not found" });
-    }
-
-    return awid.PrivacyMode switch
-    {
-        AwidPrivacyMode.Private => Results.Ok(new AwidPublicProfileResponse
-        {
-            Success = true,
-            PublicAwid = awid.PublicAwid,
-            Alias = awid.AliasDisplay,
-            Status = awid.Status.ToString().ToUpperInvariant(),
-            PrivacyMode = awid.PrivacyMode.ToString().ToUpperInvariant()
-        }),
-        _ => Results.Ok(new AwidPublicProfileResponse
-        {
-            Success = true,
-            PublicAwid = awid.PublicAwid,
-            Alias = awid.AliasDisplay,
-            Status = awid.Status.ToString().ToUpperInvariant(),
-            PrivacyMode = awid.PrivacyMode.ToString().ToUpperInvariant()
-        })
-    };
+    repository.RevokeQrToken(id, subjectId);
+    repository.AddAudit(new AuditEvent { EventType = "QR_REVOKED", SubjectId = subjectId, QrId = id, Details = "QR revoked by owner" });
+    return Results.NoContent();
 });
+
+app.MapPost("/api/v1/qr/resolve", (
+    ResolveQrRequest request,
+    IIdentityRepository repository,
+    QrTokenService qrService,
+    PrivacyResolver privacyResolver) =>
+{
+    var result = qrService.Resolve(request.Token, request.ExpectedType, repository, privacyResolver);
+    return result.Success ? Results.Ok(result) : Results.BadRequest(result);
+});
+
+app.MapPost("/api/v1/me/card/share", (ClaimsPrincipal user, IIdentityRepository repository) =>
+{
+    var subjectId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+    if (string.IsNullOrWhiteSpace(subjectId))
+    {
+        return Results.Unauthorized();
+    }
+
+    repository.AddAudit(new AuditEvent { EventType = "CARD_SHARED", SubjectId = subjectId, Details = "Digital identity card shared" });
+    return Results.Ok(new { success = true, status = "SHARED" });
+});
+
+app.MapPost("/api/v1/me/card/download", (ClaimsPrincipal user, IIdentityRepository repository) =>
+{
+    var subjectId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+    if (string.IsNullOrWhiteSpace(subjectId))
+    {
+        return Results.Unauthorized();
+    }
+
+    repository.AddAudit(new AuditEvent { EventType = "CARD_DOWNLOADED", SubjectId = subjectId, Details = "Digital identity card downloaded" });
+    return Results.Ok(new { success = true, status = "DOWNLOADED" });
+});
+
+app.MapGet("/api/v1/me/audit", (ClaimsPrincipal user, IIdentityRepository repository) =>
+{
+    var subjectId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+    if (string.IsNullOrWhiteSpace(subjectId))
+    {
+        return Results.Unauthorized();
+    }
+
+    return Results.Ok(repository.ListAuditEvents(subjectId));
+});
+
+app.MapGet("/auth/register", () => Results.Ok(new { userId = Guid.NewGuid().ToString(), status = "PENDING" }));
 
 app.Run();
 
+static QrTokenResponse ToResponse(QrToken token)
+{
+    return new QrTokenResponse
+    {
+        Id = token.Id,
+        Token = token.Token,
+        Type = token.Type.ToString().ToUpperInvariant(),
+        Purpose = token.Purpose,
+        ExpiresAt = token.ExpiresAt,
+        MaxUses = token.MaxUses,
+        UseCount = token.UseCount
+    };
+}
+
 public sealed class TestAuthHandler : AuthenticationHandler<AuthenticationSchemeOptions>
 {
-    public TestAuthHandler(IOptionsMonitor<AuthenticationSchemeOptions> options, ILoggerFactory logger, UrlEncoder encoder) : base(options, logger, encoder)
+    public TestAuthHandler(
+        IOptionsMonitor<AuthenticationSchemeOptions> options,
+        ILoggerFactory logger,
+        UrlEncoder encoder)
+        : base(options, logger, encoder)
     {
     }
 

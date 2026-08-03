@@ -1,7 +1,16 @@
+using UniversalWallet.Api.Application.Ledger;
+using UniversalWallet.Api.Api.Ledger;
+using UniversalWallet.Api.Infrastructure.Ledger;
 using UniversalWallet.Api.WalletEngine;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSingleton<IWalletRepository, InMemoryWalletRepository>();
+builder.Services.AddSingleton<ILedgerRepository, InMemoryLedgerRepository>();
+builder.Services.AddSingleton<ILedgerJournalRepository, InMemoryLedgerJournalRepository>();
+builder.Services.AddSingleton<LedgerValidator>();
+builder.Services.AddSingleton<LedgerPostingService>();
+builder.Services.AddSingleton<PostTransactionHandler>();
+builder.Services.AddSingleton<ReverseTransactionHandler>();
 
 var app = builder.Build();
 
@@ -108,6 +117,8 @@ app.MapGet("/api/v1/wallets/{id:guid}/ledger", (Guid id, IWalletRepository repos
 		entries
 	});
 });
+
+app.MapLedgerEndpoints();
 
 app.Run();
 

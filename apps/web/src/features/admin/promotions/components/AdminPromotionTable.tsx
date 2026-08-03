@@ -1,6 +1,7 @@
 "use client";
 
 import type { AdminPromotion } from '../types/admin-promotion.types';
+import { getCollectionLabel } from '@/features/admin/catalog/data/catalog-taxonomy';
 
 interface AdminPromotionTableProps {
   promotions: AdminPromotion[];
@@ -17,6 +18,12 @@ function formatDiscount(promotion: AdminPromotion) {
 }
 
 export default function AdminPromotionTable({ promotions, onEdit, onDelete }: AdminPromotionTableProps) {
+  const targetLabel = (promotion: AdminPromotion) => {
+    if (promotion.scope === 'all') return 'Tous produits';
+    if (promotion.scope === 'collection') return getCollectionLabel(promotion.collectionSlug);
+    return promotion.category || 'Categorie';
+  };
+
   return (
     <div className="overflow-hidden rounded-[28px] border border-white/10 bg-white/5">
       <table className="min-w-full text-left text-sm text-white/80">
@@ -39,7 +46,7 @@ export default function AdminPromotionTable({ promotions, onEdit, onDelete }: Ad
               <td className="px-4 py-4">
                 {new Date(promotion.startsAt).toLocaleDateString()} - {new Date(promotion.endsAt).toLocaleDateString()}
               </td>
-              <td className="px-4 py-4">{promotion.appliesToAll ? 'Tous produits' : promotion.category || 'Catégorie'}</td>
+              <td className="px-4 py-4">{targetLabel(promotion)}</td>
               <td className="px-4 py-4">
                 {promotion.usageCount}/{promotion.usageLimit ?? '∞'}
               </td>

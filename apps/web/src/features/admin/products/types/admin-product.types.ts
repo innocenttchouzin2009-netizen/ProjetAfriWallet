@@ -15,6 +15,8 @@ export interface AdminProduct {
   price: number;
   stock: number;
   category: string;
+  collectionSlug: string;
+  hatType: string;
   sku: string;
   active: boolean;
   primaryImageUrl: string | null;
@@ -30,6 +32,7 @@ export interface AdminProductFormValues {
   price: number;
   stock: number;
   category: string;
+  hatType: string;
   sku: string;
   active: boolean;
 }

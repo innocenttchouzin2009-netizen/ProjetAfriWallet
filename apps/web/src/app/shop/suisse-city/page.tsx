@@ -35,6 +35,31 @@ const COLLECTIONS: CityCollection[] = [
   },
 ];
 
+const PHOTO_SLICES = [
+  {
+    title: 'Zurich',
+    query: 'Zurich Switzerland city lake',
+    position: 'center top',
+  },
+  {
+    title: 'Geneva',
+    query: 'Geneva Switzerland Jet dEau city',
+    position: 'center 35%',
+  },
+  {
+    title: 'Bern',
+    query: 'Bern Switzerland old town city',
+    position: 'center 50%',
+  },
+  {
+    title: 'Zermatt',
+    query: 'Zermatt Switzerland Matterhorn city',
+    position: 'center bottom',
+  },
+] as const;
+
+const buildPhotoUrl = (query: string) => `https://source.unsplash.com/featured/1200x900/?${encodeURIComponent(query)}`;
+
 export default function SuisseCityPage() {
   const { products, loading, error, params, setParams, total, categories, colors } = useProducts({
     pageSize: 12,
@@ -94,6 +119,27 @@ export default function SuisseCityPage() {
             <p className="text-xs font-bold uppercase tracking-[0.24em] text-black/80">Collection active</p>
             <h2 className="mt-2 text-2xl font-black text-black">{activeCollection.label}</h2>
             <p className="mt-1 text-sm text-black/80">{activeCollection.subtitle}</p>
+          </div>
+        </div>
+
+        <div className="mt-6 overflow-hidden rounded-3xl border border-white/10 bg-white/5">
+          <div className="grid gap-0 md:grid-cols-4">
+            {PHOTO_SLICES.map((slice, index) => (
+              <div key={slice.title} className="relative h-56 overflow-hidden border-b border-white/10 md:h-72 md:border-b-0 md:border-r md:border-r-white/10 last:border-r-0">
+                <div
+                  className="absolute inset-0 bg-cover bg-center"
+                  style={{
+                    backgroundImage: `url(${buildPhotoUrl(slice.query)})`,
+                    backgroundPosition: slice.position,
+                  }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
+                <div className="absolute inset-x-0 bottom-0 p-4">
+                  <p className="text-xs font-bold uppercase tracking-[0.24em] text-white/70">Photo slice {index + 1}</p>
+                  <h3 className="mt-1 text-xl font-black">{slice.title}</h3>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 

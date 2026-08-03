@@ -234,6 +234,151 @@ export default function ShopPage() {
               </div>
             </div>
 
+            <div className="rounded-3xl border border-[#E63946]/35 bg-gradient-to-br from-[#1B1B1B] via-[#111111] to-[#2A1616] p-6 text-white">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.25em] text-[#F1FAEE]">Dope&Cute Studio</p>
+                  <h3 className="mt-2 text-2xl font-black">Italy City Collection</h3>
+                  <p className="mt-2 text-sm text-white/75">
+                    Casquettes inspirees des villes italiennes: Premium, Heritage et Riviera-Alps.
+                  </p>
+                </div>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <Link
+                    href="/shop/italy-city"
+                    className="rounded-full border border-[#E63946] bg-[#E63946] px-4 py-2 text-center text-sm font-bold text-white transition hover:opacity-90 sm:col-span-2"
+                  >
+                    Page complete Italy City
+                  </Link>
+                  <button type="button" onClick={() => applyCollection('itpremium')} className="rounded-full border border-white/20 bg-white/5 px-4 py-2 text-sm font-semibold transition hover:bg-white/10">
+                    Premium Cities
+                  </button>
+                  <button type="button" onClick={() => applyCollection('itheritage')} className="rounded-full border border-white/20 bg-white/5 px-4 py-2 text-sm font-semibold transition hover:bg-white/10">
+                    Heritage Cities
+                  </button>
+                  <button type="button" onClick={() => applyCollection('italps')} className="rounded-full border border-white/20 bg-white/5 px-4 py-2 text-sm font-semibold transition hover:bg-white/10">
+                    Riviera-Alps
+                  </button>
+                  <button type="button" onClick={() => applyCollection(undefined)} className="rounded-full border border-[#E63946] bg-[#E63946] px-4 py-2 text-sm font-bold text-white transition hover:opacity-90">
+                    Voir toute la boutique
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-3xl border border-[#0057B7]/35 bg-gradient-to-br from-[#121212] via-[#111111] to-[#16263B] p-6 text-white">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.25em] text-[#F1FAEE]">Dope&Cute Studio</p>
+                  <h3 className="mt-2 text-2xl font-black">Netherlands City Collection</h3>
+                  <p className="mt-2 text-sm text-white/75">
+                    Casquettes inspirees des villes neerlandaises: Premium, Heritage et Canals-Coast.
+                  </p>
+                </div>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <Link
+                    href="/shop/netherlands-city"
+                    className="rounded-full border border-[#0057B7] bg-[#0057B7] px-4 py-2 text-center text-sm font-bold text-white transition hover:opacity-90 sm:col-span-2"
+                  >
+                    Page complete Netherlands City
+                  </Link>
+                  <button type="button" onClick={() => applyCollection('nlpremium')} className="rounded-full border border-white/20 bg-white/5 px-4 py-2 text-sm font-semibold transition hover:bg-white/10">
+                    Premium Cities
+                  </button>
+                  <button type="button" onClick={() => applyCollection('nlheritage')} className="rounded-full border border-white/20 bg-white/5 px-4 py-2 text-sm font-semibold transition hover:bg-white/10">
+                    Heritage Cities
+                  </button>
+                  <button type="button" onClick={() => applyCollection('nlcanals')} className="rounded-full border border-white/20 bg-white/5 px-4 py-2 text-sm font-semibold transition hover:bg-white/10">
+                    Canals & Coast
+                  </button>
+                  <button type="button" onClick={() => applyCollection(undefined)} className="rounded-full border border-[#0057B7] bg-[#0057B7] px-4 py-2 text-sm font-bold text-white transition hover:opacity-90">
+                    Voir toute la boutique
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-3xl border border-[#CD212A]/35 bg-gradient-to-br from-[#1B1B1B] via-[#111111] to-[#2A1616] p-6 text-white">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.25em] text-[#F4F5F0]">Dope&Cute Studio</p>
+                  <h3 className="mt-2 text-2xl font-black">Italy City Collection</h3>
+                  <p className="mt-2 text-sm text-white/75">Casquettes inspirees des villes italiennes: Premium, Heritage et Riviera-Alps.</p>
+                </div>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <Link href="/shop/italy-city" className="rounded-full border border-[#CD212A] bg-[#CD212A] px-4 py-2 text-center text-sm font-bold text-white transition hover:opacity-90 sm:col-span-2">
+                    Page complete Italy City
+                  </Link>
+                  <button type="button" onClick={() => applyCollection('itpremium')} className="rounded-full border border-white/20 bg-white/5 px-4 py-2 text-sm font-semibold transition hover:bg-white/10">
+                    Premium Cities
+                  </button>
+                  <button type="button" onClick={() => applyCollection('itheritage')} className="rounded-full border border-white/20 bg-white/5 px-4 py-2 text-sm font-semibold transition hover:bg-white/10">
+                    Heritage Cities
+                  </button>
+                  <button type="button" onClick={() => applyCollection('italps')} className="rounded-full border border-white/20 bg-white/5 px-4 py-2 text-sm font-semibold transition hover:bg-white/10">
+                    Riviera-Alps
+                  </button>
+                  <button type="button" onClick={() => applyCollection(undefined)} className="rounded-full border border-[#CD212A] bg-[#CD212A] px-4 py-2 text-sm font-bold text-white transition hover:opacity-90">
+                    Voir toute la boutique
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-3xl border border-[#21468B]/35 bg-gradient-to-br from-[#121212] via-[#111111] to-[#16263B] p-6 text-white">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.25em] text-[#F7F7FF]">Dope&Cute Studio</p>
+                  <h3 className="mt-2 text-2xl font-black">Netherlands City Collection</h3>
+                  <p className="mt-2 text-sm text-white/75">Casquettes inspirees des villes neerlandaises: Premium, Heritage et Canals-Coast.</p>
+                </div>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <Link href="/shop/netherlands-city" className="rounded-full border border-[#21468B] bg-[#21468B] px-4 py-2 text-center text-sm font-bold text-white transition hover:opacity-90 sm:col-span-2">
+                    Page complete Netherlands City
+                  </Link>
+                  <button type="button" onClick={() => applyCollection('nlpremium')} className="rounded-full border border-white/20 bg-white/5 px-4 py-2 text-sm font-semibold transition hover:bg-white/10">
+                    Premium Cities
+                  </button>
+                  <button type="button" onClick={() => applyCollection('nlheritage')} className="rounded-full border border-white/20 bg-white/5 px-4 py-2 text-sm font-semibold transition hover:bg-white/10">
+                    Heritage Cities
+                  </button>
+                  <button type="button" onClick={() => applyCollection('nlcanals')} className="rounded-full border border-white/20 bg-white/5 px-4 py-2 text-sm font-semibold transition hover:bg-white/10">
+                    Canals & Coast
+                  </button>
+                  <button type="button" onClick={() => applyCollection(undefined)} className="rounded-full border border-[#21468B] bg-[#21468B] px-4 py-2 text-sm font-bold text-white transition hover:opacity-90">
+                    Voir toute la boutique
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-3xl border border-[#AA151B]/35 bg-gradient-to-br from-[#111217] via-[#101010] to-[#241012] p-6 text-white">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.25em] text-[#F1BF00]">Dope&Cute Studio</p>
+                  <h3 className="mt-2 text-2xl font-black">Spain City Collection</h3>
+                  <p className="mt-2 text-sm text-white/75">Casquettes inspirees des villes espagnoles: Premium, Heritage et Coast & Islands.</p>
+                </div>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <Link href="/shop/spain-city" className="rounded-full border border-[#AA151B] bg-[#AA151B] px-4 py-2 text-center text-sm font-bold text-white transition hover:opacity-90 sm:col-span-2">
+                    Page complete Spain City
+                  </Link>
+                  <button type="button" onClick={() => applyCollection('espremium')} className="rounded-full border border-white/20 bg-white/5 px-4 py-2 text-sm font-semibold transition hover:bg-white/10">
+                    Premium Cities
+                  </button>
+                  <button type="button" onClick={() => applyCollection('esheritage')} className="rounded-full border border-white/20 bg-white/5 px-4 py-2 text-sm font-semibold transition hover:bg-white/10">
+                    Heritage Cities
+                  </button>
+                  <button type="button" onClick={() => applyCollection('escoast')} className="rounded-full border border-white/20 bg-white/5 px-4 py-2 text-sm font-semibold transition hover:bg-white/10">
+                    Coast & Islands
+                  </button>
+                  <button type="button" onClick={() => applyCollection(undefined)} className="rounded-full border border-[#AA151B] bg-[#AA151B] px-4 py-2 text-sm font-bold text-white transition hover:opacity-90">
+                    Voir toute la boutique
+                  </button>
+                </div>
+              </div>
+            </div>
+
             <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
               <div className="space-y-6">
                 <SectionTitle title="Nos meilleurs produits" />

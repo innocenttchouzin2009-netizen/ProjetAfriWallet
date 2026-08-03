@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { ForgotPasswordUseCase } from '../use-cases/ForgotPasswordUseCase';
 import { ResetPasswordUseCase } from '../use-cases/ResetPasswordUseCase';
 import { LogoutUseCase } from '../use-cases/LogoutUseCase';
@@ -89,10 +89,10 @@ export function useAuth() {
     setLoading(false);
   };
 
-  const canAccess = (roles: AuthRole[]) => {
+  const canAccess = useCallback((roles: AuthRole[]) => {
     if (!user) return false;
     return roles.includes(user.role);
-  };
+  }, [user]);
 
-  return useMemo(() => ({ user, error, loading, login, register, forgotPassword, resetPassword, logout, canAccess }), [user, error, loading]);
+  return useMemo(() => ({ user, error, loading, login, register, forgotPassword, resetPassword, logout, canAccess }), [user, error, loading, canAccess]);
 }

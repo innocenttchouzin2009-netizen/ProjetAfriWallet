@@ -1,0 +1,23 @@
+name: Feature
+description: Propose an AfriWallet feature
+title: "feat: "
+labels: ["feature"]
+body:
+  - type: input
+    id: reference
+    attributes:
+      label: AfriWallet reference
+      placeholder: AFW-UX-..., AFW-ARCH-..., ADR-...
+  - type: textarea
+    id: value
+    attributes:
+      label: User value
+      description: What user problem is solved?
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+    validations:
+      required: true

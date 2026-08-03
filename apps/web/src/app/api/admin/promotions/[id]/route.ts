@@ -17,7 +17,9 @@ const PromotionUpdateSchema = z
     usageLimit: z.coerce.number().int().positive().nullable().optional(),
     active: z.boolean().optional(),
     appliesToAll: z.boolean().optional(),
+    scope: z.enum(['all', 'category', 'collection']).optional(),
     category: z.string().trim().nullable().optional(),
+    collectionSlug: z.string().trim().nullable().optional(),
   })
   .superRefine((value, ctx) => {
     if (!value.startsAt || !value.endsAt) return;
@@ -50,6 +52,11 @@ function toAdminPromotion(promotion: {
   appliesToAll: boolean;
   category: string | null;
 }) {
+  const rawCategory = promotion.category;
+  const scope = promotion.appliesToAll ? 'all' : rawCategory?.startsWith('collection:') ? 'collection' : 'category';
+  const category = scope === 'category' ? rawCategory : null;
+  const collectionSlug = scope === 'collection' ? rawCategory?.replace('collection:', '') ?? null : null;
+
   return {
     id: promotion.id,
     code: promotion.code,
@@ -63,7 +70,9 @@ function toAdminPromotion(promotion: {
     endsAt: promotion.endsAt.toISOString(),
     active: promotion.isActive,
     appliesToAll: promotion.appliesToAll,
-    category: promotion.category,
+    scope,
+    category,
+    collectionSlug,
   };
 }
 
@@ -80,6 +89,28 @@ export async function PUT(request: NextRequest, { params }: Params) {
 
   const discountType = body.discountType ?? existing.discountType;
   const discountValueBase = body.discountValue ?? (existing.discountType === 'FIXED' ? existing.discountValue / 100 : existing.discountValue);
+  const existingScope = existing.appliesToAll ? 'all' : existing.category?.startsWith('collection:') ? 'collection' : 'category';
+  const scope = body.scope ?? existingScope;
+  const normalizedCategory =
+    scope === 'all'
+      ? null
+      : scope === 'collection'
+        ? body.collectionSlug === undefined
+          ? existingScope === 'collection'
+            ? existing.category
+            : null
+          : body.collectionSlug === null
+            ? null
+            : body.collectionSlug.trim()
+              ? `collection:${body.collectionSlug.trim()}`
+              : null
+        : body.category === undefined
+          ? existingScope === 'category'
+            ? existing.category
+            : null
+          : body.category === null
+            ? null
+            : body.category.trim() || null;
 
   const updated = await prisma.promotion.update({
     where: { id: params.id },
@@ -102,15 +133,8 @@ export async function PUT(request: NextRequest, { params }: Params) {
             ? null
             : Number(body.usageLimit),
       isActive: body.active === undefined ? existing.isActive : Boolean(body.active),
-      appliesToAll: body.appliesToAll === undefined ? existing.appliesToAll : Boolean(body.appliesToAll),
-      category:
-        body.appliesToAll === true
-          ? null
-          : body.category === undefined
-            ? existing.category
-            : body.category === null
-              ? null
-              : body.category.trim() || null,
+      appliesToAll: scope === 'all',
+      category: normalizedCategory,
     },
   });
 

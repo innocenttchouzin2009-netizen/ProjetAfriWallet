@@ -12,6 +12,7 @@ const sizes: Record<string, string> = {
 
 export default function Avatar({ src, alt = 'Avatar', size = 'md' }: AvatarProps) {
   return src ? (
+    // eslint-disable-next-line @next/next/no-img-element
     <img src={src} alt={alt} className={`rounded-full object-cover ${sizes[size]}`} />
   ) : (
     <div className={`grid place-items-center rounded-full bg-white/10 text-white ${sizes[size]}`}>

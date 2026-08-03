@@ -51,6 +51,12 @@ export default function Home() {
             >
               Voir la collection
             </a>
+            <a
+              href="/shop"
+              className="rounded-full border border-[#C8A45C] bg-[#C8A45C]/10 px-8 py-4 text-center font-bold text-[#C8A45C]"
+            >
+              City Collections
+            </a>
           </div>
         </div>
       </section>

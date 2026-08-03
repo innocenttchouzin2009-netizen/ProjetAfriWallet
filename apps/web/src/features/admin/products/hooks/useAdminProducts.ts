@@ -11,7 +11,8 @@ const emptyForm: AdminProductFormValues = {
   supplierSku: '',
   price: 0,
   stock: 0,
-  category: '',
+  category: 'depremium',
+  hatType: 'Snapback',
   sku: '',
   active: true,
 };
@@ -90,6 +91,7 @@ export function useAdminProducts() {
         price: created.price,
         stock: created.stock,
         category: created.category,
+        hatType: created.hatType,
         sku: created.sku,
         active: created.active,
       });
@@ -137,6 +139,7 @@ export function useAdminProducts() {
       price: product.price,
       stock: product.stock,
       category: product.category,
+      hatType: product.hatType,
       sku: product.sku,
       active: product.active,
     });

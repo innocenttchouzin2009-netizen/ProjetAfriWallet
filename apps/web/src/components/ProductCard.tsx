@@ -118,7 +118,7 @@ export default function ProductCard({ product }: Props) {
 
       <Modal title={`Personnaliser - ${product.name}`} open={personalizeOpen} onClose={() => setPersonalizeOpen(false)}>
         <div className="space-y-4 text-sm text-white/80">
-          <p>Ajoute les initiales du client ou son propre logo avant d'ajouter l'article au panier.</p>
+          <p>Ajoute les initiales du client ou son propre logo avant d&apos;ajouter l&apos;article au panier.</p>
 
           <div className="space-y-2">
             <label htmlFor={`initials-${product.id}`} className="block font-semibold text-white">Initiales (max 5)</label>

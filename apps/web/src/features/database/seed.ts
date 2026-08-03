@@ -1,9 +1,13 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import { PrismaClient, UserRole } from '@prisma/client';
 
 const prisma = new PrismaClient();
+const CITY_CAP_PRICE_CENTS = 2000;
+const BELGIUM_CITY_IMAGE_DIRECTORY = 'C:\\Users\\User\\OneDrive\\Desktop\\Nouveau dossier (2)';
 
 type CityCollection = {
-  collection: 'premium' | 'regional' | 'nrw' | 'frpremium' | 'frheritage' | 'frriviera' | 'bepremium' | 'beheritage' | 'beardennes' | 'chpremium' | 'chheritage' | 'chalps';
+  collection: 'premium' | 'regional' | 'nrw' | 'frpremium' | 'frheritage' | 'frriviera' | 'bepremium' | 'beheritage' | 'beardennes' | 'chpremium' | 'chheritage' | 'chalps' | 'itpremium' | 'itheritage' | 'italps' | 'nlpremium' | 'nlheritage' | 'nlcanals' | 'espremium' | 'esheritage' | 'escoast';
   city: string;
   landmark: string;
   priceCents: number;
@@ -142,6 +146,105 @@ const switzerlandCityCollections: CityCollection[] = [
   { collection: 'chalps', city: 'St. Moritz', landmark: 'Luxury lake resort and alpine line', priceCents: 6590, stock: 14 },
 ];
 
+const italyCityCollections: CityCollection[] = [
+  { collection: 'itpremium', city: 'Rome', landmark: 'Colosseum and Forum skyline', priceCents: 6490, stock: 26 },
+  { collection: 'itpremium', city: 'Milan', landmark: 'Duomo and fashion district', priceCents: 6490, stock: 24 },
+  { collection: 'itpremium', city: 'Naples', landmark: 'Vesuvius and bay panorama', priceCents: 6290, stock: 22 },
+  { collection: 'itpremium', city: 'Turin', landmark: 'Mole Antonelliana silhouette', priceCents: 6290, stock: 22 },
+  { collection: 'itpremium', city: 'Florence', landmark: 'Duomo dome and Arno river', priceCents: 6390, stock: 22 },
+  { collection: 'itpremium', city: 'Venice', landmark: 'Grand Canal and bridges', priceCents: 6490, stock: 22 },
+  { collection: 'itpremium', city: 'Bologna', landmark: 'Porticoes and towers', priceCents: 6190, stock: 18 },
+  { collection: 'itpremium', city: 'Verona', landmark: 'Arena and river bends', priceCents: 6290, stock: 18 },
+  { collection: 'itpremium', city: 'Genoa', landmark: 'Old port and harbor lines', priceCents: 6190, stock: 18 },
+  { collection: 'itpremium', city: 'Palermo', landmark: 'Cathedral and Mediterranean skyline', priceCents: 6190, stock: 18 },
+  { collection: 'itheritage', city: 'Pisa', landmark: 'Leaning Tower and piazza', priceCents: 5890, stock: 16 },
+  { collection: 'itheritage', city: 'Siena', landmark: 'Piazza del Campo and brick streets', priceCents: 5890, stock: 16 },
+  { collection: 'itheritage', city: 'Ravenna', landmark: 'Byzantine mosaics and old center', priceCents: 5790, stock: 16 },
+  { collection: 'itheritage', city: 'Mantua', landmark: 'Lakes and Renaissance squares', priceCents: 5790, stock: 14 },
+  { collection: 'itheritage', city: 'Urbino', landmark: 'Renaissance hill town profile', priceCents: 5790, stock: 14 },
+  { collection: 'itheritage', city: 'Lecce', landmark: 'Baroque facades and stonework', priceCents: 5790, stock: 14 },
+  { collection: 'itheritage', city: 'Matera', landmark: 'Sassi cliff dwellings', priceCents: 5890, stock: 14 },
+  { collection: 'itheritage', city: 'Ferrara', landmark: 'Estense castle and medieval walls', priceCents: 5690, stock: 14 },
+  { collection: 'itheritage', city: 'Parma', landmark: 'Cathedral and elegant arcades', priceCents: 5690, stock: 14 },
+  { collection: 'itheritage', city: 'Perugia', landmark: 'Hilltop streets and fortress', priceCents: 5690, stock: 14 },
+  { collection: 'italps', city: 'Como', landmark: 'Lake Como villas and waterline', priceCents: 6490, stock: 16 },
+  { collection: 'italps', city: 'Trento', landmark: 'Alpine valley and cathedral square', priceCents: 6390, stock: 15 },
+  { collection: 'italps', city: 'Bolzano', landmark: 'Dolomites gateway and arcades', priceCents: 6390, stock: 15 },
+  { collection: 'italps', city: 'Aosta', landmark: 'Roman arch and mountain frame', priceCents: 6290, stock: 15 },
+  { collection: 'italps', city: 'Courmayeur', landmark: 'Mont Blanc resort backdrop', priceCents: 6590, stock: 14 },
+  { collection: 'italps', city: 'Cortina dAmpezzo', landmark: 'Dolomites peaks and ski lanes', priceCents: 6590, stock: 14 },
+  { collection: 'italps', city: 'Bressanone', landmark: 'Cathedral towers and alpine town', priceCents: 6190, stock: 14 },
+  { collection: 'italps', city: 'Merano', landmark: 'Spa promenade and mountains', priceCents: 6290, stock: 14 },
+  { collection: 'italps', city: 'Sanremo', landmark: 'Riviera palm walk and harbor', priceCents: 6290, stock: 14 },
+  { collection: 'italps', city: 'Taormina', landmark: 'Greek theatre and sea views', priceCents: 6490, stock: 14 },
+];
+
+const netherlandsCityCollections: CityCollection[] = [
+  { collection: 'nlpremium', city: 'Amsterdam', landmark: 'Canals and canal houses', priceCents: 6390, stock: 26 },
+  { collection: 'nlpremium', city: 'Rotterdam', landmark: 'Modern skyline and harbor', priceCents: 6290, stock: 24 },
+  { collection: 'nlpremium', city: 'The Hague', landmark: 'Binnenhof and city boulevards', priceCents: 6190, stock: 22 },
+  { collection: 'nlpremium', city: 'Utrecht', landmark: 'Dom tower and canals', priceCents: 6190, stock: 22 },
+  { collection: 'nlpremium', city: 'Eindhoven', landmark: 'Design district and innovation hub', priceCents: 6090, stock: 20 },
+  { collection: 'nlpremium', city: 'Groningen', landmark: 'Martini tower and city center', priceCents: 6090, stock: 20 },
+  { collection: 'nlpremium', city: 'Maastricht', landmark: 'Old bridges and riverfront', priceCents: 6190, stock: 18 },
+  { collection: 'nlpremium', city: 'Haarlem', landmark: 'Historic squares and cathedral', priceCents: 6090, stock: 18 },
+  { collection: 'nlpremium', city: 'Breda', landmark: 'Castle and lively market square', priceCents: 5990, stock: 18 },
+  { collection: 'nlpremium', city: 'Nijmegen', landmark: 'Waal river and bridge lines', priceCents: 5990, stock: 18 },
+  { collection: 'nlheritage', city: 'Delft', landmark: 'Blue ceramics and canals', priceCents: 5890, stock: 16 },
+  { collection: 'nlheritage', city: 'Leiden', landmark: 'Historic university canals', priceCents: 5890, stock: 16 },
+  { collection: 'nlheritage', city: 'Alkmaar', landmark: 'Cheese market and old roofs', priceCents: 5790, stock: 16 },
+  { collection: 'nlheritage', city: 'Zwolle', landmark: 'City gate and river edge', priceCents: 5790, stock: 14 },
+  { collection: 'nlheritage', city: 'Amersfoort', landmark: 'Koppelpoort and old center', priceCents: 5790, stock: 14 },
+  { collection: 'nlheritage', city: 'Kampen', landmark: 'Historic harbor and towers', priceCents: 5690, stock: 14 },
+  { collection: 'nlheritage', city: 'Deventer', landmark: 'IJssel river and medieval streets', priceCents: 5690, stock: 14 },
+  { collection: 'nlheritage', city: 'Middelburg', landmark: 'Monuments and Zeeland heritage', priceCents: 5690, stock: 14 },
+  { collection: 'nlheritage', city: 'Gouda', landmark: 'Town hall and cheese market', priceCents: 5690, stock: 14 },
+  { collection: 'nlheritage', city: 'Dordrecht', landmark: 'Old harbor and river junction', priceCents: 5590, stock: 14 },
+  { collection: 'nlcanals', city: 'Giethoorn', landmark: 'Canals and thatched cottages', priceCents: 5890, stock: 16 },
+  { collection: 'nlcanals', city: 'Volendam', landmark: 'Harbor and traditional houses', priceCents: 5790, stock: 15 },
+  { collection: 'nlcanals', city: 'Marken', landmark: 'Peninsula village and wooden homes', priceCents: 5790, stock: 15 },
+  { collection: 'nlcanals', city: 'Edam', landmark: 'Canals and cheese town charm', priceCents: 5690, stock: 14 },
+  { collection: 'nlcanals', city: 'Zaandam', landmark: 'Windmill heritage and river', priceCents: 5690, stock: 14 },
+  { collection: 'nlcanals', city: 'Scheveningen', landmark: 'Beach pier and North Sea promenade', priceCents: 5790, stock: 14 },
+  { collection: 'nlcanals', city: 'Texel', landmark: 'Dunes and island coastline', priceCents: 5890, stock: 14 },
+  { collection: 'nlcanals', city: 'Leeuwarden', landmark: 'Canals and Frisian skyline', priceCents: 5690, stock: 14 },
+  { collection: 'nlcanals', city: 'Harlingen', landmark: 'Harbor and sea gate', priceCents: 5690, stock: 14 },
+  { collection: 'nlcanals', city: 'Dokkum', landmark: 'Historic canals and forts', priceCents: 5590, stock: 14 },
+];
+
+const spainCityCollections: CityCollection[] = [
+  { collection: 'espremium', city: 'Madrid', landmark: 'Puerta de Alcala and Gran Via', priceCents: 6390, stock: 26 },
+  { collection: 'espremium', city: 'Barcelona', landmark: 'Sagrada Familia and Eixample grid', priceCents: 6490, stock: 24 },
+  { collection: 'espremium', city: 'Valencia', landmark: 'City of Arts and Sciences', priceCents: 6190, stock: 22 },
+  { collection: 'espremium', city: 'Seville', landmark: 'Giralda tower and river skyline', priceCents: 6190, stock: 22 },
+  { collection: 'espremium', city: 'Bilbao', landmark: 'Guggenheim and Nervion river', priceCents: 6190, stock: 20 },
+  { collection: 'espremium', city: 'Malaga', landmark: 'Alcazaba and Mediterranean harbor', priceCents: 6190, stock: 20 },
+  { collection: 'espremium', city: 'Zaragoza', landmark: 'Basilica del Pilar and Ebro river', priceCents: 6090, stock: 18 },
+  { collection: 'espremium', city: 'Alicante', landmark: 'Santa Barbara castle and port', priceCents: 6090, stock: 18 },
+  { collection: 'espremium', city: 'Cordoba', landmark: 'Mezquita and old bridge', priceCents: 6090, stock: 18 },
+  { collection: 'espremium', city: 'Palma', landmark: 'Cathedral and bay waterfront', priceCents: 6190, stock: 18 },
+  { collection: 'esheritage', city: 'Granada', landmark: 'Alhambra silhouette and Sierra Nevada', priceCents: 5890, stock: 16 },
+  { collection: 'esheritage', city: 'Toledo', landmark: 'Historic hill city and river bend', priceCents: 5890, stock: 16 },
+  { collection: 'esheritage', city: 'Salamanca', landmark: 'Plaza Mayor sandstone skyline', priceCents: 5790, stock: 16 },
+  { collection: 'esheritage', city: 'Segovia', landmark: 'Roman aqueduct and castle line', priceCents: 5790, stock: 14 },
+  { collection: 'esheritage', city: 'Caceres', landmark: 'Medieval walls and old town roofs', priceCents: 5790, stock: 14 },
+  { collection: 'esheritage', city: 'Burgos', landmark: 'Cathedral spires and historic avenue', priceCents: 5690, stock: 14 },
+  { collection: 'esheritage', city: 'Leon', landmark: 'Gothic cathedral and plaza', priceCents: 5690, stock: 14 },
+  { collection: 'esheritage', city: 'Cuenca', landmark: 'Hanging houses and canyon edge', priceCents: 5790, stock: 14 },
+  { collection: 'esheritage', city: 'Santiago de Compostela', landmark: 'Cathedral towers and pilgrims route', priceCents: 5890, stock: 14 },
+  { collection: 'esheritage', city: 'Ronda', landmark: 'Puente Nuevo and gorge skyline', priceCents: 5790, stock: 14 },
+  { collection: 'escoast', city: 'San Sebastian', landmark: 'La Concha bay and promenade', priceCents: 5990, stock: 16 },
+  { collection: 'escoast', city: 'Cadiz', landmark: 'Atlantic harbor and old ramparts', priceCents: 5890, stock: 15 },
+  { collection: 'escoast', city: 'Tarragona', landmark: 'Roman amphitheatre and sea wall', priceCents: 5790, stock: 15 },
+  { collection: 'escoast', city: 'Marbella', landmark: 'Palm-lined marina and white town', priceCents: 5990, stock: 15 },
+  { collection: 'escoast', city: 'Santander', landmark: 'Bay of Santander and cliff coast', priceCents: 5890, stock: 14 },
+  { collection: 'escoast', city: 'Gijon', landmark: 'Cantabrian coast and harbor', priceCents: 5790, stock: 14 },
+  { collection: 'escoast', city: 'A Coruna', landmark: 'Tower of Hercules and waterfront', priceCents: 5790, stock: 14 },
+  { collection: 'escoast', city: 'Vigo', landmark: 'Ria skyline and Atlantic docks', priceCents: 5790, stock: 14 },
+  { collection: 'escoast', city: 'Ibiza', landmark: 'Old town walls and island harbor', priceCents: 5990, stock: 14 },
+  { collection: 'escoast', city: 'Mataro', landmark: 'Coastal promenade and marina', priceCents: 5690, stock: 14 },
+];
+
 function slugify(value: string) {
   return value
     .toLowerCase()
@@ -175,7 +278,23 @@ function buildCityImageDataUrl(collection: CityCollection['collection'], city: s
                                     ? { start: '#DA291C', end: '#FFFFFF', accent: '#111111' }
                                     : collection === 'chheritage'
                                       ? { start: '#8B0000', end: '#CC0000', accent: '#FFFFFF' }
-                                      : { start: '#123B66', end: '#D62828', accent: '#F1FAEE' };
+                                                      : collection === 'italps'
+                                                        ? { start: '#008C45', end: '#CD212A', accent: '#F4F5F0' }
+                                                        : collection === 'itpremium'
+                                                          ? { start: '#008C45', end: '#CD212A', accent: '#F4F5F0' }
+                                                          : collection === 'itheritage'
+                                                            ? { start: '#2E294E', end: '#541388', accent: '#FFD400' }
+                                                            : collection === 'nlpremium'
+                                                              ? { start: '#AE1C28', end: '#21468B', accent: '#FFFFFF' }
+                                                              : collection === 'nlheritage'
+                                                                ? { start: '#2D6A4F', end: '#95D5B2', accent: '#FFFFFF' }
+                                                                  : collection === 'espremium'
+                                                                    ? { start: '#AA151B', end: '#F1BF00', accent: '#FFFFFF' }
+                                                                    : collection === 'esheritage'
+                                                                      ? { start: '#8B4513', end: '#C19A6B', accent: '#FFF3E0' }
+                                                                      : collection === 'escoast'
+                                                                        ? { start: '#0038A8', end: '#FFB81C', accent: '#FFFFFF' }
+                                                                        : { start: '#0D3B66', end: '#F4D35E', accent: '#F7F7FF' };
 
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1200" viewBox="0 0 1200 1200">
   <defs>
@@ -192,6 +311,35 @@ function buildCityImageDataUrl(collection: CityCollection['collection'], city: s
 </svg>`;
 
   return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+}
+
+function buildLocalPngDataUrl(filePath: string) {
+  const fileBuffer = fs.readFileSync(filePath);
+  return `data:image/png;base64,${fileBuffer.toString('base64')}`;
+}
+
+function buildBelgiumCityImageUrl(city: string) {
+  const fileCandidates = [
+    `${city}.png`,
+    `${city}.jpg`,
+    `${city}.jpeg`,
+    `${slugify(city)}.png`,
+    `${slugify(city)}.jpg`,
+    `${slugify(city)}.jpeg`,
+  ];
+
+  if (city === 'Bruges') {
+    fileCandidates.unshift('Bruge.png');
+  }
+
+  for (const fileName of fileCandidates) {
+    const filePath = path.join(BELGIUM_CITY_IMAGE_DIRECTORY, fileName);
+    if (fs.existsSync(filePath)) {
+      return buildLocalPngDataUrl(filePath);
+    }
+  }
+
+  return buildCityImageDataUrl('bepremium', city);
 }
 
 async function main() {
@@ -233,6 +381,9 @@ async function main() {
   let franceCreatedOrUpdatedCount = 0;
   let belgiumCreatedOrUpdatedCount = 0;
   let switzerlandCreatedOrUpdatedCount = 0;
+  let italyCreatedOrUpdatedCount = 0;
+  let netherlandsCreatedOrUpdatedCount = 0;
+  let spainCreatedOrUpdatedCount = 0;
 
   for (let index = 0; index < germanyCityCollections.length; index += 1) {
     const item = germanyCityCollections[index];
@@ -278,7 +429,7 @@ async function main() {
             {
               name: 'Standard',
               sku,
-              priceCents: item.priceCents,
+              priceCents: CITY_CAP_PRICE_CENTS,
               stock: item.stock,
               isActive: true,
             },
@@ -334,7 +485,7 @@ async function main() {
             {
               name: 'Standard',
               sku,
-              priceCents: item.priceCents,
+              priceCents: CITY_CAP_PRICE_CENTS,
               stock: item.stock,
               isActive: true,
             },
@@ -352,7 +503,7 @@ async function main() {
     const slug = `${item.collection}-${citySlug}-cap`;
     const padded = String(index + 1).padStart(3, '0');
     const sku = `CITY-${item.collection.toUpperCase()}-${padded}`;
-    const imageUrl = buildCityImageDataUrl(item.collection, item.city);
+    const imageUrl = buildBelgiumCityImageUrl(item.city);
 
     await prisma.product.upsert({
       where: { slug },
@@ -390,7 +541,7 @@ async function main() {
             {
               name: 'Standard',
               sku,
-              priceCents: item.priceCents,
+              priceCents: CITY_CAP_PRICE_CENTS,
               stock: item.stock,
               isActive: true,
             },
@@ -446,7 +597,7 @@ async function main() {
             {
               name: 'Standard',
               sku,
-              priceCents: item.priceCents,
+              priceCents: CITY_CAP_PRICE_CENTS,
               stock: item.stock,
               isActive: true,
             },
@@ -457,6 +608,119 @@ async function main() {
 
     switzerlandCreatedOrUpdatedCount += 1;
   }
+
+  for (let index = 0; index < italyCityCollections.length; index += 1) {
+    const item = italyCityCollections[index];
+    const citySlug = slugify(item.city);
+    const slug = `${item.collection}-${citySlug}-cap`;
+    const padded = String(index + 1).padStart(3, '0');
+    const sku = `CITY-${item.collection.toUpperCase()}-${padded}`;
+    const imageUrl = buildCityImageDataUrl(item.collection, item.city);
+
+    await prisma.product.upsert({
+      where: { slug },
+      update: {
+        name: `${item.city} City Cap`,
+        description: `Dope&Cute Studio Italy City Collection. Front embroidery: ${item.city}. Landmark line: ${item.landmark}. Back detail: subtle IT tricolor and D&C side logo.`,
+        isActive: true,
+        images: {
+          deleteMany: {},
+          create: [{ url: imageUrl, isPrimary: true, sortOrder: 0 }],
+        },
+      },
+      create: {
+        name: `${item.city} City Cap`,
+        slug,
+        description: `Dope&Cute Studio Italy City Collection. Front embroidery: ${item.city}. Landmark line: ${item.landmark}. Back detail: subtle IT tricolor and D&C side logo.`,
+        isActive: true,
+        images: { create: [{ url: imageUrl, isPrimary: true, sortOrder: 0 }] },
+        variants: {
+          create: [{ name: 'Standard', sku, priceCents: CITY_CAP_PRICE_CENTS, stock: item.stock, isActive: true }],
+        },
+      },
+    });
+
+    italyCreatedOrUpdatedCount += 1;
+  }
+
+  for (let index = 0; index < netherlandsCityCollections.length; index += 1) {
+    const item = netherlandsCityCollections[index];
+    const citySlug = slugify(item.city);
+    const slug = `${item.collection}-${citySlug}-cap`;
+    const padded = String(index + 1).padStart(3, '0');
+    const sku = `CITY-${item.collection.toUpperCase()}-${padded}`;
+    const imageUrl = buildCityImageDataUrl(item.collection, item.city);
+
+    await prisma.product.upsert({
+      where: { slug },
+      update: {
+        name: `${item.city} City Cap`,
+        description: `Dope&Cute Studio Netherlands City Collection. Front embroidery: ${item.city}. Landmark line: ${item.landmark}. Back detail: subtle NL tricolor and D&C side logo.`,
+        isActive: true,
+        images: {
+          deleteMany: {},
+          create: [{ url: imageUrl, isPrimary: true, sortOrder: 0 }],
+        },
+      },
+      create: {
+        name: `${item.city} City Cap`,
+        slug,
+        description: `Dope&Cute Studio Netherlands City Collection. Front embroidery: ${item.city}. Landmark line: ${item.landmark}. Back detail: subtle NL tricolor and D&C side logo.`,
+        isActive: true,
+        images: { create: [{ url: imageUrl, isPrimary: true, sortOrder: 0 }] },
+        variants: {
+          create: [{ name: 'Standard', sku, priceCents: CITY_CAP_PRICE_CENTS, stock: item.stock, isActive: true }],
+        },
+      },
+    });
+
+    netherlandsCreatedOrUpdatedCount += 1;
+  }
+
+  for (let index = 0; index < spainCityCollections.length; index += 1) {
+    const item = spainCityCollections[index];
+    const citySlug = slugify(item.city);
+    const slug = `${item.collection}-${citySlug}-cap`;
+    const padded = String(index + 1).padStart(3, '0');
+    const sku = `CITY-${item.collection.toUpperCase()}-${padded}`;
+    const imageUrl = buildCityImageDataUrl(item.collection, item.city);
+
+    await prisma.product.upsert({
+      where: { slug },
+      update: {
+        name: `${item.city} City Cap`,
+        description: `Dope&Cute Studio Spain City Collection. Front embroidery: ${item.city}. Landmark line: ${item.landmark}. Back detail: subtle ES flag and D&C side logo.`,
+        isActive: true,
+        images: {
+          deleteMany: {},
+          create: [{ url: imageUrl, isPrimary: true, sortOrder: 0 }],
+        },
+      },
+      create: {
+        name: `${item.city} City Cap`,
+        slug,
+        description: `Dope&Cute Studio Spain City Collection. Front embroidery: ${item.city}. Landmark line: ${item.landmark}. Back detail: subtle ES flag and D&C side logo.`,
+        isActive: true,
+        images: { create: [{ url: imageUrl, isPrimary: true, sortOrder: 0 }] },
+        variants: {
+          create: [{ name: 'Standard', sku, priceCents: CITY_CAP_PRICE_CENTS, stock: item.stock, isActive: true }],
+        },
+      },
+    });
+
+    spainCreatedOrUpdatedCount += 1;
+  }
+
+  await prisma.productVariant.updateMany({
+    where: {
+      sku: {
+        startsWith: 'CITY-',
+      },
+    },
+    data: {
+      priceCents: CITY_CAP_PRICE_CENTS,
+    },
+  });
 
   await prisma.auditLog.create({
     data: {
@@ -469,12 +733,15 @@ async function main() {
         franceCityCollectionProducts: franceCreatedOrUpdatedCount,
         belgiumCityCollectionProducts: belgiumCreatedOrUpdatedCount,
         switzerlandCityCollectionProducts: switzerlandCreatedOrUpdatedCount,
+        italyCityCollectionProducts: italyCreatedOrUpdatedCount,
+        netherlandsCityCollectionProducts: netherlandsCreatedOrUpdatedCount,
+        spainCityCollectionProducts: spainCreatedOrUpdatedCount,
       }),
     },
   });
 
   console.log(
-    `Seed completed with ${germanyCreatedOrUpdatedCount} Germany City, ${franceCreatedOrUpdatedCount} France City, ${belgiumCreatedOrUpdatedCount} Belgium City and ${switzerlandCreatedOrUpdatedCount} Switzerland City Collection products.`,
+    `Seed completed with ${germanyCreatedOrUpdatedCount} Germany City, ${franceCreatedOrUpdatedCount} France City, ${belgiumCreatedOrUpdatedCount} Belgium City, ${switzerlandCreatedOrUpdatedCount} Switzerland City, ${italyCreatedOrUpdatedCount} Italy City, ${netherlandsCreatedOrUpdatedCount} Netherlands City and ${spainCreatedOrUpdatedCount} Spain City Collection products.`,
   );
 }
 

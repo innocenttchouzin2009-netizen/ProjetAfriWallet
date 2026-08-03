@@ -13,7 +13,9 @@ const emptyPromotionForm: AdminPromotionFormValues = {
   endsAt: '',
   active: true,
   appliesToAll: true,
+  scope: 'all',
   category: '',
+  collectionSlug: '',
 };
 
 function toDateTimeInputValue(iso: string) {
@@ -32,8 +34,10 @@ function payloadFromValues(values: AdminPromotionFormValues) {
     startsAt: new Date(values.startsAt).toISOString(),
     endsAt: new Date(values.endsAt).toISOString(),
     active: values.active,
-    appliesToAll: values.appliesToAll,
-    category: values.appliesToAll ? undefined : values.category.trim(),
+    appliesToAll: values.scope === 'all',
+    scope: values.scope,
+    category: values.scope === 'category' ? values.category.trim() : undefined,
+    collectionSlug: values.scope === 'collection' ? values.collectionSlug.trim() : undefined,
   };
 }
 
@@ -133,13 +137,15 @@ export function useAdminPromotions() {
       endsAt: toDateTimeInputValue(promotion.endsAt),
       active: promotion.active,
       appliesToAll: promotion.appliesToAll,
+      scope: promotion.scope,
       category: promotion.category ?? '',
+      collectionSlug: promotion.collectionSlug ?? '',
     });
   };
 
   const stats = useMemo(() => {
     const activeCount = promotions.filter((promotion) => promotion.active).length;
-    const categoryScoped = promotions.filter((promotion) => !promotion.appliesToAll).length;
+    const categoryScoped = promotions.filter((promotion) => promotion.scope === 'category').length;
 
     return {
       total: promotions.length,

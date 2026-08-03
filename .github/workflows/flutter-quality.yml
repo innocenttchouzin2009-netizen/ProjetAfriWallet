@@ -1,0 +1,46 @@
+name: Flutter Quality
+
+on:
+  pull_request:
+    paths:
+      - "apps/mobile_app/**"
+      - "packages/afw_design_system/**"
+      - ".github/workflows/flutter-quality.yml"
+  push:
+    branches: [main]
+    paths:
+      - "apps/mobile_app/**"
+      - "packages/afw_design_system/**"
+
+permissions:
+  contents: read
+
+jobs:
+  mobile:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/mobile_app
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Generate localizations
+        run: flutter gen-l10n
+
+      - name: Verify formatting
+        run: dart format --output=none --set-exit-if-changed lib test
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test
+        run: flutter test

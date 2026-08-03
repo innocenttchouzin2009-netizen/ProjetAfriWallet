@@ -17,7 +17,9 @@ const PromotionSchema = z
     usageLimit: z.coerce.number().int().positive().optional(),
     active: z.boolean(),
     appliesToAll: z.boolean(),
+    scope: z.enum(['all', 'category', 'collection']).optional(),
     category: z.string().trim().optional(),
+    collectionSlug: z.string().trim().optional(),
   })
   .refine((value) => new Date(value.startsAt).getTime() < new Date(value.endsAt).getTime(), {
     message: 'endsAt must be after startsAt',
@@ -38,6 +40,11 @@ function toAdminPromotion(promotion: {
   appliesToAll: boolean;
   category: string | null;
 }) {
+  const rawCategory = promotion.category;
+  const scope = promotion.appliesToAll ? 'all' : rawCategory?.startsWith('collection:') ? 'collection' : 'category';
+  const category = scope === 'category' ? rawCategory : null;
+  const collectionSlug = scope === 'collection' ? rawCategory?.replace('collection:', '') ?? null : null;
+
   return {
     id: promotion.id,
     code: promotion.code,
@@ -51,7 +58,9 @@ function toAdminPromotion(promotion: {
     endsAt: promotion.endsAt.toISOString(),
     active: promotion.isActive,
     appliesToAll: promotion.appliesToAll,
-    category: promotion.category,
+    scope,
+    category,
+    collectionSlug,
   };
 }
 
@@ -71,6 +80,15 @@ export async function POST(request: NextRequest) {
   if (auth instanceof NextResponse) return auth;
 
   const body = parseBody(PromotionSchema, await request.json());
+  const scope = body.scope ?? (body.appliesToAll ? 'all' : 'category');
+  const normalizedCategory =
+    scope === 'all'
+      ? null
+      : scope === 'collection'
+        ? body.collectionSlug
+          ? `collection:${body.collectionSlug.trim()}`
+          : null
+        : body.category?.trim() || null;
 
   const promotion = await prisma.promotion.create({
     data: {
@@ -84,8 +102,8 @@ export async function POST(request: NextRequest) {
       startsAt: new Date(body.startsAt),
       endsAt: new Date(body.endsAt),
       isActive: Boolean(body.active),
-      appliesToAll: Boolean(body.appliesToAll),
-      category: body.appliesToAll ? null : (body.category?.trim() || null),
+      appliesToAll: scope === 'all',
+      category: normalizedCategory,
     },
   });
 

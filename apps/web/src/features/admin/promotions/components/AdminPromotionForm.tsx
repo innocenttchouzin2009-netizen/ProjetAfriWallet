@@ -1,6 +1,7 @@
 "use client";
 
 import type { AdminPromotionFormValues } from '../types/admin-promotion.types';
+import { COLLECTION_DEFINITIONS } from '@/features/admin/catalog/data/catalog-taxonomy';
 
 interface AdminPromotionFormProps {
   values: AdminPromotionFormValues;
@@ -40,7 +41,7 @@ export default function AdminPromotionForm({ values, onChange, onSubmit, onCance
         </label>
 
         <label className="text-sm text-white/70">
-          Minimum d'achat (€)
+          Minimum d&apos;achat (€)
           <input type="number" value={values.minPurchase} onChange={(event) => updateField('minPurchase', Number(event.target.value))} className="mt-2 w-full rounded-full border border-white/10 bg-black/30 px-4 py-3 text-white" />
         </label>
 
@@ -64,15 +65,33 @@ export default function AdminPromotionForm({ values, onChange, onSubmit, onCance
           Promo active
         </label>
 
-        <label className="flex items-center gap-3 rounded-[20px] border border-white/10 bg-black/20 px-4 py-3 text-sm text-white/70">
-          <input type="checkbox" checked={values.appliesToAll} onChange={(event) => updateField('appliesToAll', event.target.checked)} />
-          Appliquer à tous les produits
+        <label className="text-sm text-white/70">
+          Ciblage
+          <select value={values.scope} onChange={(event) => updateField('scope', event.target.value as AdminPromotionFormValues['scope'])} className="mt-2 w-full rounded-full border border-white/10 bg-black/30 px-4 py-3 text-white">
+            <option value="all">Tous les produits</option>
+            <option value="category">Categorie</option>
+            <option value="collection">Collection</option>
+          </select>
         </label>
 
-        {!values.appliesToAll ? (
+        {values.scope === 'category' ? (
           <label className="text-sm text-white/70 md:col-span-2">
             Catégorie ciblée
             <input value={values.category} onChange={(event) => updateField('category', event.target.value)} className="mt-2 w-full rounded-full border border-white/10 bg-black/30 px-4 py-3 text-white" />
+          </label>
+        ) : null}
+
+        {values.scope === 'collection' ? (
+          <label className="text-sm text-white/70 md:col-span-2">
+            Collection ciblée
+            <select value={values.collectionSlug} onChange={(event) => updateField('collectionSlug', event.target.value)} className="mt-2 w-full rounded-full border border-white/10 bg-black/30 px-4 py-3 text-white">
+              <option value="">Sélectionne une collection</option>
+              {COLLECTION_DEFINITIONS.map((collection) => (
+                <option key={collection.slug} value={collection.slug}>
+                  {collection.label}
+                </option>
+              ))}
+            </select>
           </label>
         ) : null}
       </div>

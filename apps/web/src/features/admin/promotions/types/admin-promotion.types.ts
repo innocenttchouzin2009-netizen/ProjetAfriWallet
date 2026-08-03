@@ -12,7 +12,9 @@ export interface AdminPromotion {
   endsAt: string;
   active: boolean;
   appliesToAll: boolean;
+  scope: 'all' | 'category' | 'collection';
   category: string | null;
+  collectionSlug: string | null;
 }
 
 export interface AdminPromotionFormValues {
@@ -25,5 +27,7 @@ export interface AdminPromotionFormValues {
   endsAt: string;
   active: boolean;
   appliesToAll: boolean;
+  scope: 'all' | 'category' | 'collection';
   category: string;
+  collectionSlug: string;
 }

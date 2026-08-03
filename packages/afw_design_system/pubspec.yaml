@@ -1,0 +1,16 @@
+name: afw_design_system
+description: Shared design foundations and components for AfriWallet.
+version: 0.1.0
+publish_to: "none"
+
+environment:
+  sdk: ">=3.7.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0

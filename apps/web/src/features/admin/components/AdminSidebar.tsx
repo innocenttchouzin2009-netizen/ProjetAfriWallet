@@ -12,6 +12,7 @@ const navigation: AdminNavItem[] = [
   { label: 'Production', key: 'production', description: 'Broderie' },
   { label: 'Paiements', key: 'payments', description: 'Remboursements' },
   { label: 'Promotions', key: 'promotions', description: 'Offres' },
+  { label: 'Collections', key: 'collections', description: 'Taxonomie catalogue' },
   { label: 'Audit', key: 'audit', description: 'Journal des actions' },
   { label: 'Paramètres', key: 'settings', description: 'Réglages' },
 ];
@@ -22,10 +23,11 @@ const navigationLinks: Partial<Record<AdminNavItem['key'], string>> = {
   pos: '/admin/pos',
   products: '/admin/products',
   promotions: '/admin/promotions',
+  collections: '/admin/collections',
   stock: '/admin/inventory',
   payments: '/admin/payments',
   audit: '/admin/audit',
-  settings: '/admin/health',
+  settings: '/admin/settings',
 };
 
 export default function AdminSidebar() {

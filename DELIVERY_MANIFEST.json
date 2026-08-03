@@ -1,0 +1,203 @@
+{
+  "delivery": "AFW-DLV-0002",
+  "lot": 1,
+  "version": "0.1.0-foundation",
+  "generated_on": "2026-08-02",
+  "files": [
+    {
+      "path": ".github/ISSUE_TEMPLATE/feature.yml",
+      "sha256": "9fe160f5010202a72adf13abf4774afa2fbd7a6e58c0cbada46fd0edc2211137",
+      "bytes": 520
+    },
+    {
+      "path": ".github/pull_request_template.md",
+      "sha256": "0c4862b980665c6a29622a7981a95a0e940f8da353f00fee8413937ca1ccb830",
+      "bytes": 353
+    },
+    {
+      "path": ".github/workflows/flutter-quality.yml",
+      "sha256": "8830711e93bc0f1c2470999c6fcb39223e010d43c43dbdb8013c0a7697a6204d",
+      "bytes": 907
+    },
+    {
+      "path": ".gitignore",
+      "sha256": "4393a72449da5dcfcf51b8c69f49c55058a83d8645115909e7a0383a22dc994f",
+      "bytes": 364
+    },
+    {
+      "path": "CHANGELOG.md",
+      "sha256": "db97c0a0533bbef4e0a117fd713b080264dccb66b7775a117be044142d259491",
+      "bytes": 310
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "sha256": "1b17141381990a27662ca70e888b1a3ead8d2ddaa87573fbd58a72f7e99402b4",
+      "bytes": 729
+    },
+    {
+      "path": "README.md",
+      "sha256": "65a19cc834e1ef84d248378175a0f8da737c24ead31e555ab2ba8aaca8fa1726",
+      "bytes": 1754
+    },
+    {
+      "path": "SECURITY.md",
+      "sha256": "2a86b45361733dca07f3976ca0c6cd73b407c3e768f5c5a3dfacddc437a42ad8",
+      "bytes": 545
+    },
+    {
+      "path": "analysis_options.yaml",
+      "sha256": "672b04867225b199fc3cea3efd92ed358a193e21a3f521508f4bbdf7c562ed46",
+      "bytes": 283
+    },
+    {
+      "path": "apps/mobile_app/assets/branding/afriwallet_logo.png",
+      "sha256": "1c882c8a379538846fd153237d77c18b328377dbf43001eb7645fed04086bcd3",
+      "bytes": 1942187
+    },
+    {
+      "path": "apps/mobile_app/l10n.yaml",
+      "sha256": "c9470d2b28255178b68d8f72b3e7d6819683de6f8fce480e610e5448cf571328",
+      "bytes": 176
+    },
+    {
+      "path": "apps/mobile_app/lib/app/afriwallet_app.dart",
+      "sha256": "01ab90629a758aa94c15f9b18bc6837d4f6f6d98ddb6ac638eadb7b866d784cf",
+      "bytes": 916
+    },
+    {
+      "path": "apps/mobile_app/lib/core/router/app_router.dart",
+      "sha256": "64191e14ac04406be66903f0f7d3cc42f9f9b8155361edd9c8ec1315e9538ac3",
+      "bytes": 890
+    },
+    {
+      "path": "apps/mobile_app/lib/features/financial_desk/presentation/screens/financial_desk_screen.dart",
+      "sha256": "b44a5b7dc49217f526887e89cd7a7ec28722880314523a6816c9cb0ffaa7eef6",
+      "bytes": 2742
+    },
+    {
+      "path": "apps/mobile_app/lib/features/onboarding/presentation/screens/splash_screen.dart",
+      "sha256": "6e97a5703f86eb4a867b7342abde69af797752dbe2cbfb22adf6510051a743a6",
+      "bytes": 2200
+    },
+    {
+      "path": "apps/mobile_app/lib/features/onboarding/presentation/screens/welcome_screen.dart",
+      "sha256": "5f6e1fe5d8ff800e44b8ba0f66426438157f44208ac20b74840b03581a79fa54",
+      "bytes": 2316
+    },
+    {
+      "path": "apps/mobile_app/lib/l10n/app_de.arb",
+      "sha256": "ad866cc344cb6eb3524fa92a9e53745d901cad91fdf0461503aab7bde165b8a1",
+      "bytes": 538
+    },
+    {
+      "path": "apps/mobile_app/lib/l10n/app_en.arb",
+      "sha256": "a998f14c7c7bf3164926607731511c05459c49f2bd3b41c9489c0b029dce77e7",
+      "bytes": 516
+    },
+    {
+      "path": "apps/mobile_app/lib/l10n/app_fr.arb",
+      "sha256": "08ef2ee2102b99731d0c7ec1a1db6fc44efa0461dc6591802a33af545942b78a",
+      "bytes": 558
+    },
+    {
+      "path": "apps/mobile_app/lib/main.dart",
+      "sha256": "b6f9cfb81454cb3b3600e1aaf853be1a6fcf2a0ea44d288381e0eccabec53c40",
+      "bytes": 248
+    },
+    {
+      "path": "apps/mobile_app/pubspec.yaml",
+      "sha256": "7fad1da64e7c147e0daa1d647ad7cc9096beca041dc78c7530c1de93f76bbecf",
+      "bytes": 539
+    },
+    {
+      "path": "apps/mobile_app/test/app_smoke_test.dart",
+      "sha256": "e4af72469447dd7c210fb00354764703d691d93773720473551cd62ef026ec4d",
+      "bytes": 397
+    },
+    {
+      "path": "docs/adr/ADR-0001-flutter-client.md",
+      "sha256": "ec53a56922272af3efc55a935e9a2835ef318da875cdbe9ef664c21898975d5e",
+      "bytes": 402
+    },
+    {
+      "path": "docs/adr/ADR-0002-navigation.md",
+      "sha256": "f02481e26b43e00063a2f09d4854a542ef77115c8233c7d661eeb1fa20111edc",
+      "bytes": 194
+    },
+    {
+      "path": "docs/adr/ADR-0003-localization.md",
+      "sha256": "e3f5c48f3d928f8845738ecacbe2a3fc07730750909a04a042350e4426ae61de",
+      "bytes": 260
+    },
+    {
+      "path": "docs/adr/ADR-0004-design-system.md",
+      "sha256": "9bbb771446f4772bef61e71abbaa50b00a47faac2c6de3f228e59b752d2c069f",
+      "bytes": 268
+    },
+    {
+      "path": "docs/architecture/overview.md",
+      "sha256": "cd9a60f4f2fd1532c289ddb319fc1711d91f4d278259c68d8ba58adde3951f96",
+      "bytes": 692
+    },
+    {
+      "path": "docs/roadmap/engineering-roadmap.md",
+      "sha256": "ec71355fed473e40da12e0d99d51104b1cb4d736903a977b6f75bb5d430edc64",
+      "bytes": 490
+    },
+    {
+      "path": "docs/ux/AFW-UX-004_onboarding_reference.png",
+      "sha256": "bdd598f3d8ed325e2cd182e9ccb574818084ed568a70310aa08f44d81db5e22b",
+      "bytes": 1712512
+    },
+    {
+      "path": "packages/afw_design_system/lib/afw_design_system.dart",
+      "sha256": "e5c873e66871f6677289a3331c09c607e68cbb6a1f70a1b0dc812093c03c6a7b",
+      "bytes": 203
+    },
+    {
+      "path": "packages/afw_design_system/lib/src/components/afw_primary_button.dart",
+      "sha256": "a8496f537875ec1c1d96d51e42cfdcecd0701dc3cb617dfe88537bfdc58ff413",
+      "bytes": 590
+    },
+    {
+      "path": "packages/afw_design_system/lib/src/foundations/afw_colors.dart",
+      "sha256": "67c431d5d1316c168be8aa5e9daf808903a750f492fd32a3fd5641a4864fc186",
+      "bytes": 840
+    },
+    {
+      "path": "packages/afw_design_system/lib/src/foundations/afw_spacing.dart",
+      "sha256": "645ef487925ab084c7684c46dfa425be6e3fab2bc18456935922f18667323eb0",
+      "bytes": 221
+    },
+    {
+      "path": "packages/afw_design_system/lib/src/foundations/afw_theme.dart",
+      "sha256": "9b4b1e481d392ee13d3361937c661a2dfaecf72bfe35c46db4a44f5a0386a8c8",
+      "bytes": 1637
+    },
+    {
+      "path": "packages/afw_design_system/pubspec.yaml",
+      "sha256": "708918f20c76d4aae143b14e2ec8560de458a59c3e36d8aea3cf2eb9197db3da",
+      "bytes": 285
+    },
+    {
+      "path": "packages/afw_design_system/test/afw_colors_test.dart",
+      "sha256": "cf4d0fbe3b658d1f8c12d6a7239cc7f44d0d7d778a9fd3450ea54008ab7da9a2",
+      "bytes": 237
+    },
+    {
+      "path": "tools/bootstrap_flutter.ps1",
+      "sha256": "10d87fc7bfbe45b795e2cf15e0b6d9c9e2852e10c30d50c9757bd249a575372e",
+      "bytes": 937
+    },
+    {
+      "path": "tools/bootstrap_flutter.sh",
+      "sha256": "09c5e27bcbed8e0859d3e2eec2a289736bf2bb1f7c433833a024b94a702fd606",
+      "bytes": 739
+    },
+    {
+      "path": "tools/validate_structure.py",
+      "sha256": "0cfab3dc67c092c9c1a328c1f172489459eb90b9b30335951a61cad0d28c0f08",
+      "bytes": 520
+    }
+  ]
+}

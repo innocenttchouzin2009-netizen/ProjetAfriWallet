@@ -53,7 +53,7 @@ export default function AdminHealthPage() {
           <section className="rounded-[36px] border border-white/10 bg-gradient-to-br from-[#C8A45C]/20 via-black/80 to-black p-8">
             <p className="text-sm uppercase tracking-[0.35em] text-[#C8A45C]">Observabilite</p>
             <h1 className="mt-4 text-4xl font-black md:text-5xl">Health Dashboard</h1>
-            <p className="mt-4 max-w-3xl text-white/70">Surveillance en temps reel de l'etat applicatif et de la connectivite PostgreSQL.</p>
+            <p className="mt-4 max-w-3xl text-white/70">Surveillance en temps reel de l&apos;etat applicatif et de la connectivite PostgreSQL.</p>
           </section>
 
           {loading ? <p className="text-sm text-white/70">Verification en cours...</p> : null}

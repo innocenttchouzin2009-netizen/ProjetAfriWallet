@@ -1,7 +1,8 @@
 "use client";
 
-import { ChangeEvent, useMemo, useState } from 'react';
+import { ChangeEvent, DragEvent, useMemo, useState } from 'react';
 import type { AdminProductFormValues, AdminProductImage } from '../types/admin-product.types';
+import { COLLECTION_DEFINITIONS, HAT_TYPE_OPTIONS } from '@/features/admin/catalog/data/catalog-taxonomy';
 
 interface AdminProductFormProps {
   values: AdminProductFormValues;
@@ -10,7 +11,7 @@ interface AdminProductFormProps {
   onChange: (values: AdminProductFormValues) => void;
   onSubmit: () => void;
   onCancel: () => void;
-  onUploadImage: (file: File) => void;
+  onUploadImages: (files: File[]) => void;
   onDeleteImage: (imageId: string) => void;
   onSetPrimaryImage: (imageId: string) => void;
   editingId: string | null;
@@ -23,12 +24,13 @@ export default function AdminProductForm({
   onChange,
   onSubmit,
   onCancel,
-  onUploadImage,
+  onUploadImages,
   onDeleteImage,
   onSetPrimaryImage,
   editingId,
 }: AdminProductFormProps) {
   const [localPreview, setLocalPreview] = useState<string | null>(null);
+  const [dragOver, setDragOver] = useState(false);
 
   const updateField = <K extends keyof AdminProductFormValues>(field: K, value: AdminProductFormValues[K]) => {
     onChange({ ...values, [field]: value });
@@ -36,19 +38,29 @@ export default function AdminProductForm({
 
   const gallery = useMemo(() => images, [images]);
 
-  const handleFileSelect = (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+  const uploadSelectedFiles = (files: File[]) => {
+    if (!files.length) return;
 
-    setLocalPreview(URL.createObjectURL(file));
+    setLocalPreview(URL.createObjectURL(files[0]));
 
     if (!editingId) {
-      event.target.value = '';
       return;
     }
 
-    onUploadImage(file);
+    onUploadImages(files);
+  };
+
+  const handleFileSelect = (event: ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files ?? []);
+    uploadSelectedFiles(files);
     event.target.value = '';
+  };
+
+  const handleDrop = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    setDragOver(false);
+    const files = Array.from(event.dataTransfer.files ?? []).filter((file) => file.type.startsWith('image/'));
+    uploadSelectedFiles(files);
   };
 
   return (
@@ -118,8 +130,25 @@ export default function AdminProductForm({
         </label>
 
         <label className="text-sm text-white/70">
-          Catégorie
-          <input value={values.category} onChange={(event) => updateField('category', event.target.value)} className="mt-2 w-full rounded-full border border-white/10 bg-black/30 px-4 py-3 text-white" />
+          Collection
+          <select value={values.category} onChange={(event) => updateField('category', event.target.value)} className="mt-2 w-full rounded-full border border-white/10 bg-black/30 px-4 py-3 text-white">
+            {COLLECTION_DEFINITIONS.map((collection) => (
+              <option key={collection.slug} value={collection.slug}>
+                {collection.label}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="text-sm text-white/70">
+          Type de chapeau
+          <select value={values.hatType} onChange={(event) => updateField('hatType', event.target.value)} className="mt-2 w-full rounded-full border border-white/10 bg-black/30 px-4 py-3 text-white">
+            {HAT_TYPE_OPTIONS.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
         </label>
 
         <label className="text-sm text-white/70">
@@ -137,19 +166,29 @@ export default function AdminProductForm({
           Produit actif
         </label>
 
-        <div className="rounded-[20px] border border-white/10 bg-black/20 p-4 text-sm text-white/70 md:col-span-2">
+        <div
+          className={`rounded-[20px] border bg-black/20 p-4 text-sm text-white/70 md:col-span-2 ${dragOver ? 'border-[#C8A45C]' : 'border-white/10'}`}
+          onDragOver={(event) => {
+            event.preventDefault();
+            setDragOver(true);
+          }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={handleDrop}
+        >
           <div className="flex flex-wrap items-center gap-3">
             <label className="inline-flex cursor-pointer rounded-full border border-white/20 px-4 py-2 text-sm text-white">
-              Importer photo
-              <input type="file" accept="image/*" className="hidden" onChange={handleFileSelect} />
+              Importer photos
+              <input type="file" accept="image/*" multiple className="hidden" onChange={handleFileSelect} />
             </label>
             {uploading ? <span className="text-[#C8A45C]">Upload en cours...</span> : null}
             {!editingId ? <span>Crée le produit avant l’upload définitif.</span> : null}
+            <span className="text-xs text-white/50">Glisse-dépose possible pour plusieurs photos.</span>
           </div>
 
           {localPreview ? (
             <div className="mt-3">
               <p className="mb-2 text-xs uppercase tracking-[0.2em] text-white/50">Prévisualisation locale</p>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={localPreview} alt="Prévisualisation" className="h-24 w-24 rounded-xl border border-white/10 object-cover" />
             </div>
           ) : null}
@@ -157,6 +196,7 @@ export default function AdminProductForm({
           <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
             {gallery.map((image) => (
               <div key={image.id} className="rounded-xl border border-white/10 bg-black/40 p-2">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={image.url} alt="Photo produit" className="h-24 w-full rounded-lg object-cover" />
                 <div className="mt-2 flex flex-wrap gap-2">
                   <button

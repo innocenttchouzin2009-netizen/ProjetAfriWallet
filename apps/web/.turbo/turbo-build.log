@@ -1,0 +1,121 @@
+
+> web@0.1.0 build
+> next build
+
+  ▲ Next.js 14.2.5
+  - Environments: .env
+
+   Creating an optimized production build ...
+ ⚠ Compiled with warnings
+
+../../node_modules/@sentry/server-utils/build/cjs/orchestrion/runtime/register.js
+Module not found: ESM packages (@apm-js-collab/tracing-hooks/hook-sync.mjs) need to be imported. Use 'import' to reference the package instead. https://nextjs.org/docs/messages/import-esm-externals
+
+Import trace for requested module:
+../../node_modules/@sentry/server-utils/build/cjs/orchestrion/runtime/register.js
+../../node_modules/@sentry/node/build/cjs/sdk/experimentalUseDiagnosticsChannelInjection.js
+../../node_modules/@sentry/node/build/cjs/index.js
+../../node_modules/@sentry/nextjs/build/cjs/index.server.js
+./src/lib/monitoring/sentry.ts
+./src/lib/monitoring/logger.ts
+./src/app/api/checkout/route.ts
+
+../../node_modules/@sentry/server-utils/build/cjs/orchestrion/runtime/register.js
+Module not found: ESM packages (@apm-js-collab/tracing-hooks/hook.mjs) need to be imported. Use 'import' to reference the package instead. https://nextjs.org/docs/messages/import-esm-externals
+
+Import trace for requested module:
+../../node_modules/@sentry/server-utils/build/cjs/orchestrion/runtime/register.js
+../../node_modules/@sentry/node/build/cjs/sdk/experimentalUseDiagnosticsChannelInjection.js
+../../node_modules/@sentry/node/build/cjs/index.js
+../../node_modules/@sentry/nextjs/build/cjs/index.server.js
+./src/lib/monitoring/sentry.ts
+./src/lib/monitoring/logger.ts
+./src/app/api/checkout/route.ts
+
+ ✓ Compiled successfully
+   Skipping linting
+   Checking validity of types ...
+   Collecting page data ...
+   Generating static pages (0/48) ...
+   Generating static pages (12/48) 
+   Generating static pages (24/48) 
+   Generating static pages (36/48) 
+ ✓ Generating static pages (48/48)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                    Size     First Load JS
+┌ ○ /                                          150 B          87.4 kB
+├ ○ /_not-found                                873 B          88.1 kB
+├ ○ /account                                   150 B          87.4 kB
+├ ○ /admin                                     1.08 kB        95.1 kB
+├ ○ /admin/audit                               3 kB             97 kB
+├ ○ /admin/health                              1.68 kB        95.7 kB
+├ ○ /admin/inventory                           2.72 kB        96.8 kB
+├ ○ /admin/orders                              4.03 kB        98.1 kB
+├ ○ /admin/payments                            2.22 kB        96.3 kB
+├ ○ /admin/pos                                 2.58 kB        89.8 kB
+├ ○ /admin/products                            3.71 kB          91 kB
+├ ○ /admin/promotions                          2.88 kB        90.1 kB
+├ ƒ /api/account/orders/[id]/invoice           0 B                0 B
+├ ƒ /api/admin/audit                           0 B                0 B
+├ ƒ /api/admin/inventory                       0 B                0 B
+├ ƒ /api/admin/inventory/adjust                0 B                0 B
+├ ƒ /api/admin/orders                          0 B                0 B
+├ ƒ /api/admin/orders/[id]                     0 B                0 B
+├ ƒ /api/admin/orders/[id]/invoice             0 B                0 B
+├ ƒ /api/admin/orders/[id]/ship                0 B                0 B
+├ ƒ /api/admin/payments/refund                 0 B                0 B
+├ ƒ /api/admin/products                        0 B                0 B
+├ ƒ /api/admin/products/[id]                   0 B                0 B
+├ ƒ /api/admin/products/[id]/images            0 B                0 B
+├ ƒ /api/admin/products/[id]/images/[imageId]  0 B                0 B
+├ ƒ /api/admin/promotions                      0 B                0 B
+├ ƒ /api/admin/promotions/[id]                 0 B                0 B
+├ ƒ /api/admin/uploads/cloudinary              0 B                0 B
+├ ƒ /api/auth/forgot-password                  0 B                0 B
+├ ƒ /api/auth/login                            0 B                0 B
+├ ƒ /api/auth/register                         0 B                0 B
+├ ƒ /api/auth/reset-password                   0 B                0 B
+├ ƒ /api/catalog/products                      0 B                0 B
+├ ƒ /api/checkout                              0 B                0 B
+├ ƒ /api/health                                0 B                0 B
+├ ƒ /api/orders/checkout                       0 B                0 B
+├ ƒ /api/orders/pos                            0 B                0 B
+├ ƒ /api/payments/capture/paypal               0 B                0 B
+├ ƒ /api/payments/checkout                     0 B                0 B
+├ ƒ /api/payments/refund                       0 B                0 B
+├ ƒ /api/payments/webhook/paypal               0 B                0 B
+├ ƒ /api/payments/webhook/stripe               0 B                0 B
+├ ƒ /api/pos                                   0 B                0 B
+├ ○ /cart                                      2.02 kB        96.1 kB
+├ ○ /checkout                                  5.49 kB        92.7 kB
+├ ○ /checkout/cancel                           914 B            95 kB
+├ ○ /checkout/paypal/return                    1.17 kB        95.2 kB
+├ ○ /checkout/success                          1.5 kB         95.5 kB
+├ ○ /contact                                   150 B          87.4 kB
+├ ○ /forgot-password                           2.22 kB         121 kB
+├ ○ /login                                     2.58 kB         122 kB
+├ ○ /pro                                       150 B          87.4 kB
+├ ○ /register                                  2.31 kB         121 kB
+├ ○ /reset-password                            2.15 kB         114 kB
+├ ○ /shop                                      3.91 kB         101 kB
+├ ○ /shop/belgique-city                        3.73 kB         106 kB
+├ ○ /shop/france-city                          3.74 kB         106 kB
+├ ○ /shop/germany-city                         3.83 kB         106 kB
+├ ○ /shop/italy-city                           3.71 kB         106 kB
+├ ○ /shop/netherlands-city                     3.72 kB         106 kB
+├ ○ /shop/spain-city                           4.17 kB         106 kB
+├ ○ /shop/suisse-city                          3.73 kB         106 kB
+└ ○ /studio                                    1.95 kB        89.2 kB
++ First Load JS shared by all                  87.2 kB
+  ├ chunks/1dd3208c-433eddea6238890d.js        53.6 kB
+  ├ chunks/286-e4fbc100c369defc.js             31.5 kB
+  └ other shared chunks (total)                2.09 kB
+
+
+ƒ Middleware                                   26.7 kB
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

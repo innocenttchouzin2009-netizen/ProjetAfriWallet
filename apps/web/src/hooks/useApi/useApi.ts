@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { AppError } from '@dopecute/types';
-import type { ApiResponse, ApiState } from '@dopecute/types';
+import type { ApiState } from '@dopecute/types';
 
 export type UseApiOptions = {
   method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
@@ -60,7 +60,7 @@ export const useApi = <T = unknown>(url: string, options: UseApiOptions = {}) =>
       isMounted = false;
       controller.abort();
     };
-  }, [url, options.method, options.body, options.parseJson]);
+  }, [url, options.method, options.body, options.parseJson, options.headers]);
 
   return state;
 };

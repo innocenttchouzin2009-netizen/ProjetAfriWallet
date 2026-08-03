@@ -1,4 +1,4 @@
-export type AuditEntity = 'Order' | 'Product' | 'User' | 'Auth' | 'Payment' | 'Shipping' | 'Invoice' | 'Inventory';
+export type AuditEntity = 'Order' | 'Product' | 'User' | 'Auth' | 'Payment' | 'Shipping' | 'Invoice' | 'Inventory' | 'Settings' | 'Dashboard';
 
 export type AuditAction =
   | 'ORDER_CREATED_ONLINE'
@@ -22,7 +22,9 @@ export type AuditAction =
   | 'PRODUCT_CREATED'
   | 'PRODUCT_UPDATED'
   | 'PRODUCT_DELETED'
-  | 'USER_REGISTERED';
+  | 'USER_REGISTERED'
+  | 'ADMIN_SLA_THRESHOLD_UPDATED'
+  | 'ADMIN_SLA_BREACH_ALERT';
 
 export interface AuditLogInput {
   action: AuditAction;

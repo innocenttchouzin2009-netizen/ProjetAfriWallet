@@ -4,12 +4,15 @@ import { prisma } from '@/lib/prisma';
 import { AuditService } from '@/features/audit/services/audit.service';
 import { requireRole } from '@/features/auth/guards/require-role';
 import { parseBody } from '@/lib/security/zod';
+import { extractCollectionSlugFromProductSlug } from '@/features/admin/catalog/data/catalog-taxonomy';
 
 export const dynamic = 'force-dynamic';
 
 const AdminProductUpdateSchema = z.object({
   name: z.string().min(1).optional(),
   description: z.string().max(4000).optional(),
+  category: z.string().min(1).optional(),
+  hatType: z.string().min(1).optional(),
   sku: z.string().min(1).optional(),
   supplierUrl: z.string().url().optional().or(z.literal('')),
   supplierName: z.string().max(120).optional(),
@@ -18,12 +21,6 @@ const AdminProductUpdateSchema = z.object({
   stock: z.coerce.number().int().nonnegative().optional(),
   active: z.boolean().optional(),
 });
-
-function categoryFromSlug(slug: string): string {
-  const [head] = slug.split('-');
-  if (!head) return 'general';
-  return head;
-}
 
 function toAdminProduct(product: {
   id: string;
@@ -34,7 +31,7 @@ function toAdminProduct(product: {
   supplierSku: string | null;
   slug: string;
   isActive: boolean;
-  variants: { sku: string; supplierUrl: string | null; supplierName: string | null; supplierSku: string | null; priceCents: number; stock: number }[];
+  variants: { name: string; sku: string; supplierUrl: string | null; supplierName: string | null; supplierSku: string | null; priceCents: number; stock: number }[];
   images: { id: string; url: string; publicId: string | null; isPrimary: boolean; sortOrder: number }[];
 }) {
   const primaryVariant = product.variants[0];
@@ -53,7 +50,9 @@ function toAdminProduct(product: {
     supplierSku: primaryVariant?.supplierSku ?? product.supplierSku ?? '',
     price: (primaryVariant?.priceCents ?? 0) / 100,
     stock,
-    category: categoryFromSlug(product.slug),
+    category: extractCollectionSlugFromProductSlug(product.slug),
+    collectionSlug: extractCollectionSlugFromProductSlug(product.slug),
+    hatType: primaryVariant?.name ?? 'Snapback',
     sku: primaryVariant?.sku ?? product.id,
     active: product.isActive,
     primaryImageUrl: orderedImages[0]?.url ?? null,
@@ -98,6 +97,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
     where: { id: params.id },
     data: {
       name: String(body.name ?? existing.name).trim(),
+      slug: body.category ? `${String(body.category).trim().toLowerCase()}-${params.id}` : existing.slug,
       description: body.description === undefined ? existing.description : String(body.description).trim(),
       supplierUrl: body.supplierUrl === undefined ? existing.supplierUrl : String(body.supplierUrl).trim() || null,
       supplierName: body.supplierName === undefined ? existing.supplierName : String(body.supplierName).trim() || null,
@@ -109,6 +109,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
               where: { id: primaryVariant.id },
               data: {
                 sku: String(body.sku ?? primaryVariant.sku).trim(),
+                name: String(body.hatType ?? primaryVariant.name).trim(),
                 supplierUrl: body.supplierUrl === undefined ? primaryVariant.supplierUrl : String(body.supplierUrl).trim() || null,
                 supplierName: body.supplierName === undefined ? primaryVariant.supplierName : String(body.supplierName).trim() || null,
                 supplierSku: body.supplierSku === undefined ? primaryVariant.supplierSku : String(body.supplierSku).trim() || null,
@@ -120,7 +121,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
           }
         : {
             create: {
-              name: 'Standard',
+              name: String(body.hatType ?? 'Snapback').trim(),
               sku: String(body.sku ?? `${params.id}-STD`).trim(),
               supplierUrl: String(body.supplierUrl ?? '').trim() || null,
               supplierName: String(body.supplierName ?? '').trim() || null,

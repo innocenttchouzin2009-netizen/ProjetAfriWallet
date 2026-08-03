@@ -4,13 +4,15 @@ import { prisma } from '@/lib/prisma';
 import { AuditService } from '@/features/audit/services/audit.service';
 import { requireRole } from '@/features/auth/guards/require-role';
 import { parseBody } from '@/lib/security/zod';
+import { extractCollectionSlugFromProductSlug } from '@/features/admin/catalog/data/catalog-taxonomy';
 
 export const dynamic = 'force-dynamic';
 
 const AdminProductSchema = z.object({
   name: z.string().min(1),
   description: z.string().max(4000).optional(),
-  category: z.string().min(1).optional(),
+  category: z.string().min(1),
+  hatType: z.string().min(1).optional(),
   sku: z.string().min(1),
   supplierUrl: z.string().url().optional().or(z.literal('')),
   supplierName: z.string().max(120).optional(),
@@ -19,12 +21,6 @@ const AdminProductSchema = z.object({
   stock: z.coerce.number().int().nonnegative(),
   active: z.boolean(),
 });
-
-function categoryFromSlug(slug: string): string {
-  const [head] = slug.split('-');
-  if (!head) return 'general';
-  return head;
-}
 
 function toAdminProduct(product: {
   id: string;
@@ -35,7 +31,7 @@ function toAdminProduct(product: {
   supplierSku: string | null;
   slug: string;
   isActive: boolean;
-  variants: { sku: string; supplierUrl: string | null; supplierName: string | null; supplierSku: string | null; priceCents: number; stock: number }[];
+  variants: { name: string; sku: string; supplierUrl: string | null; supplierName: string | null; supplierSku: string | null; priceCents: number; stock: number }[];
   images: { id: string; url: string; publicId: string | null; isPrimary: boolean; sortOrder: number }[];
 }) {
   const primaryVariant = product.variants[0];
@@ -54,7 +50,9 @@ function toAdminProduct(product: {
     supplierSku: primaryVariant?.supplierSku ?? product.supplierSku ?? '',
     price: (primaryVariant?.priceCents ?? 0) / 100,
     stock,
-    category: categoryFromSlug(product.slug),
+    category: extractCollectionSlugFromProductSlug(product.slug),
+    collectionSlug: extractCollectionSlugFromProductSlug(product.slug),
+    hatType: primaryVariant?.name ?? 'Snapback',
     sku: primaryVariant?.sku ?? product.id,
     active: product.isActive,
     primaryImageUrl: orderedImages[0]?.url ?? null,
@@ -106,7 +104,7 @@ export async function POST(request: NextRequest) {
       variants: {
         create: [
           {
-            name: 'Standard',
+            name: String(body.hatType ?? 'Snapback').trim(),
             sku: String(body.sku ?? '').trim(),
             supplierUrl: String(body.supplierUrl ?? '').trim() || null,
             supplierName: String(body.supplierName ?? '').trim() || null,

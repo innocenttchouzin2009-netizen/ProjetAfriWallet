@@ -70,16 +70,40 @@ function inferCategory(slug: string) {
     return { id: 'cat-chalps', name: 'Swiss City Alps & Lakes', slug: 'chalps' };
   }
 
-  if (head === 'chpremium') {
-    return { id: 'cat-chpremium', name: 'Swiss City Premium', slug: 'chpremium' };
+  if (head === 'itpremium') {
+    return { id: 'cat-itpremium', name: 'Italy City Premium', slug: 'itpremium' };
   }
 
-  if (head === 'chheritage') {
-    return { id: 'cat-chheritage', name: 'Swiss City Heritage', slug: 'chheritage' };
+  if (head === 'itheritage') {
+    return { id: 'cat-itheritage', name: 'Italy City Heritage', slug: 'itheritage' };
   }
 
-  if (head === 'chalps') {
-    return { id: 'cat-chalps', name: 'Swiss City Alps & Lakes', slug: 'chalps' };
+  if (head === 'italps') {
+    return { id: 'cat-italps', name: 'Italy City Riviera & Alps', slug: 'italps' };
+  }
+
+  if (head === 'nlpremium') {
+    return { id: 'cat-nlpremium', name: 'Netherlands City Premium', slug: 'nlpremium' };
+  }
+
+  if (head === 'nlheritage') {
+    return { id: 'cat-nlheritage', name: 'Netherlands City Heritage', slug: 'nlheritage' };
+  }
+
+  if (head === 'nlcanals') {
+    return { id: 'cat-nlcanals', name: 'Netherlands City Canals & Coast', slug: 'nlcanals' };
+  }
+
+  if (head === 'espremium') {
+    return { id: 'cat-espremium', name: 'Spain City Premium', slug: 'espremium' };
+  }
+
+  if (head === 'esheritage') {
+    return { id: 'cat-esheritage', name: 'Spain City Heritage', slug: 'esheritage' };
+  }
+
+  if (head === 'escoast') {
+    return { id: 'cat-escoast', name: 'Spain City Coast & Islands', slug: 'escoast' };
   }
 
   return {

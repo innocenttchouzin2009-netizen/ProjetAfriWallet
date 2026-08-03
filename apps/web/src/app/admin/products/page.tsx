@@ -68,9 +68,9 @@ export default function AdminProductsPage() {
           onChange={setFormValues}
           onSubmit={handleSubmit}
           onCancel={resetForm}
-          onUploadImage={(file) => {
+          onUploadImages={(files) => {
             if (!editingId) return;
-            void uploadProductImage(editingId, file);
+            void Promise.all(files.map((file) => uploadProductImage(editingId, file)));
           }}
           onDeleteImage={(imageId) => {
             if (!editingId) return;

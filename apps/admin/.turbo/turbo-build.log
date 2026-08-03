@@ -1,0 +1,30 @@
+
+> admin@0.1.0 build
+> next build
+
+  ▲ Next.js 14.2.5
+
+   Creating an optimized production build ...
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: EPERM: operation not permitted, rename 'C:\Users\User\OneDrive\Desktop\ProjetsDopeCuteStudio\apps\admin\.next\cache\webpack\client-production\0.pack_' -> 'C:\Users\User\OneDrive\Desktop\ProjetsDopeCuteStudio\apps\admin\.next\cache\webpack\client-production\0.pack'
+ ✓ Compiled successfully
+   Linting and checking validity of types ...
+   Collecting page data ...
+   Generating static pages (0/4) ...
+   Generating static pages (1/4) 
+   Generating static pages (2/4) 
+   Generating static pages (3/4) 
+ ✓ Generating static pages (4/4)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                              Size     First Load JS
+┌ ○ /                                    142 B          87.1 kB
+└ ○ /_not-found                          873 B          87.9 kB
++ First Load JS shared by all            87 kB
+  ├ chunks/1dd3208c-423052682a96d096.js  53.6 kB
+  ├ chunks/286-914f455a83d9cdd1.js       31.5 kB
+  └ other shared chunks (total)          1.84 kB
+
+
+○  (Static)  prerendered as static content
+

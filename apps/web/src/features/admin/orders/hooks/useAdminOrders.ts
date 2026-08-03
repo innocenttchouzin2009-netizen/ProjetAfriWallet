@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { AdminOrder, AdminOrdersFilters, AdminOrderStatus } from '../types/admin-order.types';
 
 const defaultFilters: AdminOrdersFilters = {
@@ -15,7 +15,7 @@ export function useAdminOrders() {
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const loadOrders = async () => {
+  const loadOrders = useCallback(async () => {
     setLoading(true);
     setError(null);
 
@@ -37,11 +37,11 @@ export function useAdminOrders() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters.channel, filters.status]);
 
   useEffect(() => {
-    loadOrders();
-  }, [filters.channel, filters.status]);
+    void loadOrders();
+  }, [loadOrders]);
 
   const updateStatus = async (orderId: string, status: AdminOrderStatus) => {
     setUpdatingId(orderId);

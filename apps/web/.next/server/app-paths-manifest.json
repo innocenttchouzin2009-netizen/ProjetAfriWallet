@@ -1,0 +1,11 @@
+{
+  "/_not-found/page": "app/_not-found/page.js",
+  "/shop/italy-city/page": "app/shop/italy-city/page.js",
+  "/shop/suisse-city/page": "app/shop/suisse-city/page.js",
+  "/shop/germany-city/page": "app/shop/germany-city/page.js",
+  "/shop/spain-city/page": "app/shop/spain-city/page.js",
+  "/studio/page": "app/studio/page.js",
+  "/page": "app/page.js",
+  "/shop/belgique-city/page": "app/shop/belgique-city/page.js",
+  "/shop/france-city/page": "app/shop/france-city/page.js"
+}

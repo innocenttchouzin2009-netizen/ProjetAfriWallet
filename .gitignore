@@ -1,22 +1,30 @@
-apps/web/node_modules/
-apps/web/.next/
-apps/admin/.next/
-apps/*/.next/
-apps/web/.env*
-apps/web/.pgdata/
-apps/web/.postgres.log
-apps/web/.postgres-*.log
-apps/web/dist/
-apps/*/dist/
-apps/*/test-results/
-apps/*/playwright-report/
-*.tsbuildinfo
-node_modules/
-.turbo/
-package-lock.json
-.DS_Store
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.vscode/
+# Flutter / Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+coverage/
+*.iml
+
+# Generated localization
+apps/mobile_app/lib/l10n/generated/
+
+# IDE
 .idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Secrets and environments
+.env
+.env.*
+!.env.example
+*.jks
+*.keystore
+key.properties
+GoogleService-Info.plist
+google-services.json
+node_modules

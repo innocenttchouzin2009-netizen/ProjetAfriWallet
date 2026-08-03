@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { AdminAuditFilters, AdminAuditLog } from '../types/admin-audit.types';
 
 const defaultFilters: AdminAuditFilters = {
@@ -17,7 +17,7 @@ export function useAdminAuditLogs() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     setError(null);
 
@@ -42,11 +42,11 @@ export function useAdminAuditLogs() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters.action, filters.entity, filters.period]);
 
   useEffect(() => {
-    load();
-  }, [filters.action, filters.entity, filters.period]);
+    void load();
+  }, [load]);
 
   return {
     logs,

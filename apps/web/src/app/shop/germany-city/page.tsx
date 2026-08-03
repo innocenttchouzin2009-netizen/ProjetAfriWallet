@@ -35,6 +35,8 @@ const COLLECTIONS: CityCollection[] = [
   },
 ];
 
+const SLICE_IMAGE = 'https://images.openai.com/static-rsc-4/BhZjJTQHdgoOiiQXbF3q7pMZ48wKJRsY8CQgU7R13Wv5kiD1y18Muwfx_kuh2Zh2XjoeAv5Exik70PLlfgLaeIX39RxGuI6rIy1h36MTrgEsNE_MVhLMnkGCIGEDUAo20zi98z3yuWdCU36gG5Go0_IaFIKwdcFh45QHWhrNhj9l_UbmuEbKTkeYYP5DzY4x?purpose=fullsize';
+
 export default function GermanyCityPage() {
   const { products, loading, error, params, setParams, total, categories, colors } = useProducts({
     pageSize: 12,
@@ -94,6 +96,32 @@ export default function GermanyCityPage() {
             <p className="text-xs font-bold uppercase tracking-[0.24em] text-white/90">Collection active</p>
             <h2 className="mt-2 text-2xl font-black">{activeCollection.label}</h2>
             <p className="mt-1 text-sm text-white/85">{activeCollection.subtitle}</p>
+          </div>
+        </div>
+
+        <div className="mt-6 overflow-hidden rounded-3xl border border-white/10 bg-white/5">
+          <div className="grid gap-0 md:grid-cols-4">
+            {[
+              { label: 'Berlin slice', position: 'center top' },
+              { label: 'Hamburg slice', position: 'center 28%' },
+              { label: 'Munich slice', position: 'center 56%' },
+              { label: 'Cologne slice', position: 'center bottom' },
+            ].map((slice, index) => (
+              <div key={slice.label} className="relative h-56 overflow-hidden border-b border-white/10 md:h-72 md:border-b-0 md:border-r md:border-r-white/10 last:border-r-0">
+                <div
+                  className="absolute inset-0 bg-cover bg-center"
+                  style={{
+                    backgroundImage: `url(${SLICE_IMAGE})`,
+                    backgroundPosition: slice.position,
+                  }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
+                <div className="absolute inset-x-0 bottom-0 p-4">
+                  <p className="text-xs font-bold uppercase tracking-[0.24em] text-white/70">Slice {index + 1}</p>
+                  <h3 className="mt-1 text-xl font-black">{slice.label}</h3>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 

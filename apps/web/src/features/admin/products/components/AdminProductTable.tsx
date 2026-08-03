@@ -1,6 +1,7 @@
 "use client";
 
 import type { AdminProduct } from '../types/admin-product.types';
+import { getCollectionLabel } from '@/features/admin/catalog/data/catalog-taxonomy';
 
 interface AdminProductTableProps {
   products: AdminProduct[];
@@ -19,6 +20,7 @@ export default function AdminProductTable({ products, onEdit, onDelete }: AdminP
             <th className="px-4 py-3">SKU</th>
             <th className="px-4 py-3">Fournisseur</th>
             <th className="px-4 py-3">Catégorie</th>
+            <th className="px-4 py-3">Type</th>
             <th className="px-4 py-3">Prix</th>
             <th className="px-4 py-3">Stock</th>
             <th className="px-4 py-3">Statut</th>
@@ -34,6 +36,7 @@ export default function AdminProductTable({ products, onEdit, onDelete }: AdminP
               </td>
               <td className="px-4 py-4">
                 {product.primaryImageUrl ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
                   <img src={product.primaryImageUrl} alt={product.name} className="h-12 w-12 rounded-lg border border-white/10 object-cover" />
                 ) : (
                   <span className="text-xs text-white/50">Aucune</span>
@@ -49,7 +52,8 @@ export default function AdminProductTable({ products, onEdit, onDelete }: AdminP
                   </a>
                 ) : null}
               </td>
-              <td className="px-4 py-4">{product.category}</td>
+              <td className="px-4 py-4">{getCollectionLabel(product.collectionSlug)}</td>
+              <td className="px-4 py-4">{product.hatType}</td>
               <td className="px-4 py-4">{product.price.toFixed(2)} €</td>
               <td className="px-4 py-4">{product.stock}</td>
               <td className="px-4 py-4">

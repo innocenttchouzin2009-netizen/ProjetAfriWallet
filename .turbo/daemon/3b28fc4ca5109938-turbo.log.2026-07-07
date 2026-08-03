@@ -1,0 +1,15 @@
+2026-07-07T21:11:52.086308Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo")}
+2026-07-07T21:11:52.087122Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-07-07T21:11:52.220498Z  WARN daemon_server: turborepo_lib::commands::daemon: daemon already running
+2026-07-07T21:11:52.708880Z  WARN daemon_server: turborepo_lib::commands::daemon: daemon already running
+2026-07-07T21:12:12.291543Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("apps\\web\\.postgres-55432.log")}
+2026-07-07T21:12:12.291607Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("web"), path: AnchoredSystemPathBuf("apps\\web") }}))
+2026-07-07T22:24:09.076984Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("apps\\web")}
+2026-07-07T22:24:09.082321Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("web"), path: AnchoredSystemPathBuf("apps\\web") }}))
+2026-07-07T22:24:12.817623Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2026-07-07T22:24:23.796391Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("apps\\web\\src\\features\\catalog")}
+2026-07-07T22:24:23.796462Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("web"), path: AnchoredSystemPathBuf("apps\\web") }}))
+2026-07-07T22:24:25.270923Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2026-07-07T22:40:31.135403Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("apps\\web\\.next")}
+2026-07-07T22:40:31.139706Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("web"), path: AnchoredSystemPathBuf("apps\\web") }}))
+2026-07-07T22:40:34.023099Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun

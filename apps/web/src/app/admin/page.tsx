@@ -1,5 +1,5 @@
 import AdminSidebar from '@/features/admin/components/AdminSidebar';
-import AdminStatsCards from '@/features/admin/components/AdminStatsCards';
+import AdminBusinessDashboard from '@/features/admin/components/AdminBusinessDashboard';
 import AdminRecentOrders from '@/features/admin/components/AdminRecentOrders';
 import AdminProductionQueue from '@/features/admin/components/AdminProductionQueue';
 
@@ -18,7 +18,7 @@ export default function AdminPage() {
             </p>
           </section>
 
-          <AdminStatsCards />
+          <AdminBusinessDashboard />
 
           <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
             <AdminRecentOrders />

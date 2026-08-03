@@ -1,0 +1,35 @@
+openapi: 3.0.3
+info:
+  title: AfriWallet Identity API
+  version: 0.2.0
+paths:
+  /api/v1/auth/register:
+    post:
+      summary: Create an account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                phone:
+                  type: string
+                language:
+                  type: string
+                country:
+                  type: string
+      responses:
+        '200':
+          description: User created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  userId:
+                    type: string
+                  status:
+                    type: string

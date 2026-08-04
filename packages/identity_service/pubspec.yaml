@@ -1,0 +1,11 @@
+name: identity_service
+publish_to: 'none'
+description: Identity service foundation for AfriWallet.
+version: 0.2.0
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+dependencies:
+  meta: ^1.11.0
+
+dev_dependencies:
+  test: ^1.25.0

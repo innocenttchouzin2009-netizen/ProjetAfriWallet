@@ -1,0 +1,17 @@
+openapi: 3.0.3
+info:
+  title: AfriWallet Internal Fraud API
+  version: 0.4.8
+paths:
+  /internal/fraud/assessments:
+    post:
+      summary: Create fraud assessment
+      responses:
+        '200':
+          description: Assessment created
+  /internal/fraud/reviews:
+    get:
+      summary: List review cases
+      responses:
+        '200':
+          description: Review cases returned

@@ -1,0 +1,19 @@
+{
+  "@@locale": "fr",
+  "wallets": "Portefeuilles",
+  "createWallet": "Créer un portefeuille",
+  "fxQuote": "Citation FX",
+  "sourceAmount": "Montant source",
+  "amountReceived": "Montant reçu",
+  "marketRate": "Taux de marché",
+  "appliedRate": "Taux appliqué",
+  "spread": "Spread",
+  "fees": "Frais",
+  "countdown": "Compte à rebours",
+  "expiresAt": "Expire à",
+  "fromCurrency": "Devise d'origine",
+  "toCurrency": "Devise de destination",
+  "getQuote": "Obtenir une offre",
+  "quoteSummary": "Résumé de l'offre",
+  "requiredField": "Ce champ est requis"
+}

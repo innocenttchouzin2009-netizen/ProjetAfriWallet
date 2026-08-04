@@ -9,7 +9,8 @@ public sealed class FxEngineService
 	private readonly CurrencyRegistryService _currencyRegistry;
 	private readonly IFxRateProvider _provider;
 	private readonly FxRateCache _cache;
-	private readonly IFxRateHistoryRepository _rateHistory;
+	private readonly InMemoryFxRateRepository _rateRepository;
+	private readonly InMemoryFxHistoryRepository _historyRepository;
 	private readonly IFxConversionRepository _conversionRepository;
 	private readonly object _sync = new();
 	private long _rateVersion;
@@ -18,13 +19,15 @@ public sealed class FxEngineService
 		CurrencyRegistryService currencyRegistry,
 		IFxRateProvider provider,
 		FxRateCache cache,
-		IFxRateHistoryRepository rateHistory,
+		InMemoryFxRateRepository rateRepository,
+		InMemoryFxHistoryRepository historyRepository,
 		IFxConversionRepository conversionRepository)
 	{
 		_currencyRegistry = currencyRegistry;
 		_provider = provider;
 		_cache = cache;
-		_rateHistory = rateHistory;
+		_rateRepository = rateRepository;
+		_historyRepository = historyRepository;
 		_conversionRepository = conversionRepository;
 	}
 
@@ -53,15 +56,35 @@ public sealed class FxEngineService
 	{
 		EnsureCurrencies(request.BaseCurrency, request.QuoteCurrency);
 		var now = DateTimeOffset.UtcNow;
-		var rate = new ExchangeRate(Normalize(request.BaseCurrency), Normalize(request.QuoteCurrency), request.Rate, string.IsNullOrWhiteSpace(request.Provider) ? _provider.Name : request.Provider, now, now.AddHours(1), now, NextVersion());
+		var rate = new ExchangeRate(
+			Guid.CreateVersion7(),
+			Normalize(request.BaseCurrency),
+			Normalize(request.QuoteCurrency),
+			request.Rate,
+			string.IsNullOrWhiteSpace(request.Provider) ? _provider.Name : request.Provider,
+			null,
+			now,
+			now.AddHours(1),
+			ExchangeRateStatus.Active,
+			NextVersion(),
+			now);
 		_cache.Set(rate);
-		_rateHistory.Save(rate);
+		_rateRepository.Save(rate);
+		_historyRepository.Save(new FxRateHistory(rate.Id, rate.BaseCurrency, rate.QuoteCurrency, rate.Rate, rate.Provider, now));
 		return ToRateResponse(rate);
 	}
 
-	public IReadOnlyList<ExchangeRate> RateHistory() => _rateHistory.List();
+	public FxRateResponse RefreshRate(string from, string to)
+	{
+		var rate = ResolveExchangeRate(from, to);
+		return ToRateResponse(rate);
+	}
 
-	public IReadOnlyList<ExchangeRate> RateHistory(string baseCurrency, string quoteCurrency) => _rateHistory.List(baseCurrency, quoteCurrency);
+	public IReadOnlyList<ExchangeRate> RateHistory() => _rateRepository.List();
+
+	public IReadOnlyList<ExchangeRate> RateHistory(string baseCurrency, string quoteCurrency) => _rateRepository.List(baseCurrency, quoteCurrency);
+
+	public IReadOnlyList<FxRateHistory> GetHistory(string baseCurrency, string quoteCurrency) => _historyRepository.List(baseCurrency, quoteCurrency);
 
 	public IReadOnlyList<FxConversion> History() => _conversionRepository.List();
 
@@ -70,23 +93,66 @@ public sealed class FxEngineService
 	private ExchangeRate ResolveExchangeRate(string from, string to)
 	{
 		EnsureCurrencies(from, to);
+		var normalizedFrom = Normalize(from);
+		var normalizedTo = Normalize(to);
 
-		if (string.Equals(from, to, StringComparison.OrdinalIgnoreCase))
+		if (string.Equals(normalizedFrom, normalizedTo, StringComparison.OrdinalIgnoreCase))
 		{
-			var identityRate = new ExchangeRate(Normalize(from), Normalize(to), 1m, "Identity", DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddHours(1), DateTimeOffset.UtcNow, NextVersion());
-			_rateHistory.Save(identityRate);
+			var identityRate = new ExchangeRate(
+				Guid.CreateVersion7(),
+				normalizedFrom,
+				normalizedTo,
+				1m,
+				"Identity",
+				null,
+				DateTimeOffset.UtcNow,
+				DateTimeOffset.UtcNow.AddHours(1),
+				ExchangeRateStatus.Active,
+				NextVersion(),
+				DateTimeOffset.UtcNow);
+			_rateRepository.Save(identityRate);
+			_historyRepository.Save(new FxRateHistory(identityRate.Id, identityRate.BaseCurrency, identityRate.QuoteCurrency, identityRate.Rate, identityRate.Provider, identityRate.CreatedAt));
 			return identityRate;
 		}
 
-		if (_cache.TryGet(from, to, out var cached))
+		if (_cache.TryGet(normalizedFrom, normalizedTo, out var cached))
 		{
 			return cached;
 		}
 
-		var rate = _provider.GetRate(from, to);
-		_cache.Set(rate);
-		_rateHistory.Save(rate);
-		return rate;
+		try
+		{
+			var rate = _provider.GetRateAsync(normalizedFrom, normalizedTo, CancellationToken.None).GetAwaiter().GetResult();
+			ValidateRatePeriod(rate);
+			_cache.Set(rate);
+			_rateRepository.Save(rate);
+			_historyRepository.Save(new FxRateHistory(rate.Id, rate.BaseCurrency, rate.QuoteCurrency, rate.Rate, rate.Provider, DateTimeOffset.UtcNow));
+			return rate;
+		}
+		catch (InvalidOperationException ex) when (ex.Message == "FX_RATE_NOT_FOUND")
+		{
+			var reciprocal = _provider.GetRateAsync(normalizedTo, normalizedFrom, CancellationToken.None).GetAwaiter().GetResult();
+			var derivedRate = new ExchangeRate(
+				Guid.CreateVersion7(),
+				normalizedFrom,
+				normalizedTo,
+				1m / reciprocal.Rate,
+				reciprocal.Provider,
+				null,
+				reciprocal.ValidFrom,
+				reciprocal.ValidUntil,
+				ExchangeRateStatus.Active,
+				NextVersion(),
+				DateTimeOffset.UtcNow);
+			if (derivedRate.ValidUntil <= derivedRate.ValidFrom)
+			{
+				throw new InvalidOperationException("FX_RATE_PERIOD_INVALID");
+			}
+			_cache.Set(derivedRate);
+			_rateRepository.Save(derivedRate);
+			_historyRepository.Save(new FxRateHistory(derivedRate.Id, derivedRate.BaseCurrency, derivedRate.QuoteCurrency, derivedRate.Rate, derivedRate.Provider, DateTimeOffset.UtcNow));
+			return derivedRate;
+		}
 	}
 
 	private FxConversion Convert(CurrencyAmount sourceAmount, Currency sourceCurrency, Currency targetCurrency, ExchangeRate exchangeRate)
@@ -97,6 +163,14 @@ public sealed class FxEngineService
 		var fee = CurrencyAmount.FromMinor(sourceCurrency.Code, 0);
 		var spread = CurrencyAmount.FromMinor(sourceCurrency.Code, 0);
 		return new FxConversion(Guid.CreateVersion7(), sourceAmount, targetAmount, exchangeRate, fee, spread, DateTimeOffset.UtcNow, exchangeRate.Provider);
+	}
+
+	private static void ValidateRatePeriod(ExchangeRate rate)
+	{
+		if (rate.ValidUntil <= rate.ValidFrom)
+		{
+			throw new InvalidOperationException("FX_RATE_PERIOD_INVALID");
+		}
 	}
 
 	private void EnsureCurrencies(string from, string to)

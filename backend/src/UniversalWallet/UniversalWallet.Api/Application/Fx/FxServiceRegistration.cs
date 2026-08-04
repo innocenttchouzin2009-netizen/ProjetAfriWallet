@@ -11,12 +11,16 @@ public static class FxServiceRegistration
 		services.AddSingleton<CurrencyRegistryService>();
 		services.AddSingleton<IFxRateProvider, StaticRateProvider>();
 		services.AddSingleton(new FxRateCache(TimeSpan.FromMinutes(5)));
+		services.AddSingleton<InMemoryFxRateRepository>();
+		services.AddSingleton<InMemoryFxHistoryRepository>();
 		services.AddSingleton<IFxRateHistoryRepository, InMemoryFxRateHistoryRepository>();
 		services.AddSingleton<IFxConversionRepository, InMemoryFxConversionRepository>();
 		services.AddSingleton<FxEngineService>();
 		services.AddSingleton<ConvertCurrencyHandler>();
 		services.AddSingleton<GetExchangeRateHandler>();
 		services.AddSingleton<UpdateExchangeRateHandler>();
+		services.AddSingleton<RefreshExchangeRateHandler>();
+		services.AddSingleton<GetHistoryHandler>();
 		return services;
 	}
 }

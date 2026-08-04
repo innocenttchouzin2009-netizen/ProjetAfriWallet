@@ -1,0 +1,5 @@
+.dart_tool/
+**/.dart_tool/
+apps/mobile_app/lib/l10n/generated/
+build/
+**/build/

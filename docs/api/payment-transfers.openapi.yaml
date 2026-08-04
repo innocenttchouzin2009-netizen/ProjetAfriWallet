@@ -1,0 +1,61 @@
+openapi: 3.0.3
+info:
+  title: AfriWallet Payment Transfers API
+  version: 1.0.0
+paths:
+  /api/v1/payments/transfers:
+    post:
+      summary: Create a wallet-to-wallet transfer from an authorized payment intent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                paymentIntentId:
+                  type: string
+                  format: uuid
+      responses:
+        '200':
+          description: Transfer created or already existing
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  transferId:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                  ledgerTransactionId:
+                    type: string
+                    format: uuid
+    get:
+      summary: List transfers
+      responses:
+        '200':
+          description: Transfer list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+  /api/v1/payments/transfers/{transferId}:
+    get:
+      summary: Retrieve a transfer by id
+      parameters:
+        - in: path
+          name: transferId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Transfer details

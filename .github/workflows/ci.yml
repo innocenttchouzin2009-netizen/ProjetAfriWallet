@@ -1,0 +1,31 @@
+name: CI
+on:
+  push:
+    branches: [main, feature/**]
+  pull_request:
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Restore
+        run: dotnet restore backend/src/UniversalWallet/UniversalWallet.Api/UniversalWallet.Api.csproj
+      - name: Build
+        run: dotnet build backend/src/UniversalWallet/UniversalWallet.Api/UniversalWallet.Api.csproj --no-restore
+      - name: Test
+        run: dotnet test backend/tests/UniversalWallet.Scenarios/UniversalWallet.Scenarios.csproj --no-build
+
+  mobile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.35.0'
+      - name: Analyze
+        run: cd apps/mobile_app && flutter pub get && flutter analyze
+      - name: Test
+        run: cd apps/mobile_app && flutter test

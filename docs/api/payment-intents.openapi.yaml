@@ -1,0 +1,64 @@
+openapi: 3.0.3
+info:
+  title: Payment Intents API
+  version: 1.0.0
+paths:
+  /api/v1/payments/intents:
+    post:
+      summary: Create a payment intent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sourceWalletId:
+                  type: string
+                recipient:
+                  type: object
+                  properties:
+                    type:
+                      type: string
+                    reference:
+                      type: string
+                amountMinor:
+                  type: integer
+                currencyCode:
+                  type: string
+                purpose:
+                  type: string
+                description:
+                  type: string
+      responses:
+        '201':
+          description: Payment intent created
+    get:
+      summary: List payment intents
+      responses:
+        '200':
+          description: Payment intents returned
+  /api/v1/payments/intents/{intentId}:
+    get:
+      summary: Get a payment intent
+      parameters:
+        - in: path
+          name: intentId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Payment intent returned
+  /api/v1/payments/intents/{intentId}/cancel:
+    post:
+      summary: Cancel a payment intent
+      parameters:
+        - in: path
+          name: intentId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Payment intent cancelled

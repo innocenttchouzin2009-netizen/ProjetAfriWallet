@@ -1,0 +1,39 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v10.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v10.0": {
+      "Payments.Transfer.Scenarios/1.0.0": {
+        "dependencies": {
+          "UniversalWallet.Api": "1.0.0"
+        },
+        "runtime": {
+          "Payments.Transfer.Scenarios.dll": {}
+        }
+      },
+      "UniversalWallet.Api/1.0.0": {
+        "runtime": {
+          "UniversalWallet.Api.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "Payments.Transfer.Scenarios/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "UniversalWallet.Api/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

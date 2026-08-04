@@ -1,0 +1,9 @@
+global:
+  scrape_interval: 15s
+scrape_configs:
+  - job_name: 'universal-wallet'
+    static_configs:
+      - targets: ['universal-wallet:8080']
+  - job_name: 'identity-service'
+    static_configs:
+      - targets: ['identity-service:8080']

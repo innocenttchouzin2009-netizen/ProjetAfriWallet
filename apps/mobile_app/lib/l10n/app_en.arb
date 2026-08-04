@@ -1,0 +1,19 @@
+{
+  "@@locale": "en",
+  "wallets": "Wallets",
+  "createWallet": "Create wallet",
+  "fxQuote": "FX Quote",
+  "sourceAmount": "Source amount",
+  "amountReceived": "Amount received",
+  "marketRate": "Market rate",
+  "appliedRate": "Applied rate",
+  "spread": "Spread",
+  "fees": "Fees",
+  "countdown": "Countdown",
+  "expiresAt": "Expires at",
+  "fromCurrency": "From currency",
+  "toCurrency": "To currency",
+  "getQuote": "Get quote",
+  "quoteSummary": "Quote summary",
+  "requiredField": "This field is required"
+}

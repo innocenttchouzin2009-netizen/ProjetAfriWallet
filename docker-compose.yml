@@ -1,0 +1,46 @@
+services:
+  identity-service:
+    build:
+      context: ./backend/src/IdentityService/IdentityService.Api
+      dockerfile: Dockerfile
+    ports:
+      - "5001:8080"
+    environment:
+      ASPNETCORE_URLS: http://+:8080
+
+  universal-wallet:
+    build:
+      context: ./backend/src/UniversalWallet/UniversalWallet.Api
+      dockerfile: Dockerfile
+    ports:
+      - "5000:8080"
+    environment:
+      ASPNETCORE_URLS: http://+:8080
+    depends_on:
+      - identity-service
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: afriwallet
+      POSTGRES_USER: afriwallet
+      POSTGRES_PASSWORD: afriwallet
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./ops/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"

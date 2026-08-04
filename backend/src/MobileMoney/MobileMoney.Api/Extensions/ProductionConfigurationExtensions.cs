@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Options;
+using MobileMoney.Production.Audit;
 using MobileMoney.Production.Configuration;
 using MobileMoney.Production.Diagnostics;
 using MobileMoney.Production.Health;
@@ -33,6 +34,7 @@ public static class ProductionConfigurationExtensions
         services.AddMobileMoneyRateLimiting(configuration);
         services.AddMobileMoneyFeatureFlags(configuration);
         services.AddMobileMoneyOpenTelemetry(configuration);
+        services.AddMobileMoneyAudit(configuration);
 
         services.AddSingleton<IHealthProbe, ConfigurationHealthProbe>();
         services.AddSingleton<IHealthProbe, SecretProviderHealthProbe>();

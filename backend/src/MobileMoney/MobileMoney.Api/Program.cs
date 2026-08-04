@@ -1,3 +1,4 @@
+using MobileMoney.Production.Audit;
 using MobileMoney.Production.Correlation;
 using MobileMoney.Production.Diagnostics;
 using MobileMoney.Production.Errors;
@@ -87,5 +88,52 @@ app.MapPost("/mtn-momo/callback", async context =>
 {
     await context.Response.WriteAsJsonAsync(new { status = "received" });
 }).RequireRateLimiting(MobileMoneyRateLimitPolicies.Callback).AllowAnonymous();
+
+app.MapPost("/internal/audit/records", (IAuditService auditService, AuditRecord record) =>
+{
+    var saved = auditService.Record(record);
+    return Results.Ok(saved);
+});
+
+app.MapGet("/internal/audit/records", (IAuditService auditService, string? auditId, string? transactionId, string? correlationId, string? providerReference, string? walletId, DateTime? from, DateTime? to, AuditAction? action, AuditResult? result) =>
+{
+    var criteria = new AuditSearchCriteria
+    {
+        AuditId = auditId,
+        TransactionId = transactionId,
+        CorrelationId = correlationId,
+        ProviderReference = providerReference,
+        WalletId = walletId,
+        From = from,
+        To = to,
+        Action = action,
+        Result = result
+    };
+
+    return Results.Ok(auditService.Search(criteria));
+});
+
+app.MapGet("/internal/audit/records/{auditId}/verify", (IAuditService auditService, string auditId) =>
+{
+    var isValid = auditService.VerifyChain(auditId);
+    return Results.Ok(new { auditId, isValid });
+});
+
+app.MapGet("/internal/audit/export", (IAuditService auditService, AuditExportService exportService, DateTime? from, DateTime? to, string? providerCode, AuditResult? result, string? operationType, string format = "json") =>
+{
+    var filter = new AuditExportFilter
+    {
+        From = from,
+        To = to,
+        ProviderCode = providerCode,
+        Result = result,
+        OperationType = operationType
+    };
+
+    var records = auditService.Export(filter).ToList();
+    return format.Equals("csv", StringComparison.OrdinalIgnoreCase)
+        ? Results.Text(exportService.ExportCsv(records), "text/csv")
+        : Results.Ok(records);
+});
 
 app.Run();

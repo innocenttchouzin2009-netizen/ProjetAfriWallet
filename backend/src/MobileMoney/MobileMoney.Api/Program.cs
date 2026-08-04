@@ -4,6 +4,7 @@ using MobileMoney.Production.Errors;
 using MobileMoney.Production.Extensions;
 using MobileMoney.Production.Health;
 using MobileMoney.Production.Logging;
+using MobileMoney.Production.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,6 +26,7 @@ var app = builder.Build();
 
 app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseMiddleware<MobileMoneyExceptionMiddleware>();
+app.UseRateLimiter();
 
 app.MapGet("/health/live", async (HealthProbeRegistry registry, CancellationToken cancellationToken) =>
 {
@@ -56,5 +58,20 @@ app.MapGet("/internal/logging/echo", (HttpContext httpContext, StructuredOperati
     logger.LogRequestAccepted(MobileMoneyLogEvents.RequestAccepted, correlation, 15000, "XAF", "237670000000");
     return Results.Ok(new { correlationId = correlation.CorrelationId });
 });
+
+app.MapPost("/mtn-momo/status", async context =>
+{
+    await context.Response.WriteAsJsonAsync(new { status = "ok" });
+}).RequireRateLimiting(MobileMoneyRateLimitPolicies.StatusPerIp).AllowAnonymous();
+
+app.MapPost("/mtn-momo/deposit", async context =>
+{
+    await context.Response.WriteAsJsonAsync(new { status = "accepted" });
+}).RequireRateLimiting(MobileMoneyRateLimitPolicies.OperationsPerAwid).AllowAnonymous();
+
+app.MapPost("/mtn-momo/callback", async context =>
+{
+    await context.Response.WriteAsJsonAsync(new { status = "received" });
+}).RequireRateLimiting(MobileMoneyRateLimitPolicies.Callback).AllowAnonymous();
 
 app.Run();

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Http.HttpResults;
+using Subscriptions.Api;
 using Subscriptions.Application.Services;
 using Subscriptions.Contracts.Dtos;
 using Subscriptions.Domain.Models;
@@ -6,17 +7,23 @@ using Subscriptions.Infrastructure.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var storageRoot = Path.Combine(AppContext.BaseDirectory, "state");
 var providerRepository = new InMemorySubscriptionProviderRepository(SeedProviders());
 var planRepository = new InMemorySubscriptionPlanRepository(SeedPlans(providerRepository));
 var offerRepository = new InMemorySubscriptionCatalogOfferRepository(SeedOffers());
 var catalogService = new SubscriptionProviderCatalogService(providerRepository, planRepository);
-var lifecycleRepository = new InMemoryUserSubscriptionRepository();
+var lifecycleRepository = new JsonAtomicSubscriptionRepository(storageRoot);
 var lifecycleService = new UserSubscriptionLifecycleService(lifecycleRepository);
-var invoiceRepository = new InMemorySubscriptionInvoiceRepository();
+var invoiceRepository = new JsonAtomicSubscriptionInvoiceRepository(storageRoot);
 var billingService = new SubscriptionBillingService(invoiceRepository, new FakePaymentIntentGateway());
-var jobRepository = new InMemoryAutoRenewJobRepository();
+var jobRepository = new JsonAtomicAutoRenewJobRepository(storageRoot);
 var notificationGateway = new FakeNotificationGateway();
 var autoRenewService = new AutoRenewService(jobRepository, billingService, lifecycleService, notificationGateway);
+var connectorRegistry = new SubscriptionProviderConnectorRegistry();
+connectorRegistry.Register(new SandboxNetflixConnector());
+connectorRegistry.Register(new SandboxCanalPlusConnector());
+connectorRegistry.Register(new SandboxMyBouquetAfricainConnector());
+connectorRegistry.Register(new SandboxCinafConnector());
 
 builder.Services.AddSingleton<ISubscriptionProviderRepository>(providerRepository);
 builder.Services.AddSingleton<ISubscriptionPlanRepository>(planRepository);
@@ -28,10 +35,14 @@ builder.Services.AddSingleton<ISubscriptionInvoiceRepository>(invoiceRepository)
 builder.Services.AddSingleton(billingService);
 builder.Services.AddSingleton<IAutoRenewJobRepository>(jobRepository);
 builder.Services.AddSingleton(autoRenewService);
+builder.Services.AddSingleton(connectorRegistry);
 
 var app = builder.Build();
 
-app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
+app.UseProductionReadiness();
+app.UseMiddleware<TechnicalKeyMiddleware>();
+
+app.MapHealthEndpoints();
 app.MapGet("/api/v1/subscriptions/providers", (string? country, string? currency, string? q, int page = 1, int pageSize = 20, SubscriptionProviderCatalogService service = null!) =>
 {
     var items = service.ListProviders(country, currency, q, page, pageSize)
@@ -173,6 +184,56 @@ app.MapPost("/internal/subscriptions/auto-renew/process", (DateTimeOffset asOf, 
 {
     var jobs = service.ProcessDueRenewals(asOf);
     return Results.Ok(jobs.Select(MapAutoRenew));
+});
+
+app.MapGet("/internal/subscriptions/connectors/{providerId}/capabilities", (string providerId, SubscriptionProviderConnectorRegistry registry) =>
+{
+    var capabilities = registry.DiscoverCapabilities(providerId);
+    return capabilities is null
+        ? Results.NotFound(new { code = "CONNECTOR_NOT_FOUND", message = "Connector not found." })
+        : Results.Ok(MapCapabilities(capabilities));
+});
+
+app.MapPost("/internal/subscriptions/connectors/{providerId}/activate", (string providerId, string subscriptionId, SubscriptionProviderConnectorRegistry registry) =>
+{
+    var response = registry.Activate(providerId, subscriptionId, new Dictionary<string, string> { ["requestId"] = Guid.NewGuid().ToString("N") });
+    return Results.Ok(MapResponse(response));
+});
+
+app.MapPost("/internal/subscriptions/connectors/{providerId}/renew", (string providerId, string subscriptionId, SubscriptionProviderConnectorRegistry registry) =>
+{
+    var response = registry.Renew(providerId, subscriptionId);
+    return Results.Ok(MapResponse(response));
+});
+
+app.MapPost("/internal/subscriptions/connectors/{providerId}/suspend", (string providerId, string subscriptionId, SubscriptionProviderConnectorRegistry registry) =>
+{
+    var response = registry.Suspend(providerId, subscriptionId);
+    return Results.Ok(MapResponse(response));
+});
+
+app.MapPost("/internal/subscriptions/connectors/{providerId}/resume", (string providerId, string subscriptionId, SubscriptionProviderConnectorRegistry registry) =>
+{
+    var response = registry.Resume(providerId, subscriptionId);
+    return Results.Ok(MapResponse(response));
+});
+
+app.MapPost("/internal/subscriptions/connectors/{providerId}/cancel", (string providerId, string subscriptionId, SubscriptionProviderConnectorRegistry registry) =>
+{
+    var response = registry.Cancel(providerId, subscriptionId);
+    return Results.Ok(MapResponse(response));
+});
+
+app.MapGet("/internal/subscriptions/connectors/{providerId}/status", (string providerId, string subscriptionId, SubscriptionProviderConnectorRegistry registry) =>
+{
+    var response = registry.GetStatus(providerId, subscriptionId);
+    return Results.Ok(MapResponse(response));
+});
+
+app.MapGet("/internal/subscriptions/connectors/{providerId}/health", (string providerId, SubscriptionProviderConnectorRegistry registry) =>
+{
+    var health = registry.HealthCheck(providerId);
+    return Results.Ok(MapHealth(health));
 });
 
 app.Run();
@@ -409,3 +470,24 @@ static AutoRenewJobDto MapAutoRenew(AutoRenewJob job) => new(
     job.CreatedAt,
     job.StartedAt,
     job.CompletedAt);
+
+static SubscriptionConnectorCapabilityDto MapCapabilities(SubscriptionProviderConnectorCapabilities capabilities) => new(
+    capabilities.SupportsActivation,
+    capabilities.SupportsRenewal,
+    capabilities.SupportsSuspension,
+    capabilities.SupportsResumption,
+    capabilities.SupportsCancellation,
+    capabilities.SupportsStatusLookup);
+
+static SubscriptionConnectorResponseDto MapResponse(SubscriptionProviderConnectorResponse response) => new(
+    response.ProviderId,
+    response.Operation,
+    response.Status.ToString(),
+    response.CorrelationId,
+    response.Message,
+    response.Payload);
+
+static SubscriptionConnectorHealthDto MapHealth(SubscriptionProviderConnectorHealth health) => new(
+    health.ProviderId,
+    health.Status.ToString(),
+    health.Message);

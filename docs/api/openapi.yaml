@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: AfriWallet Identity API
+  title: AfriWallet API
   version: 0.2.0
 paths:
   /api/v1/auth/register:
@@ -33,3 +33,44 @@ paths:
                     type: string
                   status:
                     type: string
+  /internal/subscriptions/connectors/{providerId}/capabilities:
+    get:
+      summary: Discover connector capabilities
+      parameters:
+        - in: path
+          name: providerId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Connector capabilities
+  /internal/subscriptions/connectors/{providerId}/activate:
+    post:
+      summary: Activate a subscription through a provider connector
+      parameters:
+        - in: path
+          name: providerId
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: subscriptionId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Connector activation response
+  /internal/subscriptions/connectors/{providerId}/health:
+    get:
+      summary: Check connector health
+      parameters:
+        - in: path
+          name: providerId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Connector health response

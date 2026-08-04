@@ -5,6 +5,7 @@ using MobileMoney.Production.Health;
 using MobileMoney.Production.RateLimiting;
 using MobileMoney.Production.Secrets;
 using MobileMoney.Production.FeatureFlags;
+using MobileMoney.Production.Telemetry;
 
 namespace MobileMoney.Production.Extensions;
 
@@ -21,6 +22,7 @@ public static class ProductionConfigurationExtensions
         services.AddSingleton<ISecretProvider, EnvironmentSecretProvider>();
         services.AddSingleton<CachedSecretProvider>();
         services.AddSingleton<ConfigurationDiagnosticService>();
+        services.AddSingleton<TelemetryDiagnosticService>();
         services.AddSingleton<ProductionEnvironmentGuard>(sp =>
         {
             var options = sp.GetRequiredService<IOptions<MtnMomoProductionOptions>>().Value;
@@ -30,6 +32,7 @@ public static class ProductionConfigurationExtensions
         services.AddMtnMomoResilience();
         services.AddMobileMoneyRateLimiting(configuration);
         services.AddMobileMoneyFeatureFlags(configuration);
+        services.AddMobileMoneyOpenTelemetry(configuration);
 
         services.AddSingleton<IHealthProbe, ConfigurationHealthProbe>();
         services.AddSingleton<IHealthProbe, SecretProviderHealthProbe>();

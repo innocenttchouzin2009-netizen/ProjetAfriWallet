@@ -1,0 +1,39 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v10.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v10.0": {
+      "MobileMoney.MtnMomo.Telemetry.Scenarios/1.0.0": {
+        "dependencies": {
+          "MobileMoney.Api": "1.0.0"
+        },
+        "runtime": {
+          "MobileMoney.MtnMomo.Telemetry.Scenarios.dll": {}
+        }
+      },
+      "MobileMoney.Api/1.0.0": {
+        "runtime": {
+          "MobileMoney.Api.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "MobileMoney.MtnMomo.Telemetry.Scenarios/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "MobileMoney.Api/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

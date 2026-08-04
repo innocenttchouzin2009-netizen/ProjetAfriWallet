@@ -6,6 +6,7 @@ using MobileMoney.Production.Health;
 using MobileMoney.Production.Logging;
 using MobileMoney.Production.RateLimiting;
 using MobileMoney.Production.FeatureFlags;
+using MobileMoney.Production.Telemetry;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -56,6 +57,13 @@ app.MapGet("/internal/configuration/diagnostics", (ConfigurationDiagnosticServic
         featureFlags = featureDiagnostics.GetDiagnosticSnapshot()
     });
 });
+
+app.MapGet("/internal/mobile-money/telemetry/diagnostics", (TelemetryDiagnosticService telemetryDiagnostics) =>
+{
+    return Results.Ok(telemetryDiagnostics.GetDiagnosticSnapshot());
+});
+
+app.MapGet("/metrics", () => Results.Ok());
 
 app.MapGet("/internal/logging/echo", (HttpContext httpContext, StructuredOperationLogger logger) =>
 {

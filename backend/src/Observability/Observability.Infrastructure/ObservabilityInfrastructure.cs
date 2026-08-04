@@ -1,0 +1,1 @@
+namespace Observability.Api.Infrastructure;

@@ -1,0 +1,12 @@
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Observability\Observability.Domain\bin\Debug\net10.0\Observability.Domain.deps.json
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Observability\Observability.Domain\bin\Debug\net10.0\Observability.Domain.dll
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Observability\Observability.Domain\bin\Debug\net10.0\Observability.Domain.pdb
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Observability\Observability.Domain\obj\Debug\net10.0\Observability.Domain.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Observability\Observability.Domain\obj\Debug\net10.0\Observability.Domain.AssemblyInfoInputs.cache
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Observability\Observability.Domain\obj\Debug\net10.0\Observability.Domain.AssemblyInfo.cs
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Observability\Observability.Domain\obj\Debug\net10.0\Observability.Domain.csproj.CoreCompileInputs.cache
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Observability\Observability.Domain\obj\Debug\net10.0\Observability.Domain.sourcelink.json
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Observability\Observability.Domain\obj\Debug\net10.0\Observability.Domain.dll
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Observability\Observability.Domain\obj\Debug\net10.0\refint\Observability.Domain.dll
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Observability\Observability.Domain\obj\Debug\net10.0\Observability.Domain.pdb
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Observability\Observability.Domain\obj\Debug\net10.0\ref\Observability.Domain.dll

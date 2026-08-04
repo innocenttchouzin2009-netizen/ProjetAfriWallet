@@ -1,0 +1,69 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v10.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v10.0": {
+      "Fraud.Infrastructure/1.0.0": {
+        "dependencies": {
+          "Fraud.Application": "1.0.0"
+        },
+        "runtime": {
+          "Fraud.Infrastructure.dll": {}
+        }
+      },
+      "Fraud.Application/1.0.0": {
+        "dependencies": {
+          "Fraud.Contracts": "1.0.0",
+          "Fraud.Domain": "1.0.0"
+        },
+        "runtime": {
+          "Fraud.Application.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      },
+      "Fraud.Contracts/1.0.0": {
+        "runtime": {
+          "Fraud.Contracts.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      },
+      "Fraud.Domain/1.0.0": {
+        "runtime": {
+          "Fraud.Domain.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "Fraud.Infrastructure/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Fraud.Application/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Fraud.Contracts/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Fraud.Domain/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

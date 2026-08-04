@@ -1,0 +1,12 @@
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Fraud\Fraud.Domain\bin\Debug\net10.0\Fraud.Domain.deps.json
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Fraud\Fraud.Domain\bin\Debug\net10.0\Fraud.Domain.dll
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Fraud\Fraud.Domain\bin\Debug\net10.0\Fraud.Domain.pdb
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Fraud\Fraud.Domain\obj\Debug\net10.0\Fraud.Domain.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Fraud\Fraud.Domain\obj\Debug\net10.0\Fraud.Domain.AssemblyInfoInputs.cache
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Fraud\Fraud.Domain\obj\Debug\net10.0\Fraud.Domain.AssemblyInfo.cs
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Fraud\Fraud.Domain\obj\Debug\net10.0\Fraud.Domain.csproj.CoreCompileInputs.cache
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Fraud\Fraud.Domain\obj\Debug\net10.0\Fraud.Domain.sourcelink.json
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Fraud\Fraud.Domain\obj\Debug\net10.0\Fraud.Domain.dll
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Fraud\Fraud.Domain\obj\Debug\net10.0\refint\Fraud.Domain.dll
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Fraud\Fraud.Domain\obj\Debug\net10.0\Fraud.Domain.pdb
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Fraud\Fraud.Domain\obj\Debug\net10.0\ref\Fraud.Domain.dll

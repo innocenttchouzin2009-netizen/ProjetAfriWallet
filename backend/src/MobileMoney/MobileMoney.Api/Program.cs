@@ -5,6 +5,7 @@ using MobileMoney.Production.Extensions;
 using MobileMoney.Production.Health;
 using MobileMoney.Production.Logging;
 using MobileMoney.Production.RateLimiting;
+using MobileMoney.Production.FeatureFlags;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,6 +27,7 @@ var app = builder.Build();
 
 app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseMiddleware<MobileMoneyExceptionMiddleware>();
+app.UseMiddleware<FeatureGateMiddleware>();
 app.UseRateLimiter();
 
 app.MapGet("/health/live", async (HealthProbeRegistry registry, CancellationToken cancellationToken) =>
@@ -46,9 +48,13 @@ app.MapGet("/health/startup", async (HealthProbeRegistry registry, CancellationT
     return Results.Ok(response);
 });
 
-app.MapGet("/internal/configuration/diagnostics", (ConfigurationDiagnosticService diagnostics) =>
+app.MapGet("/internal/configuration/diagnostics", (ConfigurationDiagnosticService diagnostics, FeatureFlagDiagnosticService featureDiagnostics) =>
 {
-    return Results.Ok(diagnostics.GetDiagnosticSnapshot());
+    return Results.Ok(new
+    {
+        configuration = diagnostics.GetDiagnosticSnapshot(),
+        featureFlags = featureDiagnostics.GetDiagnosticSnapshot()
+    });
 });
 
 app.MapGet("/internal/logging/echo", (HttpContext httpContext, StructuredOperationLogger logger) =>

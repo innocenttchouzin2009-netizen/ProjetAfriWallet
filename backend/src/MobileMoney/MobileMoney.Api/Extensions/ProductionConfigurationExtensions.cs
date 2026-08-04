@@ -4,6 +4,7 @@ using MobileMoney.Production.Diagnostics;
 using MobileMoney.Production.Health;
 using MobileMoney.Production.RateLimiting;
 using MobileMoney.Production.Secrets;
+using MobileMoney.Production.FeatureFlags;
 
 namespace MobileMoney.Production.Extensions;
 
@@ -28,6 +29,7 @@ public static class ProductionConfigurationExtensions
 
         services.AddMtnMomoResilience();
         services.AddMobileMoneyRateLimiting(configuration);
+        services.AddMobileMoneyFeatureFlags(configuration);
 
         services.AddSingleton<IHealthProbe, ConfigurationHealthProbe>();
         services.AddSingleton<IHealthProbe, SecretProviderHealthProbe>();

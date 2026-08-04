@@ -12,6 +12,8 @@ var offerRepository = new InMemorySubscriptionCatalogOfferRepository(SeedOffers(
 var catalogService = new SubscriptionProviderCatalogService(providerRepository, planRepository);
 var lifecycleRepository = new InMemoryUserSubscriptionRepository();
 var lifecycleService = new UserSubscriptionLifecycleService(lifecycleRepository);
+var invoiceRepository = new InMemorySubscriptionInvoiceRepository();
+var billingService = new SubscriptionBillingService(invoiceRepository, new FakePaymentIntentGateway());
 
 builder.Services.AddSingleton<ISubscriptionProviderRepository>(providerRepository);
 builder.Services.AddSingleton<ISubscriptionPlanRepository>(planRepository);
@@ -19,6 +21,8 @@ builder.Services.AddSingleton(offerRepository);
 builder.Services.AddSingleton(catalogService);
 builder.Services.AddSingleton<IUserSubscriptionRepository>(lifecycleRepository);
 builder.Services.AddSingleton(lifecycleService);
+builder.Services.AddSingleton<ISubscriptionInvoiceRepository>(invoiceRepository);
+builder.Services.AddSingleton(billingService);
 
 var app = builder.Build();
 
@@ -132,6 +136,26 @@ app.MapPost("/api/v1/subscriptions/lifecycle/{subscriptionId}/expire", (string s
 {
     var subscription = service.Expire(subscriptionId);
     return Results.Ok(MapLifecycle(subscription));
+});
+
+app.MapPost("/api/v1/subscriptions/invoices", (CreateSubscriptionInvoiceRequest request, SubscriptionBillingService service) =>
+{
+    var invoice = service.CreateInvoice(request);
+    return Results.Created($"/api/v1/subscriptions/invoices/{invoice.InvoiceId}", MapInvoice(invoice));
+});
+
+app.MapGet("/api/v1/subscriptions/invoices/{invoiceId}", (string invoiceId, ISubscriptionInvoiceRepository repository) =>
+{
+    var invoice = repository.GetById(invoiceId);
+    return invoice is null
+        ? Results.NotFound(new { code = "INVOICE_NOT_FOUND", message = "Invoice not found." })
+        : Results.Ok(MapInvoice(invoice));
+});
+
+app.MapPost("/api/v1/subscriptions/invoices/{invoiceId}/pay", (string invoiceId, SubscriptionBillingService service) =>
+{
+    var attempt = service.ProcessPayment(invoiceId);
+    return Results.Ok(new { invoiceId, attempt.Status, attempt.GatewayReference });
 });
 
 app.Run();
@@ -339,3 +363,20 @@ static UserSubscriptionDto MapLifecycle(UserSubscription subscription) => new(
     subscription.RenewalAt,
     subscription.LastPaymentAt,
     subscription.History.Select(h => $"{h.Status}:{h.Reason ?? ""}").ToList());
+
+static SubscriptionInvoiceDto MapInvoice(SubscriptionInvoice invoice) => new(
+    invoice.InvoiceId,
+    invoice.SubscriptionId,
+    invoice.BillingPeriodStart,
+    invoice.BillingPeriodEnd,
+    invoice.Currency,
+    invoice.AmountMinor,
+    invoice.BillingCycle.ToString(),
+    invoice.DueAt,
+    invoice.Status.ToString(),
+    invoice.CreatedAt,
+    invoice.UpdatedAt,
+    invoice.PaidAt,
+    invoice.RetryCount,
+    invoice.MaxRetries,
+    invoice.Attempts.Select(a => $"{a.Status}:{a.GatewayReference ?? ""}").ToList());

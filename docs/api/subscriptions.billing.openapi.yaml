@@ -1,0 +1,47 @@
+openapi: 3.0.3
+info:
+  title: AfriWallet Subscription Billing API
+  version: 0.1.0
+paths:
+  /api/v1/subscriptions/invoices:
+    post:
+      summary: Create an invoice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                subscriptionId:
+                  type: string
+                billingPeriodStart:
+                  type: string
+                  format: date-time
+                billingPeriodEnd:
+                  type: string
+                  format: date-time
+                currency:
+                  type: string
+                amountMinor:
+                  type: integer
+                billingCycle:
+                  type: string
+                dueAt:
+                  type: string
+                  format: date-time
+      responses:
+        '201':
+          description: Invoice created
+  /api/v1/subscriptions/invoices/{invoiceId}/pay:
+    post:
+      summary: Process a payment attempt for an invoice
+      parameters:
+        - in: path
+          name: invoiceId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Payment attempt result

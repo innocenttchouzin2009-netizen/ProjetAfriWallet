@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using MobileMoney.Production.Correlation;
+using MobileMoney.Production.Resilience;
 
 namespace MobileMoney.Production.Logging;
 
@@ -25,6 +26,20 @@ public sealed class StructuredOperationLogger
         public void Dispose()
         {
         }
+    }
+
+    public void LogResilienceEvent(string eventName, string providerName, ResilienceTelemetry telemetry)
+    {
+        _logger.LogInformation(
+            "event={EventName} provider={ProviderName} retryCount={RetryCount} timeoutCount={TimeoutCount} circuitBreakerOpened={CircuitBreakerOpened} circuitBreakerClosed={CircuitBreakerClosed} circuitBreakerHalfOpen={CircuitBreakerHalfOpen} fallbackTriggered={FallbackTriggered}",
+            eventName,
+            providerName,
+            telemetry.RetryCount,
+            telemetry.TimeoutCount,
+            telemetry.CircuitBreakerOpened,
+            telemetry.CircuitBreakerClosed,
+            telemetry.CircuitBreakerHalfOpen,
+            telemetry.FallbackTriggered);
     }
 
     public void LogRequestStarted(string eventName, CorrelationContext context, int amountMinor, string currencyCode, string? phoneNumber)

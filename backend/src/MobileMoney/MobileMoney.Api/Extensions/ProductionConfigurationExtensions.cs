@@ -25,6 +25,8 @@ public static class ProductionConfigurationExtensions
             return new ProductionEnvironmentGuard(options);
         });
 
+        services.AddMtnMomoResilience();
+
         services.AddSingleton<IHealthProbe, ConfigurationHealthProbe>();
         services.AddSingleton<IHealthProbe, SecretProviderHealthProbe>();
         services.AddSingleton<IHealthProbe, ConnectorHealthProbe>();

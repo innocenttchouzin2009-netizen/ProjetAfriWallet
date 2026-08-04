@@ -1,11 +1,21 @@
 using Microsoft.AspNetCore.Http.HttpResults;
 using Subscriptions.Api;
+using Subscriptions.Api.Configuration;
 using Subscriptions.Application.Services;
 using Subscriptions.Contracts.Dtos;
 using Subscriptions.Domain.Models;
 using Subscriptions.Infrastructure.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddEnterpriseConfiguration(builder.Configuration);
+
+var secretProvider = new EnvironmentSecretProvider();
+var mtnOptions = builder.Configuration.GetSection(MtnMomoOptions.SectionName).Get<MtnMomoOptions>() ?? new MtnMomoOptions();
+if (builder.Environment.IsProduction())
+{
+    _ = secretProvider.GetRequiredSecret("MTN_API_KEY");
+}
 
 var storageRoot = Path.Combine(AppContext.BaseDirectory, "state");
 var providerRepository = new InMemorySubscriptionProviderRepository(SeedProviders());

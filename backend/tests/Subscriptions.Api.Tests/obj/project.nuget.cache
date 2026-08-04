@@ -1,0 +1,64 @@
+{
+  "version": 2,
+  "dgSpecHash": "z8+orNHPb6c=",
+  "success": false,
+  "projectFilePath": "C:\\Users\\User\\OneDrive\\Desktop\\ProjetAfriWallet-atomic\\backend\\tests\\Subscriptions.Api.Tests\\Subscriptions.Api.Tests.csproj",
+  "expectedPackageFiles": [],
+  "logs": [
+    {
+      "code": "NU1100",
+      "level": "Error",
+      "message": "Impossible de résoudre 'Microsoft.NET.Test.Sdk (>= 17.12.0)' pour 'net10.0'.",
+      "projectPath": "C:\\Users\\User\\OneDrive\\Desktop\\ProjetAfriWallet-atomic\\backend\\tests\\Subscriptions.Api.Tests\\Subscriptions.Api.Tests.csproj",
+      "filePath": "C:\\Users\\User\\OneDrive\\Desktop\\ProjetAfriWallet-atomic\\backend\\tests\\Subscriptions.Api.Tests\\Subscriptions.Api.Tests.csproj",
+      "libraryId": "Microsoft.NET.Test.Sdk",
+      "targetGraphs": [
+        "net10.0"
+      ]
+    },
+    {
+      "code": "NU1100",
+      "level": "Error",
+      "message": "Impossible de résoudre 'xunit (>= 2.9.2)' pour 'net10.0'.",
+      "projectPath": "C:\\Users\\User\\OneDrive\\Desktop\\ProjetAfriWallet-atomic\\backend\\tests\\Subscriptions.Api.Tests\\Subscriptions.Api.Tests.csproj",
+      "filePath": "C:\\Users\\User\\OneDrive\\Desktop\\ProjetAfriWallet-atomic\\backend\\tests\\Subscriptions.Api.Tests\\Subscriptions.Api.Tests.csproj",
+      "libraryId": "xunit",
+      "targetGraphs": [
+        "net10.0"
+      ]
+    },
+    {
+      "code": "NU1100",
+      "level": "Error",
+      "message": "Impossible de résoudre 'xunit.runner.visualstudio (>= 2.8.2)' pour 'net10.0'.",
+      "projectPath": "C:\\Users\\User\\OneDrive\\Desktop\\ProjetAfriWallet-atomic\\backend\\tests\\Subscriptions.Api.Tests\\Subscriptions.Api.Tests.csproj",
+      "filePath": "C:\\Users\\User\\OneDrive\\Desktop\\ProjetAfriWallet-atomic\\backend\\tests\\Subscriptions.Api.Tests\\Subscriptions.Api.Tests.csproj",
+      "libraryId": "xunit.runner.visualstudio",
+      "targetGraphs": [
+        "net10.0"
+      ]
+    },
+    {
+      "code": "NU1100",
+      "level": "Error",
+      "message": "Impossible de résoudre 'FluentAssertions (>= 6.12.0)' pour 'net10.0'.",
+      "projectPath": "C:\\Users\\User\\OneDrive\\Desktop\\ProjetAfriWallet-atomic\\backend\\tests\\Subscriptions.Api.Tests\\Subscriptions.Api.Tests.csproj",
+      "filePath": "C:\\Users\\User\\OneDrive\\Desktop\\ProjetAfriWallet-atomic\\backend\\tests\\Subscriptions.Api.Tests\\Subscriptions.Api.Tests.csproj",
+      "libraryId": "FluentAssertions",
+      "targetGraphs": [
+        "net10.0"
+      ]
+    },
+    {
+      "code": "NU1100",
+      "level": "Error",
+      "message": "Impossible de résoudre 'Microsoft.Extensions.Options.ConfigurationExtensions (>= 10.0.0)' pour 'net10.0'.",
+      "projectPath": "C:\\Users\\User\\OneDrive\\Desktop\\ProjetAfriWallet-atomic\\backend\\tests\\Subscriptions.Api.Tests\\Subscriptions.Api.Tests.csproj",
+      "filePath": "C:\\Users\\User\\OneDrive\\Desktop\\ProjetAfriWallet-atomic\\backend\\tests\\Subscriptions.Api.Tests\\Subscriptions.Api.Tests.csproj",
+      "libraryId": "Microsoft.Extensions.Options.ConfigurationExtensions",
+      "targetGraphs": [
+        "net10.0"
+      ]
+    }
+  ]
+}

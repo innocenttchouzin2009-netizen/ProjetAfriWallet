@@ -1,0 +1,5 @@
+AfriWallet v0.5.0-rc1
+Release notes: release/RELEASE_NOTES_v0.5.0-rc1.md
+SBOM: release/SBOM/sbom.spdx.json
+OpenAPI: release/OpenAPI/README.md
+Docker: release/Docker/README.md

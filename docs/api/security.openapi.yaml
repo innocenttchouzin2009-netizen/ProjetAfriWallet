@@ -1,0 +1,35 @@
+openapi: 3.0.3
+info:
+  title: Security API
+  version: 1.0.0
+paths:
+  /health:
+    get:
+      summary: Health check
+      responses:
+        '200':
+          description: Service is healthy
+  /api/v1/security/validate-jwt:
+    post:
+      summary: Validate a JWT payload
+      responses:
+        '200':
+          description: Validation result
+  /api/v1/security/validate-api-key:
+    post:
+      summary: Validate an API key
+      responses:
+        '200':
+          description: Validation result
+  /api/v1/security/validate-signing-key:
+    post:
+      summary: Validate a signing key
+      responses:
+        '200':
+          description: Validation result
+  /api/v1/security/headers:
+    get:
+      summary: Get recommended security headers
+      responses:
+        '200':
+          description: Security headers

@@ -1,0 +1,35 @@
+openapi: 3.0.3
+info:
+  title: Performance API
+  version: 1.0.0
+paths:
+  /health:
+    get:
+      summary: Health check
+      responses:
+        '200':
+          description: Service is healthy
+  /api/v1/performance/metrics:
+    get:
+      summary: Get API performance metrics
+      responses:
+        '200':
+          description: Metrics payload
+  /api/v1/performance/benchmark:
+    post:
+      summary: Create a performance benchmark
+      responses:
+        '200':
+          description: Benchmark result
+  /api/v1/performance/cache:
+    post:
+      summary: Check cache hit or miss
+      responses:
+        '200':
+          description: Cache result
+  /api/v1/performance/sla:
+    get:
+      summary: Evaluate SLA compliance
+      responses:
+        '200':
+          description: SLA evaluation

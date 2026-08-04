@@ -1,0 +1,83 @@
+openapi: 3.0.3
+info:
+  title: AfriWallet Disaster Recovery API
+  version: 1.0.0
+paths:
+  /health:
+    get:
+      summary: Health check
+      responses:
+        '200':
+          description: Service healthy
+  /recoveries/backups:
+    post:
+      summary: Create a backup
+      parameters:
+        - in: query
+          name: type
+          schema:
+            type: string
+        - in: query
+          name: encrypted
+          schema:
+            type: boolean
+        - in: query
+          name: immutable
+          schema:
+            type: boolean
+      responses:
+        '201':
+          description: Backup created
+  /recoveries/restore:
+    post:
+      summary: Restore a backup
+      parameters:
+        - in: query
+          name: backupId
+          schema:
+            type: string
+        - in: query
+          name: targetEnvironment
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Restore completed
+  /recoveries/pitr:
+    post:
+      summary: Request point-in-time recovery
+      parameters:
+        - in: query
+          name: backupId
+          schema:
+            type: string
+        - in: query
+          name: requestedAt
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: targetEnvironment
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Recovery requested
+  /recoveries/validate:
+    post:
+      summary: Validate ledger integrity
+      responses:
+        '200':
+          description: Validation result
+  /recoveries/outbox:
+    get:
+      summary: Replay outbox events
+      responses:
+        '200':
+          description: Outbox replay result
+  /recoveries/metrics:
+    get:
+      summary: Retrieve recovery metrics
+      responses:
+        '200':
+          description: Recovery metrics

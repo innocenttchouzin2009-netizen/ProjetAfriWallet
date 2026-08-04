@@ -1,0 +1,42 @@
+openapi: 3.0.3
+info:
+  title: Resilience API
+  version: 1.0.0
+paths:
+  /health:
+    get:
+      summary: Health check
+      responses:
+        '200':
+          description: Service is healthy
+  /api/v1/resilience/execute:
+    post:
+      summary: Execute a protected operation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                operation:
+                  type: string
+                payload:
+                  type: string
+                policy:
+                  type: object
+      responses:
+        '200':
+          description: Execution result
+  /api/v1/resilience/outbox:
+    post:
+      summary: Publish a message through outbox and inbox stores
+      responses:
+        '200':
+          description: Publication acknowledged
+  /api/v1/resilience/recover:
+    post:
+      summary: Send a message to the dead-letter queue
+      responses:
+        '200':
+          description: Recovery handled

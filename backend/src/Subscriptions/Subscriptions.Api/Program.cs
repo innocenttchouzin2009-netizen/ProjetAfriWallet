@@ -10,11 +10,15 @@ var providerRepository = new InMemorySubscriptionProviderRepository(SeedProvider
 var planRepository = new InMemorySubscriptionPlanRepository(SeedPlans(providerRepository));
 var offerRepository = new InMemorySubscriptionCatalogOfferRepository(SeedOffers());
 var catalogService = new SubscriptionProviderCatalogService(providerRepository, planRepository);
+var lifecycleRepository = new InMemoryUserSubscriptionRepository();
+var lifecycleService = new UserSubscriptionLifecycleService(lifecycleRepository);
 
 builder.Services.AddSingleton<ISubscriptionProviderRepository>(providerRepository);
 builder.Services.AddSingleton<ISubscriptionPlanRepository>(planRepository);
 builder.Services.AddSingleton(offerRepository);
 builder.Services.AddSingleton(catalogService);
+builder.Services.AddSingleton<IUserSubscriptionRepository>(lifecycleRepository);
+builder.Services.AddSingleton(lifecycleService);
 
 var app = builder.Build();
 
@@ -72,6 +76,62 @@ app.MapGet("/api/v1/subscriptions/catalog/{offerId}", (string offerId, InMemoryS
     return offer is null
         ? Results.NotFound(new { code = "OFFER_NOT_FOUND", message = "Offer not found." })
         : Results.Ok(MapOffer(offer));
+});
+
+app.MapPost("/api/v1/subscriptions/lifecycle", (CreateUserSubscriptionRequest request, UserSubscriptionLifecycleService service) =>
+{
+    var subscription = service.Create(request);
+    return Results.Created($"/api/v1/subscriptions/lifecycle/{subscription.SubscriptionId}", MapLifecycle(subscription));
+});
+
+app.MapGet("/api/v1/subscriptions/lifecycle/{subscriptionId}", (string subscriptionId, IUserSubscriptionRepository repository) =>
+{
+    var subscription = repository.GetById(subscriptionId);
+    return subscription is null
+        ? Results.NotFound(new { code = "SUBSCRIPTION_NOT_FOUND", message = "Subscription not found." })
+        : Results.Ok(MapLifecycle(subscription));
+});
+
+app.MapPost("/api/v1/subscriptions/lifecycle/{subscriptionId}/pending-payment", (string subscriptionId, UserSubscriptionLifecycleService service) =>
+{
+    var subscription = service.MarkPendingPayment(subscriptionId);
+    return Results.Ok(MapLifecycle(subscription));
+});
+
+app.MapPost("/api/v1/subscriptions/lifecycle/{subscriptionId}/activate", (string subscriptionId, UserSubscriptionLifecycleService service) =>
+{
+    var subscription = service.Activate(subscriptionId);
+    return Results.Ok(MapLifecycle(subscription));
+});
+
+app.MapPost("/api/v1/subscriptions/lifecycle/{subscriptionId}/suspend", (string subscriptionId, UserSubscriptionLifecycleService service) =>
+{
+    var subscription = service.Suspend(subscriptionId);
+    return Results.Ok(MapLifecycle(subscription));
+});
+
+app.MapPost("/api/v1/subscriptions/lifecycle/{subscriptionId}/resume", (string subscriptionId, UserSubscriptionLifecycleService service) =>
+{
+    var subscription = service.Resume(subscriptionId);
+    return Results.Ok(MapLifecycle(subscription));
+});
+
+app.MapPost("/api/v1/subscriptions/lifecycle/{subscriptionId}/renew", (string subscriptionId, UserSubscriptionLifecycleService service) =>
+{
+    var subscription = service.Renew(subscriptionId);
+    return Results.Ok(MapLifecycle(subscription));
+});
+
+app.MapPost("/api/v1/subscriptions/lifecycle/{subscriptionId}/cancel", (string subscriptionId, UserSubscriptionLifecycleService service) =>
+{
+    var subscription = service.Cancel(subscriptionId);
+    return Results.Ok(MapLifecycle(subscription));
+});
+
+app.MapPost("/api/v1/subscriptions/lifecycle/{subscriptionId}/expire", (string subscriptionId, UserSubscriptionLifecycleService service) =>
+{
+    var subscription = service.Expire(subscriptionId);
+    return Results.Ok(MapLifecycle(subscription));
 });
 
 app.Run();
@@ -260,3 +320,22 @@ static SubscriptionCatalogOfferDto MapOffer(SubscriptionCatalogOffer offer) => n
     offer.IsNew,
     offer.CreatedAt,
     offer.UpdatedAt);
+
+static UserSubscriptionDto MapLifecycle(UserSubscription subscription) => new(
+    subscription.SubscriptionId,
+    subscription.UserId,
+    subscription.ProviderId,
+    subscription.PlanId,
+    subscription.OfferId,
+    subscription.Currency,
+    subscription.AmountMinor,
+    subscription.BillingCycle,
+    subscription.GracePeriodDays,
+    subscription.Status.ToString(),
+    subscription.CreatedAt,
+    subscription.UpdatedAt,
+    subscription.StartedAt,
+    subscription.EndedAt,
+    subscription.RenewalAt,
+    subscription.LastPaymentAt,
+    subscription.History.Select(h => $"{h.Status}:{h.Reason ?? ""}").ToList());

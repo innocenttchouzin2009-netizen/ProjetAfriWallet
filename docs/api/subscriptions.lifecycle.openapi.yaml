@@ -1,0 +1,46 @@
+openapi: 3.0.3
+info:
+  title: AfriWallet Subscription Lifecycle API
+  version: 0.1.0
+paths:
+  /api/v1/subscriptions/lifecycle:
+    post:
+      summary: Create a subscription lifecycle
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userId:
+                  type: string
+                providerId:
+                  type: string
+                planId:
+                  type: string
+                offerId:
+                  type: string
+                currency:
+                  type: string
+                amountMinor:
+                  type: integer
+                billingCycle:
+                  type: string
+                gracePeriodDays:
+                  type: integer
+      responses:
+        '201':
+          description: Subscription created
+  /api/v1/subscriptions/lifecycle/{subscriptionId}/activate:
+    post:
+      summary: Activate a subscription
+      parameters:
+        - in: path
+          name: subscriptionId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Subscription activated

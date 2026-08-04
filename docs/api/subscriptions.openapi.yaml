@@ -1,0 +1,87 @@
+openapi: 3.0.3
+info:
+  title: AfriWallet Subscriptions API
+  version: 0.1.0
+paths:
+  /api/v1/subscriptions/providers:
+    get:
+      summary: List providers
+      parameters:
+        - in: query
+          name: country
+          schema:
+            type: string
+        - in: query
+          name: currency
+          schema:
+            type: string
+        - in: query
+          name: q
+          schema:
+            type: string
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: pageSize
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Provider list response
+  /api/v1/subscriptions/catalog:
+    get:
+      summary: List catalog offers
+      parameters:
+        - in: query
+          name: country
+          schema:
+            type: string
+        - in: query
+          name: currency
+          schema:
+            type: string
+        - in: query
+          name: category
+          schema:
+            type: string
+        - in: query
+          name: featured
+          schema:
+            type: boolean
+        - in: query
+          name: q
+          schema:
+            type: string
+        - in: query
+          name: sort
+          schema:
+            type: string
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: pageSize
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Catalog offer response
+  /api/v1/subscriptions/catalog/{offerId}:
+    get:
+      summary: Retrieve a catalog offer
+      parameters:
+        - in: path
+          name: offerId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Catalog offer detail

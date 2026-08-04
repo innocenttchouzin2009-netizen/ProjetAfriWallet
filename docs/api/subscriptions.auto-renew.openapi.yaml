@@ -1,0 +1,35 @@
+openapi: 3.0.3
+info:
+  title: AfriWallet Subscription Auto-Renew API
+  version: 0.1.0
+paths:
+  /internal/subscriptions/auto-renew/jobs:
+    post:
+      summary: Schedule an auto-renew job
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                subscriptionId:
+                  type: string
+                scheduledFor:
+                  type: string
+                  format: date-time
+      responses:
+        '201':
+          description: Auto-renew job created
+  /internal/subscriptions/auto-renew/process:
+    post:
+      summary: Process due auto-renew jobs
+      parameters:
+        - in: query
+          name: asOf
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Auto-renew jobs processed

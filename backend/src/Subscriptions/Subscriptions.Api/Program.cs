@@ -14,6 +14,9 @@ var lifecycleRepository = new InMemoryUserSubscriptionRepository();
 var lifecycleService = new UserSubscriptionLifecycleService(lifecycleRepository);
 var invoiceRepository = new InMemorySubscriptionInvoiceRepository();
 var billingService = new SubscriptionBillingService(invoiceRepository, new FakePaymentIntentGateway());
+var jobRepository = new InMemoryAutoRenewJobRepository();
+var notificationGateway = new FakeNotificationGateway();
+var autoRenewService = new AutoRenewService(jobRepository, billingService, lifecycleService, notificationGateway);
 
 builder.Services.AddSingleton<ISubscriptionProviderRepository>(providerRepository);
 builder.Services.AddSingleton<ISubscriptionPlanRepository>(planRepository);
@@ -23,6 +26,8 @@ builder.Services.AddSingleton<IUserSubscriptionRepository>(lifecycleRepository);
 builder.Services.AddSingleton(lifecycleService);
 builder.Services.AddSingleton<ISubscriptionInvoiceRepository>(invoiceRepository);
 builder.Services.AddSingleton(billingService);
+builder.Services.AddSingleton<IAutoRenewJobRepository>(jobRepository);
+builder.Services.AddSingleton(autoRenewService);
 
 var app = builder.Build();
 
@@ -156,6 +161,18 @@ app.MapPost("/api/v1/subscriptions/invoices/{invoiceId}/pay", (string invoiceId,
 {
     var attempt = service.ProcessPayment(invoiceId);
     return Results.Ok(new { invoiceId, attempt.Status, attempt.GatewayReference });
+});
+
+app.MapPost("/internal/subscriptions/auto-renew/jobs", (ScheduleAutoRenewRequest request, AutoRenewService service) =>
+{
+    var job = service.ScheduleRenewal(request);
+    return Results.Created($"/internal/subscriptions/auto-renew/jobs/{job.JobId}", MapAutoRenew(job));
+});
+
+app.MapPost("/internal/subscriptions/auto-renew/process", (DateTimeOffset asOf, AutoRenewService service) =>
+{
+    var jobs = service.ProcessDueRenewals(asOf);
+    return Results.Ok(jobs.Select(MapAutoRenew));
 });
 
 app.Run();
@@ -380,3 +397,15 @@ static SubscriptionInvoiceDto MapInvoice(SubscriptionInvoice invoice) => new(
     invoice.RetryCount,
     invoice.MaxRetries,
     invoice.Attempts.Select(a => $"{a.Status}:{a.GatewayReference ?? ""}").ToList());
+
+static AutoRenewJobDto MapAutoRenew(AutoRenewJob job) => new(
+    job.JobId,
+    job.SubscriptionId,
+    job.ScheduledFor,
+    job.Status.ToString(),
+    job.RetryCount,
+    job.MaxRetries,
+    job.LastError,
+    job.CreatedAt,
+    job.StartedAt,
+    job.CompletedAt);

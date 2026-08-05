@@ -1,0 +1,124 @@
+openapi: 3.0.3
+info:
+  title: AfriWallet Merchant Registry API
+  version: 0.9.1
+paths:
+  /health/live:
+    get:
+      summary: Health check
+      responses:
+        '200':
+          description: Service is alive
+  /api/v1/merchants:
+    get:
+      summary: List merchants
+      responses:
+        '200':
+          description: Merchant list
+    post:
+      summary: Create merchant
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Merchant'
+      responses:
+        '201':
+          description: Merchant created
+  /api/v1/merchants/{merchantId}:
+    get:
+      summary: Get merchant
+      parameters:
+        - name: merchantId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Merchant found
+    put:
+      summary: Update merchant
+      parameters:
+        - name: merchantId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Merchant'
+      responses:
+        '200':
+          description: Merchant updated
+  /api/v1/merchants/{merchantId}/activate:
+    post:
+      summary: Activate merchant
+      parameters:
+        - name: merchantId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Merchant activated
+  /api/v1/merchants/{merchantId}/suspend:
+    post:
+      summary: Suspend merchant
+      parameters:
+        - name: merchantId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Merchant suspended
+  /api/v1/merchants/{merchantId}/close:
+    post:
+      summary: Close merchant
+      parameters:
+        - name: merchantId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Merchant closed
+components:
+  schemas:
+    Merchant:
+      type: object
+      properties:
+        merchantId:
+          type: string
+        merchantCode:
+          type: string
+        businessName:
+          type: string
+        displayName:
+          type: string
+        merchantType:
+          type: string
+        merchantCategoryCode:
+          type: string
+        countryCode:
+          type: string
+        baseCurrency:
+          type: string
+        settlementCurrency:
+          type: string
+        businessRegistrationNumber:
+          type: string
+        taxIdentifier:
+          type: string
+        status:
+          type: string
+        walletId:
+          type: string

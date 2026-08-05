@@ -1,0 +1,17 @@
+{
+  "deliveryId": "AFW-DLV-0009.1",
+  "name": "Merchant Registry",
+  "version": "0.9.1",
+  "status": "validated",
+  "artifacts": [
+    "adr/ADR-0158-merchant-registry-architecture.md",
+    "adr/ADR-0159-merchant-identity-capabilities.md",
+    "AFW-DLV-0009.1-prd.md",
+    "release-notes-v0.9.1.md",
+    "merchant-registry.openapi.yaml",
+    "operations-runbook.md",
+    "integration-guide.md",
+    "qa-checklist-v0.9.1.md",
+    "validation-report.md"
+  ]
+}

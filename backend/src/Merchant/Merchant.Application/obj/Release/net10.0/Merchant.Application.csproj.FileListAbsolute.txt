@@ -1,0 +1,16 @@
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Merchant\Merchant.Application\obj\Release\net10.0\Merchant.Application.csproj.AssemblyReference.cache
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Merchant\Merchant.Application\obj\Release\net10.0\Merchant.Application.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Merchant\Merchant.Application\obj\Release\net10.0\Merchant.Application.AssemblyInfoInputs.cache
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Merchant\Merchant.Application\obj\Release\net10.0\Merchant.Application.AssemblyInfo.cs
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Merchant\Merchant.Application\obj\Release\net10.0\Merchant.Application.csproj.CoreCompileInputs.cache
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Merchant\Merchant.Application\obj\Release\net10.0\Merchant.Application.sourcelink.json
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Merchant\Merchant.Application\bin\Release\net10.0\Merchant.Application.deps.json
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Merchant\Merchant.Application\bin\Release\net10.0\Merchant.Application.dll
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Merchant\Merchant.Application\bin\Release\net10.0\Merchant.Application.pdb
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Merchant\Merchant.Application\bin\Release\net10.0\Merchant.Domain.dll
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Merchant\Merchant.Application\bin\Release\net10.0\Merchant.Domain.pdb
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Merchant\Merchant.Application\obj\Release\net10.0\Merchant.B490F13F.Up2Date
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Merchant\Merchant.Application\obj\Release\net10.0\Merchant.Application.dll
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Merchant\Merchant.Application\obj\Release\net10.0\refint\Merchant.Application.dll
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Merchant\Merchant.Application\obj\Release\net10.0\Merchant.Application.pdb
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Merchant\Merchant.Application\obj\Release\net10.0\ref\Merchant.Application.dll

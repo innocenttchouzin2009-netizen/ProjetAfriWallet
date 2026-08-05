@@ -11,11 +11,11 @@ public sealed class CardAuthorizationService
 
     private static readonly Dictionary<string, long> WalletBalances = new(StringComparer.OrdinalIgnoreCase)
     {
-        ["wallet-001"] = 1_000_000,
-        ["wallet-002"] = 1_000_000,
-        ["wallet-003"] = 1_000_000,
-        ["wallet-004"] = 1_000_000,
-        ["wallet-005"] = 1_000_000
+        ["wallet-001"] = 100_000,
+        ["wallet-002"] = 100_000,
+        ["wallet-003"] = 100_000,
+        ["wallet-004"] = 100_000,
+        ["wallet-005"] = 100_000
     };
 
     public CardAuthorizationService(

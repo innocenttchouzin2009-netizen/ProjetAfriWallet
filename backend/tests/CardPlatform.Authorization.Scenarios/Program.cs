@@ -39,7 +39,7 @@ var insufficientFunds = await authorizationService.AuthorizeAsync(new CardAuthor
 {
     CardId = card.VirtualCardId,
     WalletId = "wallet-001",
-    AmountMinor = 10_000_000_000,
+    AmountMinor = 150_000,
     CurrencyCode = "XAF",
     MerchantCategoryCode = "5812",
     MerchantCountry = "CM",

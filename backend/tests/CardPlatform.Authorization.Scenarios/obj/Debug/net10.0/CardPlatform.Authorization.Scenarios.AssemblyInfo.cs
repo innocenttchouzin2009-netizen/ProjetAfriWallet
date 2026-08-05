@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("CardPlatform.Authorization.Scenarios")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+2ae0d755e6fac305b32abd19e681ffe2d5b6bd44")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+fb27f0f83178a97b0d4558bcca57d08b09f6bad4")]
 [assembly: System.Reflection.AssemblyProductAttribute("CardPlatform.Authorization.Scenarios")]
 [assembly: System.Reflection.AssemblyTitleAttribute("CardPlatform.Authorization.Scenarios")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

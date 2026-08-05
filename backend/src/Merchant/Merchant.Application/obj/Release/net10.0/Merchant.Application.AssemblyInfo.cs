@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Merchant.Application")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+cebad74a2bbbb286d59745e36f7bca0e3df5509d")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e022e82097481d327138467e1cea047466d96ab0")]
 [assembly: System.Reflection.AssemblyProductAttribute("Merchant.Application")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Merchant.Application")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

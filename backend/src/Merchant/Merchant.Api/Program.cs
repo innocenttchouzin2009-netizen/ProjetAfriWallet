@@ -115,6 +115,36 @@ app.MapPost("/api/v1/settlements", async (MerchantDomain.MerchantSettlement sett
     return Results.Created($"/api/v1/settlements/{created.SettlementId}", created);
 });
 
+app.MapPost("/api/v1/merchant/settlements", (MerchantDomain.SettlementInstruction instruction, SettlementService service) =>
+{
+    var created = service.CreateInstruction(instruction);
+    return Results.Created($"/api/v1/merchant/settlements/{created.SettlementId}", created);
+});
+
+app.MapGet("/api/v1/merchant/settlements", (SettlementService service) =>
+{
+    var settlements = service.ListInstructions();
+    return Results.Ok(settlements);
+});
+
+app.MapGet("/api/v1/merchant/settlements/{settlementId}", (string settlementId, SettlementService service) =>
+{
+    var settlement = service.GetInstruction(settlementId);
+    return settlement is null ? Results.NotFound() : Results.Ok(settlement);
+});
+
+app.MapPost("/api/v1/merchant/settlements/{settlementId}/execute", (string settlementId, MerchantDomain.SettlementMethod method, SettlementService service) =>
+{
+    var settlement = service.ExecuteInstruction(settlementId, method);
+    return Results.Ok(settlement);
+});
+
+app.MapPost("/api/v1/merchant/settlements/{settlementId}/cancel", (string settlementId, SettlementService service) =>
+{
+    var settlement = service.FailInstruction(settlementId, "Cancelled by request");
+    return Results.Ok(settlement);
+});
+
 app.MapPost("/api/v1/merchant/checkout", (MerchantDomain.PosCheckoutRequest request, PosService service) =>
 {
     var checkout = service.CreateCheckout(request);

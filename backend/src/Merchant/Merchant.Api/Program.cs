@@ -7,6 +7,7 @@ builder.Services.AddSingleton<QrPaymentService>();
 builder.Services.AddSingleton<SettlementService>();
 builder.Services.AddSingleton<MerchantOnboardingService>();
 builder.Services.AddSingleton<MerchantOnboardingValidator>();
+builder.Services.AddSingleton<PosService>();
 
 var app = builder.Build();
 
@@ -72,6 +73,36 @@ app.MapPost("/api/v1/qr-payments", async (MerchantDomain.QrPayment payment, QrPa
     return Results.Created($"/api/v1/qr-payments/{created.PaymentId}", created);
 });
 
+app.MapPost("/api/v1/qr-payments/generate", (GenerateQrCommand command, QrPaymentService service) =>
+{
+    var payment = service.GenerateQr(command);
+    return Results.Created($"/api/v1/qr-payments/{payment.PaymentId}", payment);
+});
+
+app.MapPost("/api/v1/qr-payments/decode", (string code, QrPaymentService service) =>
+{
+    var payload = service.DecodeQr(code);
+    return Results.Ok(payload);
+});
+
+app.MapPost("/api/v1/qr-payments/initiate", (InitiateQrPaymentCommand command, QrPaymentService service) =>
+{
+    var payment = service.InitiatePayment(command);
+    return Results.Ok(payment);
+});
+
+app.MapPost("/api/v1/qr-payments/receipts", (string transferIntentId, QrPaymentService service) =>
+{
+    var receipt = service.GenerateReceipt(transferIntentId);
+    return Results.Ok(receipt);
+});
+
+app.MapGet("/api/v1/qr-payments/{transferIntentId}/timeline", (string transferIntentId, QrPaymentService service) =>
+{
+    var timeline = service.GetTimeline(transferIntentId);
+    return Results.Ok(new { transferIntentId, items = timeline });
+});
+
 app.MapGet("/api/v1/settlements", async (SettlementService service, CancellationToken cancellationToken) =>
 {
     var settlements = await service.GetAllAsync(cancellationToken);
@@ -82,6 +113,48 @@ app.MapPost("/api/v1/settlements", async (MerchantDomain.MerchantSettlement sett
 {
     var created = await service.CreateAsync(settlement, cancellationToken);
     return Results.Created($"/api/v1/settlements/{created.SettlementId}", created);
+});
+
+app.MapPost("/api/v1/merchant/checkout", (MerchantDomain.PosCheckoutRequest request, PosService service) =>
+{
+    var checkout = service.CreateCheckout(request);
+    return Results.Created($"/api/v1/merchant/transactions/{checkout.TransactionId}", checkout);
+});
+
+app.MapPost("/api/v1/merchant/pos/pay", (MerchantDomain.PosPaymentRequest request, PosService service) =>
+{
+    var payment = service.InitiatePayment(request);
+    return Results.Created($"/api/v1/merchant/transactions/{payment.TransactionId}", payment);
+});
+
+app.MapPost("/api/v1/merchant/pos", (MerchantDomain.PosTerminal terminal, PosService service) =>
+{
+    var registered = service.RegisterTerminal(terminal);
+    return Results.Created($"/api/v1/merchant/pos/{registered.TerminalId}", registered);
+});
+
+app.MapGet("/api/v1/merchant/pos/{terminalId}", (string terminalId, PosService service) =>
+{
+    var terminal = service.GetTerminal(terminalId);
+    return Results.Ok(terminal);
+});
+
+app.MapPost("/api/v1/merchant/pos/{terminalId}/heartbeat", (string terminalId, PosService service) =>
+{
+    var terminal = service.Heartbeat(terminalId);
+    return Results.Ok(terminal);
+});
+
+app.MapGet("/api/v1/merchant/transactions", (PosService service) =>
+{
+    var transactions = service.GetTransactions();
+    return Results.Ok(transactions);
+});
+
+app.MapGet("/api/v1/merchant/receipts/{receiptId}", (string receiptId, PosService service) =>
+{
+    var receipt = service.GetReceipt(receiptId);
+    return receipt is null ? Results.NotFound() : Results.Ok(receipt);
 });
 
 app.MapPost("/api/v1/merchant-onboarding", (string merchantId, string businessName, string legalName, string businessType, string registrationNumber, string taxIdentifier, MerchantOnboardingService service) =>

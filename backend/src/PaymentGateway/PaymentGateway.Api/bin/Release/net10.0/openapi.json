@@ -1,0 +1,32 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Payment Gateway API",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api/v1/payment-executions": {
+      "post": {
+        "summary": "Create a transfer execution"
+      },
+      "get": {
+        "summary": "List executions"
+      }
+    },
+    "/api/v1/payment-executions/{executionId}": {
+      "get": {
+        "summary": "Get execution by id"
+      }
+    },
+    "/api/v1/payment-executions/{executionId}/retry": {
+      "post": {
+        "summary": "Retry an execution"
+      }
+    },
+    "/api/v1/payment-executions/{executionId}/cancel": {
+      "post": {
+        "summary": "Cancel an execution"
+      }
+    }
+  }
+}

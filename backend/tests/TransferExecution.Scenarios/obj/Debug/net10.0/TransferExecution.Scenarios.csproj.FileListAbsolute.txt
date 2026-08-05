@@ -1,0 +1,15 @@
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\tests\TransferExecution.Scenarios\obj\Debug\net10.0\TransferExecution.Scenarios.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\tests\TransferExecution.Scenarios\obj\Debug\net10.0\TransferExecution.Scenarios.AssemblyInfoInputs.cache
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\tests\TransferExecution.Scenarios\obj\Debug\net10.0\TransferExecution.Scenarios.AssemblyInfo.cs
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\tests\TransferExecution.Scenarios\obj\Debug\net10.0\TransferExecution.Scenarios.csproj.CoreCompileInputs.cache
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\tests\TransferExecution.Scenarios\obj\Debug\net10.0\TransferExecution.Scenarios.sourcelink.json
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\tests\TransferExecution.Scenarios\bin\Debug\net10.0\TransferExecution.Scenarios.exe
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\tests\TransferExecution.Scenarios\bin\Debug\net10.0\TransferExecution.Scenarios.deps.json
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\tests\TransferExecution.Scenarios\bin\Debug\net10.0\TransferExecution.Scenarios.runtimeconfig.json
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\tests\TransferExecution.Scenarios\bin\Debug\net10.0\TransferExecution.Scenarios.dll
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\tests\TransferExecution.Scenarios\bin\Debug\net10.0\TransferExecution.Scenarios.pdb
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\tests\TransferExecution.Scenarios\obj\Debug\net10.0\TransferExecution.Scenarios.dll
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\tests\TransferExecution.Scenarios\obj\Debug\net10.0\refint\TransferExecution.Scenarios.dll
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\tests\TransferExecution.Scenarios\obj\Debug\net10.0\TransferExecution.Scenarios.pdb
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\tests\TransferExecution.Scenarios\obj\Debug\net10.0\TransferExecution.Scenarios.genruntimeconfig.cache
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\tests\TransferExecution.Scenarios\obj\Debug\net10.0\ref\TransferExecution.Scenarios.dll

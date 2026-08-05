@@ -1,0 +1,12 @@
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Banking\Banking.Domain\bin\Debug\net10.0\Banking.Domain.deps.json
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Banking\Banking.Domain\bin\Debug\net10.0\Banking.Domain.dll
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Banking\Banking.Domain\bin\Debug\net10.0\Banking.Domain.pdb
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Banking\Banking.Domain\obj\Debug\net10.0\Banking.Domain.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Banking\Banking.Domain\obj\Debug\net10.0\Banking.Domain.AssemblyInfoInputs.cache
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Banking\Banking.Domain\obj\Debug\net10.0\Banking.Domain.AssemblyInfo.cs
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Banking\Banking.Domain\obj\Debug\net10.0\Banking.Domain.csproj.CoreCompileInputs.cache
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Banking\Banking.Domain\obj\Debug\net10.0\Banking.Domain.sourcelink.json
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Banking\Banking.Domain\obj\Debug\net10.0\Banking.Domain.dll
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Banking\Banking.Domain\obj\Debug\net10.0\refint\Banking.Domain.dll
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Banking\Banking.Domain\obj\Debug\net10.0\Banking.Domain.pdb
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Banking\Banking.Domain\obj\Debug\net10.0\ref\Banking.Domain.dll

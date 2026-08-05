@@ -1,0 +1,16 @@
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Banking\Banking.Application\bin\Release\net10.0\Banking.Application.deps.json
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Banking\Banking.Application\bin\Release\net10.0\Banking.Application.dll
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Banking\Banking.Application\bin\Release\net10.0\Banking.Application.pdb
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Banking\Banking.Application\bin\Release\net10.0\Banking.Domain.dll
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Banking\Banking.Application\bin\Release\net10.0\Banking.Domain.pdb
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Banking\Banking.Application\obj\Release\net10.0\Banking.Application.csproj.AssemblyReference.cache
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Banking\Banking.Application\obj\Release\net10.0\Banking.Application.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Banking\Banking.Application\obj\Release\net10.0\Banking.Application.AssemblyInfoInputs.cache
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Banking\Banking.Application\obj\Release\net10.0\Banking.Application.AssemblyInfo.cs
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Banking\Banking.Application\obj\Release\net10.0\Banking.Application.csproj.CoreCompileInputs.cache
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Banking\Banking.Application\obj\Release\net10.0\Banking.Application.sourcelink.json
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Banking\Banking.Application\obj\Release\net10.0\Banking..9061490F.Up2Date
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Banking\Banking.Application\obj\Release\net10.0\Banking.Application.dll
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Banking\Banking.Application\obj\Release\net10.0\refint\Banking.Application.dll
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Banking\Banking.Application\obj\Release\net10.0\Banking.Application.pdb
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Banking\Banking.Application\obj\Release\net10.0\ref\Banking.Application.dll

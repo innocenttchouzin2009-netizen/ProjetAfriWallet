@@ -1,0 +1,41 @@
+openapi: 3.0.3
+info:
+  title: Card Platform Authorization API
+  version: 1.0.0
+paths:
+  /api/v1/cards/authorize:
+    post:
+      summary: Authorize a card transaction
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Authorization created
+  /api/v1/cards/preauthorize:
+    post:
+      summary: Pre-authorize a card transaction
+      responses:
+        '200':
+          description: Authorization created
+  /api/v1/cards/reverse:
+    post:
+      summary: Reverse an authorization
+      responses:
+        '200':
+          description: Authorization reversed
+  /api/v1/cards/authorizations/{authorizationId}:
+    get:
+      summary: Retrieve an authorization
+      parameters:
+        - in: path
+          name: authorizationId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Authorization details

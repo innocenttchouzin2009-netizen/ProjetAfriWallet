@@ -15,6 +15,8 @@ builder.Services.AddSingleton<ITokenRepository, InMemoryTokenRepository>();
 builder.Services.AddSingleton<TokenizationService>();
 builder.Services.AddSingleton<TokenVault>();
 builder.Services.AddSingleton<TokenValidator>();
+builder.Services.AddSingleton<ICardLifecycleRepository, InMemoryCardRepository>();
+builder.Services.AddSingleton<CardLifecycleService>();
 
 var app = builder.Build();
 
@@ -61,30 +63,6 @@ app.MapGet("/api/v1/cards/{cardId}", async (string cardId, VirtualCardService se
 {
     var card = await service.GetByIdAsync(cardId, cancellationToken);
     return card is null ? Results.NotFound() : Results.Ok(card);
-});
-
-app.MapPost("/api/v1/cards/{cardId}/activate", async (string cardId, VirtualCardService service, CancellationToken cancellationToken) =>
-{
-    var card = await service.ActivateAsync(cardId, cancellationToken);
-    return card is null ? Results.BadRequest(new { message = "invalid transition" }) : Results.Ok(card);
-});
-
-app.MapPost("/api/v1/cards/{cardId}/freeze", async (string cardId, VirtualCardService service, CancellationToken cancellationToken) =>
-{
-    var card = await service.FreezeAsync(cardId, cancellationToken);
-    return card is null ? Results.BadRequest(new { message = "invalid transition" }) : Results.Ok(card);
-});
-
-app.MapPost("/api/v1/cards/{cardId}/unfreeze", async (string cardId, VirtualCardService service, CancellationToken cancellationToken) =>
-{
-    var card = await service.UnfreezeAsync(cardId, cancellationToken);
-    return card is null ? Results.BadRequest(new { message = "invalid transition" }) : Results.Ok(card);
-});
-
-app.MapPost("/api/v1/cards/{cardId}/close", async (string cardId, VirtualCardService service, CancellationToken cancellationToken) =>
-{
-    var card = await service.CloseAsync(cardId, cancellationToken);
-    return card is null ? Results.BadRequest(new { message = "invalid transition" }) : Results.Ok(card);
 });
 
 app.MapPut("/api/v1/cards/{cardId}/controls", async (string cardId, bool ecommerceEnabled, bool contactlessEnabled, bool internationalEnabled, VirtualCardService service, CancellationToken cancellationToken) =>
@@ -170,6 +148,60 @@ app.MapPost("/api/v1/tokens/{tokenId}/rotate", async (string tokenId, Tokenizati
 {
     var token = await service.RotateAsync(tokenId, cancellationToken);
     return token is null ? Results.BadRequest() : Results.Ok(token);
+});
+
+app.MapPost("/api/v1/cards/{cardId}/activate", async (string cardId, CardLifecycleService service, CancellationToken cancellationToken) =>
+{
+    var card = await service.ActivateAsync(cardId, cancellationToken);
+    return card is null ? Results.BadRequest() : Results.Ok(card);
+});
+
+app.MapPost("/api/v1/cards/{cardId}/freeze", async (string cardId, CardLifecycleService service, CancellationToken cancellationToken) =>
+{
+    var card = await service.FreezeAsync(cardId, cancellationToken);
+    return card is null ? Results.BadRequest() : Results.Ok(card);
+});
+
+app.MapPost("/api/v1/cards/{cardId}/unfreeze", async (string cardId, CardLifecycleService service, CancellationToken cancellationToken) =>
+{
+    var card = await service.UnfreezeAsync(cardId, cancellationToken);
+    return card is null ? Results.BadRequest() : Results.Ok(card);
+});
+
+app.MapPost("/api/v1/cards/{cardId}/suspend", async (string cardId, CardLifecycleService service, CancellationToken cancellationToken) =>
+{
+    var card = await service.SuspendAsync(cardId, cancellationToken);
+    return card is null ? Results.BadRequest() : Results.Ok(card);
+});
+
+app.MapPost("/api/v1/cards/{cardId}/resume", async (string cardId, CardLifecycleService service, CancellationToken cancellationToken) =>
+{
+    var card = await service.ResumeAsync(cardId, cancellationToken);
+    return card is null ? Results.BadRequest() : Results.Ok(card);
+});
+
+app.MapPost("/api/v1/cards/{cardId}/replace", async (string cardId, CardLifecycleService service, CancellationToken cancellationToken) =>
+{
+    var card = await service.ReplaceAsync(cardId, cancellationToken);
+    return card is null ? Results.BadRequest() : Results.Ok(card);
+});
+
+app.MapPost("/api/v1/cards/{cardId}/expire", async (string cardId, CardLifecycleService service, CancellationToken cancellationToken) =>
+{
+    var card = await service.ExpireAsync(cardId, cancellationToken);
+    return card is null ? Results.BadRequest() : Results.Ok(card);
+});
+
+app.MapPost("/api/v1/cards/{cardId}/close", async (string cardId, CardLifecycleService service, CancellationToken cancellationToken) =>
+{
+    var card = await service.CloseAsync(cardId, cancellationToken);
+    return card is null ? Results.BadRequest() : Results.Ok(card);
+});
+
+app.MapGet("/api/v1/cards/{cardId}/lifecycle", async (string cardId, CardLifecycleService service, CancellationToken cancellationToken) =>
+{
+    var card = await service.GetByIdAsync(cardId, cancellationToken);
+    return card is null ? Results.NotFound() : Results.Ok(card);
 });
 
 app.Run();

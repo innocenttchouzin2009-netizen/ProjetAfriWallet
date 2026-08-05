@@ -1,0 +1,32 @@
+openapi: 3.0.3
+info:
+  title: Card Platform Lifecycle API
+  version: 1.0.0
+paths:
+  /api/v1/cards/{cardId}/activate:
+    post:
+      summary: Activate a card
+  /api/v1/cards/{cardId}/freeze:
+    post:
+      summary: Freeze a card
+  /api/v1/cards/{cardId}/unfreeze:
+    post:
+      summary: Unfreeze a card
+  /api/v1/cards/{cardId}/suspend:
+    post:
+      summary: Suspend a card
+  /api/v1/cards/{cardId}/resume:
+    post:
+      summary: Resume a card
+  /api/v1/cards/{cardId}/replace:
+    post:
+      summary: Replace a card
+  /api/v1/cards/{cardId}/expire:
+    post:
+      summary: Expire a card
+  /api/v1/cards/{cardId}/close:
+    post:
+      summary: Close a card
+  /api/v1/cards/{cardId}/lifecycle:
+    get:
+      summary: Retrieve card lifecycle state

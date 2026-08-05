@@ -1,0 +1,22 @@
+openapi: 3.0.3
+info:
+  title: Card Platform Tokenization API
+  version: 1.0.0
+paths:
+  /api/v1/cards/{cardId}/tokens:
+    post:
+      summary: Create a card token
+    get:
+      summary: List card tokens
+  /api/v1/tokens/{tokenId}/suspend:
+    post:
+      summary: Suspend a token
+  /api/v1/tokens/{tokenId}/resume:
+    post:
+      summary: Resume a token
+  /api/v1/tokens/{tokenId}/revoke:
+    post:
+      summary: Revoke a token
+  /api/v1/tokens/{tokenId}/rotate:
+    post:
+      summary: Rotate a token

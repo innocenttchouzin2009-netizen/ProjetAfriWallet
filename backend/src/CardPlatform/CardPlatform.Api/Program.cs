@@ -11,6 +11,10 @@ builder.Services.AddSingleton<IVirtualCardRepository, InMemoryVirtualCardReposit
 builder.Services.AddSingleton<VirtualCardService>();
 builder.Services.AddSingleton<ICardAuthorizationRepository, InMemoryAuthorizationRepository>();
 builder.Services.AddSingleton<CardAuthorizationService>();
+builder.Services.AddSingleton<ITokenRepository, InMemoryTokenRepository>();
+builder.Services.AddSingleton<TokenizationService>();
+builder.Services.AddSingleton<TokenVault>();
+builder.Services.AddSingleton<TokenValidator>();
 
 var app = builder.Build();
 
@@ -123,6 +127,49 @@ app.MapGet("/api/v1/cards/authorizations/{authorizationId}", async (string autho
 {
     var authorization = await service.GetByIdAsync(authorizationId, cancellationToken);
     return authorization is null ? Results.NotFound() : Results.Ok(authorization);
+});
+
+app.MapPost("/api/v1/cards/{cardId}/tokens", async (string cardId, CardTokenRequest request, TokenizationService service, CancellationToken cancellationToken) =>
+{
+    var token = await service.CreateAsync(new CardTokenRequest
+    {
+        CardId = cardId,
+        OwnerAwidId = request.OwnerAwidId,
+        WalletId = request.WalletId,
+        Network = request.Network,
+        TokenType = request.TokenType
+    }, cancellationToken);
+    return token is null ? Results.BadRequest() : Results.Created($"/api/v1/tokens/{token.TokenId}", token);
+});
+
+app.MapGet("/api/v1/cards/{cardId}/tokens", async (string cardId, TokenizationService service, CancellationToken cancellationToken) =>
+{
+    var tokens = await service.GetTokensForCardAsync(cardId, cancellationToken);
+    return Results.Ok(tokens);
+});
+
+app.MapPost("/api/v1/tokens/{tokenId}/suspend", async (string tokenId, TokenizationService service, CancellationToken cancellationToken) =>
+{
+    var token = await service.SuspendAsync(tokenId, cancellationToken);
+    return token is null ? Results.BadRequest() : Results.Ok(token);
+});
+
+app.MapPost("/api/v1/tokens/{tokenId}/resume", async (string tokenId, TokenizationService service, CancellationToken cancellationToken) =>
+{
+    var token = await service.ResumeAsync(tokenId, cancellationToken);
+    return token is null ? Results.BadRequest() : Results.Ok(token);
+});
+
+app.MapPost("/api/v1/tokens/{tokenId}/revoke", async (string tokenId, TokenizationService service, CancellationToken cancellationToken) =>
+{
+    var token = await service.RevokeAsync(tokenId, cancellationToken);
+    return token is null ? Results.BadRequest() : Results.Ok(token);
+});
+
+app.MapPost("/api/v1/tokens/{tokenId}/rotate", async (string tokenId, TokenizationService service, CancellationToken cancellationToken) =>
+{
+    var token = await service.RotateAsync(tokenId, cancellationToken);
+    return token is null ? Results.BadRequest() : Results.Ok(token);
 });
 
 app.Run();

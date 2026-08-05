@@ -1,17 +1,17 @@
 {
-  "deliveryId": "AFW-DLV-0009.1",
-  "name": "Merchant Registry",
-  "version": "0.9.1",
+  "deliveryId": "AFW-DLV-0009.2",
+  "name": "Merchant Onboarding and KYC",
+  "version": "0.9.2",
   "status": "validated",
   "artifacts": [
-    "adr/ADR-0158-merchant-registry-architecture.md",
-    "adr/ADR-0159-merchant-identity-capabilities.md",
-    "AFW-DLV-0009.1-prd.md",
-    "release-notes-v0.9.1.md",
-    "merchant-registry.openapi.yaml",
+    "adr/ADR-0160-merchant-onboarding-architecture.md",
+    "adr/ADR-0161-merchant-kyc-workflow.md",
+    "AFW-DLV-0009.2-prd.md",
+    "merchant-onboarding.openapi.yaml",
+    "release-notes-v0.9.2.md",
     "operations-runbook.md",
     "integration-guide.md",
-    "qa-checklist-v0.9.1.md",
+    "qa-checklist-v0.9.2.md",
     "validation-report.md"
   ]
 }

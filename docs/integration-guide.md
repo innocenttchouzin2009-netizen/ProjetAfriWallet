@@ -1,14 +1,13 @@
-# Merchant Registry Integration Guide
+# Merchant Onboarding Integration Guide
 
 ## Overview
-This guide describes how downstream services and clients can integrate with the Merchant Registry.
+This guide describes how downstream services and clients can integrate with the merchant onboarding flow.
 
 ## API entry points
-- Merchant collection and detail endpoints under /api/v1/merchants
-- Lifecycle transitions under /api/v1/merchants/{merchantId}/activate, /suspend, and /close
-- QR payment and settlement scaffolding endpoints under /api/v1/qr-payments and /api/v1/settlements
+- Create onboarding state via /api/v1/merchant-onboarding
+- Complete the merchant profile via /api/v1/merchant-onboarding/{merchantId}
+- Submit and review the KYC case via /api/v1/merchant-onboarding/{merchantId}/submit and /api/v1/merchant-kyc/{merchantId}
 
-## Integration notes
-- Use the merchantId returned from creation to correlate future operations.
-- Preserve the merchant status and version fields when updating regulatory or operational data.
-- Treat QR and settlement endpoints as scaffolded integration points for the next implementation wave.
+## Notes
+- The onboarding domain is intentionally provider-agnostic.
+- Future external KYC adapters can be introduced without changing the core onboarding contract.

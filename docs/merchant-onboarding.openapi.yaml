@@ -1,0 +1,46 @@
+openapi: 3.0.3
+info:
+  title: AfriWallet Merchant Onboarding API
+  version: 0.9.2
+paths:
+  /api/v1/merchant-onboarding:
+    post:
+      summary: Start onboarding
+      responses:
+        '201':
+          description: Onboarding created
+  /api/v1/merchant-onboarding/{merchantId}:
+    get:
+      summary: Get onboarding state
+      responses:
+        '200':
+          description: Onboarding state returned
+    put:
+      summary: Complete onboarding profile
+      responses:
+        '200':
+          description: Profile updated
+  /api/v1/merchant-onboarding/{merchantId}/submit:
+    post:
+      summary: Submit KYC case
+      responses:
+        '200':
+          description: KYC case submitted
+  /api/v1/merchant-kyc/{merchantId}:
+    get:
+      summary: Get KYC case
+      responses:
+        '200':
+          description: KYC case returned
+  /api/v1/merchant-kyc/{merchantId}/approve:
+    post:
+      summary: Approve KYC case
+      responses:
+        '200':
+          description: KYC approved
+  /api/v1/merchant-kyc/{merchantId}/reject:
+    post:
+      summary: Reject KYC case
+      responses:
+        '200':
+          description: KYC rejected

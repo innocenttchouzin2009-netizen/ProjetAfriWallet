@@ -1,17 +1,12 @@
-# Merchant Registry Operations Runbook
+# Merchant Onboarding Operations Runbook
 
 ## Overview
-This runbook covers operational checks for the AFW-DLV-0009.1 Merchant Registry release.
+This runbook handles the merchant onboarding and KYC release.
 
 ## Health checks
-- Confirm the merchant API health endpoint responds at /health/live.
-- Verify that merchant create and lookup requests complete successfully.
+- Confirm the merchant API is reachable and the health endpoint responds.
+- Verify onboarding, KYC submission, approval, rejection, and activation requests return expected responses.
 
-## Validation workflow
-1. Build the merchant API with Release configuration.
-2. Run the merchant registry scenario suite.
-3. Review logs for merchant lifecycle transitions and validation failures.
-
-## Incident response
-- If merchant creation fails, verify the request payload contains merchantCode, countryCode, baseCurrency, and walletId.
-- If lifecycle transitions fail, confirm the merchant exists and is in an eligible status.
+## Troubleshooting
+- If profile completion fails, validate the required fields before resubmission.
+- If KYC review is stuck, confirm the KYC case exists and has a valid status.

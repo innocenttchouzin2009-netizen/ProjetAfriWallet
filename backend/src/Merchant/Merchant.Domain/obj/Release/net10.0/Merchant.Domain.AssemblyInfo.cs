@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Merchant.Domain")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a8a104874fba5277b38a16f64aedf225d4786c55")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+544dca9b75e044394f324ba97a752ebe059e73e8")]
 [assembly: System.Reflection.AssemblyProductAttribute("Merchant.Domain")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Merchant.Domain")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

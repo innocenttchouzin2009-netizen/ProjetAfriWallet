@@ -5,6 +5,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSingleton<MerchantRegistryService>();
 builder.Services.AddSingleton<QrPaymentService>();
 builder.Services.AddSingleton<SettlementService>();
+builder.Services.AddSingleton<MerchantOnboardingService>();
+builder.Services.AddSingleton<MerchantOnboardingValidator>();
 
 var app = builder.Build();
 
@@ -80,6 +82,48 @@ app.MapPost("/api/v1/settlements", async (MerchantDomain.MerchantSettlement sett
 {
     var created = await service.CreateAsync(settlement, cancellationToken);
     return Results.Created($"/api/v1/settlements/{created.SettlementId}", created);
+});
+
+app.MapPost("/api/v1/merchant-onboarding", (string merchantId, string businessName, string legalName, string businessType, string registrationNumber, string taxIdentifier, MerchantOnboardingService service) =>
+{
+    var onboarding = service.StartOnboarding(merchantId, businessName, legalName, businessType, registrationNumber, taxIdentifier);
+    return Results.Created($"/api/v1/merchant-onboarding/{onboarding.MerchantId}", onboarding);
+});
+
+app.MapGet("/api/v1/merchant-onboarding/{merchantId}", (string merchantId, MerchantOnboardingService service) =>
+{
+    var onboarding = service.GetOnboarding(merchantId);
+    return onboarding is null ? Results.NotFound() : Results.Ok(onboarding);
+});
+
+app.MapPut("/api/v1/merchant-onboarding/{merchantId}", (string merchantId, MerchantDomain.MerchantProfile profile, MerchantOnboardingService service) =>
+{
+    var onboarding = service.CompleteProfile(merchantId, profile);
+    return onboarding is null ? Results.NotFound() : Results.Ok(onboarding);
+});
+
+app.MapPost("/api/v1/merchant-onboarding/{merchantId}/submit", (string merchantId, MerchantOnboardingService service) =>
+{
+    var onboarding = service.CreateKycCase(merchantId);
+    return onboarding is null ? Results.NotFound() : Results.Ok(onboarding);
+});
+
+app.MapGet("/api/v1/merchant-kyc/{merchantId}", (string merchantId, MerchantOnboardingService service) =>
+{
+    var onboarding = service.GetOnboarding(merchantId);
+    return onboarding?.KycCase is null ? Results.NotFound() : Results.Ok(onboarding.KycCase);
+});
+
+app.MapPost("/api/v1/merchant-kyc/{merchantId}/approve", (string merchantId, MerchantOnboardingService service) =>
+{
+    var onboarding = service.ApproveKyc(merchantId);
+    return onboarding is null ? Results.NotFound() : Results.Ok(onboarding);
+});
+
+app.MapPost("/api/v1/merchant-kyc/{merchantId}/reject", (string merchantId, MerchantOnboardingService service) =>
+{
+    var onboarding = service.RejectKyc(merchantId);
+    return onboarding is null ? Results.NotFound() : Results.Ok(onboarding);
 });
 
 app.Run();

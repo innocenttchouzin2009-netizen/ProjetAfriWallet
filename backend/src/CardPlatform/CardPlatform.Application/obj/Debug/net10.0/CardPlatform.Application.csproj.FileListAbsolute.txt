@@ -1,0 +1,16 @@
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\CardPlatform\CardPlatform.Application\bin\Debug\net10.0\CardPlatform.Application.deps.json
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\CardPlatform\CardPlatform.Application\bin\Debug\net10.0\CardPlatform.Application.dll
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\CardPlatform\CardPlatform.Application\bin\Debug\net10.0\CardPlatform.Application.pdb
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\CardPlatform\CardPlatform.Application\bin\Debug\net10.0\CardPlatform.Domain.dll
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\CardPlatform\CardPlatform.Application\bin\Debug\net10.0\CardPlatform.Domain.pdb
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\CardPlatform\CardPlatform.Application\obj\Debug\net10.0\CardPlatform.Application.csproj.AssemblyReference.cache
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\CardPlatform\CardPlatform.Application\obj\Debug\net10.0\CardPlatform.Application.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\CardPlatform\CardPlatform.Application\obj\Debug\net10.0\CardPlatform.Application.AssemblyInfoInputs.cache
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\CardPlatform\CardPlatform.Application\obj\Debug\net10.0\CardPlatform.Application.AssemblyInfo.cs
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\CardPlatform\CardPlatform.Application\obj\Debug\net10.0\CardPlatform.Application.csproj.CoreCompileInputs.cache
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\CardPlatform\CardPlatform.Application\obj\Debug\net10.0\CardPlatform.Application.sourcelink.json
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\CardPlatform\CardPlatform.Application\obj\Debug\net10.0\CardPlat.29167372.Up2Date
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\CardPlatform\CardPlatform.Application\obj\Debug\net10.0\CardPlatform.Application.dll
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\CardPlatform\CardPlatform.Application\obj\Debug\net10.0\refint\CardPlatform.Application.dll
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\CardPlatform\CardPlatform.Application\obj\Debug\net10.0\CardPlatform.Application.pdb
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\CardPlatform\CardPlatform.Application\obj\Debug\net10.0\ref\CardPlatform.Application.dll

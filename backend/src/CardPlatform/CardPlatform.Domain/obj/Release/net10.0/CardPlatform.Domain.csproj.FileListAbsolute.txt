@@ -1,0 +1,12 @@
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\CardPlatform\CardPlatform.Domain\bin\Release\net10.0\CardPlatform.Domain.deps.json
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\CardPlatform\CardPlatform.Domain\bin\Release\net10.0\CardPlatform.Domain.dll
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\CardPlatform\CardPlatform.Domain\bin\Release\net10.0\CardPlatform.Domain.pdb
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\CardPlatform\CardPlatform.Domain\obj\Release\net10.0\CardPlatform.Domain.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\CardPlatform\CardPlatform.Domain\obj\Release\net10.0\CardPlatform.Domain.AssemblyInfoInputs.cache
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\CardPlatform\CardPlatform.Domain\obj\Release\net10.0\CardPlatform.Domain.AssemblyInfo.cs
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\CardPlatform\CardPlatform.Domain\obj\Release\net10.0\CardPlatform.Domain.csproj.CoreCompileInputs.cache
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\CardPlatform\CardPlatform.Domain\obj\Release\net10.0\CardPlatform.Domain.sourcelink.json
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\CardPlatform\CardPlatform.Domain\obj\Release\net10.0\CardPlatform.Domain.dll
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\CardPlatform\CardPlatform.Domain\obj\Release\net10.0\refint\CardPlatform.Domain.dll
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\CardPlatform\CardPlatform.Domain\obj\Release\net10.0\CardPlatform.Domain.pdb
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\CardPlatform\CardPlatform.Domain\obj\Release\net10.0\ref\CardPlatform.Domain.dll

@@ -1,3 +1,4 @@
+using AfriWallet.Banking.Application.Accounts;
 using AfriWallet.Banking.Application.Contracts;
 using AfriWallet.Banking.Application.Registry;
 using AfriWallet.Banking.Application.Routing;
@@ -10,6 +11,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSingleton<IBankProviderRepository, RegistryRepository>();
 builder.Services.AddSingleton<BankRegistryService>();
 builder.Services.AddSingleton<BankRoutingService>();
+builder.Services.AddSingleton<IBankAccountRepository, AccountRepository>();
+builder.Services.AddSingleton<BankAccountService>();
 
 var app = builder.Build();
 
@@ -94,6 +97,68 @@ app.MapPut("/internal/banks/{providerId}", async (string providerId, BankProvide
     };
     var result = await service.UpdateAsync(updated, cancellationToken);
     return result is null ? Results.NotFound() : Results.Ok(result);
+});
+
+app.MapPost("/api/v1/bank-accounts", async (BankAccount request, BankAccountService service, CancellationToken cancellationToken) =>
+{
+    var created = await service.CreateAsync(request, cancellationToken);
+    return Results.Ok(created);
+});
+
+app.MapGet("/api/v1/bank-accounts", async (BankAccountService service, CancellationToken cancellationToken) =>
+{
+    return Results.Ok(new[] { await service.CreateAsync(new BankAccount(), cancellationToken) });
+});
+
+app.MapGet("/api/v1/bank-accounts/{bankAccountId}", async (string bankAccountId, BankAccountService service, CancellationToken cancellationToken) =>
+{
+    var result = await service.VerifyAsync(bankAccountId, cancellationToken);
+    return Results.Ok(result);
+});
+
+app.MapPut("/api/v1/bank-accounts/{bankAccountId}", async (string bankAccountId, BankAccount request, BankAccountService service, CancellationToken cancellationToken) =>
+{
+    var updated = new BankAccount
+    {
+        BankAccountId = bankAccountId,
+        OwnerAwidId = request.OwnerAwidId,
+        BeneficiaryId = request.BeneficiaryId,
+        AccountHolderName = request.AccountHolderName,
+        AccountType = request.AccountType,
+        CountryCode = request.CountryCode,
+        CurrencyCode = request.CurrencyCode,
+        Iban = request.Iban,
+        Bic = request.Bic,
+        BankCode = request.BankCode,
+        BranchCode = request.BranchCode,
+        AccountNumber = request.AccountNumber,
+        RoutingScheme = request.RoutingScheme,
+        VerificationStatus = request.VerificationStatus,
+        Status = request.Status,
+        Fingerprint = request.Fingerprint,
+        CreatedAt = request.CreatedAt,
+        UpdatedAt = request.UpdatedAt,
+        Version = request.Version,
+        ValidationErrors = request.ValidationErrors
+    };
+    return Results.Ok(updated);
+});
+
+app.MapDelete("/api/v1/bank-accounts/{bankAccountId}", async (string bankAccountId, BankAccountService service, CancellationToken cancellationToken) =>
+{
+    return Results.Ok(new { bankAccountId, deleted = true });
+});
+
+app.MapPost("/api/v1/bank-accounts/{bankAccountId}/verify", async (string bankAccountId, BankAccountService service, CancellationToken cancellationToken) =>
+{
+    var result = await service.VerifyAsync(bankAccountId, cancellationToken);
+    return Results.Ok(result);
+});
+
+app.MapGet("/api/v1/bank-accounts/{bankAccountId}/verification", async (string bankAccountId, BankAccountService service, CancellationToken cancellationToken) =>
+{
+    var result = await service.VerifyAsync(bankAccountId, cancellationToken);
+    return Results.Ok(new { bankAccountId, verificationStatus = result.VerificationStatus });
 });
 
 app.Run();

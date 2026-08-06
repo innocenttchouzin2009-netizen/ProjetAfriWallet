@@ -1,0 +1,96 @@
+openapi: 3.0.3
+info:
+  title: AfriWallet Regulatory Reporting API
+  version: 1.0.0
+paths:
+  /api/v1/regulatory-reports:
+    post:
+      summary: Create a regulatory report
+      responses:
+        '200':
+          description: Created report
+    get:
+      summary: List regulatory reports
+      responses:
+        '200':
+          description: Report list
+  /api/v1/regulatory-reports/{reportId}:
+    get:
+      summary: Get report by id
+      parameters:
+        - in: path
+          name: reportId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Report details
+  /api/v1/regulatory-reports/{reportId}/generate:
+    post:
+      summary: Generate report snapshot and version
+      responses:
+        '200':
+          description: Generated report
+  /api/v1/regulatory-reports/{reportId}/review:
+    post:
+      summary: Move report to under review
+      responses:
+        '200':
+          description: Reviewed report
+  /api/v1/regulatory-reports/{reportId}/approve:
+    post:
+      summary: Approve report (role-restricted)
+      responses:
+        '200':
+          description: Approved report
+  /api/v1/regulatory-reports/{reportId}/submit:
+    post:
+      summary: Submit report (role-restricted)
+      responses:
+        '200':
+          description: Submitted report
+  /api/v1/regulatory-reports/{reportId}/accept:
+    post:
+      summary: Accept report (role-restricted)
+      responses:
+        '200':
+          description: Accepted report
+  /api/v1/regulatory-reports/{reportId}/reject:
+    post:
+      summary: Reject report (role-restricted)
+      responses:
+        '200':
+          description: Rejected report
+  /api/v1/regulatory-reports/{reportId}/archive:
+    post:
+      summary: Archive accepted report
+      responses:
+        '200':
+          description: Archived report
+  /api/v1/regulatory-reports/{reportId}/versions:
+    get:
+      summary: Get report versions
+      responses:
+        '200':
+          description: Version history
+  /api/v1/regulatory-reports/{reportId}/export:
+    get:
+      summary: Export report in selected format
+      parameters:
+        - in: query
+          name: format
+          required: true
+          schema:
+            type: string
+            enum: [json, csv, pdf]
+      responses:
+        '200':
+          description: Export payload
+  /api/v1/regulatory-reports/{reportId}/submissions:
+    get:
+      summary: Get submission history
+      responses:
+        '200':
+          description: Submission list

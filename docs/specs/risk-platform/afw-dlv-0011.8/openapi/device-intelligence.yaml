@@ -1,0 +1,11 @@
+openapi: 3.0.3
+info:
+  title: Device Intelligence & Behavioral Analytics
+  version: 1.1.0-rc1
+paths:
+  /api/v1/device/evaluate:
+    post:
+      summary: Evaluate device intelligence
+      responses:
+        '200':
+          description: Device decision

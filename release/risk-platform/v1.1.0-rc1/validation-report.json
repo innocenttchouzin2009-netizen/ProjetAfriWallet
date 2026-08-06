@@ -1,0 +1,105 @@
+{
+    "summary":  {
+                    "stream":  "AFW-DLV-0011.8",
+                    "version":  "v1.1.0-rc1",
+                    "configuration":  "Release",
+                    "generatedAt":  "2026-08-06T19:23:26.7287755+02:00",
+                    "checks":  18,
+                    "passed":  18,
+                    "failed":  0,
+                    "skipped":  0,
+                    "decision":  "READY FOR RISK RC"
+                },
+    "checks":  [
+                   {
+                       "Name":  "Fraud Detection Engine",
+                       "Passed":  true,
+                       "Details":  "ok"
+                   },
+                   {
+                       "Name":  "AML Monitoring",
+                       "Passed":  true,
+                       "Details":  "ok"
+                   },
+                   {
+                       "Name":  "Unified Risk Scoring",
+                       "Passed":  true,
+                       "Details":  "ok"
+                   },
+                   {
+                       "Name":  "Device Intelligence",
+                       "Passed":  true,
+                       "Details":  "ok"
+                   },
+                   {
+                       "Name":  "Compliance Case Management",
+                       "Passed":  true,
+                       "Details":  "ok"
+                   },
+                   {
+                       "Name":  "Regulatory Reporting",
+                       "Passed":  true,
+                       "Details":  "ok"
+                   },
+                   {
+                       "Name":  "Configuration \u0026 Secrets",
+                       "Passed":  true,
+                       "Details":  "ok"
+                   },
+                   {
+                       "Name":  "Health Checks",
+                       "Passed":  true,
+                       "Details":  "ok"
+                   },
+                   {
+                       "Name":  "Logging \u0026 Correlation",
+                       "Passed":  true,
+                       "Details":  "ok"
+                   },
+                   {
+                       "Name":  "Resilience",
+                       "Passed":  true,
+                       "Details":  "ok"
+                   },
+                   {
+                       "Name":  "Rate Limiting",
+                       "Passed":  true,
+                       "Details":  "ok"
+                   },
+                   {
+                       "Name":  "Feature Flags",
+                       "Passed":  true,
+                       "Details":  "ok"
+                   },
+                   {
+                       "Name":  "OpenTelemetry",
+                       "Passed":  true,
+                       "Details":  "ok"
+                   },
+                   {
+                       "Name":  "Metrics \u0026 Monitoring",
+                       "Passed":  true,
+                       "Details":  "ok"
+                   },
+                   {
+                       "Name":  "Audit Trail",
+                       "Passed":  true,
+                       "Details":  "ok"
+                   },
+                   {
+                       "Name":  "Release Build",
+                       "Passed":  true,
+                       "Details":  "ok"
+                   },
+                   {
+                       "Name":  "Secret Scan",
+                       "Passed":  true,
+                       "Details":  "ok"
+                   },
+                   {
+                       "Name":  "Packaging",
+                       "Passed":  true,
+                       "Details":  "ok"
+                   }
+               ]
+}

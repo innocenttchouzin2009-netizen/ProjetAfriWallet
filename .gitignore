@@ -3,3 +3,9 @@
 apps/mobile_app/lib/l10n/generated/
 build/
 **/build/
+
+# .NET generated artifacts
+bin/
+obj/
+**/bin/
+**/obj/

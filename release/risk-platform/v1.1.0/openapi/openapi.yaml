@@ -1,0 +1,69 @@
+openapi: 3.0.3
+info:
+  title: AfriWallet Risk Platform Consolidated API
+  version: 1.1.7
+paths:
+  /api/v1/fraud/evaluate:
+    post:
+      summary: Evaluate fraud risk
+      responses:
+        '200':
+          description: Fraud decision
+  /api/v1/aml/evaluate:
+    post:
+      summary: Evaluate AML monitoring
+      responses:
+        '200':
+          description: AML monitoring decision
+  /api/v1/risk/evaluate:
+    post:
+      summary: Evaluate unified risk score
+      responses:
+        '200':
+          description: Risk scoring decision
+  /api/v1/device/evaluate:
+    post:
+      summary: Evaluate device intelligence risk
+      responses:
+        '200':
+          description: Device decision
+  /api/v1/compliance/cases:
+    post:
+      summary: Create compliance case
+      responses:
+        '200':
+          description: Compliance case created
+    get:
+      summary: List compliance cases
+      responses:
+        '200':
+          description: Compliance cases
+  /api/v1/regulatory-reports:
+    post:
+      summary: Create regulatory report
+      responses:
+        '200':
+          description: Regulatory report created
+    get:
+      summary: List regulatory reports
+      responses:
+        '200':
+          description: Regulatory reports
+  /health/live:
+    get:
+      summary: Liveness status
+      responses:
+        '200':
+          description: Service alive
+  /health/ready:
+    get:
+      summary: Readiness status
+      responses:
+        '200':
+          description: Dependencies ready
+  /health/startup:
+    get:
+      summary: Startup configuration status
+      responses:
+        '200':
+          description: Startup checks passed

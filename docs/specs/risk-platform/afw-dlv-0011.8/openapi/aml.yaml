@@ -1,0 +1,11 @@
+openapi: 3.0.3
+info:
+  title: AML & Transaction Monitoring
+  version: 1.1.0-rc1
+paths:
+  /api/v1/aml/evaluate:
+    post:
+      summary: Evaluate AML monitoring
+      responses:
+        '200':
+          description: AML decision

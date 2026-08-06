@@ -1,0 +1,11 @@
+openapi: 3.0.3
+info:
+  title: Fraud Detection Engine
+  version: 1.1.0-rc1
+paths:
+  /api/v1/fraud/evaluate:
+    post:
+      summary: Evaluate fraud risk
+      responses:
+        '200':
+          description: Fraud decision

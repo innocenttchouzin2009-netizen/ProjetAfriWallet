@@ -1,0 +1,47 @@
+openapi: 3.0.3
+info:
+  title: AfriWallet Operations Portal API
+  version: 1.0.0
+paths:
+  /api/v1/operations/dashboard:
+    get:
+      summary: Get operations dashboard
+      responses:
+        '200':
+          description: Dashboard
+  /api/v1/operations/search:
+    get:
+      summary: Global search
+      responses:
+        '200':
+          description: Search results
+  /api/v1/operations/users/{awid}:
+    get:
+      summary: Lookup user by AWID
+      parameters:
+        - name: awid
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: User record
+  /api/v1/operations/transactions/{transactionId}:
+    get:
+      summary: Lookup transaction
+      responses:
+        '200':
+          description: Transaction record
+  /api/v1/operations/services/health:
+    get:
+      summary: Service health
+      responses:
+        '200':
+          description: Health summary
+  /api/v1/operations/audit:
+    get:
+      summary: Audit trail
+      responses:
+        '200':
+          description: Audit trail

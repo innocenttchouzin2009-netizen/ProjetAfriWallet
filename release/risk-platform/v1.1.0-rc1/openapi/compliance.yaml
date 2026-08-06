@@ -1,0 +1,11 @@
+openapi: 3.0.3
+info:
+  title: Compliance Case Management
+  version: 1.1.0-rc1
+paths:
+  /api/v1/compliance/cases:
+    post:
+      summary: Create compliance case
+      responses:
+        '200':
+          description: Case created

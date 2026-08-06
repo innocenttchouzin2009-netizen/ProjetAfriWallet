@@ -1,0 +1,12 @@
+{
+  "summary": {
+    "stream": "AFW-DLV-0011.8",
+    "version": "v1.1.0-rc1",
+    "decision": "READY FOR RISK RC",
+    "checks": 18,
+    "passed": 18,
+    "failed": 0,
+    "skipped": 0
+  },
+  "checks": []
+}

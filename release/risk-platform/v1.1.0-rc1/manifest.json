@@ -1,0 +1,29 @@
+{
+    "stream":  "AFW-DLV-0011.8",
+    "version":  "v1.1.0-rc1",
+    "decision":  "READY FOR RISK RC",
+    "generatedAt":  "2026-08-06T19:23:26.7814815+02:00",
+    "files":  [
+                  "release/risk-platform/v1.1.0-rc1/adr/ADR-0194-risk-platform-release-candidate-process.md",
+                  "release/risk-platform/v1.1.0-rc1/adr/ADR-0195-risk-platform-deployment-policy.md",
+                  "release/risk-platform/v1.1.0-rc1/artifacts/PRD-AFW-DLV-0011.8.md",
+                  "release/risk-platform/v1.1.0-rc1/artifacts/qa-checklist.md",
+                  "release/risk-platform/v1.1.0-rc1/changelog.md",
+                  "release/risk-platform/v1.1.0-rc1/checksums.sha256",
+                  "release/risk-platform/v1.1.0-rc1/configuration/production-readiness.json",
+                  "release/risk-platform/v1.1.0-rc1/dashboards/risk-platform-overview.md",
+                  "release/risk-platform/v1.1.0-rc1/manifest.json",
+                  "release/risk-platform/v1.1.0-rc1/openapi/aml.yaml",
+                  "release/risk-platform/v1.1.0-rc1/openapi/compliance.yaml",
+                  "release/risk-platform/v1.1.0-rc1/openapi/device-intelligence.yaml",
+                  "release/risk-platform/v1.1.0-rc1/openapi/fraud.yaml",
+                  "release/risk-platform/v1.1.0-rc1/openapi/regulatory-reporting.yaml",
+                  "release/risk-platform/v1.1.0-rc1/openapi/risk-scoring.yaml",
+                  "release/risk-platform/v1.1.0-rc1/release-notes.md",
+                  "release/risk-platform/v1.1.0-rc1/rollback/rollback-plan.md",
+                  "release/risk-platform/v1.1.0-rc1/runbooks/administration-guide.md",
+                  "release/risk-platform/v1.1.0-rc1/runbooks/operations-guide.md",
+                  "release/risk-platform/v1.1.0-rc1/validation-report.json",
+                  "release/risk-platform/v1.1.0-rc1/validation-report.md"
+              ]
+}

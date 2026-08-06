@@ -1,0 +1,11 @@
+openapi: 3.0.3
+info:
+  title: Unified Risk Scoring Engine
+  version: 1.1.0-rc1
+paths:
+  /api/v1/risk/evaluate:
+    post:
+      summary: Evaluate unified risk score
+      responses:
+        '200':
+          description: Risk decision

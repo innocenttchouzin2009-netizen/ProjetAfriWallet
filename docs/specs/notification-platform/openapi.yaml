@@ -1,0 +1,45 @@
+openapi: 3.0.3
+info:
+  title: AfriWallet Notification API
+  version: 1.2.1
+paths:
+  /api/v1/notifications:
+    post:
+      summary: Create and dispatch a notification
+      responses:
+        '200':
+          description: Notification accepted
+  /api/v1/notifications/{notificationId}:
+    get:
+      summary: Get notification status and delivery attempts
+      responses:
+        '200':
+          description: Notification state
+  /api/v1/notifications/preferences:
+    get:
+      summary: Get notification preferences
+      responses:
+        '200':
+          description: Preferences
+    put:
+      summary: Update notification preferences
+      responses:
+        '200':
+          description: Preferences updated
+  /api/v1/notifications/templates:
+    get:
+      summary: List templates
+      responses:
+        '200':
+          description: Templates
+    post:
+      summary: Create a template
+      responses:
+        '200':
+          description: Template created
+  /api/v1/notifications/templates/{templateId}/publish:
+    post:
+      summary: Publish a template version
+      responses:
+        '200':
+          description: Template published

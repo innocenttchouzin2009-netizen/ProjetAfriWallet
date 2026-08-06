@@ -1,0 +1,127 @@
+openapi: 3.0.3
+info:
+  title: AfriWallet Device Intelligence API
+  version: 1.0.0
+paths:
+  /api/v1/device/evaluate:
+    post:
+      summary: Evaluate a device risk posture
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeviceEvaluationRequest'
+      responses:
+        '200':
+          description: Evaluation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeviceEvaluationResult'
+  /api/v1/device/{deviceId}:
+    get:
+      summary: Fetch device status
+      parameters:
+        - in: path
+          name: deviceId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Device status
+  /api/v1/device/{deviceId}/history:
+    get:
+      summary: Fetch device history
+      parameters:
+        - in: path
+          name: deviceId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Device history
+  /api/v1/device/{deviceId}/trust:
+    post:
+      summary: Mark a device as trusted
+      parameters:
+        - in: path
+          name: deviceId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Trust action accepted
+  /api/v1/device/{deviceId}/revoke:
+    post:
+      summary: Revoke a device trust state
+      parameters:
+        - in: path
+          name: deviceId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Revoke action accepted
+components:
+  schemas:
+    DeviceEvaluationRequest:
+      type: object
+      properties:
+        deviceId:
+          type: string
+        deviceFingerprint:
+          type: string
+        deviceTrustScore:
+          type: integer
+        deviceReputationScore:
+          type: integer
+        ipReputationScore:
+          type: integer
+        knownDevice:
+          type: boolean
+        newDevice:
+          type: boolean
+        isVpn:
+          type: boolean
+        isProxy:
+          type: boolean
+        isTor:
+          type: boolean
+        isImpossibleTravel:
+          type: boolean
+        browserChanged:
+          type: boolean
+        osChanged:
+          type: boolean
+        appVersionChanged:
+          type: boolean
+        timezoneCountryMismatch:
+          type: boolean
+        biometricAvailable:
+          type: boolean
+        sessionBehaviorScore:
+          type: integer
+        deviceHistoryCount:
+          type: integer
+    DeviceEvaluationResult:
+      type: object
+      properties:
+        decision:
+          type: string
+        riskLevel:
+          type: string
+        score:
+          type: integer
+        triggeredSignals:
+          type: array
+          items:
+            type: string
+        auditEvents:
+          type: array
+          items:
+            type: string

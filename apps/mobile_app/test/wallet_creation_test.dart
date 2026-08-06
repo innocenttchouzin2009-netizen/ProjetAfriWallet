@@ -40,7 +40,7 @@ void main() {
       ),
     );
 
-    await tester.tap(find.byType(FilledButton));
+    await tester.tap(find.text('Create wallet'));
     await tester.pump();
 
     expect(find.text('Currency is required'), findsOneWidget);

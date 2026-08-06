@@ -3,6 +3,9 @@ on:
   push:
     branches: [main]
   pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
 jobs:
   lint:
     runs-on: ubuntu-latest

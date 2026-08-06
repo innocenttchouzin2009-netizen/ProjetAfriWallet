@@ -92,10 +92,16 @@ class _FxQuoteScreenState extends State<FxQuoteScreen> {
                 ],
               ),
               const SizedBox(height: 16),
-              FilledButton.icon(
+              FilledButton(
                 onPressed: _createQuote,
-                icon: const Icon(Icons.currency_exchange),
-                label: Text(l10n.getQuote),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.currency_exchange),
+                    const SizedBox(width: 8),
+                    Text(l10n.getQuote),
+                  ],
+                ),
               ),
               const SizedBox(height: 16),
               if (_quote != null) ...[

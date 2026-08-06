@@ -63,7 +63,7 @@ class _WalletCreateScreenState extends State<WalletCreateScreen> {
                   padding: const EdgeInsets.only(bottom: 12),
                   child: Text(widget.controller.error!, style: const TextStyle(color: Colors.red)),
                 ),
-              FilledButton.icon(
+              FilledButton(
                 onPressed: () async {
                   if (!(_formKey.currentState?.validate() ?? false)) return;
                   final success = await widget.controller.createWallet(
@@ -78,8 +78,14 @@ class _WalletCreateScreenState extends State<WalletCreateScreen> {
                     setState(() {});
                   }
                 },
-                icon: const Icon(Icons.add_circle_outline),
-                label: const Text('Create wallet'),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.add_circle_outline),
+                    SizedBox(width: 8),
+                    Text('Create wallet'),
+                  ],
+                ),
               ),
             ],
           ),

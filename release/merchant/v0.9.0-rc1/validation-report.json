@@ -1,0 +1,28 @@
+{
+  "version": "v0.9.0-rc1",
+  "stream": "AFW-DLV-0009.8",
+  "decision": "READY FOR MERCHANT RC",
+  "checks": {
+    "Merchant Registry": true,
+    "Merchant Onboarding & KYC": true,
+    "QR Payment Engine": true,
+    "Merchant API & POS": true,
+    "Settlement Engine": true,
+    "Merchant Dashboard": true,
+    "Configuration": true,
+    "Health Checks": true,
+    "Observability": true,
+    "Audit Trail": true,
+    "Flutter Analyze": true,
+    "Flutter Tests": true,
+    "Release Build": true,
+    "Packaging": true,
+    "Secret Scan": true
+  },
+  "summary": {
+    "checks": 15,
+    "passed": 15,
+    "failed": 0,
+    "skipped": 0
+  }
+}

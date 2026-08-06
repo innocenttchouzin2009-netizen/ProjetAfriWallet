@@ -1,0 +1,28 @@
+{
+    "version":  "v0.9.0",
+    "stream":  "AFW-DLV-0009.7",
+    "decision":  "READY FOR MERCHANT RC",
+    "checks":  {
+                   "Configuration \u0026 Secrets":  true,
+                   "Health Checks":  true,
+                   "Logging \u0026 Correlation":  true,
+                   "Resilience":  true,
+                   "Rate Limiting":  true,
+                   "Feature Flags":  true,
+                   "OpenTelemetry":  true,
+                   "Monitoring":  true,
+                   "Audit Trail":  true,
+                   "Merchant Platform":  true,
+                   "Flutter Analyze":  true,
+                   "Flutter Tests":  true,
+                   "Release Build":  true,
+                   "Packaging":  true,
+                   "Secret Scan":  true
+               },
+    "summary":  {
+                    "checks":  15,
+                    "passed":  15,
+                    "failed":  0,
+                    "skipped":  0
+                }
+}

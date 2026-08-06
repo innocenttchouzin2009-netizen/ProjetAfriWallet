@@ -1,22 +1,49 @@
+using AfriWallet.Merchant.Api.Production;
 using AfriWallet.Merchant.Application.Services;
+using Microsoft.Extensions.Options;
 using MerchantDomain = AfriWallet.Merchant.Domain.Entities;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: false);
+builder.Services.Configure<MerchantProductionConfiguration>(builder.Configuration.GetSection(MerchantProductionConfiguration.SectionName));
+builder.Services.AddSingleton(sp => sp.GetRequiredService<IOptions<MerchantProductionConfiguration>>().Value);
+builder.Services.AddSingleton<MerchantProductionConfigurationService>();
 builder.Services.AddSingleton<MerchantRegistryService>();
 builder.Services.AddSingleton<QrPaymentService>();
 builder.Services.AddSingleton<SettlementService>();
 builder.Services.AddSingleton<MerchantOnboardingService>();
 builder.Services.AddSingleton<MerchantOnboardingValidator>();
 builder.Services.AddSingleton<PosService>();
+builder.Services.AddSingleton<MerchantHealthProbe>();
+builder.Services.AddSingleton<MerchantTelemetry>();
+builder.Services.AddSingleton<MerchantAuditService>();
+builder.Services.AddSingleton<MerchantFeatureFlags>();
+builder.Services.AddMerchantResilience();
+builder.Services.AddMerchantRateLimiting();
+builder.Services.AddMerchantOpenTelemetry();
 
 var app = builder.Build();
 
-app.MapGet("/health/live", () => Results.Ok(new { status = "live" }));
-app.MapGet("/api/v1/merchants", async (MerchantRegistryService service, CancellationToken cancellationToken) =>
+app.UseMiddleware<MerchantCorrelationMiddleware>();
+app.UseRateLimiter();
+
+app.MapGet("/health/live", (MerchantHealthProbe probe) => Results.Ok(new { status = "live", checks = probe.Check() }));
+app.MapGet("/health/ready", (MerchantHealthProbe probe) => Results.Ok(new { status = "ready", checks = probe.Check() }));
+app.MapGet("/health/startup", () => Results.Ok(new { status = "startup" }));
+app.MapGet("/api/v1/production/configuration", (MerchantProductionConfigurationService service) => Results.Ok(service.GetSummary()));
+app.MapGet("/api/v1/production/feature-flags", (MerchantFeatureFlags flags) => Results.Ok(flags));
+app.MapGet("/api/v1/production/metrics", (MerchantTelemetry telemetry) => Results.Ok(new { status = "ok" }));
+app.MapPost("/api/v1/production/audit", (MerchantAuditService audit, string action, string subjectId, string? correlationId = null, string? merchantId = null, string? settlementId = null, string? posTerminalId = null, string? qrReference = null) =>
 {
+    audit.Record(action, subjectId, correlationId, merchantId, settlementId, posTerminalId, qrReference);
+    return Results.Ok(new { status = "recorded" });
+});
+app.MapGet("/api/v1/merchants", async (MerchantRegistryService service, MerchantTelemetry telemetry, CancellationToken cancellationToken) =>
+{
+    telemetry.TrackMerchantCreated();
     var merchants = await service.GetAllAsync(cancellationToken);
     return Results.Ok(merchants);
-});
+}).RequireRateLimiting("merchant-registry");
 
 app.MapGet("/api/v1/merchants/{merchantId}", async (string merchantId, MerchantRegistryService service, CancellationToken cancellationToken) =>
 {
@@ -24,18 +51,21 @@ app.MapGet("/api/v1/merchants/{merchantId}", async (string merchantId, MerchantR
     return merchant is null ? Results.NotFound() : Results.Ok(merchant);
 });
 
-app.MapPost("/api/v1/merchants", async (MerchantDomain.Merchant merchant, MerchantRegistryService service, CancellationToken cancellationToken) =>
+app.MapPost("/api/v1/merchants", async (MerchantDomain.Merchant merchant, MerchantRegistryService service, MerchantTelemetry telemetry, MerchantAuditService audit, HttpContext httpContext, CancellationToken cancellationToken) =>
 {
     try
     {
         var created = await service.CreateAsync(merchant, cancellationToken);
+        telemetry.TrackMerchantCreated();
+        var correlationId = httpContext.Items["MerchantCorrelationContext"] as MerchantCorrelationContext;
+        audit.Record("merchant-created", created.MerchantId, correlationId?.CorrelationId, created.MerchantId);
         return Results.Created($"/api/v1/merchants/{created.MerchantId}", created);
     }
     catch (InvalidOperationException ex)
     {
         return Results.BadRequest(new { message = ex.Message });
     }
-});
+}).RequireRateLimiting("merchant-registry");
 
 app.MapPut("/api/v1/merchants/{merchantId}", async (string merchantId, MerchantDomain.Merchant merchant, MerchantRegistryService service, CancellationToken cancellationToken) =>
 {
@@ -67,11 +97,14 @@ app.MapGet("/api/v1/qr-payments", async (QrPaymentService service, CancellationT
     return Results.Ok(payments);
 });
 
-app.MapPost("/api/v1/qr-payments", async (MerchantDomain.QrPayment payment, QrPaymentService service, CancellationToken cancellationToken) =>
+app.MapPost("/api/v1/qr-payments", async (MerchantDomain.QrPayment payment, QrPaymentService service, MerchantTelemetry telemetry, MerchantAuditService audit, HttpContext httpContext, CancellationToken cancellationToken) =>
 {
     var created = await service.CreateAsync(payment, cancellationToken);
+    telemetry.TrackQrCreated();
+    var correlationId = httpContext.Items["MerchantCorrelationContext"] as MerchantCorrelationContext;
+    audit.Record("qr-generated", created.PaymentId, correlationId?.CorrelationId, created.MerchantId, qrReference: created.QrId);
     return Results.Created($"/api/v1/qr-payments/{created.PaymentId}", created);
-});
+}).RequireRateLimiting("qr");
 
 app.MapPost("/api/v1/qr-payments/generate", (GenerateQrCommand command, QrPaymentService service) =>
 {
@@ -115,11 +148,14 @@ app.MapPost("/api/v1/settlements", async (MerchantDomain.MerchantSettlement sett
     return Results.Created($"/api/v1/settlements/{created.SettlementId}", created);
 });
 
-app.MapPost("/api/v1/merchant/settlements", (MerchantDomain.SettlementInstruction instruction, SettlementService service) =>
+app.MapPost("/api/v1/merchant/settlements", (MerchantDomain.SettlementInstruction instruction, SettlementService service, MerchantTelemetry telemetry, MerchantAuditService audit, HttpContext httpContext) =>
 {
     var created = service.CreateInstruction(instruction);
+    telemetry.TrackSettlement();
+    var correlationId = httpContext.Items["MerchantCorrelationContext"] as MerchantCorrelationContext;
+    audit.Record("settlement-created", created.SettlementId, correlationId?.CorrelationId, created.MerchantId, created.SettlementId);
     return Results.Created($"/api/v1/merchant/settlements/{created.SettlementId}", created);
-});
+}).RequireRateLimiting("settlement");
 
 app.MapGet("/api/v1/merchant/settlements", (SettlementService service) =>
 {
@@ -157,11 +193,14 @@ app.MapPost("/api/v1/merchant/pos/pay", (MerchantDomain.PosPaymentRequest reques
     return Results.Created($"/api/v1/merchant/transactions/{payment.TransactionId}", payment);
 });
 
-app.MapPost("/api/v1/merchant/pos", (MerchantDomain.PosTerminal terminal, PosService service) =>
+app.MapPost("/api/v1/merchant/pos", (MerchantDomain.PosTerminal terminal, PosService service, MerchantTelemetry telemetry, MerchantAuditService audit, HttpContext httpContext) =>
 {
     var registered = service.RegisterTerminal(terminal);
+    telemetry.TrackPosTransaction();
+    var correlationId = httpContext.Items["MerchantCorrelationContext"] as MerchantCorrelationContext;
+    audit.Record("pos-terminal-registered", registered.TerminalId, correlationId?.CorrelationId, registered.MerchantId, posTerminalId: registered.TerminalId);
     return Results.Created($"/api/v1/merchant/pos/{registered.TerminalId}", registered);
-});
+}).RequireRateLimiting("pos");
 
 app.MapGet("/api/v1/merchant/pos/{terminalId}", (string terminalId, PosService service) =>
 {
@@ -175,29 +214,35 @@ app.MapPost("/api/v1/merchant/pos/{terminalId}/heartbeat", (string terminalId, P
     return Results.Ok(terminal);
 });
 
-app.MapGet("/api/v1/merchant/transactions", (PosService service) =>
+app.MapGet("/api/v1/merchant/transactions", (PosService service, MerchantTelemetry telemetry) =>
 {
+    telemetry.TrackPosTransaction();
     var transactions = service.GetTransactions();
     return Results.Ok(transactions);
-});
+}).RequireRateLimiting("dashboard");
 
-app.MapGet("/api/v1/merchant/receipts/{receiptId}", (string receiptId, PosService service) =>
+app.MapGet("/api/v1/merchant/receipts/{receiptId}", (string receiptId, PosService service, MerchantTelemetry telemetry) =>
 {
+    telemetry.TrackDashboardRequest();
     var receipt = service.GetReceipt(receiptId);
     return receipt is null ? Results.NotFound() : Results.Ok(receipt);
-});
+}).RequireRateLimiting("dashboard");
 
-app.MapPost("/api/v1/merchant-onboarding", (string merchantId, string businessName, string legalName, string businessType, string registrationNumber, string taxIdentifier, MerchantOnboardingService service) =>
+app.MapPost("/api/v1/merchant-onboarding", (string merchantId, string businessName, string legalName, string businessType, string registrationNumber, string taxIdentifier, MerchantOnboardingService service, MerchantTelemetry telemetry, MerchantAuditService audit, HttpContext httpContext) =>
 {
     var onboarding = service.StartOnboarding(merchantId, businessName, legalName, businessType, registrationNumber, taxIdentifier);
+    telemetry.TrackKyc();
+    var correlationId = httpContext.Items["MerchantCorrelationContext"] as MerchantCorrelationContext;
+    audit.Record("merchant-onboarding-started", onboarding.MerchantId, correlationId?.CorrelationId, onboarding.MerchantId);
     return Results.Created($"/api/v1/merchant-onboarding/{onboarding.MerchantId}", onboarding);
-});
+}).RequireRateLimiting("onboarding");
 
-app.MapGet("/api/v1/merchant-onboarding/{merchantId}", (string merchantId, MerchantOnboardingService service) =>
+app.MapGet("/api/v1/merchant-onboarding/{merchantId}", (string merchantId, MerchantOnboardingService service, MerchantTelemetry telemetry) =>
 {
+    telemetry.TrackDashboardRequest();
     var onboarding = service.GetOnboarding(merchantId);
     return onboarding is null ? Results.NotFound() : Results.Ok(onboarding);
-});
+}).RequireRateLimiting("dashboard");
 
 app.MapPut("/api/v1/merchant-onboarding/{merchantId}", (string merchantId, MerchantDomain.MerchantProfile profile, MerchantOnboardingService service) =>
 {

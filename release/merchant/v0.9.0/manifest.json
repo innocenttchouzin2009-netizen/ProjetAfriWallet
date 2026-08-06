@@ -1,0 +1,24 @@
+{
+    "version":  "v0.9.0",
+    "name":  "AfriWallet Merchant Release Candidate Package",
+    "stream":  "AFW-DLV-0009.7",
+    "createdAt":  "2026-08-06T08:01:53.9734438+02:00",
+    "checks":  {
+                   "Configuration \u0026 Secrets":  true,
+                   "Health Checks":  true,
+                   "Logging \u0026 Correlation":  true,
+                   "Resilience":  true,
+                   "Rate Limiting":  true,
+                   "Feature Flags":  true,
+                   "OpenTelemetry":  true,
+                   "Monitoring":  true,
+                   "Audit Trail":  true,
+                   "Merchant Platform":  true,
+                   "Flutter Analyze":  true,
+                   "Flutter Tests":  true,
+                   "Release Build":  true,
+                   "Packaging":  true,
+                   "Secret Scan":  true
+               },
+    "status":  "READY FOR MERCHANT RC"
+}

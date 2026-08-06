@@ -1,0 +1,20 @@
+name: merchant_dashboard
+description: Merchant dashboard for AfriWallet
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  afw_design_system:
+    path: ../../packages/afw_design_system
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true

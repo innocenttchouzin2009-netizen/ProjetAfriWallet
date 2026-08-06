@@ -1,8 +1,13 @@
 {
   "version": 2,
-  "dgSpecHash": "Jd4MS/GgQtI=",
+  "dgSpecHash": "xwq4OjMm8nY=",
   "success": true,
   "projectFilePath": "C:\\Users\\User\\OneDrive\\Desktop\\ProjetAfriWallet-atomic\\backend\\src\\Merchant\\Merchant.Api\\Merchant.Api.csproj",
-  "expectedPackageFiles": [],
+  "expectedPackageFiles": [
+    "C:\\Users\\User\\.nuget\\packages\\microsoft.extensions.http.polly\\10.0.0\\microsoft.extensions.http.polly.10.0.0.nupkg.sha512",
+    "C:\\Users\\User\\.nuget\\packages\\polly\\8.4.2\\polly.8.4.2.nupkg.sha512",
+    "C:\\Users\\User\\.nuget\\packages\\polly.core\\8.4.2\\polly.core.8.4.2.nupkg.sha512",
+    "C:\\Users\\User\\.nuget\\packages\\polly.extensions.http\\3.0.0\\polly.extensions.http.3.0.0.nupkg.sha512"
+  ],
   "logs": []
 }

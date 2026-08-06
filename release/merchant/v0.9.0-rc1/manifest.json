@@ -1,0 +1,17 @@
+{
+  "name": "AfriWallet Merchant Release Candidate Package",
+  "version": "v0.9.0-rc1",
+  "stream": "AFW-DLV-0009.8",
+  "status": "READY FOR MERCHANT RC",
+  "createdAt": "2026-08-06T00:00:00Z",
+  "checks": 15,
+  "artifacts": [
+    "validation-report.json",
+    "validation-report.md",
+    "release-notes.md",
+    "changelog.md",
+    "openapi/openapi.yaml",
+    "adr/ADR-0172-merchant-release-candidate-process.md",
+    "adr/ADR-0173-merchant-deployment-policy.md"
+  ]
+}

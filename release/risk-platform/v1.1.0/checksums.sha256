@@ -1,0 +1,15 @@
+27cbf58dd2f930ececb3cf06c3d7b55d6dda7d06b61a7336d4c2f425caf6b4cf  release/risk-platform/v1.1.0/artifacts/PRD-AFW-DLV-0011.7.md
+30441c3622013eec83474677cf63b454fb80234b20035f1ecec7c727870f39f7  release/risk-platform/v1.1.0/openapi/openapi.yaml
+35fb7a26ba7f33858661b711ef36ca36884bd97e1bcd8fa900e3daf05b018604  release/risk-platform/v1.1.0/adr/ADR-0192-risk-platform-production-readiness.md
+418dda624dc6f78b83afadc149eec4f87f8178a74b22d350c1a0d83b64112d70  release/risk-platform/v1.1.0/runbooks/administration-guide.md
+7fa128a08eafca15f3382e7b31858e28222f22d5d6a20b922fad89b64abf8544  release/risk-platform/v1.1.0/rollback/rollback-plan.md
+81ccaa9d14de6ca54e3a8f2353af0b2a1cfbffde572e3b64b0c8ffd8c568f189  release/risk-platform/v1.1.0/runbooks/runbook.md
+9c6ee012a71e8513522857b3a1dd98a8253e4abff54cac6aeb99251fc1d0932a  release/risk-platform/v1.1.0/artifacts/qa-checklist.md
+9ca6d80689ba4cbf03812c265eb30194542bdfa569c75508c587cf8bc4462522  release/risk-platform/v1.1.0/configuration/production-readiness.json
+9f20b7cc5e4611fc5e18c2b9ba0730760df72bb2d86630b4dac89ab8ff200717  release/risk-platform/v1.1.0/release-notes.md
+b8dbfc872caef9e83c6132650e0c3ac924ae244b692e2e7b0258a92eda4acc99  release/risk-platform/v1.1.0/adr/ADR-0193-risk-operational-validation-strategy.md
+bde6528912c01a89bd60fac256b5f43cd7902cb3a77f782d68772dfe3d92ae37  release/risk-platform/v1.1.0/runbooks/ci-cd-guide.md
+cf7d74357a7686d53f222b2b4b58565a7b2d68b9df845f8033e389d0d85623f5  release/risk-platform/v1.1.0/validation-report.json
+f3bf91d8e6e7ff35fde90cd5c8e142dc10542a2276d4ada14c2f94fd9b13a18a  release/risk-platform/v1.1.0/validation-report.md
+fcad7eb4da09670ef1c137f0eff81af5b2516f41ce163252461bbd1ce8b8e864  release/risk-platform/v1.1.0/manifest.json
+ff2cfa70f7815747a03f04a146a51abe070c0249eedbc4689a5b07edc6176f22  release/risk-platform/v1.1.0/dashboards/risk-monitoring-dashboard.md

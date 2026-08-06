@@ -1,0 +1,24 @@
+{
+    "stream":  "AFW-DLV-0011.7",
+    "version":  "v1.1.0",
+    "decision":  "READY FOR RISK RC",
+    "generatedAt":  "2026-08-06T18:50:08.2349167+02:00",
+    "files":  [
+                  "release/risk-platform/v1.1.0/adr/ADR-0192-risk-platform-production-readiness.md",
+                  "release/risk-platform/v1.1.0/adr/ADR-0193-risk-operational-validation-strategy.md",
+                  "release/risk-platform/v1.1.0/artifacts/PRD-AFW-DLV-0011.7.md",
+                  "release/risk-platform/v1.1.0/artifacts/qa-checklist.md",
+                  "release/risk-platform/v1.1.0/checksums.sha256",
+                  "release/risk-platform/v1.1.0/configuration/production-readiness.json",
+                  "release/risk-platform/v1.1.0/dashboards/risk-monitoring-dashboard.md",
+                  "release/risk-platform/v1.1.0/manifest.json",
+                  "release/risk-platform/v1.1.0/openapi/openapi.yaml",
+                  "release/risk-platform/v1.1.0/release-notes.md",
+                  "release/risk-platform/v1.1.0/rollback/rollback-plan.md",
+                  "release/risk-platform/v1.1.0/runbooks/administration-guide.md",
+                  "release/risk-platform/v1.1.0/runbooks/ci-cd-guide.md",
+                  "release/risk-platform/v1.1.0/runbooks/runbook.md",
+                  "release/risk-platform/v1.1.0/validation-report.json",
+                  "release/risk-platform/v1.1.0/validation-report.md"
+              ]
+}

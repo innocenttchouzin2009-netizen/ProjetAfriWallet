@@ -1,0 +1,69 @@
+openapi: 3.0.3
+info:
+  title: AfriWallet Risk Scoring API
+  version: 1.1.3
+paths:
+  /api/v1/risk/evaluate:
+    post:
+      summary: Evaluate a transaction for risk
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RiskEvaluationRequest'
+      responses:
+        '200':
+          description: Risk evaluation produced
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskEvaluationResult'
+components:
+  schemas:
+    RiskEvaluationRequest:
+      type: object
+      properties:
+        AWID:
+          type: string
+        TransactionId:
+          type: string
+        FraudScore:
+          type: integer
+        AmlScore:
+          type: integer
+        DeviceScore:
+          type: integer
+        AccountAgeDays:
+          type: integer
+        BeneficiaryHistoryScore:
+          type: integer
+        KycProfileScore:
+          type: integer
+        GeoScore:
+          type: integer
+        BehaviourScore:
+          type: integer
+        PaymentType:
+          type: string
+    RiskEvaluationResult:
+      type: object
+      properties:
+        Decision:
+          type: string
+        RiskBand:
+          type: string
+        Score:
+          type: integer
+        TriggeredRules:
+          type: array
+          items:
+            type: string
+        Factors:
+          type: array
+          items:
+            type: object
+        AuditEvents:
+          type: array
+          items:
+            type: string

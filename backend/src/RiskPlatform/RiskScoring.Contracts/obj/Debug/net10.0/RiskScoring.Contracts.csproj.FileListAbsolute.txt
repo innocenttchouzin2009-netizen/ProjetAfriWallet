@@ -1,0 +1,12 @@
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\RiskPlatform\RiskScoring.Contracts\bin\Debug\net10.0\RiskScoring.Contracts.deps.json
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\RiskPlatform\RiskScoring.Contracts\bin\Debug\net10.0\RiskScoring.Contracts.dll
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\RiskPlatform\RiskScoring.Contracts\bin\Debug\net10.0\RiskScoring.Contracts.pdb
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\RiskPlatform\RiskScoring.Contracts\obj\Debug\net10.0\RiskScoring.Contracts.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\RiskPlatform\RiskScoring.Contracts\obj\Debug\net10.0\RiskScoring.Contracts.AssemblyInfoInputs.cache
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\RiskPlatform\RiskScoring.Contracts\obj\Debug\net10.0\RiskScoring.Contracts.AssemblyInfo.cs
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\RiskPlatform\RiskScoring.Contracts\obj\Debug\net10.0\RiskScoring.Contracts.csproj.CoreCompileInputs.cache
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\RiskPlatform\RiskScoring.Contracts\obj\Debug\net10.0\RiskScoring.Contracts.sourcelink.json
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\RiskPlatform\RiskScoring.Contracts\obj\Debug\net10.0\RiskScoring.Contracts.dll
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\RiskPlatform\RiskScoring.Contracts\obj\Debug\net10.0\refint\RiskScoring.Contracts.dll
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\RiskPlatform\RiskScoring.Contracts\obj\Debug\net10.0\RiskScoring.Contracts.pdb
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\RiskPlatform\RiskScoring.Contracts\obj\Debug\net10.0\ref\RiskScoring.Contracts.dll

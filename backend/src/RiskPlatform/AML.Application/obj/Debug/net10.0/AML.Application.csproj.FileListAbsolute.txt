@@ -1,0 +1,16 @@
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\RiskPlatform\AML.Application\bin\Debug\net10.0\AML.Application.deps.json
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\RiskPlatform\AML.Application\bin\Debug\net10.0\AML.Application.dll
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\RiskPlatform\AML.Application\bin\Debug\net10.0\AML.Application.pdb
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\RiskPlatform\AML.Application\bin\Debug\net10.0\AML.Contracts.dll
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\RiskPlatform\AML.Application\bin\Debug\net10.0\AML.Contracts.pdb
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\RiskPlatform\AML.Application\obj\Debug\net10.0\AML.Application.csproj.AssemblyReference.cache
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\RiskPlatform\AML.Application\obj\Debug\net10.0\AML.Application.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\RiskPlatform\AML.Application\obj\Debug\net10.0\AML.Application.AssemblyInfoInputs.cache
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\RiskPlatform\AML.Application\obj\Debug\net10.0\AML.Application.AssemblyInfo.cs
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\RiskPlatform\AML.Application\obj\Debug\net10.0\AML.Application.csproj.CoreCompileInputs.cache
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\RiskPlatform\AML.Application\obj\Debug\net10.0\AML.Application.sourcelink.json
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\RiskPlatform\AML.Application\obj\Debug\net10.0\AML.Appl.CBD2D5FF.Up2Date
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\RiskPlatform\AML.Application\obj\Debug\net10.0\AML.Application.dll
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\RiskPlatform\AML.Application\obj\Debug\net10.0\refint\AML.Application.dll
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\RiskPlatform\AML.Application\obj\Debug\net10.0\AML.Application.pdb
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\RiskPlatform\AML.Application\obj\Debug\net10.0\ref\AML.Application.dll

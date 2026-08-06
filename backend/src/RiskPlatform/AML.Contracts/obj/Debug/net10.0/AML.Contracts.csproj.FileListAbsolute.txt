@@ -1,0 +1,12 @@
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\RiskPlatform\AML.Contracts\bin\Debug\net10.0\AML.Contracts.deps.json
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\RiskPlatform\AML.Contracts\bin\Debug\net10.0\AML.Contracts.dll
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\RiskPlatform\AML.Contracts\bin\Debug\net10.0\AML.Contracts.pdb
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\RiskPlatform\AML.Contracts\obj\Debug\net10.0\AML.Contracts.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\RiskPlatform\AML.Contracts\obj\Debug\net10.0\AML.Contracts.AssemblyInfoInputs.cache
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\RiskPlatform\AML.Contracts\obj\Debug\net10.0\AML.Contracts.AssemblyInfo.cs
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\RiskPlatform\AML.Contracts\obj\Debug\net10.0\AML.Contracts.csproj.CoreCompileInputs.cache
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\RiskPlatform\AML.Contracts\obj\Debug\net10.0\AML.Contracts.sourcelink.json
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\RiskPlatform\AML.Contracts\obj\Debug\net10.0\AML.Contracts.dll
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\RiskPlatform\AML.Contracts\obj\Debug\net10.0\refint\AML.Contracts.dll
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\RiskPlatform\AML.Contracts\obj\Debug\net10.0\AML.Contracts.pdb
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\RiskPlatform\AML.Contracts\obj\Debug\net10.0\ref\AML.Contracts.dll

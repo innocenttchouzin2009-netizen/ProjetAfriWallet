@@ -1,0 +1,16 @@
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\RiskPlatform\RiskScoring.Application\bin\Release\net10.0\RiskScoring.Application.deps.json
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\RiskPlatform\RiskScoring.Application\bin\Release\net10.0\RiskScoring.Application.dll
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\RiskPlatform\RiskScoring.Application\bin\Release\net10.0\RiskScoring.Application.pdb
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\RiskPlatform\RiskScoring.Application\bin\Release\net10.0\RiskScoring.Contracts.dll
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\RiskPlatform\RiskScoring.Application\bin\Release\net10.0\RiskScoring.Contracts.pdb
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\RiskPlatform\RiskScoring.Application\obj\Release\net10.0\RiskScoring.Application.csproj.AssemblyReference.cache
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\RiskPlatform\RiskScoring.Application\obj\Release\net10.0\RiskScoring.Application.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\RiskPlatform\RiskScoring.Application\obj\Release\net10.0\RiskScoring.Application.AssemblyInfoInputs.cache
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\RiskPlatform\RiskScoring.Application\obj\Release\net10.0\RiskScoring.Application.AssemblyInfo.cs
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\RiskPlatform\RiskScoring.Application\obj\Release\net10.0\RiskScoring.Application.csproj.CoreCompileInputs.cache
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\RiskPlatform\RiskScoring.Application\obj\Release\net10.0\RiskScoring.Application.sourcelink.json
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\RiskPlatform\RiskScoring.Application\obj\Release\net10.0\RiskScor.4C6AB6DB.Up2Date
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\RiskPlatform\RiskScoring.Application\obj\Release\net10.0\RiskScoring.Application.dll
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\RiskPlatform\RiskScoring.Application\obj\Release\net10.0\refint\RiskScoring.Application.dll
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\RiskPlatform\RiskScoring.Application\obj\Release\net10.0\RiskScoring.Application.pdb
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\RiskPlatform\RiskScoring.Application\obj\Release\net10.0\ref\RiskScoring.Application.dll

@@ -1,0 +1,39 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v10.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v10.0": {
+      "RiskScoring.Application/1.0.0": {
+        "dependencies": {
+          "RiskScoring.Contracts": "1.0.0"
+        },
+        "runtime": {
+          "RiskScoring.Application.dll": {}
+        }
+      },
+      "RiskScoring.Contracts/1.0.0": {
+        "runtime": {
+          "RiskScoring.Contracts.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "RiskScoring.Application/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "RiskScoring.Contracts/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

@@ -1,0 +1,11 @@
+openapi: 3.0.3
+info:
+  title: AfriWallet Fraud Detection API
+  version: 1.1.1
+paths:
+  /api/v1/fraud/evaluate:
+    post:
+      summary: Evaluate a payment request for fraud risk
+      responses:
+        '200':
+          description: Fraud decision produced

@@ -1,0 +1,228 @@
+openapi: 3.0.3
+info:
+  title: AfriWallet Compliance Case Management API
+  version: 1.0.0
+paths:
+  /api/v1/compliance/cases:
+    post:
+      summary: Create a compliance case
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCaseRequest'
+      responses:
+        '200':
+          description: Case created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CaseResponse'
+    get:
+      summary: List compliance cases
+      responses:
+        '200':
+          description: Cases list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CaseResponse'
+  /api/v1/compliance/cases/{caseId}:
+    get:
+      summary: Get case by id
+      parameters:
+        - in: path
+          name: caseId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Case details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CaseResponse'
+    put:
+      summary: Update case metadata
+      parameters:
+        - in: path
+          name: caseId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCaseRequest'
+      responses:
+        '200':
+          description: Updated case
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CaseResponse'
+  /api/v1/compliance/cases/{caseId}/assign:
+    post:
+      summary: Assign case to investigator
+      parameters:
+        - in: path
+          name: caseId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignCaseRequest'
+      responses:
+        '200':
+          description: Assigned case
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CaseResponse'
+  /api/v1/compliance/cases/{caseId}/evidence:
+    post:
+      summary: Attach evidence to case
+      parameters:
+        - in: path
+          name: caseId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EvidenceRequest'
+      responses:
+        '200':
+          description: Case with evidence
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CaseResponse'
+  /api/v1/compliance/cases/{caseId}/decision:
+    post:
+      summary: Record case decision
+      parameters:
+        - in: path
+          name: caseId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DecisionRequest'
+      responses:
+        '200':
+          description: Case decision recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CaseResponse'
+components:
+  schemas:
+    ComplianceAlertInput:
+      type: object
+      properties:
+        source:
+          type: string
+        type:
+          type: string
+        details:
+          type: string
+        severity:
+          type: string
+    CreateCaseRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        source:
+          type: string
+        description:
+          type: string
+        assignedInvestigator:
+          type: string
+        priority:
+          type: string
+        alerts:
+          type: array
+          items:
+            $ref: '#/components/schemas/ComplianceAlertInput'
+    UpdateCaseRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+        assignedInvestigator:
+          type: string
+        priority:
+          type: string
+        investigatorNote:
+          type: string
+        noteAuthor:
+          type: string
+    AssignCaseRequest:
+      type: object
+      properties:
+        investigator:
+          type: string
+        isAutomatic:
+          type: boolean
+    EvidenceRequest:
+      type: object
+      properties:
+        label:
+          type: string
+        content:
+          type: string
+    DecisionRequest:
+      type: object
+      properties:
+        decisionType:
+          type: string
+        rationale:
+          type: string
+        closeCase:
+          type: boolean
+    CaseResponse:
+      type: object
+      properties:
+        caseId:
+          type: string
+          format: uuid
+        title:
+          type: string
+        source:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+        assignedInvestigator:
+          type: string
+        priority:
+          type: string

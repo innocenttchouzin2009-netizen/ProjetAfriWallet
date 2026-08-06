@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\RiskPlatform\RegulatoryReporting.Application\RegulatoryReporting.Application.csproj" />
+    <ProjectReference Include="..\..\src\RiskPlatform\RegulatoryReporting.Contracts\RegulatoryReporting.Contracts.csproj" />
+  </ItemGroup>
+</Project>

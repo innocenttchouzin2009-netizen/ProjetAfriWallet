@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Treasury.Domain\Treasury.Domain.csproj" />
+    <ProjectReference Include="..\Treasury.Contracts\Treasury.Contracts.csproj" />
+    <ProjectReference Include="..\Treasury.Infrastructure\Treasury.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>

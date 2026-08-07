@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Settlement.Domain\Settlement.Domain.csproj" />
+    <ProjectReference Include="..\Settlement.Application\Settlement.Application.csproj" />
+    <ProjectReference Include="..\Settlement.Contracts\Settlement.Contracts.csproj" />
+    <ProjectReference Include="..\Settlement.Infrastructure\Settlement.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+</Project>

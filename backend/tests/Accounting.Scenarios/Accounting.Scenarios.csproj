@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\FinancialPlatform\Accounting\Accounting.Domain\Accounting.Domain.csproj" />
+    <ProjectReference Include="..\..\src\FinancialPlatform\Accounting\Accounting.Application\Accounting.Application.csproj" />
+    <ProjectReference Include="..\..\src\FinancialPlatform\Accounting\Accounting.Infrastructure\Accounting.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>

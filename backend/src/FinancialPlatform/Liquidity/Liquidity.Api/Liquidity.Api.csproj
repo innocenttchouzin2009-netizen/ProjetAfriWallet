@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Liquidity.Domain\Liquidity.Domain.csproj" />
+    <ProjectReference Include="..\Liquidity.Application\Liquidity.Application.csproj" />
+    <ProjectReference Include="..\Liquidity.Contracts\Liquidity.Contracts.csproj" />
+    <ProjectReference Include="..\Liquidity.Infrastructure\Liquidity.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+</Project>

@@ -1,0 +1,27 @@
+{
+  "version": "v1.3.0-rc1",
+  "stream": "AFW-DLV-0013.8",
+  "decision": "READY FOR TREASURY RC",
+  "checks": {
+    "Treasury production validation report": true,
+    "Treasury production decision": true,
+    "Treasury disaster recovery validation report": true,
+    "Treasury disaster recovery decision": true,
+    "Treasury ledger OpenAPI": true,
+    "Liquidity OpenAPI": true,
+    "Settlement OpenAPI": true,
+    "Reconciliation OpenAPI": true,
+    "Accounting OpenAPI": true,
+    "Treasury RC PRD": true,
+    "Treasury RC release guide": true,
+    "Treasury RC rollback plan": true,
+    "Treasury RC QA checklist": true,
+    "Treasury RC validation template": true
+  },
+  "summary": {
+    "checks": 14,
+    "passed": 14,
+    "failed": 0,
+    "skipped": 0
+  }
+}

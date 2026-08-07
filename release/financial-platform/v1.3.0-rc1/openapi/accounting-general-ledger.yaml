@@ -1,0 +1,49 @@
+openapi: 3.0.3
+info:
+  title: Accounting and General Ledger API
+  version: 1.0.0
+paths:
+  /health/live:
+    get:
+      responses:
+        "200":
+          description: service healthy
+  /api/v1/accounting/accounts:
+    post:
+      responses:
+        "201":
+          description: account created
+  /api/v1/accounting/periods:
+    post:
+      responses:
+        "201":
+          description: accounting period created
+  /api/v1/accounting/journal-entries:
+    post:
+      responses:
+        "201":
+          description: journal entry posted
+  /api/v1/accounting/journal-entries/{journalEntryId}/reverse:
+    post:
+      parameters:
+        - name: journalEntryId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "201":
+          description: reversal journal entry posted
+  /api/v1/accounting/periods/{periodId}/trial-balance:
+    get:
+      parameters:
+        - name: periodId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: trial balance for period

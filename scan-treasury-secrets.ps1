@@ -9,7 +9,9 @@ $patterns = @(
 
 $roots = @(
     'backend/src/FinancialPlatform',
-    'docs/specs/treasury-production-readiness'
+    'docs/specs/treasury-production-readiness',
+    'docs/specs/treasury-release-candidate',
+    'release/financial-platform/v1.3.0-rc1'
 )
 
 $violations = @()

@@ -1,0 +1,40 @@
+openapi: 3.0.3
+info:
+  title: Multi-Currency Settlement API
+  version: 1.0.0
+paths:
+  /health:
+    get:
+      responses:
+        "200":
+          description: service health
+  /api/v1/settlement/instructions:
+    post:
+      responses:
+        "201":
+          description: instruction created
+  /api/v1/settlement/instructions/{instructionId}/execute:
+    post:
+      responses:
+        "200":
+          description: instruction execution result
+  /api/v1/settlement/batches:
+    post:
+      responses:
+        "201":
+          description: batch created
+  /api/v1/settlement/batches/{batchId}/execute:
+    post:
+      responses:
+        "200":
+          description: batch execution result
+  /api/v1/settlement/positions:
+    get:
+      responses:
+        "200":
+          description: settlement position list
+  /api/v1/settlement/quotes:
+    get:
+      responses:
+        "200":
+          description: sandbox FX quote

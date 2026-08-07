@@ -1,0 +1,11 @@
+{
+  "delivery": "AFW-DLV-0012.7",
+  "artifacts": [
+    "validation-report.md",
+    "validation-report.json",
+    "release-notes.md",
+    "manifest.json",
+    "checksums.sha256"
+  ],
+  "status": "ready"
+}

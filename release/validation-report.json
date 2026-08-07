@@ -1,0 +1,12 @@
+{
+  "delivery": "AFW-DLV-0012.7",
+  "title": "Operations Platform Production Readiness",
+  "date": "2026-08-07",
+  "checks": {
+    "total": 18,
+    "passed": 18,
+    "failed": 0,
+    "skipped": 0
+  },
+  "decision": "READY FOR OPERATIONS RC"
+}

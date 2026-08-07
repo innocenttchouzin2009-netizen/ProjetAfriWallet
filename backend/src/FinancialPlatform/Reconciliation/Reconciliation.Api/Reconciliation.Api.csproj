@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Reconciliation.Domain\Reconciliation.Domain.csproj" />
+    <ProjectReference Include="..\Reconciliation.Application\Reconciliation.Application.csproj" />
+    <ProjectReference Include="..\Reconciliation.Contracts\Reconciliation.Contracts.csproj" />
+    <ProjectReference Include="..\Reconciliation.Infrastructure\Reconciliation.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.10" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+</Project>

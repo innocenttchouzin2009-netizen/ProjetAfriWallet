@@ -1,0 +1,37 @@
+openapi: 3.0.3
+info:
+  title: AfriWallet Operations Center API
+  version: 1.0.0
+paths:
+  /api/v1/operations/health:
+    get:
+      summary: Get aggregated service health
+  /api/v1/operations/dashboard:
+    get:
+      summary: Get operations dashboard
+  /api/v1/operations/incidents:
+    get:
+      summary: List incidents
+    post:
+      summary: Create incident
+  /api/v1/operations/incidents/{id}/ack:
+    post:
+      summary: Acknowledge incident
+  /api/v1/operations/incidents/{id}/resolve:
+    post:
+      summary: Resolve incident
+  /api/v1/operations/alerts:
+    get:
+      summary: List alerts
+  /api/v1/operations/maintenance:
+    post:
+      summary: Schedule maintenance window
+  /api/v1/operations/deployments:
+    get:
+      summary: List deployments
+  /api/v1/operations/backups:
+    get:
+      summary: List backups
+  /api/v1/operations/dr:
+    get:
+      summary: List disaster recovery plans

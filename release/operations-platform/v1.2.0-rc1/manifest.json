@@ -1,0 +1,62 @@
+{
+  "delivery": "AFW-DLV-0012.8",
+  "version": "v1.2.0-rc1",
+  "generatedAtUtc": "2026-08-07T09:50:15.8318754Z",
+  "files": [
+    {
+      "path": "adr/README.md",
+      "sha256": "37f9d577b2b1497a866cd075602df5e4987a53a4751f1cf32ac26c95434b7103",
+      "size": 49
+    },
+    {
+      "path": "artifacts/README.md",
+      "sha256": "60912825708fd58c9db9deb50b963df2de3597ba5a49c6768b9c05aed9e7c635",
+      "size": 48
+    },
+    {
+      "path": "changelog.md",
+      "sha256": "bff379cd66d5fa6e242e84cec61618e835b36ac1243266f503ed797298f42581",
+      "size": 448
+    },
+    {
+      "path": "configuration/README.md",
+      "sha256": "5ad0147881527cce44a57139bbd646caa56d734e33b2ee56054df41abbf12b16",
+      "size": 40
+    },
+    {
+      "path": "dashboards/README.md",
+      "sha256": "667f0213271612daa5d85b6b229395dc7c5000c2afb857f7b6f9ce50d707562d",
+      "size": 33
+    },
+    {
+      "path": "openapi/README.md",
+      "sha256": "1d237bbc40ff9693e33a2da3712c3945502ab69db79ad849d74446b09d5d9c9c",
+      "size": 53
+    },
+    {
+      "path": "release-notes.md",
+      "sha256": "d95cf8c2a9992c8228e463b402b0dd7e3272791010be117ae2d893792aea9158",
+      "size": 651
+    },
+    {
+      "path": "rollback/README.md",
+      "sha256": "b53dcb41b5c91a045e44ddc38f211f134fd6bc13413d1ded96d0e61069e29aae",
+      "size": 44
+    },
+    {
+      "path": "runbooks/README.md",
+      "sha256": "495f6a204c40d64eb8cb0134df2ea9b7b37c137dd24a7ebc92656bd55cd0bac2",
+      "size": 47
+    },
+    {
+      "path": "validation-report.json",
+      "sha256": "69eddfa8cec79eeb705305dc3a279e38d498bfba5e8b1d75c16bbb27fd4ff287",
+      "size": 2008
+    },
+    {
+      "path": "validation-report.md",
+      "sha256": "a1c4e745ed414ad54572acc97098e3b08fe993eea677fd8e0086768bf0a57b51",
+      "size": 651
+    }
+  ]
+}

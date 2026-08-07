@@ -1,0 +1,101 @@
+{
+  "delivery": "AFW-DLV-0012.8",
+  "version": "v1.2.0-rc1",
+  "checks": 18,
+  "passed": 18,
+  "failed": 0,
+  "skipped": 0,
+  "decision": "READY FOR OPERATIONS RC",
+  "results": [
+    {
+      "name": "Notification Platform",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "Customer Support Platform",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "Operations \u0026 Back Office",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "Reporting \u0026 BI",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "Multi-Tenant Administration",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "Production Operations \u0026 SRE",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "Configuration \u0026 Secrets",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "Health Checks",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "Logging \u0026 Correlation",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "Resilience",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "Rate Limiting",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "Feature Flags",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "OpenTelemetry",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "Metrics \u0026 Monitoring",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "Audit Trail",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "Release Build",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "Secret Scan",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "Packaging",
+      "passed": true,
+      "details": "PASS"
+    }
+  ]
+}

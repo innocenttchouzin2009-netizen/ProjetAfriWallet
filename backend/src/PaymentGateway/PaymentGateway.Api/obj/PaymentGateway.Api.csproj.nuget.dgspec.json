@@ -19,6 +19,9 @@
         "originalTargetFrameworks": [
           "net10.0"
         ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
         "frameworks": {
           "net10.0": {
             "framework": "net10.0",

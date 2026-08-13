@@ -35,3 +35,6 @@ C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Subscriptions
 C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Subscriptions\Subscriptions.Api\obj\Debug\net10.0\Subscriptions.Api.pdb
 C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Subscriptions\Subscriptions.Api\obj\Debug\net10.0\Subscriptions.Api.genruntimeconfig.cache
 C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Subscriptions\Subscriptions.Api\obj\Debug\net10.0\ref\Subscriptions.Api.dll
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Subscriptions\Subscriptions.Api\bin\Debug\net10.0\appsettings.Development.json
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Subscriptions\Subscriptions.Api\bin\Debug\net10.0\appsettings.json
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\Subscriptions\Subscriptions.Api\bin\Debug\net10.0\appsettings.Production.json

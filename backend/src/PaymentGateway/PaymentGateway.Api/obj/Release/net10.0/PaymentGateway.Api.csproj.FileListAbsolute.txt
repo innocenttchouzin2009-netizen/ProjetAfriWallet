@@ -1,10 +1,11 @@
-C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\PaymentGateway\PaymentGateway.Api\bin\Release\net10.0\openapi.json
-C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\PaymentGateway\PaymentGateway.Api\bin\Release\net10.0\PaymentGateway.Api.staticwebassets.endpoints.json
-C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\PaymentGateway\PaymentGateway.Api\bin\Release\net10.0\PaymentGateway.Api.exe
-C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\PaymentGateway\PaymentGateway.Api\bin\Release\net10.0\PaymentGateway.Api.deps.json
-C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\PaymentGateway\PaymentGateway.Api\bin\Release\net10.0\PaymentGateway.Api.runtimeconfig.json
 C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\PaymentGateway\PaymentGateway.Api\bin\Release\net10.0\PaymentGateway.Api.dll
-C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\PaymentGateway\PaymentGateway.Api\bin\Release\net10.0\PaymentGateway.Api.pdb
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\.tmp-gateway-build\openapi.json
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\.tmp-gateway-build\PaymentGateway.Api.staticwebassets.endpoints.json
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\.tmp-gateway-build\PaymentGateway.Api.exe
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\.tmp-gateway-build\PaymentGateway.Api.deps.json
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\.tmp-gateway-build\PaymentGateway.Api.runtimeconfig.json
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\.tmp-gateway-build\PaymentGateway.Api.dll
+C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\.tmp-gateway-build\PaymentGateway.Api.pdb
 C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\PaymentGateway\PaymentGateway.Api\obj\Release\net10.0\rpswa.dswa.cache.json
 C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\PaymentGateway\PaymentGateway.Api\obj\Release\net10.0\PaymentGateway.Api.GeneratedMSBuildEditorConfig.editorconfig
 C:\Users\User\OneDrive\Desktop\ProjetAfriWallet-atomic\backend\src\PaymentGateway\PaymentGateway.Api\obj\Release\net10.0\PaymentGateway.Api.AssemblyInfoInputs.cache

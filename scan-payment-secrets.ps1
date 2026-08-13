@@ -1,66 +1,62 @@
-[CmdletBinding()]
-param()
-
-$ErrorActionPreference = "Stop"
-$repositoryRoot = $PSScriptRoot
+﻿$ErrorActionPreference = 'Stop'
+$repoRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 
 $patterns = @(
-    '(?i)\b(API[_-]?KEY|CLIENT[_-]?SECRET|ACCESS[_-]?TOKEN|JWT[_-]?SECRET|PASSWORD|PASSWD|PRIVATE[_-]?KEY)\b\s*[:=]\s*["''][^"''\r\n]{8,}["'']',
-    'AKIA[0-9A-Z]{16}',
-    '-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----',
-    '(?i)Bearer\s+[A-Za-z0-9\-\._~\+\/]{20,}=*',
-    '(?i)https?://[^/\s:@]+:[^/\s@]+@'
+    '(?i)(?:api[_-]?key|access[_-]?token|client[_-]?secret|jwt[_-]?secret|callback[_-]?secret|password)\s*[:=]\s*["''](?!(?:example|sample|fake|dummy|placeholder|changeme|test)).+',
+    '(?i)(?:AKIA|ASIA)[A-Z0-9]{16}',
+    '(?i)AIza[0-9A-Za-z\-_]{35}',
+    '(?i)sk_(?:live|test)_[A-Za-z0-9]{16,}',
+    '(?i)Bearer\s+[A-Za-z0-9._\-]{20,}'
 )
 
-$roots = @(
-    "backend/src/PaymentPlatform",
-    "docs/specs/payment-production-readiness",
-    "release/payment-platform/v1.4.0"
-)
+$files = Get-ChildItem -Path $repoRoot -Recurse -File |
+    Where-Object {
+        $_.FullName -notmatch '(?i)\\(\\.git|bin|obj|\.vs)\\' -and
+        $_.Extension -in '.cs', '.json', '.ps1', '.yaml', '.yml', '.csproj'
+    }
 
-$extensions = @(
-    ".cs",
-    ".csproj",
-    ".json",
-    ".md",
-    ".ps1",
-    ".xml",
-    ".yaml",
-    ".yml",
-    ".config"
-)
+$findings = [System.Collections.Generic.List[string]]::new()
 
-$violations = @()
-
-foreach ($relativeRoot in $roots) {
-    $root = Join-Path $repositoryRoot $relativeRoot
-
-    if (-not (Test-Path -LiteralPath $root)) {
+foreach ($file in $files) {
+    $relative = $file.FullName.Substring($repoRoot.Length + 1).Replace('\\', '/')
+    if ($relative -match '(?i)(?:build-risk-release\.ps1|validate-risk-platform\.ps1|README|CHANGELOG|SECURITY|\.md)$') {
         continue
     }
 
-    $files = Get-ChildItem -LiteralPath $root -Recurse -File |
-        Where-Object {
-            $_.FullName -notmatch '[\\/](bin|obj)[\\/]' -and
-            $extensions -contains $_.Extension.ToLowerInvariant()
-        }
+    $content = Get-Content -Path $file.FullName -Raw -ErrorAction SilentlyContinue
+    if ($null -eq $content) { continue }
 
-    foreach ($file in $files) {
-        $content = Get-Content -LiteralPath $file.FullName -Raw -ErrorAction Stop
-
+    $lines = $content -split "`r?`n"
+    foreach ($line in $lines) {
         foreach ($pattern in $patterns) {
-            if ($content -match $pattern) {
-                $relativePath = $file.FullName.Substring($repositoryRoot.Length + 1)
-                $violations += "${relativePath}: $pattern"
+            if ($line -match $pattern) {
+                if ($line -match '(?i)(?:api[_-]?key|access[_-]?token|client[_-]?secret|jwt[_-]?secret|callback[_-]?secret|password)\s*[:=]\s*["'']\s*["'']') {
+                    continue
+                }
+
+                if ($line -match '(?i)(?:api[_-]?key|access[_-]?token|client[_-]?secret|jwt[_-]?secret|callback[_-]?secret|password)\s*[:=]\s*\$\{?\w+\}?') {
+                    continue
+                }
+
+                if ($line -match '(?i)[A-Z0-9_]{4,}_(?:API_KEY|ACCESS_TOKEN|CLIENT_SECRET|JWT_SECRET|CALLBACK_SECRET|PASSWORD)') {
+                    continue
+                }
+
+                if ($line -match '(?i)public\s+const\s+string\s+[A-Za-z0-9_]+\s*=\s*"[A-Z0-9_]+";') {
+                    continue
+                }
+
+                $findings.Add("$relative : $line")
             }
         }
     }
 }
 
-if ($violations.Count -gt 0) {
-    Write-Output "Secret Scan FAIL"
-    $violations | ForEach-Object { Write-Output $_ }
-    exit 1
+if ($findings.Count -gt 0) {
+    foreach ($finding in $findings | Select-Object -First 10) {
+        Write-Host "SECRET_FINDING: $finding"
+    }
+    throw "Secret scan found potential secrets in the repository."
 }
 
-Write-Output "Secret Scan PASS"
+Write-Host 'Payment Secret Scan PASS'

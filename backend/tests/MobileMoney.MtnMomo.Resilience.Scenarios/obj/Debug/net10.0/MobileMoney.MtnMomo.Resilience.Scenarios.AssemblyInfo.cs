@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("MobileMoney.MtnMomo.Resilience.Scenarios")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+add435717e10082dcffec9976345d4ac90eeca1e")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+dd875eac560dfde4eb0df81a5815a42fe906cd91")]
 [assembly: System.Reflection.AssemblyProductAttribute("MobileMoney.MtnMomo.Resilience.Scenarios")]
 [assembly: System.Reflection.AssemblyTitleAttribute("MobileMoney.MtnMomo.Resilience.Scenarios")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

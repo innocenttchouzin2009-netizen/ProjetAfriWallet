@@ -1,0 +1,101 @@
+openapi: 3.0.3
+info:
+  title: AfriWallet Support Platform API
+  version: 1.0.0
+paths:
+  /api/v1/support/cases:
+    post:
+      summary: Create support case
+      responses:
+        '200':
+          description: Support case created
+    get:
+      summary: List support cases
+      responses:
+        '200':
+          description: Support case list
+  /api/v1/support/cases/{caseId}:
+    get:
+      summary: Get support case by id
+      parameters:
+        - name: caseId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Support case details
+    put:
+      summary: Update support case
+      parameters:
+        - name: caseId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Support case updated
+  /api/v1/support/cases/{caseId}/assign:
+    post:
+      summary: Assign support case
+      responses:
+        '200':
+          description: Case assigned
+  /api/v1/support/cases/{caseId}/messages:
+    post:
+      summary: Add support message
+      responses:
+        '200':
+          description: Message added
+  /api/v1/support/cases/{caseId}/notes:
+    post:
+      summary: Add internal note
+      responses:
+        '200':
+          description: Internal note added
+  /api/v1/support/cases/{caseId}/attachments:
+    post:
+      summary: Add attachment
+      responses:
+        '200':
+          description: Attachment added
+  /api/v1/support/cases/{caseId}/escalate:
+    post:
+      summary: Escalate support case
+      responses:
+        '200':
+          description: Case escalated
+  /api/v1/support/cases/{caseId}/resolve:
+    post:
+      summary: Resolve support case
+      responses:
+        '200':
+          description: Case resolved
+  /api/v1/support/cases/{caseId}/close:
+    post:
+      summary: Close support case
+      responses:
+        '200':
+          description: Case closed
+  /api/v1/support/cases/{caseId}/reopen:
+    post:
+      summary: Reopen support case
+      responses:
+        '200':
+          description: Case reopened
+  /api/v1/support/cases/{caseId}/timeline:
+    get:
+      summary: Get case timeline
+      responses:
+        '200':
+          description: Timeline entries
+  /api/v1/support/cases/{caseId}/sla:
+    get:
+      summary: Get case SLA
+      responses:
+        '200':
+          description: SLA state

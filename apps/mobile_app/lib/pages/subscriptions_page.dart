@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/app_localizations.dart';
 import '../models/subscription_models.dart';
 import '../services/subscription_repository.dart';
 
 class SubscriptionsPage extends StatefulWidget {
-  const SubscriptionsPage({super.key, this.repository});
+  const SubscriptionsPage({super.key, this.repository, this.locale, this.onOpenSettings});
 
   final SubscriptionRepository? repository;
+  final Locale? locale;
+  final VoidCallback? onOpenSettings;
 
   @override
   State<SubscriptionsPage> createState() => _SubscriptionsPageState();
@@ -62,9 +65,16 @@ class _SubscriptionsPageState extends State<SubscriptionsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Abonnements'),
+        title: Text(localizations.appTitle),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: widget.onOpenSettings,
+          ),
+        ],
       ),
       body: RefreshIndicator(
         onRefresh: _loadData,
@@ -79,13 +89,14 @@ class _SubscriptionsPageState extends State<SubscriptionsPage> {
     }
 
     if (_isError) {
+      final localizations = AppLocalizations.of(context)!;
       return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('Unable to load subscriptions'),
+            Text(localizations.welcome),
             const SizedBox(height: 12),
-            FilledButton(onPressed: _loadData, child: const Text('Retry')),
+            FilledButton(onPressed: _loadData, child: Text(localizations.retry)),
           ],
         ),
       );
@@ -104,19 +115,20 @@ class _SubscriptionsPageState extends State<SubscriptionsPage> {
   }
 
   Widget _buildSearchSection() {
+    final localizations = AppLocalizations.of(context)!;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Catalogue', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            Text(localizations.wallet, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),
             TextField(
               controller: _searchController,
-              decoration: const InputDecoration(
-                labelText: 'Rechercher une offre',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: localizations.searchOffers,
+                border: const OutlineInputBorder(),
               ),
               onSubmitted: (_) => _loadData(),
             ),
@@ -126,7 +138,7 @@ class _SubscriptionsPageState extends State<SubscriptionsPage> {
                 Expanded(
                   child: DropdownButtonFormField<String>(
                     initialValue: _selectedCountry,
-                    decoration: const InputDecoration(labelText: 'Pays', border: OutlineInputBorder()),
+                    decoration: InputDecoration(labelText: localizations.country, border: const OutlineInputBorder()),
                     items: _countries.map((country) => DropdownMenuItem(value: country, child: Text(country))).toList(),
                     onChanged: (value) {
                       setState(() => _selectedCountry = value);
@@ -138,7 +150,7 @@ class _SubscriptionsPageState extends State<SubscriptionsPage> {
                 Expanded(
                   child: DropdownButtonFormField<String>(
                     initialValue: _selectedCurrency,
-                    decoration: const InputDecoration(labelText: 'Devise', border: OutlineInputBorder()),
+                    decoration: InputDecoration(labelText: localizations.currency, border: const OutlineInputBorder()),
                     items: _currencies.map((currency) => DropdownMenuItem(value: currency, child: Text(currency))).toList(),
                     onChanged: (value) {
                       setState(() => _selectedCurrency = value);
@@ -155,13 +167,14 @@ class _SubscriptionsPageState extends State<SubscriptionsPage> {
   }
 
   Widget _buildSubscriptionsSection() {
+    final localizations = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Mes abonnements', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        Text(localizations.mySubscriptions, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
         const SizedBox(height: 8),
         if (_subscriptions.isEmpty)
-          const Text('Aucun abonnement pour le moment.')
+          Text(localizations.noSubscriptions)
         else
           ..._subscriptions.map((subscription) => _SubscriptionCard(subscription: subscription)),
       ],
@@ -169,13 +182,14 @@ class _SubscriptionsPageState extends State<SubscriptionsPage> {
   }
 
   Widget _buildOffersSection() {
+    final localizations = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Offres', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        Text(localizations.offers, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
         const SizedBox(height: 8),
         if (_offers.isEmpty)
-          const Text('Aucune offre disponible.')
+          Text(localizations.noOffers)
         else
           ..._offers.map((offer) => _OfferCard(offer: offer, repository: _repository)),
       ],
@@ -190,6 +204,7 @@ class _SubscriptionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: Padding(
@@ -204,14 +219,14 @@ class _SubscriptionCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 8),
-            Text('Cycle: ${subscription.currentCycle}'),
-            Text('Prochaine facturation: ${subscription.nextBillingDate}'),
-            Text('Prix: ${subscription.price} ${subscription.currency}'),
+            Text('${localizations.cycle}: ${subscription.currentCycle}'),
+            Text('${localizations.nextBilling}: ${subscription.nextBillingDate}'),
+            Text('${localizations.price}: ${localizations.formatCurrency(subscription.price)} ${subscription.currency}'),
             const SizedBox(height: 8),
             Row(
               children: [
                 Switch(value: subscription.autoRenew, onChanged: (_) {}),
-                const Text('Auto-renouvellement'),
+                Text(localizations.autoRenewal),
               ],
             ),
           ],
@@ -229,6 +244,7 @@ class _OfferCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: Padding(
@@ -240,7 +256,7 @@ class _OfferCard extends StatelessWidget {
             const SizedBox(height: 4),
             Text(offer.description),
             const SizedBox(height: 8),
-            Text('${offer.price} ${offer.currency} / mois'),
+            Text('${localizations.formatCurrency(offer.price)} ${offer.currency} / ${localizations.monthly}'),
             const SizedBox(height: 8),
             Wrap(spacing: 8, children: offer.features.map((feature) => Chip(label: Text(feature))).toList()),
             const SizedBox(height: 12),
@@ -251,10 +267,10 @@ class _OfferCard extends StatelessWidget {
                     onPressed: () async {
                       await repository.createSubscription(offer.id);
                       if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Abonnement créé')));
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(localizations.subscriptionCreated)));
                       }
                     },
-                    child: const Text('Souscrire'),
+                    child: Text(localizations.subscribe),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -267,12 +283,12 @@ class _OfferCard extends StatelessWidget {
                           title: Text(offer.name),
                           content: Text(offer.longDescription),
                           actions: [
-                            TextButton(onPressed: () => Navigator.of(dialogContext).pop(), child: const Text('Fermer')),
+                            TextButton(onPressed: () => Navigator.of(dialogContext).pop(), child: Text(localizations.close)),
                           ],
                         ),
                       );
                     },
-                    child: const Text('Détails'),
+                    child: Text(localizations.details),
                   ),
                 ),
               ],

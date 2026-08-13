@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Merchant.Settlement.Scenarios")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e022e82097481d327138467e1cea047466d96ab0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+ed3d0d61bcad5ca34e8264602d1264010e59b85e")]
 [assembly: System.Reflection.AssemblyProductAttribute("Merchant.Settlement.Scenarios")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Merchant.Settlement.Scenarios")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

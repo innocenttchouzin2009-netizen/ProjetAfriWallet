@@ -1,0 +1,153 @@
+{
+  "delivery": "AFW-DLV-0015.7",
+  "platform": "AfriWallet Banking Platform",
+  "version": "v1.5.0",
+  "checks": 28,
+  "passed": 28,
+  "failed": 0,
+  "skipped": 0,
+  "decision": "READY FOR BANKING RC",
+  "generatedAtUtc": "2026-08-13T22:11:35.7665953+00:00",
+  "checkResults": [
+    {
+      "Name": "Beneficiary Registry",
+      "Passed": true,
+      "Details": "PASS"
+    },
+    {
+      "Name": "Transfer Intent Engine",
+      "Passed": true,
+      "Details": "PASS"
+    },
+    {
+      "Name": "Routing \u0026 Rail Selection",
+      "Passed": true,
+      "Details": "PASS"
+    },
+    {
+      "Name": "Transfer Execution Platform",
+      "Passed": true,
+      "Details": "PASS"
+    },
+    {
+      "Name": "Settlement \u0026 Reconciliation",
+      "Passed": true,
+      "Details": "PASS"
+    },
+    {
+      "Name": "Provider Integration",
+      "Passed": true,
+      "Details": "PASS"
+    },
+    {
+      "Name": "Release Build",
+      "Passed": true,
+      "Details": "PASS"
+    },
+    {
+      "Name": "Scenario Suites",
+      "Passed": true,
+      "Details": "PASS"
+    },
+    {
+      "Name": "Configuration Validation",
+      "Passed": true,
+      "Details": "PASS"
+    },
+    {
+      "Name": "Secret Scan",
+      "Passed": true,
+      "Details": "PASS"
+    },
+    {
+      "Name": "Dependency Audit",
+      "Passed": true,
+      "Details": "PASS"
+    },
+    {
+      "Name": "Health Checks",
+      "Passed": true,
+      "Details": "PASS"
+    },
+    {
+      "Name": "Readiness Checks",
+      "Passed": true,
+      "Details": "PASS"
+    },
+    {
+      "Name": "Failure Recovery",
+      "Passed": true,
+      "Details": "PASS"
+    },
+    {
+      "Name": "Idempotency Controls",
+      "Passed": true,
+      "Details": "PASS"
+    },
+    {
+      "Name": "Webhook Security",
+      "Passed": true,
+      "Details": "PASS"
+    },
+    {
+      "Name": "Provider Health",
+      "Passed": true,
+      "Details": "PASS"
+    },
+    {
+      "Name": "Retry Policy",
+      "Passed": true,
+      "Details": "PASS"
+    },
+    {
+      "Name": "Circuit Breaker",
+      "Passed": true,
+      "Details": "PASS"
+    },
+    {
+      "Name": "Audit Foundation",
+      "Passed": true,
+      "Details": "PASS"
+    },
+    {
+      "Name": "Telemetry Foundation",
+      "Passed": true,
+      "Details": "PASS"
+    },
+    {
+      "Name": "Financial Core Boundary",
+      "Passed": true,
+      "Details": "PASS"
+    },
+    {
+      "Name": "Sandbox Enforcement",
+      "Passed": true,
+      "Details": "PASS"
+    },
+    {
+      "Name": "Production Traffic Disabled",
+      "Passed": true,
+      "Details": "PASS"
+    },
+    {
+      "Name": "Bank Credentials Absent",
+      "Passed": true,
+      "Details": "PASS"
+    },
+    {
+      "Name": "External Certification Not Claimed",
+      "Passed": true,
+      "Details": "PASS"
+    },
+    {
+      "Name": "Manifest SHA-256",
+      "Passed": true,
+      "Details": "PASS"
+    },
+    {
+      "Name": "Rollback Package",
+      "Passed": true,
+      "Details": "PASS"
+    }
+  ]
+}

@@ -1,0 +1,60 @@
+openapi: 3.0.1
+info:
+  title: Bank Routing API
+  version: 1.0.0
+paths:
+  /health/live:
+    get:
+      summary: health check
+      responses:
+        '200':
+          description: healthy
+  /api/v1/banking/routing/evaluate:
+    post:
+      summary: evaluate routing for a ready-for-routing transfer intent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - transferIntentId
+                - ownerAwid
+                - countryCode
+                - currencyCode
+                - amountMinor
+                - idempotencyKey
+              properties:
+                transferIntentId:
+                  type: string
+                  format: uuid
+                ownerAwid:
+                  type: string
+                countryCode:
+                  type: string
+                currencyCode:
+                  type: string
+                amountMinor:
+                  type: integer
+                  format: int64
+                idempotencyKey:
+                  type: string
+                preferredRail:
+                  type: string
+      responses:
+        '200':
+          description: routing decision produced
+  /api/v1/banking/routing/decisions/{decisionId}:
+    get:
+      summary: get a routing decision
+      parameters:
+        - in: path
+          name: decisionId
+          schema:
+            type: string
+            format: uuid
+          required: true
+      responses:
+        '200':
+          description: decision found

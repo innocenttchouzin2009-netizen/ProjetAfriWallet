@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\BankingPlatform\BankRouting\BankRouting.Application\BankRouting.Application.csproj" />
+    <ProjectReference Include="..\..\src\BankingPlatform\BankRouting\BankRouting.Infrastructure\BankRouting.Infrastructure.csproj" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,29 @@
+openapi: 3.0.1
+info:
+  title: AfriWallet Payment Intent API
+  version: 1.0.0
+paths:
+  /health/live:
+    get:
+      responses:
+        '200':
+          description: Healthy
+  /api/v1/payment-intents:
+    post:
+      responses:
+        '201':
+          description: Created
+  /api/v1/payment-intents/{paymentIntentId}:
+    get:
+      parameters:
+        - in: path
+          name: paymentIntentId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Payment intent
+        '404':
+          description: Not found

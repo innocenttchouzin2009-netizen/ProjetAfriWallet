@@ -1,0 +1,18 @@
+{
+  "delivery": "AFW-DLV-0015.7",
+  "platform": "AfriWallet Banking Platform",
+  "version": "v1.5.0",
+  "generatedAtUtc": "2026-08-13T22:11:36.1723782+00:00",
+  "files": [
+    {
+      "path": "validation-report.json",
+      "sha256": "5518db224147d1c117e7bef8a065a640e4cbfb053fba2b8f21125e2d1de9e079",
+      "sizeBytes": 3138
+    },
+    {
+      "path": "validation-report.md",
+      "sha256": "cc1e4373fe659395a5a284b5749750cea694e9004f959ca25567b4588cfab0d1",
+      "sizeBytes": 139
+    }
+  ]
+}

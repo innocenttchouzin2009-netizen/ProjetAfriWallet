@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\PaymentPlatform\MerchantSettlement\MerchantSettlement.Domain\MerchantSettlement.Domain.csproj" />
+    <ProjectReference Include="..\..\src\PaymentPlatform\MerchantSettlement\MerchantSettlement.Application\MerchantSettlement.Application.csproj" />
+    <ProjectReference Include="..\..\src\PaymentPlatform\MerchantSettlement\MerchantSettlement.Infrastructure\MerchantSettlement.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>

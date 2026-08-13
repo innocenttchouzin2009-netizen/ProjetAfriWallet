@@ -1,0 +1,157 @@
+{
+  "delivery": "AFW-DLV-0014.8",
+  "version": "v1.4.0-rc1",
+  "checks": 29,
+  "passed": 29,
+  "failed": 0,
+  "skipped": 0,
+  "decision": "READY FOR PAYMENT RC",
+  "generatedAtUtc": "2026-08-13T18:41:34.5064797+00:00",
+  "results": [
+    {
+      "name": "Payment Intent Engine",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "Payment Routing Engine",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "Merchant Acquiring Platform",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "Merchant Settlement Platform",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "Mobile Money Gateway",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "Provider Integration Platform",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "Production Readiness",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "Configuration \u0026 Secrets",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "Health Checks",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "Logging \u0026 Correlation",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "Audit Trail",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "Telemetry",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "Metrics",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "Retry Policy",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "Circuit Breaker",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "Provider Health",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "Webhook Verification",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "Idempotency",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "Failure Recovery",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "Payment Routing Security Fix",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "Dependency Vulnerability Scan",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "Secret Scan",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "Release Build",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "OpenAPI Package",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "Operational Documentation",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "Release Manifest",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "SHA-256 Checksums",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "Rollback Package",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "RC Packaging",
+      "passed": true,
+      "details": "PASS"
+    }
+  ]
+}

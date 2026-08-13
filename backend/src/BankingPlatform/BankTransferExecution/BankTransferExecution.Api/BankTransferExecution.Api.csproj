@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <ItemGroup>
+    <ProjectReference Include="..\BankTransferExecution.Domain\BankTransferExecution.Domain.csproj" />
+    <ProjectReference Include="..\BankTransferExecution.Application\BankTransferExecution.Application.csproj" />
+    <ProjectReference Include="..\BankTransferExecution.Infrastructure\BankTransferExecution.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.0" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+</Project>

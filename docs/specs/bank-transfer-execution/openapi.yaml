@@ -1,0 +1,73 @@
+openapi: 3.0.3
+info:
+  title: AfriWallet Bank Transfer Execution API
+  version: 1.0.0
+paths:
+  /health/live:
+    get:
+      responses:
+        '200':
+          description: healthy
+  /api/v1/banking/transfer-executions:
+    post:
+      summary: execute a bank transfer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - transferIntentId
+                - routingDecisionId
+                - providerCode
+                - railCode
+                - amountMinor
+                - currencyCode
+                - idempotencyKey
+              properties:
+                transferIntentId:
+                  type: string
+                  format: uuid
+                routingDecisionId:
+                  type: string
+                  format: uuid
+                providerCode:
+                  type: string
+                railCode:
+                  type: string
+                amountMinor:
+                  type: integer
+                currencyCode:
+                  type: string
+                idempotencyKey:
+                  type: string
+      responses:
+        '202':
+          description: execution accepted
+  /api/v1/banking/transfer-executions/{executionId}:
+    get:
+      parameters:
+        - in: path
+          name: executionId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: execution found
+        '404':
+          description: execution not found
+  /api/v1/banking/transfer-executions/{executionId}/complete:
+    post:
+      parameters:
+        - in: path
+          name: executionId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: execution completed

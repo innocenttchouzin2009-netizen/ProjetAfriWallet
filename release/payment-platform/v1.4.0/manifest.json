@@ -1,0 +1,57 @@
+{
+  "delivery": "AFW-DLV-0014.7",
+  "release": "payment-platform-v1.4.0",
+  "generatedAtUtc": "2026-08-13T18:00:00+00:00",
+  "files": [
+    {
+      "path": "artifacts/release-evidence.md",
+      "sha256": "ce3681ffa6d71f19c70968aeaa6959735edf39d97d86a22d71dc141656b0ab7c",
+      "size": 480
+    },
+    {
+      "path": "configuration/configuration-matrix.md",
+      "sha256": "ec874140ff22460b1eef3a963d12c2d67a5b7633206f12797305e0035661bca9",
+      "size": 660
+    },
+    {
+      "path": "configuration/release-metadata.json",
+      "sha256": "2eeea6f0f80bdea10ad5868806d36a4b0edf52b8041d42b7e11fc9c115bd208f",
+      "size": 122
+    },
+    {
+      "path": "dashboards/payment-platform-dashboard.md",
+      "sha256": "50e656ad352011bd9b84169c565da36b0def012cc99684de74f29ce9e2842792",
+      "size": 470
+    },
+    {
+      "path": "openapi/catalog.md",
+      "sha256": "5de1374bbbac974d49c009c101a42a52ae749ebe3673b4c2e94d6f8cac1d4a31",
+      "size": 761
+    },
+    {
+      "path": "release-notes.md",
+      "sha256": "c7dd62426989a68e2b3764ef1c51bb2ec75f6d5f5efd2f21a1b676138b278e48",
+      "size": 1022
+    },
+    {
+      "path": "rollback/rollback-plan.md",
+      "sha256": "b6bcd4258e94f7c8b78d9493eb7fbfd73d4676e664eb4cfc6ade99327e68ce9e",
+      "size": 349
+    },
+    {
+      "path": "runbooks/payment-platform-operations.md",
+      "sha256": "009f39876ee83af4a4966a825a8a630912a534460b92d6f2b05285832bd7f5e3",
+      "size": 421
+    },
+    {
+      "path": "validation-report.json",
+      "sha256": "407af26855ed955b00cccf7d3228cda6d5c96dc83aafb16926285787e45c542c",
+      "size": 2933
+    },
+    {
+      "path": "validation-report.md",
+      "sha256": "7c4a1b5049ce2ac78ff09051dadac09be196d5eaf2e9e124f7c12e04eb4289eb",
+      "size": 1329
+    }
+  ]
+}

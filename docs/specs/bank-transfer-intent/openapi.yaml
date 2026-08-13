@@ -1,0 +1,116 @@
+openapi: 3.0.1
+info:
+  title: Bank Transfer Intent API
+  version: 1.0.0
+paths:
+  /health/live:
+    get:
+      summary: health check
+      responses:
+        '200':
+          description: healthy
+  /api/v1/banking/transfer-intents:
+    post:
+      summary: create transfer intent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - ownerAwid
+                - beneficiaryId
+                - bankAccountId
+                - amountMinor
+                - currencyCode
+                - reference
+                - idempotencyKey
+                - lifetimeMinutes
+              properties:
+                ownerAwid:
+                  type: string
+                beneficiaryId:
+                  type: string
+                  format: uuid
+                bankAccountId:
+                  type: string
+                  format: uuid
+                amountMinor:
+                  type: integer
+                  format: int64
+                currencyCode:
+                  type: string
+                reference:
+                  type: string
+                idempotencyKey:
+                  type: string
+                lifetimeMinutes:
+                  type: integer
+      responses:
+        '201':
+          description: created
+  /api/v1/banking/transfer-intents/{transferIntentId}:
+    get:
+      summary: get transfer intent
+      parameters:
+        - in: path
+          name: transferIntentId
+          schema:
+            type: string
+            format: uuid
+          required: true
+      responses:
+        '200':
+          description: retrieved
+  /api/v1/banking/owners/{ownerAwid}/transfer-intents:
+    get:
+      summary: list transfer intents by owner
+      parameters:
+        - in: path
+          name: ownerAwid
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: list
+  /api/v1/banking/transfer-intents/{transferIntentId}/confirm:
+    post:
+      summary: confirm intent
+      parameters:
+        - in: path
+          name: transferIntentId
+          schema:
+            type: string
+            format: uuid
+          required: true
+      responses:
+        '200':
+          description: confirmed
+  /api/v1/banking/transfer-intents/{transferIntentId}/ready:
+    post:
+      summary: mark ready for routing
+      parameters:
+        - in: path
+          name: transferIntentId
+          schema:
+            type: string
+            format: uuid
+          required: true
+      responses:
+        '200':
+          description: ready
+  /api/v1/banking/transfer-intents/{transferIntentId}/cancel:
+    post:
+      summary: cancel intent
+      parameters:
+        - in: path
+          name: transferIntentId
+          schema:
+            type: string
+            format: uuid
+          required: true
+      responses:
+        '200':
+          description: cancelled

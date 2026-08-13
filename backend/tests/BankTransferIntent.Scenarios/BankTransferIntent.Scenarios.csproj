@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\BankingPlatform\BankTransferIntent\BankTransferIntent.Domain\BankTransferIntent.Domain.csproj" />
+    <ProjectReference Include="..\..\src\BankingPlatform\BankTransferIntent\BankTransferIntent.Application\BankTransferIntent.Application.csproj" />
+    <ProjectReference Include="..\..\src\BankingPlatform\BankTransferIntent\BankTransferIntent.Infrastructure\BankTransferIntent.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>

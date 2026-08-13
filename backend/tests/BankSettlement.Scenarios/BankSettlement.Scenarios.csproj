@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\BankingPlatform\BankSettlement\BankSettlement.Domain\BankSettlement.Domain.csproj" />
+    <ProjectReference Include="..\..\src\BankingPlatform\BankSettlement\BankSettlement.Application\BankSettlement.Application.csproj" />
+    <ProjectReference Include="..\..\src\BankingPlatform\BankSettlement\BankSettlement.Infrastructure\BankSettlement.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>

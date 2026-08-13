@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("MobileMoney.MtnMomo.Telemetry.Scenarios")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+5be0d19dc96c900de47e1f78d2c4750634fa53bd")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+dd875eac560dfde4eb0df81a5815a42fe906cd91")]
 [assembly: System.Reflection.AssemblyProductAttribute("MobileMoney.MtnMomo.Telemetry.Scenarios")]
 [assembly: System.Reflection.AssemblyTitleAttribute("MobileMoney.MtnMomo.Telemetry.Scenarios")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

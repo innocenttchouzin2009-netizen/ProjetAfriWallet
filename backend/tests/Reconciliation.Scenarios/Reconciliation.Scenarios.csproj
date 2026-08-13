@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\FinancialPlatform\Reconciliation\Reconciliation.Domain\Reconciliation.Domain.csproj" />
+    <ProjectReference Include="..\..\src\FinancialPlatform\Reconciliation\Reconciliation.Application\Reconciliation.Application.csproj" />
+    <ProjectReference Include="..\..\src\FinancialPlatform\Reconciliation\Reconciliation.Infrastructure\Reconciliation.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>

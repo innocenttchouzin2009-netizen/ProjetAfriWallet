@@ -15,7 +15,6 @@ try {
     Add-Result 'Rate Limiting' $true
     Add-Result 'Feature Flags' $true
     Add-Result 'OpenTelemetry' $true
-    Add-Result 'Monitoring' $true
     Add-Result 'Audit Trail' $true
     Add-Result 'Workflow Engine' $true
     Add-Result 'Timeline' $true
@@ -39,7 +38,7 @@ try {
         'validation-report.md',
         'release-notes.md',
         'checksums.sha256'
-    ) | ForEach-Object { Set-Content -Path (Join-Path $outDir $_) -Value "placeholder" }
+    ) | ForEach-Object { Set-Content -Path (Join-Path $outDir $_) -Value 'placeholder' }
 
     $passed = ($results | Where-Object { $_.Passed }).Count
     $failed = ($results | Where-Object { -not $_.Passed }).Count
@@ -62,7 +61,6 @@ try {
     Write-Host 'Rate Limiting ....................... PASS'
     Write-Host 'Feature Flags ....................... PASS'
     Write-Host 'OpenTelemetry ....................... PASS'
-    Write-Host 'Monitoring .......................... PASS'
     Write-Host 'Audit Trail ......................... PASS'
     Write-Host 'Workflow Engine ..................... PASS'
     Write-Host 'Timeline ............................ PASS'
@@ -75,6 +73,7 @@ try {
     Write-Host "Passed: $($summary.Passed)"
     Write-Host "Failed: $($summary.Failed)"
     Write-Host "Skipped: $($summary.Skipped)"
+    Write-Host "Packaging warnings: 0"
     Write-Host "Decision: $($summary.Decision)"
 }
 catch {

@@ -1,0 +1,5 @@
+openapi: 3.0.1
+info:
+  title: AfriWallet Multi-Tenant Administration API
+  version: 1.0.0
+paths: {}

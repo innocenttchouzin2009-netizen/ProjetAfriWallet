@@ -8,7 +8,5 @@
     <ProjectReference Include="..\Support.Contracts\Support.Contracts.csproj" />
     <ProjectReference Include="..\Support.Infrastructure\Support.Infrastructure.csproj" />
     <ProjectReference Include="..\Support.Domain\Support.Domain.csproj" />
-    <ProjectReference Include="..\..\NotificationPlatform\Notification.Application\Notification.Application.csproj" />
-    <ProjectReference Include="..\..\NotificationPlatform\Notification.Contracts\Notification.Contracts.csproj" />
   </ItemGroup>
 </Project>

@@ -1,0 +1,18 @@
+openapi: 3.0.3
+info:
+  title: Operations Production Readiness API
+  version: 1.0.0
+  description: Endpoints used to expose Operations readiness health and status.
+paths:
+  /health/live:
+    get:
+      summary: Liveness probe
+      responses:
+        '200':
+          description: Service is alive
+  /health/ready:
+    get:
+      summary: Readiness probe
+      responses:
+        '200':
+          description: Service is ready

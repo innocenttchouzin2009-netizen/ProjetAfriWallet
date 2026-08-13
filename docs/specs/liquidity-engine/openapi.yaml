@@ -1,0 +1,15 @@
+openapi: 3.0.3
+info:
+  title: Liquidity Management API
+  version: 1.0.0
+paths:
+  /api/v1/liquidity/positions:
+    get:
+      responses:
+        "200":
+          description: liquidity positions
+  /api/v1/liquidity/rebalance:
+    post:
+      responses:
+        "200":
+          description: rebalance proposal

@@ -7,4 +7,8 @@
   <ItemGroup>
     <ProjectReference Include="..\Banking.Domain\Banking.Domain.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\Beneficiaries\*.cs" Link="Beneficiaries\%(Filename)%(Extension)" />
+    <Compile Include="..\Verification\*.cs" Link="Verification\%(Filename)%(Extension)" />
+  </ItemGroup>
 </Project>

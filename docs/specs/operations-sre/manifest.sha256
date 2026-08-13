@@ -1,0 +1,11 @@
+255b59521547ad93000ad3233a2088e3dab65f91d5aecbf4f5c69c88036f2981  docs/specs/operations-sre/ADR-0206-sre-platform.md
+4c0a9ab91fd0c0564db5f46786fee578ba5580b9d807c6ec2928afde351f83f8  docs/specs/operations-sre/ADR-0207-operational-monitoring.md
+e955f871fbe19bb480aaac796144c950cf9f4403386e2900865dac9c98eaac70  docs/specs/operations-sre/backup-guide.md
+2fc6d353d92094b591ce5236467c099df29c2a19e0a1c183889b0c0808af754c  docs/specs/operations-sre/disaster-recovery-guide.md
+62c982c5ceec59d03316dbd6eed5707ad8f2746cd65576993fd7da7dc5723aa8  docs/specs/operations-sre/incident-runbook.md
+84ea4285596ac452cac9ac0f3528a4e0b1074eaa28e31b55a3968c53d1a0c0f8  docs/specs/operations-sre/maintenance-guide.md
+3f7abc7ff1b9e167387d90895cbb7e597393c1b16fafa8bdc3d29b091b38f3ce  docs/specs/operations-sre/openapi.yaml
+ffcbe9009feeb98de79e86ac6c0ab9caff93160a920e1fd70ca94a9de776c480  docs/specs/operations-sre/operations-center-guide.md
+5b07e35395e50f395bb7152c3948c062d70e0796a6ad8a6db11cd1f94f6e983b  docs/specs/operations-sre/PRD-AFW-DLV-0012.6.md
+bfe8c56729f2652b5ffca4a979f563bb2149f4f15d9e43a96636101022bc07ee  docs/specs/operations-sre/qa-checklist.md
+4f392088ab8c7eaebc6936d7a6ce7f228a1852d18e62bbad3c9733e84c8a1257  docs/specs/operations-sre/validation-report.md

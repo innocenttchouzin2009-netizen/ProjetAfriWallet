@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("CardPlatform.Application")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f6ccf046e679f4919531de767d7a8610f701996e")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a8a104874fba5277b38a16f64aedf225d4786c55")]
 [assembly: System.Reflection.AssemblyProductAttribute("CardPlatform.Application")]
 [assembly: System.Reflection.AssemblyTitleAttribute("CardPlatform.Application")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

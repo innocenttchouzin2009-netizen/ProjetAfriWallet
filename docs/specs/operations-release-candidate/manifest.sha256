@@ -1,0 +1,9 @@
+22d4b35dd4a88fd33902ea32b1dd99f5ac1fa6903151b31c4ae0c88f91221ce3  docs/specs/operations-release-candidate/ADR-0210-operations-release-candidate-process.md
+95591885dd969cb608812bdf999f890f6718595384fcf36c8dee10a1cd8666ac  docs/specs/operations-release-candidate/ADR-0211-operations-deployment-policy.md
+014a9066d276f271b23376b9c89d9caeacabe030898b8f8258d43b8c21684797  docs/specs/operations-release-candidate/deployment-guide.md
+7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6  docs/specs/operations-release-candidate/manifest.sha256
+787bfb1f55632524350e88e894d466d3ccc3854e6c34fa49461226ab78e4c175  docs/specs/operations-release-candidate/PRD-AFW-DLV-0012.8.md
+fa066641ae4700eb09fc8b6d3739cd4340ea7bb5bd1261450c3ad12b79057470  docs/specs/operations-release-candidate/qa-checklist.md
+002e896b119b2431a16d45d03c96c4c6627ccafb3e3be433f58f1f4d62c06277  docs/specs/operations-release-candidate/release-guide.md
+69319f2ca27dbb7ee6ccb2dfb5397e0ca2aafdf8820141a7d74c5796a9c8935a  docs/specs/operations-release-candidate/rollback-plan.md
+d37cc0c30af9ebc1751ad0396039d066935e8aa9cc7c0a8eeb26eeaf837e76cb  docs/specs/operations-release-candidate/validation-report.md

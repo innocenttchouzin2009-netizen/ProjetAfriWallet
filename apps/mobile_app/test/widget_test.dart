@@ -5,18 +5,26 @@
 // gestures. You can also use WidgetTester to find child widgets in the widget
 // tree, read text, and verify that the values of widget properties are correct.
 
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile_app/l10n/app_localizations.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mobile_app/main.dart';
 import 'package:mobile_app/models/subscription_models.dart';
 import 'package:mobile_app/services/subscription_repository.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   testWidgets('subscriptions page renders', (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues({});
     await tester.pumpWidget(AfriWalletApp(repository: _FakeSubscriptionRepository()));
     await tester.pumpAndSettle();
 
-    expect(find.text('Abonnements'), findsOneWidget);
-    expect(find.text('Mes abonnements'), findsOneWidget);
+    final localizations = await AppLocalizations.delegate.load(const Locale('en'));
+
+    expect(find.text(localizations.mySubscriptions), findsOneWidget);
+    expect(find.text(localizations.offers), findsOneWidget);
   });
 }
 

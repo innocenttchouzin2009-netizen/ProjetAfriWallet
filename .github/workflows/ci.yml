@@ -3,8 +3,18 @@ on:
   push:
     branches: [main]
   pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
 jobs:
-  lint:
-    runs-on: ubuntu-latest
+  payment-readiness:
+    runs-on: windows-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Validate payment platform readiness
+        shell: powershell
+        run: .\validate-payment-platform.ps1 -Configuration Release

@@ -1,0 +1,29 @@
+openapi: 3.0.3
+info:
+  title: AfriWallet Reconciliation API
+  version: 1.0.0
+paths:
+  /health/live:
+    get:
+      responses:
+        "200":
+          description: service liveness
+  /api/v1/reconciliation/runs:
+    post:
+      responses:
+        "201":
+          description: reconciliation run created
+  /api/v1/reconciliation/runs/{runId}:
+    get:
+      parameters:
+        - in: path
+          name: runId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: reconciliation run details
+        "404":
+          description: run not found

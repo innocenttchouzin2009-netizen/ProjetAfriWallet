@@ -1,0 +1,122 @@
+{
+  "delivery": "AFW-DLV-0014.7",
+  "release": "payment-platform-v1.4.0",
+  "generatedAtUtc": "2026-08-13T18:00:00+00:00",
+  "checks": 22,
+  "passed": 22,
+  "failed": 0,
+  "skipped": 0,
+  "decision": "READY FOR PAYMENT RC",
+  "results": [
+    {
+      "Name": "Payment Intent",
+      "Passed": true,
+      "Details": "Verified 1 evidence file(s)."
+    },
+    {
+      "Name": "Payment Routing",
+      "Passed": true,
+      "Details": "Verified 1 evidence file(s)."
+    },
+    {
+      "Name": "Merchant Acquiring",
+      "Passed": true,
+      "Details": "Verified 1 evidence file(s)."
+    },
+    {
+      "Name": "Merchant Settlement",
+      "Passed": true,
+      "Details": "Verified 1 evidence file(s)."
+    },
+    {
+      "Name": "Mobile Money Gateway",
+      "Passed": true,
+      "Details": "Verified 1 evidence file(s)."
+    },
+    {
+      "Name": "Provider Integration",
+      "Passed": true,
+      "Details": "Verified 1 evidence file(s)."
+    },
+    {
+      "Name": "Configuration \u0026 Secrets",
+      "Passed": true,
+      "Details": "Verified 2 repository file(s)."
+    },
+    {
+      "Name": "Health Checks",
+      "Passed": true,
+      "Details": "Verified 6 repository file(s)."
+    },
+    {
+      "Name": "Logging \u0026 Correlation",
+      "Passed": true,
+      "Details": "Verified 2 repository file(s)."
+    },
+    {
+      "Name": "Audit Trail",
+      "Passed": true,
+      "Details": "Verified 6 evidence file(s)."
+    },
+    {
+      "Name": "Telemetry",
+      "Passed": true,
+      "Details": "Verified 6 evidence file(s)."
+    },
+    {
+      "Name": "Metrics",
+      "Passed": true,
+      "Details": "Verified 3 repository file(s)."
+    },
+    {
+      "Name": "Retry Policy",
+      "Passed": true,
+      "Details": "Verified 1 evidence file(s)."
+    },
+    {
+      "Name": "Circuit Breaker",
+      "Passed": true,
+      "Details": "Verified 1 evidence file(s)."
+    },
+    {
+      "Name": "Provider Health",
+      "Passed": true,
+      "Details": "Verified 1 evidence file(s)."
+    },
+    {
+      "Name": "Webhook Verification",
+      "Passed": true,
+      "Details": "Verified 1 evidence file(s)."
+    },
+    {
+      "Name": "Idempotency",
+      "Passed": true,
+      "Details": "Verified 5 evidence file(s)."
+    },
+    {
+      "Name": "Failure Recovery",
+      "Passed": true,
+      "Details": "Verified 3 recovery signal(s)."
+    },
+    {
+      "Name": "Release Build",
+      "Passed": true,
+      "Details": "Verified 7 evidence file(s)."
+    },
+    {
+      "Name": "Secret Scan",
+      "Passed": true,
+      "Details": "Verified 1 evidence file(s)."
+    },
+    {
+      "Name": "Dependency Scan",
+      "Passed": true,
+      "Details": "Verified 1 evidence file(s)."
+    },
+    {
+      "Name": "Packaging",
+      "Passed": true,
+      "Details": "Verified 8 package input(s)."
+    }
+  ]
+}

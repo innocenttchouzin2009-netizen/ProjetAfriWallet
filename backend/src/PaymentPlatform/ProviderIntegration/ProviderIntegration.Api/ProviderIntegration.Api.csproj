@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ProviderIntegration.Domain\ProviderIntegration.Domain.csproj" />
+    <ProjectReference Include="..\ProviderIntegration.Application\ProviderIntegration.Application.csproj" />
+    <ProjectReference Include="..\ProviderIntegration.Infrastructure\ProviderIntegration.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>

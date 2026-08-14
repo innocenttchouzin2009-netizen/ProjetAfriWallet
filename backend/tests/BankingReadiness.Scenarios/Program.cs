@@ -16,8 +16,8 @@ static void Check(
 var validator = new BankingReadinessValidator();
 var summary = validator.Run();
 
-Check("all readiness checks executed", summary.Total == 28);
-Check("all readiness checks passed", summary.Passed == 28);
+Check("all readiness checks executed", summary.Total == 30);
+Check("all readiness checks passed", summary.Passed == 30);
 Check("no readiness failures", summary.Failed == 0);
 Check("no readiness skips", summary.Skipped == 0);
 Check("banking RC decision", summary.Success);

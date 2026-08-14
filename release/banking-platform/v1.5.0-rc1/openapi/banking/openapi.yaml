@@ -1,0 +1,5 @@
+openapi: 3.0.3
+info:
+  title: AfriWallet Banking Platform
+  version: v1.5.0-rc1
+paths: {}

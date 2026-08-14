@@ -1,0 +1,162 @@
+{
+  "delivery": "AFW-DLV-0015.8",
+  "version": "v1.5.0-rc1",
+  "checks": 30,
+  "passed": 30,
+  "failed": 0,
+  "skipped": 0,
+  "decision": "READY FOR BANKING RC",
+  "generatedAtUtc": "2026-08-14T06:57:18.2458449+00:00",
+  "results": [
+    {
+      "name": "0015.1 Beneficiary Registry",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "0015.2 Transfer Intent",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "0015.3 Routing \u0026 Rail Selection",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "0015.4 Transfer Execution",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "0015.5 Settlement \u0026 Reconciliation",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "0015.6 Provider Integration",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "0015.7 Production Readiness",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "Release Build",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "Scenario Suites",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "Readiness Gate",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "Secret Scan",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "Dependency Policy",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "Webhook Security",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "Idempotency",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "Retry Policy",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "Circuit Breaker",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "Provider Health",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "Failure Recovery",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "Financial Core Boundary",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "Sandbox Enforcement",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "Production Traffic Disabled",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "Production Credentials Absent",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "External Certification Not Claimed",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "OpenAPI Package",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "Operational Documentation",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "Rollback Package",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "Release Evidence",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "Release Manifest",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "SHA-256 Checksums",
+      "passed": true,
+      "details": "PASS"
+    },
+    {
+      "name": "RC Package Integrity",
+      "passed": true,
+      "details": "PASS"
+    }
+  ]
+}

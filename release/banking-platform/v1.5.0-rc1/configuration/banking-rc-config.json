@@ -1,0 +1,6 @@
+{
+  "allowedEnvironment": "sandbox",
+  "productionTrafficEnabled": false,
+  "productionCredentialsIncluded": false,
+  "externalCertificationClaimed": false
+}

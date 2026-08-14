@@ -6,6 +6,6 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\src\BankingPlatform\BankingReadiness\BankingReadiness.csproj" />
+    <ProjectReference Include="..\..\src\BankingPlatform\BankingReleaseCandidate\BankingReleaseCandidate.csproj" />
   </ItemGroup>
 </Project>

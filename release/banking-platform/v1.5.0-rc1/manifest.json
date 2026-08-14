@@ -1,0 +1,73 @@
+{
+  "platform": "AfriWallet Banking Platform",
+  "delivery": "AFW-DLV-0015.8",
+  "version": "v1.5.0-rc1",
+  "generatedAtUtc": "2026-08-14T06:57:18.4923451+00:00",
+  "files": [
+    {
+      "path": "adr/ADR-0256-banking-release-candidate.md",
+      "sha256": "86f2f368daffb2f22858f71962e14500cabbeb11ec2b4ead86dced7692d528d3",
+      "sizeBytes": 402
+    },
+    {
+      "path": "adr/ADR-0257-banking-release-policy.md",
+      "sha256": "a53de7c36b618d267e5dd8779254c8f83c5500fa97f1a25e1598e84e3a6f0479",
+      "sizeBytes": 420
+    },
+    {
+      "path": "artifacts/placeholder.txt",
+      "sha256": "b2603fbf717f5ac6e6e9d140eb274f39837072a438c5191d9c7de607c135c4d7",
+      "sizeBytes": 13
+    },
+    {
+      "path": "changelog.md",
+      "sha256": "0addfe8b78a18a20c84a9d6760038ee10d4c094d912251aa5d1f87327c4fee98",
+      "sizeBytes": 1031
+    },
+    {
+      "path": "configuration/banking-rc-config.json",
+      "sha256": "f054c9ce784ad90fe8f23833008d805edf6018cb2c5658ff70ea056ff8fb1f59",
+      "sizeBytes": 164
+    },
+    {
+      "path": "dashboards/banking-rc-dashboard.json",
+      "sha256": "8ec96912214fbdf67514836ddbe071372ea63d839091e2d0e91e3004e6234f19",
+      "sizeBytes": 103
+    },
+    {
+      "path": "evidence/banking-rc-evidence.txt",
+      "sha256": "dd35053f80868bf1e2ad0f259e895d78871aaf04a6d7a887745760fbc550561d",
+      "sizeBytes": 116
+    },
+    {
+      "path": "openapi/banking/openapi.yaml",
+      "sha256": "161efe4bc3abd9c7917a6b9ab9098a803a099dfe59f2138d207501ed6ee4ef9a",
+      "sizeBytes": 95
+    },
+    {
+      "path": "release-notes.md",
+      "sha256": "7b5083818f9cd50337b7feca6942ab06e5e37baea3ae2541ef41932cb8bce0d8",
+      "sizeBytes": 1047
+    },
+    {
+      "path": "rollback/rollback-plan.md",
+      "sha256": "44bc54c77f1222e4dba02558a1b23031c03bbb75c1175d831d24438651551ec0",
+      "sizeBytes": 289
+    },
+    {
+      "path": "runbooks/release-runbook.md",
+      "sha256": "fb8ecc3211bb9712c5293a57524aa69c85ecfa01905b3d46ced0a00c5eb7457c",
+      "sizeBytes": 306
+    },
+    {
+      "path": "validation-report.json",
+      "sha256": "775019d3987ae6185796a6cfa1987a4a1ea196ed9d6a5ef012e14c786c58dc37",
+      "sizeBytes": 3324
+    },
+    {
+      "path": "validation-report.md",
+      "sha256": "bf1cd4cc2fa6f739ac4e60af56ee31ae524ab313739a8f5b50eb316d433a8574",
+      "sizeBytes": 1070
+    }
+  ]
+}

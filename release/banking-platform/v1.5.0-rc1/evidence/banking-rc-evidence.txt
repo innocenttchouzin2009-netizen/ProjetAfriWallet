@@ -1,0 +1,4 @@
+AfriWallet Banking Platform RC evidence
+Version: v1.5.0-rc1
+Status: READY FOR BANKING RC
+Boundary: sandbox-only

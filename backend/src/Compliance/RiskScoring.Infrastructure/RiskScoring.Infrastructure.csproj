@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\RiskScoring.Domain\RiskScoring.Domain.csproj" />
+    <ProjectReference Include="..\RiskScoring.Application\RiskScoring.Application.csproj" />
+  </ItemGroup>
+</Project>

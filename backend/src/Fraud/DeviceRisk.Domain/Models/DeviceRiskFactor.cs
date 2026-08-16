@@ -1,0 +1,1 @@
+namespace AfriWallet.Fraud.DeviceRisk.Domain.Models;public sealed record DeviceRiskFactor(DeviceRiskFactorType Type,int Score,string Reason,string? SourceEventId);

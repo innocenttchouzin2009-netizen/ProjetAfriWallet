@@ -1,0 +1,1 @@
+namespace AfriWallet.Fraud.DeviceRisk.Domain.Models;public enum DeviceRiskFactorType{NewDevice=0,DeviceChanged=1,LoginFailures=2,PinFailures=3,MultipleDevices=4,LoginVelocity=5,SessionAnomaly=6,AccountDeviceMismatch=7}

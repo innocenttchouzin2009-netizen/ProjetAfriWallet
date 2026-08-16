@@ -1,0 +1,1 @@
+using AfriWallet.Fraud.DeviceRisk.Domain.Models;namespace AfriWallet.Fraud.DeviceRisk.Application.Services;public sealed record DeviceRiskResult(Guid RiskProfileId,string Awid,string DeviceId,int Score,RiskBand Band,RiskRecommendation Recommendation,IReadOnlyCollection<DeviceRiskFactor> Factors,DateTimeOffset CalculatedAtUtc);

@@ -1,0 +1,1 @@
+using AfriWallet.Fraud.DeviceRisk.Domain.Signals;namespace AfriWallet.Fraud.DeviceRisk.Application.Abstractions;public interface IFraudSignalReader{Task<IReadOnlyCollection<FraudSignalSnapshot>> GetBySubjectAsync(string subjectType,string subjectId,DateTimeOffset fromUtc,CancellationToken cancellationToken=default);}

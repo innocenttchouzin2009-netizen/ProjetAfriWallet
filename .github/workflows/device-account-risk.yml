@@ -1,0 +1,16 @@
+name: device-account-risk
+on:
+  pull_request:
+    branches: [main]
+    paths: ["backend/src/Fraud/DeviceRisk.**/**","backend/tests/DeviceRisk.Scenarios/**","tools/release/validate-device-risk.ps1","tools/release/scan-device-risk-secrets.ps1","docs/specs/device-account-risk/**",".github/workflows/device-account-risk.yml"]
+  workflow_dispatch:
+permissions: {contents: read}
+jobs:
+  device-account-risk:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with: {dotnet-version: "10.0.x"}
+      - shell: pwsh
+        run: ./tools/release/validate-device-risk.ps1 -Configuration Release

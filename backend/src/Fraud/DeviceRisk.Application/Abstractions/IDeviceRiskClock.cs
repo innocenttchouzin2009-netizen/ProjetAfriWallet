@@ -1,0 +1,1 @@
+namespace AfriWallet.Fraud.DeviceRisk.Application.Abstractions;public interface IDeviceRiskClock{DateTimeOffset UtcNow{get;}}

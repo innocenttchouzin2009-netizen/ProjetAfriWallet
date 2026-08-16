@@ -1,0 +1,3 @@
+using AfriWallet.Fraud.Signals.Domain.Aggregates;
+namespace AfriWallet.Fraud.Signals.Application.Abstractions;
+public interface IFraudSignalRepository { Task<bool> ExistsByEventIdAsync(string eventId,CancellationToken cancellationToken=default);Task AddAsync(FraudSignal signal,CancellationToken cancellationToken=default);Task<FraudSignal?> GetAsync(Guid id,CancellationToken cancellationToken=default);Task<IReadOnlyCollection<FraudSignal>> GetBySubjectAsync(string subjectType,string subjectId,CancellationToken cancellationToken=default); }

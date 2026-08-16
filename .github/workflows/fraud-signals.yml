@@ -1,0 +1,27 @@
+name: fraud-signals
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "backend/src/Fraud/FraudSignals.**/**"
+      - "backend/tests/FraudSignals.Scenarios/**"
+      - "tools/release/validate-fraud-signals.ps1"
+      - "docs/specs/fraud/**"
+      - ".github/workflows/fraud-signals.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  fraud-signals:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+      - name: Validate AFW-DLV-0017.1
+        shell: pwsh
+        run: ./tools/release/validate-fraud-signals.ps1 -Configuration Release
+      - name: Verify diff
+        shell: pwsh
+        run: git diff --check

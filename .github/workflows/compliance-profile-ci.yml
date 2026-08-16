@@ -1,0 +1,28 @@
+name: Compliance Profile CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
+
+jobs:
+  compliance-profile:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Restore dependencies
+        shell: powershell
+        run: dotnet restore .\backend\tests\ComplianceProfile.Scenarios\ComplianceProfile.Scenarios.csproj
+      - name: Build compliance profile package
+        shell: powershell
+        run: dotnet build .\backend\tests\ComplianceProfile.Scenarios\ComplianceProfile.Scenarios.csproj --configuration Release --no-restore
+      - name: Run compliance profile scenarios
+        shell: powershell
+        run: dotnet run --project .\backend\tests\ComplianceProfile.Scenarios\ComplianceProfile.Scenarios.csproj --configuration Release --no-build

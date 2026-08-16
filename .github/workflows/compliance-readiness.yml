@@ -1,0 +1,43 @@
+name: compliance-readiness
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "backend/src/Compliance/**"
+      - "backend/tests/ComplianceReadiness.Scenarios/**"
+      - "tools/release/validate-compliance-readiness.ps1"
+      - "tools/release/build-compliance-readiness.ps1"
+      - "tools/release/scan-compliance-secrets.ps1"
+      - "tools/release/check-compliance-boundaries.ps1"
+      - "tools/release/check-compliance-regulatory-claims.ps1"
+      - "docs/specs/compliance-readiness/**"
+      - ".github/workflows/compliance-readiness.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: compliance-readiness-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  compliance-readiness:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+      - name: Show SDK
+        shell: pwsh
+        run: dotnet --info
+      - name: Validate AFW-DLV-0016.7
+        shell: pwsh
+        run: ./tools/release/validate-compliance-readiness.ps1 -Configuration Release
+      - name: Verify repository diff
+        shell: pwsh
+        run: git diff --check
+      - name: Final readiness summary
+        shell: pwsh
+        run: |
+          Write-Host "AFW-DLV-0016.7 CI PASS"
+          Write-Host "Decision: READY FOR COMPLIANCE RC"

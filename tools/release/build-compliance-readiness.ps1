@@ -1,0 +1,2 @@
+param([string]$Configuration='Release')
+$ErrorActionPreference='Stop';Write-Host 'Building AFW-DLV-0016.7 compliance readiness gate...';powershell -NoProfile -ExecutionPolicy Bypass -File tools/release/validate-compliance-readiness.ps1 -Configuration $Configuration;if($LASTEXITCODE -ne 0){exit $LASTEXITCODE};Write-Host 'Compliance readiness packaging PASS';Write-Host 'Decision: READY FOR COMPLIANCE RC'

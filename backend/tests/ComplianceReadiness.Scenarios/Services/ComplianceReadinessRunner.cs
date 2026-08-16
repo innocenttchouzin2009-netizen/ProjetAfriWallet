@@ -1,0 +1,3 @@
+using AfriWallet.Compliance.Readiness.Checks;using AfriWallet.Compliance.Readiness.Models;
+namespace AfriWallet.Compliance.Readiness.Services;
+public sealed class ComplianceReadinessRunner(IEnumerable<IComplianceReadinessCheck> checks){private readonly IReadOnlyCollection<IComplianceReadinessCheck> _checks=checks.ToArray();public async Task<ReadinessReport> RunAsync(string root,CancellationToken ct=default){var results=new List<ReadinessCheck>();foreach(var check in _checks){ct.ThrowIfCancellationRequested();try{results.Add(await check.ExecuteAsync(root,ct));}catch(Exception ex){results.Add(new ReadinessCheck(check.Code,check.GetType().Name,ReadinessStatus.Failed,$"Check exception: {ex.Message}"));}}return new ReadinessReport(results);}}

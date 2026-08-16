@@ -1,0 +1,3 @@
+using System.Collections.Concurrent;using AfriWallet.Fraud.Signals.Application.Abstractions;
+namespace AfriWallet.Fraud.Signals.Infrastructure.Persistence;
+public sealed class InMemoryFraudSignalAuditStore:IFraudSignalAuditStore { private readonly ConcurrentQueue<string> _events=new();public IReadOnlyCollection<string> Events=>_events.ToArray();public Task AppendAsync(Guid id,string action,DateTimeOffset at,CancellationToken ct=default){ct.ThrowIfCancellationRequested();_events.Enqueue($"{at:O}|{id}|{action}");return Task.CompletedTask;} }

@@ -1,0 +1,2 @@
+namespace AfriWallet.Fraud.Signals.Domain.Enums;
+public enum FraudSignalType { LoginFailed=1,NewDevice=2,DeviceChanged=3,PinFailure=4,BeneficiaryAdded=10,PaymentAttempted=20,PaymentFailed=21,PaymentReversed=22,WalletCredit=30,WalletDebit=31,BankTransferCreated=40,BankTransferFailed=41,ScreeningMatch=50,AmlAlert=51,MerchantActivity=60 }

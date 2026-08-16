@@ -1,0 +1,2 @@
+namespace AfriWallet.Fraud.Signals.Domain.ValueObjects;
+public sealed record FraudSubject { private FraudSubject(string type,string id){Type=type;Id=id;}public string Type{get;}public string Id{get;}public static FraudSubject Create(string type,string id){if(string.IsNullOrWhiteSpace(type))throw new ArgumentException("Subject type is required.",nameof(type));if(string.IsNullOrWhiteSpace(id))throw new ArgumentException("Subject id is required.",nameof(id));return new FraudSubject(type.Trim().ToUpperInvariant(),id.Trim());} }

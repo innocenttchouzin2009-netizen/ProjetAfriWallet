@@ -1,0 +1,2 @@
+namespace AfriWallet.Fraud.Signals.Application.Abstractions;
+public interface IFraudSignalAuditStore { Task AppendAsync(Guid signalId,string action,DateTimeOffset occurredAt,CancellationToken cancellationToken=default); }

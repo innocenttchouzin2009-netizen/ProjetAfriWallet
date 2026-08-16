@@ -1,0 +1,2 @@
+namespace AfriWallet.Compliance.Readiness.Models;
+public sealed class ReadinessReport(IReadOnlyCollection<ReadinessCheck> checks) { public IReadOnlyCollection<ReadinessCheck> Checks { get; } = checks; public int Total => Checks.Count; public int Passed => Checks.Count(x => x.Status == ReadinessStatus.Passed); public int Failed => Checks.Count(x => x.Status == ReadinessStatus.Failed); public int Skipped => Checks.Count(x => x.Status == ReadinessStatus.Skipped); public bool IsReady => Total > 0 && Failed == 0 && Skipped == 0 && Passed == Total; }

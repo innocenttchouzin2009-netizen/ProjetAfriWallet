@@ -1,0 +1,2 @@
+namespace AfriWallet.Compliance.Readiness.Models;
+public sealed record ReadinessCheck(string Code, string Name, ReadinessStatus Status, string Evidence) { public bool Passed => Status == ReadinessStatus.Passed; }

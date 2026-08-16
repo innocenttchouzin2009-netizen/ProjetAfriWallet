@@ -1,0 +1,3 @@
+$ErrorActionPreference='Stop';$claims=@('regulatory certified','regulator approved','aml certified','guaranteed aml compliance');$roots=@('backend/src/Compliance','docs/specs/compliance-readiness');$findings=@()
+foreach($root in $roots){if(!(Test-Path $root)){continue};$files=Get-ChildItem $root -Recurse -File|Where-Object{$_.FullName -notmatch '\\(bin|obj)\\'};foreach($claim in $claims){$findings+=@($files|Select-String -Pattern $claim -SimpleMatch -ErrorAction SilentlyContinue)}}
+if($findings){Write-Host 'Regulatory claim verification FAIL';$findings|ForEach-Object{Write-Host $_};exit 1};Write-Host 'Regulatory claim verification PASS'

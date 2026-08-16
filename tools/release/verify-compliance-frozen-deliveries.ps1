@@ -1,0 +1,4 @@
+$ErrorActionPreference='Stop';git fetch origin --prune --tags
+$tags=1..7|ForEach-Object{"sprint16-dlv-0016.$_"}
+foreach($tag in $tags){Write-Host "Checking $tag...";git rev-parse --verify $tag *> $null;if($LASTEXITCODE -ne 0){throw "$tag local tag missing."};$local=(git rev-list -n 1 $tag).Trim();$peeled=git ls-remote --tags origin "refs/tags/$tag^{}";$remoteRef=if($peeled){$peeled}else{git ls-remote --tags origin "refs/tags/$tag"};if(!$remoteRef){throw "$tag remote tag missing."};$remote=($remoteRef -split '\s+')[0].Trim();if($local-ne$remote){throw "$tag SHA MISMATCH"};git merge-base --is-ancestor $local origin/main;if($LASTEXITCODE-ne 0){throw "$tag not in origin/main."};Write-Host "LOCAL : $local";Write-Host "REMOTE: $remote";Write-Host 'PARITY: VERIFIED'}
+Write-Host 'Frozen deliveries: 7/7 VERIFIED'

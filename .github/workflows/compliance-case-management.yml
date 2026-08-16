@@ -1,0 +1,28 @@
+name: compliance-case-management
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "backend/src/Compliance/CaseManagement.**/**"
+      - "backend/tests/ComplianceCaseManagement.Scenarios/**"
+      - "tools/release/validate-compliance-case-management.ps1"
+      - "tools/release/scan-compliance-case-secrets.ps1"
+      - "docs/specs/compliance-case-management/**"
+      - ".github/workflows/compliance-case-management.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  compliance-case-management:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+      - name: Validate AFW-DLV-0016.6
+        shell: pwsh
+        run: ./tools/release/validate-compliance-case-management.ps1 -Configuration Release
+      - name: Verify git diff
+        shell: pwsh
+        run: git diff --check

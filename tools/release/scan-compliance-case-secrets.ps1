@@ -1,0 +1,6 @@
+$ErrorActionPreference='Stop'
+$roots=@('backend/src/Compliance/CaseManagement.Domain','backend/src/Compliance/CaseManagement.Application','backend/src/Compliance/CaseManagement.Infrastructure','backend/src/Compliance/CaseManagement.Api','backend/tests/ComplianceCaseManagement.Scenarios','docs/specs/compliance-case-management')
+$patterns=@('BEGIN PRIVATE KEY','BEGIN RSA PRIVATE KEY','ghp_','github_pat_','CASE_MANAGEMENT_SECRET=','REGULATOR_API_KEY=','SAR_API_KEY=')
+$violations=@()
+foreach($root in $roots){if(!(Test-Path $root)){continue}; Get-ChildItem -Path $root -Recurse -File|Where-Object{$_.FullName -notmatch '\\bin\\' -and $_.FullName -notmatch '\\obj\\'}|ForEach-Object{foreach($pattern in $patterns){$match=Select-String -Path $_.FullName -Pattern $pattern -SimpleMatch -ErrorAction SilentlyContinue;if($match){$violations+="$($_.FullName) -> $pattern"}}}}
+if($violations.Count -gt 0){Write-Host 'Compliance case secret scan FAIL';$violations|ForEach-Object{Write-Host $_};exit 1}; Write-Host 'Compliance case secret scan PASS'

@@ -1,0 +1,36 @@
+name: financial-risk-scoring
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "backend/src/Compliance/RiskScoring.**/**"
+      - "backend/tests/RiskScoring.Scenarios/**"
+      - "tools/release/validate-risk-scoring.ps1"
+      - "tools/release/scan-risk-scoring-secrets.ps1"
+      - "docs/specs/financial-risk-scoring/**"
+      - ".github/workflows/financial-risk-scoring.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  financial-risk-scoring:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+      - name: Validate AFW-DLV-0016.5
+        shell: pwsh
+        run: |
+          ./tools/release/validate-risk-scoring.ps1 -Configuration Release
+      - name: Verify git diff
+        shell: pwsh
+        run: |
+          git diff --check

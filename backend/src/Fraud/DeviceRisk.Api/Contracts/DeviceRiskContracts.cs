@@ -1,0 +1,1 @@
+namespace AfriWallet.Fraud.DeviceRisk.Api.Contracts;public sealed record CalculateDeviceRiskRequest(string Awid,string DeviceId);

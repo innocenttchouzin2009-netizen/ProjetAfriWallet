@@ -1,0 +1,1 @@
+using AfriWallet.Fraud.DeviceRisk.Domain.Models;namespace AfriWallet.Fraud.DeviceRisk.Application.Abstractions;public interface IDeviceRiskRepository{Task SaveAsync(DeviceAccountRiskProfile profile,CancellationToken cancellationToken=default);Task<DeviceAccountRiskProfile?> GetLatestAsync(string awid,string deviceId,CancellationToken cancellationToken=default);}

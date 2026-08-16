@@ -1,0 +1,1 @@
+namespace AfriWallet.Fraud.DeviceRisk.Domain.Signals;public sealed record FraudSignalSnapshot(string EventId,string Type,string SubjectType,string SubjectId,string Severity,DateTimeOffset OccurredAt,IReadOnlyDictionary<string,string> Attributes);

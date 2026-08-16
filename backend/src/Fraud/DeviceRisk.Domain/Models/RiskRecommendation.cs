@@ -1,0 +1,1 @@
+namespace AfriWallet.Fraud.DeviceRisk.Domain.Models;public enum RiskRecommendation{Allow=0,Review=1,Challenge=2,Restrict=3}

@@ -1,0 +1,39 @@
+name: aml-transaction-monitoring
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "backend/src/Compliance/TransactionMonitoring.**/**"
+      - "backend/tests/TransactionMonitoring.Scenarios/**"
+      - "tools/release/validate-transaction-monitoring.ps1"
+      - "tools/release/scan-transaction-monitoring-secrets.ps1"
+      - "docs/specs/aml-transaction-monitoring/**"
+      - ".github/workflows/aml-transaction-monitoring.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  aml-transaction-monitoring:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Validate AFW-DLV-0016.4
+        shell: pwsh
+        run: |
+          ./tools/release/validate-transaction-monitoring.ps1 -Configuration Release
+
+      - name: Verify git diff
+        shell: pwsh
+        run: |
+          git diff --check

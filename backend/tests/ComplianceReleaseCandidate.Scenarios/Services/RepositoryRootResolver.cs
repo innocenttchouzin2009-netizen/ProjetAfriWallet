@@ -1,0 +1,2 @@
+namespace AfriWallet.Compliance.ReleaseCandidate.Services;
+public static class RepositoryRootResolver{public static string Resolve(){var current=new DirectoryInfo(Directory.GetCurrentDirectory());while(current is not null){var git=Path.Combine(current.FullName,".git");if((Directory.Exists(git)||File.Exists(git))&&Directory.Exists(Path.Combine(current.FullName,"backend")))return current.FullName;current=current.Parent;}throw new InvalidOperationException("AfriWallet repository root not found.");}}

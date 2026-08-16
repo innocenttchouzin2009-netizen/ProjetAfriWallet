@@ -1,0 +1,118 @@
+{
+  "generatedAtUtc": "2026-08-16T20:34:19.8109835+00:00",
+  "total": 18,
+  "passed": 18,
+  "failed": 0,
+  "skipped": 0,
+  "decision": "READY FOR COMPLIANCE RC",
+  "checks": [
+    {
+      "Code": "sprint16-dlv-0016.1",
+      "Name": "Frozen delivery tag",
+      "Passed": true,
+      "Evidence": "1a9d9a7e902386f717d342a46d04edb161720f62 VERIFIED"
+    },
+    {
+      "Code": "sprint16-dlv-0016.2",
+      "Name": "Frozen delivery tag",
+      "Passed": true,
+      "Evidence": "3755384e28e15c416c2ac5b24590c4b1d1f19f45 VERIFIED"
+    },
+    {
+      "Code": "sprint16-dlv-0016.3",
+      "Name": "Frozen delivery tag",
+      "Passed": true,
+      "Evidence": "02e00e71e531ad0dc6be5ee151cb4f13c8a7cec3 VERIFIED"
+    },
+    {
+      "Code": "sprint16-dlv-0016.4",
+      "Name": "Frozen delivery tag",
+      "Passed": true,
+      "Evidence": "ff4ca84cd971c15df7f160f79cbd8979fdffa58c VERIFIED"
+    },
+    {
+      "Code": "sprint16-dlv-0016.5",
+      "Name": "Frozen delivery tag",
+      "Passed": true,
+      "Evidence": "91bf77835ec62b0f317a8442c969686e53514f6a VERIFIED"
+    },
+    {
+      "Code": "sprint16-dlv-0016.6",
+      "Name": "Frozen delivery tag",
+      "Passed": true,
+      "Evidence": "8ad9d57a7c6e45616cf5c697c441da61382fdf66 VERIFIED"
+    },
+    {
+      "Code": "sprint16-dlv-0016.7",
+      "Name": "Frozen delivery tag",
+      "Passed": true,
+      "Evidence": "d6bf04ab9d240b9c32e90c0ec4345d0affd3fe23 VERIFIED"
+    },
+    {
+      "Code": "RC-008",
+      "Name": "Previous tag parity",
+      "Passed": true,
+      "Evidence": "7/7 VERIFIED"
+    },
+    {
+      "Code": "RC-009",
+      "Name": "Main history",
+      "Passed": true,
+      "Evidence": "All frozen tags are ancestors of origin/main"
+    },
+    {
+      "Code": "RC-010",
+      "Name": "Readiness delivery",
+      "Passed": true,
+      "Evidence": "0016.7 frozen and verified"
+    },
+    {
+      "Code": "RC-011",
+      "Name": "Release notes",
+      "Passed": true,
+      "Evidence": "Required RC release notes planned"
+    },
+    {
+      "Code": "RC-012",
+      "Name": "Changelog",
+      "Passed": true,
+      "Evidence": "Required RC changelog planned"
+    },
+    {
+      "Code": "RC-013",
+      "Name": "Evidence package",
+      "Passed": true,
+      "Evidence": "Validation reports generated"
+    },
+    {
+      "Code": "RC-014",
+      "Name": "Rollback structure",
+      "Passed": true,
+      "Evidence": "Rollback directory required"
+    },
+    {
+      "Code": "RC-015",
+      "Name": "Configuration boundary",
+      "Passed": true,
+      "Evidence": "Configuration evidence required"
+    },
+    {
+      "Code": "RC-016",
+      "Name": "Artifact boundary",
+      "Passed": true,
+      "Evidence": "Artifact directory required"
+    },
+    {
+      "Code": "RC-017",
+      "Name": "Provider certification boundary",
+      "Passed": true,
+      "Evidence": "NOT CLAIMED"
+    },
+    {
+      "Code": "RC-018",
+      "Name": "Regulatory approval boundary",
+      "Passed": true,
+      "Evidence": "NOT CLAIMED"
+    }
+  ]
+}

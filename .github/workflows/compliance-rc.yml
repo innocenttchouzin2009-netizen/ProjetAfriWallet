@@ -1,0 +1,47 @@
+name: compliance-rc
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "backend/tests/ComplianceReleaseCandidate.Scenarios/**"
+      - "tools/release/build-compliance-release.ps1"
+      - "tools/release/verify-compliance-frozen-deliveries.ps1"
+      - "tools/release/verify-compliance-rc-package.ps1"
+      - "tools/release/create-compliance-rc-manifest.ps1"
+      - "docs/specs/compliance-release-candidate/**"
+      - "release/compliance-platform/v1.6.0-rc1/**"
+      - ".github/workflows/compliance-rc.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: compliance-rc-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  compliance-rc:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Fetch tags
+        shell: pwsh
+        run: |
+          git fetch origin --prune --tags
+          git fetch origin main
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+      - name: Compliance RC gate
+        shell: pwsh
+        run: ./tools/release/build-compliance-release.ps1 -Configuration Release
+      - name: Verify diff
+        shell: pwsh
+        run: git diff --check
+      - name: Final RC status
+        shell: pwsh
+        run: |
+          Write-Host "AFW-DLV-0016.8 CI PASS"
+          Write-Host "Decision: READY FOR COMPLIANCE RC"

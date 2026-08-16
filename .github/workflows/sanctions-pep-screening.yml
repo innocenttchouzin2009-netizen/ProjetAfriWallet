@@ -1,0 +1,39 @@
+name: sanctions-pep-screening
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "backend/src/Compliance/Screening.**/**"
+      - "backend/tests/Screening.Scenarios/**"
+      - "tools/release/validate-screening-engine.ps1"
+      - "tools/release/scan-screening-secrets.ps1"
+      - "docs/specs/sanctions-pep-screening/**"
+      - ".github/workflows/sanctions-pep-screening.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sanctions-pep-screening:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Validate AFW-DLV-0016.3
+        shell: pwsh
+        run: |
+          ./tools/release/validate-screening-engine.ps1 -Configuration Release
+
+      - name: Git diff check
+        shell: pwsh
+        run: |
+          git diff --check

@@ -1,0 +1,27 @@
+using AfriWallet.Compliance.CaseManagement.Api.Contracts;
+using AfriWallet.Compliance.CaseManagement.Application.Abstractions;
+using AfriWallet.Compliance.CaseManagement.Application.Cases;
+using AfriWallet.Compliance.CaseManagement.Application.Policies;
+using AfriWallet.Compliance.CaseManagement.Infrastructure;
+
+var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddSingleton<IComplianceCaseRepository, InMemoryComplianceCaseRepository>();
+builder.Services.AddSingleton<IComplianceCaseAuditStore, InMemoryComplianceCaseAuditStore>();
+builder.Services.AddSingleton<IComplianceCaseClock, SystemComplianceCaseClock>();
+builder.Services.AddSingleton<CaseManagementPolicy>();
+builder.Services.AddSingleton<ComplianceCaseService>();
+var app = builder.Build();
+const string Actor = "afriwallet-system";
+app.MapGet("/health", () => Results.Ok(new { status = "Healthy", delivery = "AFW-DLV-0016.6" }));
+app.MapPost("/api/v1/compliance/cases", async (CreateCaseRequest r, ComplianceCaseService s, CancellationToken ct) => Results.Ok(await s.CreateAsync(new(r.Awid, r.Title, r.Priority, Actor), ct)));
+app.MapGet("/api/v1/compliance/cases/{id:guid}", async (Guid id, ComplianceCaseService s, CancellationToken ct) => Results.Ok(await s.GetAsync(id, ct)));
+app.MapGet("/api/v1/compliance/cases/by-awid/{awid}", async (string awid, ComplianceCaseService s, CancellationToken ct) => Results.Ok(await s.GetByAwidAsync(awid, ct)));
+app.MapPost("/api/v1/compliance/cases/{id:guid}/sources", async (Guid id, AddCaseSourceRequest r, ComplianceCaseService s, CancellationToken ct) => Results.Ok(await s.AddSourceAsync(new(id, r.SourceType, r.SourceId, r.Summary, Actor), ct)));
+app.MapPost("/api/v1/compliance/cases/{id:guid}/assign", async (Guid id, AssignCaseRequest r, ComplianceCaseService s, CancellationToken ct) => Results.Ok(await s.AssignAsync(new(id, r.Assignee, Actor), ct)));
+app.MapPost("/api/v1/compliance/cases/{id:guid}/review", async (Guid id, ComplianceCaseService s, CancellationToken ct) => Results.Ok(await s.StartReviewAsync(id, Actor, ct)));
+app.MapPost("/api/v1/compliance/cases/{id:guid}/notes", async (Guid id, AddCaseNoteRequest r, ComplianceCaseService s, CancellationToken ct) => Results.Ok(await s.AddNoteAsync(new(id, r.Content, Actor), ct)));
+app.MapPost("/api/v1/compliance/cases/{id:guid}/escalate", async (Guid id, EscalateCaseRequest r, ComplianceCaseService s, CancellationToken ct) => Results.Ok(await s.EscalateAsync(new(id, r.Priority, Actor), ct)));
+app.MapPost("/api/v1/compliance/cases/{id:guid}/resolve", async (Guid id, ResolveCaseRequest r, ComplianceCaseService s, CancellationToken ct) => Results.Ok(await s.ResolveAsync(new(id, r.Decision, Actor), ct)));
+app.MapPost("/api/v1/compliance/cases/{id:guid}/close", async (Guid id, ComplianceCaseService s, CancellationToken ct) => Results.Ok(await s.CloseAsync(id, Actor, ct)));
+app.Run();
+public partial class Program;

@@ -1,0 +1,35 @@
+name: transaction-fraud-detection
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "backend/src/Fraud/TransactionFraud.**/**"
+      - "backend/tests/TransactionFraud.Scenarios/**"
+      - "tools/release/validate-transaction-fraud.ps1"
+      - "tools/release/scan-transaction-fraud-secrets.ps1"
+      - "docs/specs/transaction-fraud-detection/**"
+      - ".github/workflows/transaction-fraud-detection.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  transaction-fraud-detection:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+      - name: Validate AFW-DLV-0017.3
+        shell: pwsh
+        run: |
+          ./tools/release/validate-transaction-fraud.ps1 -Configuration Release
+      - name: Git diff check
+        shell: pwsh
+        run: |
+          git diff --check

@@ -1,0 +1,53 @@
+name: fraud-readiness
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'backend/src/Fraud/**'
+      - 'backend/tests/FraudReadiness.Scenarios/**'
+      - 'tools/release/validate-fraud-readiness.ps1'
+      - 'tools/release/verify-fraud-frozen-deliveries.ps1'
+      - 'tools/release/scan-fraud-platform-secrets.ps1'
+      - 'tools/release/check-fraud-execution-boundaries.ps1'
+      - 'tools/release/check-fraud-ml-boundary.ps1'
+      - 'docs/specs/fraud-readiness/**'
+      - '.github/workflows/fraud-readiness.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fraud-readiness-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  fraud-readiness:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Fetch tags
+        shell: pwsh
+        run: |
+          git fetch origin --prune --tags
+          git fetch origin main
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Validate AFW-DLV-0017.7
+        shell: pwsh
+        run: ./tools/release/validate-fraud-readiness.ps1 -Configuration Release
+      - name: Verify diff
+        shell: pwsh
+        run: git diff --check
+      - name: Final readiness
+        shell: pwsh
+        run: |
+          Write-Host 'AFW-DLV-0017.7 CI PASS'
+          Write-Host 'Decision: READY FOR FRAUD RC'

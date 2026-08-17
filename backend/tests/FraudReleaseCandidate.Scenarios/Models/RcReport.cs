@@ -1,0 +1,11 @@
+namespace AfriWallet.Fraud.ReleaseCandidate.Models;
+
+public sealed class RcReport(IReadOnlyCollection<RcCheck> checks)
+{
+    public IReadOnlyCollection<RcCheck> Checks { get; } = checks;
+    public int Total => Checks.Count;
+    public int Passed => Checks.Count(x => x.Passed);
+    public int Failed => Checks.Count(x => !x.Passed);
+    public int Skipped => 0;
+    public bool Ready => Total > 0 && Failed == 0 && Passed == Total;
+}

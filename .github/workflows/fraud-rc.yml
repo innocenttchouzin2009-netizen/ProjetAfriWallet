@@ -1,0 +1,52 @@
+name: fraud-rc
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'backend/tests/FraudReleaseCandidate.Scenarios/**'
+      - 'tools/release/build-fraud-release.ps1'
+      - 'tools/release/verify-fraud-rc-frozen-deliveries.ps1'
+      - 'tools/release/verify-fraud-rc-package.ps1'
+      - 'tools/release/create-fraud-rc-manifest.ps1'
+      - 'docs/specs/fraud-release-candidate/**'
+      - 'release/fraud-platform/v1.7.0-rc1/**'
+      - '.github/workflows/fraud-rc.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fraud-rc-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  fraud-rc:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Fetch main and tags
+        shell: pwsh
+        run: |
+          git fetch origin --prune --tags
+          git fetch origin main
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Fraud RC gate
+        shell: pwsh
+        run: ./tools/release/build-fraud-release.ps1 -Configuration Release
+      - name: Verify diff
+        shell: pwsh
+        run: git diff --check
+      - name: Final status
+        shell: pwsh
+        run: |
+          Write-Host 'AFW-DLV-0017.8 CI PASS'
+          Write-Host 'Decision: READY FOR FRAUD RC'

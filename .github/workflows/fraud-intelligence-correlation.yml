@@ -1,0 +1,34 @@
+name: fraud-intelligence-correlation
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'backend/src/Fraud/FraudIntelligence.**/**'
+      - 'backend/tests/FraudIntelligence.Scenarios/**'
+      - 'tools/release/validate-fraud-intelligence.ps1'
+      - 'tools/release/scan-fraud-intelligence-secrets.ps1'
+      - 'docs/specs/fraud-intelligence/**'
+      - '.github/workflows/fraud-intelligence-correlation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fraud-intelligence-correlation:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Validate AFW-DLV-0017.6
+        shell: pwsh
+        run: ./tools/release/validate-fraud-intelligence.ps1 -Configuration Release
+      - name: Verify git diff
+        shell: pwsh
+        run: git diff --check

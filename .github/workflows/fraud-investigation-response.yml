@@ -1,0 +1,34 @@
+name: fraud-investigation-response
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'backend/src/Fraud/FraudInvestigation.**/**'
+      - 'backend/tests/FraudInvestigation.Scenarios/**'
+      - 'tools/release/validate-fraud-investigation.ps1'
+      - 'tools/release/scan-fraud-investigation-secrets.ps1'
+      - 'docs/specs/fraud-investigation/**'
+      - '.github/workflows/fraud-investigation-response.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fraud-investigation-response:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Validate AFW-DLV-0017.5
+        shell: pwsh
+        run: ./tools/release/validate-fraud-investigation.ps1 -Configuration Release
+      - name: Verify diff
+        shell: pwsh
+        run: git diff --check

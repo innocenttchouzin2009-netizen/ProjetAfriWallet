@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\DisputeIntelligence.Application\DisputeIntelligence.Application.csproj" />
+    <ProjectReference Include="..\DisputeIntelligence.Infrastructure\DisputeIntelligence.Infrastructure.csproj" />
+  </ItemGroup>
+</Project>

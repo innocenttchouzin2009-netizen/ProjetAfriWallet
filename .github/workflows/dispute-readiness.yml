@@ -1,0 +1,56 @@
+name: dispute-readiness
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'backend/src/Disputes/**'
+      - 'backend/tests/DisputeReadiness.Scenarios/**'
+      - 'tools/release/validate-dispute-readiness.ps1'
+      - 'tools/release/verify-dispute-frozen-deliveries.ps1'
+      - 'tools/release/check-dispute-financial-boundaries.ps1'
+      - 'tools/release/check-dispute-ledger-boundary.ps1'
+      - 'tools/release/scan-dispute-platform-secrets.ps1'
+      - 'docs/specs/dispute-readiness/**'
+      - '.github/workflows/dispute-readiness.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dispute-readiness-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  dispute-readiness:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Fetch main and tags
+        shell: pwsh
+        run: |
+          git fetch origin --prune --tags
+          git fetch origin main
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Validate AFW-DLV-0018.7
+        shell: pwsh
+        run: |
+          ./tools/release/validate-dispute-readiness.ps1 -Configuration Release
+      - name: Verify git diff
+        shell: pwsh
+        run: |
+          git diff --check
+      - name: Final status
+        shell: pwsh
+        run: |
+          Write-Host "AFW-DLV-0018.7 CI PASS"
+          Write-Host "Decision: READY FOR DISPUTE RC"

@@ -1,0 +1,55 @@
+name: dispute-rc
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'backend/tests/DisputeReleaseCandidate.Scenarios/**'
+      - 'tools/release/build-dispute-release.ps1'
+      - 'tools/release/verify-dispute-rc-frozen-deliveries.ps1'
+      - 'tools/release/verify-dispute-rc-package.ps1'
+      - 'tools/release/create-dispute-rc-manifest.ps1'
+      - 'docs/specs/dispute-release-candidate/**'
+      - 'release/dispute-platform/v1.8.0-rc1/**'
+      - '.github/workflows/dispute-rc.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dispute-rc-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  dispute-rc:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Fetch main and tags
+        shell: pwsh
+        run: |
+          git fetch origin --prune --tags
+          git fetch origin main
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Validate AFW-DLV-0018.8
+        shell: pwsh
+        run: |
+          ./tools/release/build-dispute-release.ps1 -Configuration Release
+      - name: Verify diff
+        shell: pwsh
+        run: |
+          git diff --check
+      - name: Final status
+        shell: pwsh
+        run: |
+          Write-Host "AFW-DLV-0018.8 CI PASS"
+          Write-Host "Decision: READY FOR DISPUTE RC"

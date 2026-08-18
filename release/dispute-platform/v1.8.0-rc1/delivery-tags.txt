@@ -1,0 +1,7 @@
+sprint18-dlv-0018.1  SHA ba72af0eee6db6652851295a99cd6d86d819edf8 verified in origin/main
+sprint18-dlv-0018.2  SHA 8c74d29fe7d900d0ec8751cf20b3265fabb9dd63 verified in origin/main
+sprint18-dlv-0018.3  SHA 011c0e6c0c15d08e5b23a337715b456591d8d59e verified in origin/main
+sprint18-dlv-0018.4  SHA 28f763d63378d7aa4e7a3d5b25e8cfe35eee3bd3 verified in origin/main
+sprint18-dlv-0018.5  SHA 5e590c7b64b2591d52236f3d653e178e3dc17921 verified in origin/main
+sprint18-dlv-0018.6  SHA 80265062d72eee8c252f47faffeeb396e623ee9c verified in origin/main
+sprint18-dlv-0018.7  SHA 72f28f34f92cdf96eed96b54181f88849954c0ba verified in origin/main

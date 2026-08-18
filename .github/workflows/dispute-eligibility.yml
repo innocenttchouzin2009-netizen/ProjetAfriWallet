@@ -1,0 +1,34 @@
+name: dispute-eligibility
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'backend/src/Disputes/DisputeEligibility.**/**'
+      - 'backend/tests/DisputeEligibility.Scenarios/**'
+      - 'tools/release/validate-dispute-eligibility.ps1'
+      - 'tools/release/scan-dispute-eligibility-secrets.ps1'
+      - 'docs/specs/dispute-eligibility/**'
+      - '.github/workflows/dispute-eligibility.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dispute-eligibility:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Validate AFW-DLV-0018.2
+        shell: pwsh
+        run: ./tools/release/validate-dispute-eligibility.ps1 -Configuration Release
+      - name: Git diff check
+        shell: pwsh
+        run: git diff --check

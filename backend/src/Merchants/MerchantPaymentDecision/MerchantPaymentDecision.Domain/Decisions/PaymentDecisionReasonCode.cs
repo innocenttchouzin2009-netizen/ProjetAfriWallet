@@ -1,0 +1,2 @@
+namespace AfriWallet.Merchants.PaymentDecision.Domain.Decisions;
+public enum PaymentDecisionReasonCode { PaymentIntentReady = 0, LowRiskAuthorization = 10, StepUpRequired = 11, StepUpSatisfied = 12, CaptureEligibilityConfirmed = 13, MerchantNotEligible = 20, PaymentIntentNotReady = 21, CurrencyMismatch = 22, AmountOutsidePolicy = 23, RiskSignalElevated = 30, RiskSignalCritical = 31, UnsupportedPaymentMethod = 40, PaymentIntentExpired = 41, PaymentIntentCancelled = 42 }

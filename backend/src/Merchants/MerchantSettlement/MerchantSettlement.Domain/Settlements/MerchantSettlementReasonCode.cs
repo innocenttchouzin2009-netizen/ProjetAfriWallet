@@ -1,0 +1,2 @@
+namespace AfriWallet.Merchants.Settlement.Domain.Settlements;
+public enum MerchantSettlementReasonCode { CaptureEligibleDecisionAccepted=0, SettlementRouteSelected=1, PayoutRouteSelected=2, ProviderAccepted=10, ProviderAcknowledged=11, ProviderCompleted=12, ProviderTimeout=20, ProviderTemporaryFailure=21, ProviderPermanentFailure=22, RetryScheduled=23, RetryExhausted=24, PartialProcessingDetected=30, CompensationRequired=31, CompensationCompleted=32, DecisionNotCaptureEligible=40, MerchantNotEligible=41, CurrencyMismatch=42, ManualInterventionRequired=50 }

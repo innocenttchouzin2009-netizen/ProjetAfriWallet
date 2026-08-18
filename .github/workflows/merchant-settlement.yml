@@ -1,0 +1,25 @@
+name: merchant-settlement
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'backend/src/Merchants/MerchantSettlement/**'
+      - 'backend/tests/MerchantSettlementOrchestration.Scenarios/**'
+      - 'tools/release/validate-merchant-settlement.ps1'
+      - 'tools/release/scan-merchant-settlement-secrets.ps1'
+      - 'docs/specs/merchant-settlement/**'
+      - '.github/workflows/merchant-settlement.yml'
+  workflow_dispatch:
+permissions: { contents: read }
+jobs:
+  merchant-settlement:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with: { dotnet-version: '10.0.x' }
+      - shell: pwsh
+        run: ./tools/release/validate-merchant-settlement.ps1 -Configuration Release
+      - shell: pwsh
+        run: git diff --check

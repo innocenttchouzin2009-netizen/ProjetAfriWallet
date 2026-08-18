@@ -1,0 +1,25 @@
+using AfriWallet.Merchants.Checkout.Api.Contracts;
+using AfriWallet.Merchants.Checkout.Application.Abstractions;
+using AfriWallet.Merchants.Checkout.Application.Commands;
+using AfriWallet.Merchants.Checkout.Application.Policies;
+using AfriWallet.Merchants.Checkout.Application.Services;
+using AfriWallet.Merchants.Checkout.Infrastructure;
+
+var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddSingleton<IMerchantCommerceEligibilityReader, SandboxMerchantCommerceEligibilityReader>();
+builder.Services.AddSingleton<ICheckoutSessionRepository, InMemoryCheckoutSessionRepository>();
+builder.Services.AddSingleton<IPaymentIntentRepository, InMemoryPaymentIntentRepository>();
+builder.Services.AddSingleton<ICheckoutAuditStore, InMemoryCheckoutAuditStore>();
+builder.Services.AddSingleton<ICheckoutClock, SystemCheckoutClock>();
+builder.Services.AddSingleton<CheckoutEligibilityPolicy>();
+builder.Services.AddSingleton<CheckoutService>();
+var app = builder.Build();
+const string Actor = "afriwallet-merchant-checkout-system";
+app.MapGet("/health", () => Results.Ok(new { status = "Healthy", delivery = "AFW-DLV-0019.3", authorizationPerformed = false, capturePerformed = false, settlementPerformed = false, payoutPerformed = false, moneyMovementPerformed = false, ledgerMutationPerformed = false }));
+app.MapPost("/api/v1/merchant-checkout/sessions", async (CreateCheckoutRequest request, CheckoutService service, CancellationToken ct) => { var result = await service.CreateAsync(new CreateCheckoutSessionCommand(request.MerchantId, request.CustomerReference, request.MerchantOrderReference, request.AmountMinor, request.Currency, request.ReturnUrl, request.Metadata, request.ExpiresInMinutes, request.IdempotencyKey, Actor), ct); return Results.Created($"/api/v1/merchant-checkout/sessions/{result.CheckoutSessionId}", result); });
+app.MapPost("/api/v1/merchant-checkout/sessions/{id:guid}/payment-method", async (Guid id, AttachPaymentMethodRequest request, CheckoutService service, CancellationToken ct) => Results.Ok(await service.AttachPaymentMethodAsync(new AttachCheckoutPaymentMethodCommand(id, request.PaymentMethodType, request.TokenReference, Actor), ct)));
+app.MapPost("/api/v1/merchant-checkout/sessions/{id:guid}/cancel", async (Guid id, CheckoutService service, CancellationToken ct) => Results.Ok(await service.CancelAsync(new CancelCheckoutSessionCommand(id, Actor), ct)));
+app.MapPost("/api/v1/merchant-checkout/sessions/{id:guid}/expire", async (Guid id, CheckoutService service, CancellationToken ct) => Results.Ok(await service.ExpireAsync(new ExpireCheckoutSessionCommand(id, Actor), ct)));
+app.MapGet("/api/v1/merchant-checkout/sessions/{id:guid}", async (Guid id, CheckoutService service, CancellationToken ct) => Results.Ok(await service.GetSessionAsync(id, ct)));
+app.MapGet("/api/v1/merchant-checkout/payment-intents/{id:guid}", async (Guid id, CheckoutService service, CancellationToken ct) => Results.Ok(await service.GetPaymentIntentAsync(id, ct)));
+app.Run();

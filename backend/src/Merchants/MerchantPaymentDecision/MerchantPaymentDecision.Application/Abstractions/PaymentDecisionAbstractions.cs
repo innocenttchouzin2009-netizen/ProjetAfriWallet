@@ -1,0 +1,8 @@
+using AfriWallet.Merchants.PaymentDecision.Domain.Decisions;
+namespace AfriWallet.Merchants.PaymentDecision.Application.Abstractions;
+public sealed record PaymentIntentDecisionSnapshot(Guid PaymentIntentId, Guid CheckoutSessionId, string MerchantId, string Status, long AmountMinor, string Currency, string PaymentMethodType, string MerchantRegistryStatus, string MerchantVerificationStatus, int RiskScore, DateTimeOffset ExpiresAtUtc);
+public interface IPaymentIntentDecisionReader { Task<PaymentIntentDecisionSnapshot?> GetAsync(Guid paymentIntentId, CancellationToken cancellationToken = default); }
+public interface IMerchantPaymentDecisionRepository { Task AddAsync(MerchantPaymentDecision decision, CancellationToken cancellationToken = default); Task SaveAsync(MerchantPaymentDecision decision, CancellationToken cancellationToken = default); Task<MerchantPaymentDecision?> GetAsync(Guid decisionId, CancellationToken cancellationToken = default); Task<MerchantPaymentDecision?> GetActiveByPaymentIntentAsync(Guid paymentIntentId, CancellationToken cancellationToken = default); }
+public sealed record MerchantPaymentDecisionAuditEvent(Guid EventId, Guid DecisionId, Guid PaymentIntentId, string MerchantId, string EventType, string Actor, DateTimeOffset OccurredAtUtc, IReadOnlyDictionary<string,string> Metadata);
+public interface IMerchantPaymentDecisionAuditStore { Task AppendAsync(MerchantPaymentDecisionAuditEvent auditEvent, CancellationToken cancellationToken = default); Task<IReadOnlyCollection<MerchantPaymentDecisionAuditEvent>> GetAsync(Guid decisionId, CancellationToken cancellationToken = default); }
+public interface IMerchantPaymentDecisionClock { DateTimeOffset UtcNow { get; } }

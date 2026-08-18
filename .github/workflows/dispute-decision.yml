@@ -1,0 +1,34 @@
+name: dispute-decision
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'backend/src/Disputes/DisputeDecision/**'
+      - 'backend/tests/DisputeDecision.Scenarios/**'
+      - 'tools/release/validate-dispute-decision.ps1'
+      - 'tools/release/scan-dispute-decision-secrets.ps1'
+      - 'docs/specs/dispute-decision/**'
+      - '.github/workflows/dispute-decision.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dispute-decision:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Validate AFW-DLV-0018.4
+        shell: pwsh
+        run: ./tools/release/validate-dispute-decision.ps1 -Configuration Release
+      - name: Verify diff
+        shell: pwsh
+        run: git diff --check

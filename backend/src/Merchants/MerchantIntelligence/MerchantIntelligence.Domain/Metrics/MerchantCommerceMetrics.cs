@@ -1,0 +1,2 @@
+namespace AfriWallet.Merchants.Intelligence.Domain.Metrics;
+public sealed record MerchantCommerceMetrics(int CheckoutCount, int ReadyForAuthorizationCount, int AuthorizationCount, int DeclineCount, int StepUpCount, int CaptureEligibleCount, int SettlementCount, int SettlementFailureCount, int SettlementRetryCount, int DisputeCount, int RefundRecommendationCount, int ChargebackRecommendationCount, double DeclineRate, double StepUpRate, double SettlementFailureRate);

@@ -1,0 +1,25 @@
+name: merchant-intelligence
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'backend/src/Merchants/MerchantIntelligence/**'
+      - 'backend/tests/MerchantIntelligence.Scenarios/**'
+      - 'tools/release/validate-merchant-intelligence.ps1'
+      - 'tools/release/scan-merchant-intelligence-secrets.ps1'
+      - 'docs/specs/merchant-intelligence/**'
+      - '.github/workflows/merchant-intelligence.yml'
+  workflow_dispatch:
+permissions: { contents: read }
+jobs:
+  merchant-intelligence:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with: { dotnet-version: '10.0.x' }
+      - shell: pwsh
+        run: ./tools/release/validate-merchant-intelligence.ps1 -Configuration Release
+      - shell: pwsh
+        run: git diff --check

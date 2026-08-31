@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import 'l10n/app_localizations.dart';
 import 'localization/language_manager.dart';
 import 'localization/locale_controller.dart';
+import 'pages/beta_welcome_page.dart';
 import 'pages/language_settings_page.dart';
 import 'pages/subscriptions_page.dart';
 import 'services/subscription_repository.dart';
+import 'theme/afwal_theme.dart';
 
 void main() {
   runApp(const AfriWalletApp());
@@ -23,6 +25,7 @@ class AfriWalletApp extends StatefulWidget {
 class _AfriWalletAppState extends State<AfriWalletApp> {
   Locale _locale = const Locale('en');
   bool _isLocaleLoaded = false;
+  bool _hasEnteredBeta = false;
   LocaleController? _localeController;
 
   @override
@@ -47,25 +50,42 @@ class _AfriWalletAppState extends State<AfriWalletApp> {
     setState(() => _locale = locale);
   }
 
+  Widget _buildCurrentExperience() {
+    if (!_isLocaleLoaded) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    if (!_hasEnteredBeta) {
+      return BetaWelcomePage(onContinue: () => setState(() => _hasEnteredBeta = true));
+    }
+
+    return SubscriptionsPage(
+      repository: widget.repository,
+      locale: _locale,
+      onOpenSettings: () {
+        Navigator.of(context).push(MaterialPageRoute<void>(
+          builder: (context) => LanguageSettingsPage(
+            onLocaleChanged: (locale) async {
+              await _handleLocaleChanged(locale);
+              if (!context.mounted) return;
+              Navigator.of(context).pop();
+            },
+          ),
+        ));
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'AfriWallet',
+      title: 'AfWal',
+      debugShowCheckedModeBanner: false,
       locale: _locale,
       supportedLocales: AppLocalizations.supportedLocales,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
-      theme: ThemeData(useMaterial3: true, colorSchemeSeed: Colors.indigo),
-      home: _isLocaleLoaded
-          ? SubscriptionsPage(repository: widget.repository, locale: _locale, onOpenSettings: () {
-              Navigator.of(context).push(MaterialPageRoute<void>(
-                builder: (context) => LanguageSettingsPage(onLocaleChanged: (locale) async {
-                  await _handleLocaleChanged(locale);
-                  if (!context.mounted) return;
-                  Navigator.of(context).pop();
-                }),
-              ));
-            })
-          : const Scaffold(body: Center(child: CircularProgressIndicator())),
+      theme: AfWalTheme.light(),
+      home: Builder(builder: (_) => _buildCurrentExperience()),
     );
   }
 }

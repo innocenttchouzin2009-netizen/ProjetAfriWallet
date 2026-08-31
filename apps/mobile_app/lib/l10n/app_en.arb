@@ -1,0 +1,38 @@
+{
+  "@@locale": "en",
+  "appTitle": "AfriWallet",
+  "welcome": "Something went wrong",
+  "retry": "Retry",
+  "wallet": "Wallet",
+  "searchOffers": "Search offers",
+  "country": "Country",
+  "currency": "Currency",
+  "mySubscriptions": "My Subscriptions",
+  "noSubscriptions": "No active subscriptions",
+  "offers": "Offers",
+  "noOffers": "No offers available",
+  "cycle": "Cycle",
+  "nextBilling": "Next billing",
+  "price": "Price",
+  "formatCurrency": "{amount}",
+  "@formatCurrency": {
+    "placeholders": {
+      "amount": {
+        "type": "double",
+        "format": "decimalPatternDigits",
+        "optionalParameters": {
+          "decimalDigits": 2
+        }
+      }
+    }
+  },
+  "autoRenewal": "Auto-renewal",
+  "monthly": "month",
+  "subscriptionCreated": "Subscription created",
+  "subscribe": "Subscribe",
+  "close": "Close",
+  "details": "Details",
+  "selectLanguage": "Select language",
+  "english": "English",
+  "french": "French"
+}

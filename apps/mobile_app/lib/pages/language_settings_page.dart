@@ -16,13 +16,15 @@ class LanguageSettingsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
+    final labels = <String, String>{
+      'en': localizations.english,
+      'fr': localizations.french,
+    };
     return Scaffold(
       appBar: AppBar(title: Text(localizations.selectLanguage)),
       body: ListView(
         children: _supportedLocales.map((locale) {
-          final label = locale.languageCode == 'fr'
-              ? localizations.french
-              : localizations.english;
+          final label = labels[locale.languageCode] ?? locale.languageCode;
           return ListTile(
             title: Text(label),
             onTap: () => onLocaleChanged(locale),

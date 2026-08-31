@@ -1,0 +1,27 @@
+name: merchant-readiness
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'backend/src/Merchants/**'
+      - 'backend/tests/MerchantReadiness.Scenarios/**'
+      - 'tools/release/validate-merchant-readiness.ps1'
+      - 'tools/release/scan-merchant-readiness-secrets.ps1'
+      - 'docs/specs/merchant-readiness/**'
+      - 'docs/adr/ADR-0171-merchant-readiness-gates.md'
+      - '.github/workflows/merchant-readiness.yml'
+  workflow_dispatch:
+permissions: { contents: read }
+jobs:
+  merchant-readiness:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-dotnet@v4
+        with: { dotnet-version: '10.0.x' }
+      - shell: pwsh
+        run: ./tools/release/validate-merchant-readiness.ps1 -Configuration Release
+      - shell: pwsh
+        run: git diff --check

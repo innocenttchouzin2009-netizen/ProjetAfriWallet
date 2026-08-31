@@ -1,0 +1,19 @@
+{
+  "product": "AfriWallet Merchant Platform",
+  "delivery": "AFW-DLV-0019.8",
+  "version": "1.9.0-rc1",
+  "baseDelivery": "AFW-DLV-0019.7",
+  "baseSha": "3b0fa213c9d25b680ad16914278934bd8e6971c4",
+  "baseTag": "sprint19-dlv-0019.7",
+  "includedDeliveries": [
+    "AFW-DLV-0019.1",
+    "AFW-DLV-0019.2",
+    "AFW-DLV-0019.3",
+    "AFW-DLV-0019.4",
+    "AFW-DLV-0019.5",
+    "AFW-DLV-0019.6",
+    "AFW-DLV-0019.7"
+  ],
+  "releaseTag": "merchant-platform-v1.9.0-rc1",
+  "status": "candidate"
+}

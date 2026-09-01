@@ -7,11 +7,13 @@ import 'pages/beta_welcome_page.dart';
 import 'pages/identity_awid_page.dart';
 import 'pages/language_settings_page.dart';
 import 'pages/onboarding_auth_page.dart';
+import 'pages/qr_payment_page.dart';
 import 'pages/send_receive_page.dart';
 import 'pages/subscriptions_page.dart';
 import 'pages/transaction_history_page.dart';
 import 'pages/wallet_home_page.dart';
 import 'services/identity_repository.dart';
+import 'services/qr_payment_repository.dart';
 import 'services/subscription_repository.dart';
 import 'services/transaction_history_repository.dart';
 import 'services/transfer_repository.dart';
@@ -30,6 +32,7 @@ class AfriWalletApp extends StatefulWidget {
     this.walletRepository,
     this.transferRepository,
     this.transactionHistoryRepository,
+    this.qrPaymentRepository,
   });
 
   final SubscriptionRepository? repository;
@@ -37,6 +40,7 @@ class AfriWalletApp extends StatefulWidget {
   final WalletRepository? walletRepository;
   final TransferRepository? transferRepository;
   final TransactionHistoryRepository? transactionHistoryRepository;
+  final QrPaymentRepository? qrPaymentRepository;
 
   @override
   State<AfriWalletApp> createState() => _AfriWalletAppState();
@@ -51,6 +55,7 @@ class _AfriWalletAppState extends State<AfriWalletApp> {
   bool _hasVisitedWalletHome = false;
   bool _hasVisitedSendReceive = false;
   bool _hasVisitedTransactions = false;
+  bool _hasVisitedQrPayments = false;
   LocaleController? _localeController;
 
   @override
@@ -107,6 +112,12 @@ class _AfriWalletAppState extends State<AfriWalletApp> {
       return TransactionHistoryPage(
         repository: widget.transactionHistoryRepository ?? const UnavailableTransactionHistoryRepository(),
         onContinue: () => setState(() => _hasVisitedTransactions = true),
+      );
+    }
+    if (!_hasVisitedQrPayments) {
+      return QrPaymentPage(
+        repository: widget.qrPaymentRepository ?? const UnavailableQrPaymentRepository(),
+        onContinue: () => setState(() => _hasVisitedQrPayments = true),
       );
     }
     return SubscriptionsPage(

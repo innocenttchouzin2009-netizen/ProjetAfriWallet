@@ -1,0 +1,57 @@
+name: Mobile Beta QR Payments
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'apps/mobile_app/**'
+      - 'docs/mobile/**'
+      - '.github/workflows/mobile-beta-qr-payments.yml'
+  push:
+    branches:
+      - feature/mobile-beta1-qr-payments
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/mobile_app
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Flutter version
+        run: flutter --version
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test QR decoder
+        run: flutter test test/afriwallet_qr_decoder_test.dart
+
+      - name: Test QR scanner contract
+        run: flutter test test/qr_scanner_page_test.dart
+
+      - name: Run complete Flutter test suite
+        run: flutter test
+
+      - name: Verify commit diff
+        working-directory: .
+        run: git diff --check HEAD^ HEAD

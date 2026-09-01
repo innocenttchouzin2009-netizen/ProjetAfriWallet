@@ -24,13 +24,22 @@ class WalletHomePage extends StatefulWidget {
 
 class _WalletHomePageState extends State<WalletHomePage> {
   late Future<List<WalletBalance>> _balances;
-  late Future<List<TransactionHistoryItem>> _transactions;
+  late Future<_TimelineLoadResult> _transactions;
 
   @override
   void initState() {
     super.initState();
     _balances = widget.repository.loadWalletBalances();
-    _transactions = widget.transactionHistoryRepository.listTransactions();
+    _transactions = _loadTransactions();
+  }
+
+  Future<_TimelineLoadResult> _loadTransactions() async {
+    try {
+      final items = await widget.transactionHistoryRepository.listTransactions();
+      return _TimelineLoadResult(items: items);
+    } catch (error) {
+      return _TimelineLoadResult(error: error);
+    }
   }
 
   void _retryBalances() {
@@ -38,7 +47,7 @@ class _WalletHomePageState extends State<WalletHomePage> {
   }
 
   void _retryTransactions() {
-    setState(() => _transactions = widget.transactionHistoryRepository.listTransactions());
+    setState(() => _transactions = _loadTransactions());
   }
 
   void _openFinancialTimeline() {
@@ -120,6 +129,15 @@ class _WalletHomePageState extends State<WalletHomePage> {
   }
 }
 
+class _TimelineLoadResult {
+  const _TimelineLoadResult({this.items = const <TransactionHistoryItem>[], this.error});
+
+  final List<TransactionHistoryItem> items;
+  final Object? error;
+
+  bool get hasError => error != null;
+}
+
 class _WalletCard extends StatelessWidget {
   const _WalletCard({required this.wallet});
   final WalletBalance wallet;
@@ -158,7 +176,7 @@ class _FinancialTimelineSection extends StatelessWidget {
     required this.onOpenAll,
   });
 
-  final Future<List<TransactionHistoryItem>> transactions;
+  final Future<_TimelineLoadResult> transactions;
   final VoidCallback onRetry;
   final VoidCallback onOpenAll;
 
@@ -194,7 +212,7 @@ class _FinancialTimelineSection extends StatelessWidget {
         const SizedBox(height: 4),
         const Text('Les dernières opérations confirmées de votre portefeuille.'),
         const SizedBox(height: 12),
-        FutureBuilder<List<TransactionHistoryItem>>(
+        FutureBuilder<_TimelineLoadResult>(
           future: transactions,
           builder: (context, snapshot) {
             if (snapshot.connectionState != ConnectionState.done) {
@@ -203,7 +221,9 @@ class _FinancialTimelineSection extends StatelessWidget {
                 child: Center(child: CircularProgressIndicator()),
               );
             }
-            if (snapshot.hasError) {
+
+            final result = snapshot.data ?? const _TimelineLoadResult();
+            if (result.hasError) {
               return Card(
                 child: Padding(
                   padding: const EdgeInsets.all(16),
@@ -221,7 +241,7 @@ class _FinancialTimelineSection extends StatelessWidget {
               );
             }
 
-            final items = [...?snapshot.data]
+            final items = [...result.items]
               ..sort((a, b) => b.occurredAt.compareTo(a.occurredAt));
             if (items.isEmpty) {
               return const Card(

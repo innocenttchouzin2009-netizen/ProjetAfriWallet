@@ -35,8 +35,12 @@ void main() {
         onContinueToBeta: () {},
       ),
     ));
-    await tester.tap(find.text('Se connecter'));
+
+    final submitButton = find.widgetWithText(FilledButton, 'Se connecter');
+    expect(submitButton, findsOneWidget);
+    await tester.tap(submitButton);
     await tester.pump();
+
     expect(find.text('Saisissez votre téléphone ou e-mail.'), findsOneWidget);
     expect(find.text('Le PIN doit contenir au moins 6 chiffres.'), findsOneWidget);
   });

@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:afriwallet_mobile/pages/onboarding_auth_page.dart';
-import 'package:afriwallet_mobile/theme/afwal_theme.dart';
+import 'package:mobile_app/pages/onboarding_auth_page.dart';
+import 'package:mobile_app/theme/afwal_theme.dart';
 
 void main() {
   testWidgets('onboarding advances to account access', (tester) async {
-    await tester.pumpWidget(MaterialApp(theme: AfWalTheme.light(), home: OnboardingAuthPage(onContinueToBeta: () {})));
+    await tester.pumpWidget(MaterialApp(
+      theme: AfWalTheme.light(),
+      home: OnboardingAuthPage(onContinueToBeta: () {}),
+    ));
 
     expect(find.text('Une identité pour une Afrique connectée'), findsOneWidget);
     await tester.tap(find.text('Continuer'));
@@ -25,7 +28,13 @@ void main() {
   });
 
   testWidgets('account form rejects empty access data', (tester) async {
-    await tester.pumpWidget(MaterialApp(theme: AfWalTheme.light(), home: AuthFormPage(createAccount: false, onContinueToBeta: () {})));
+    await tester.pumpWidget(MaterialApp(
+      theme: AfWalTheme.light(),
+      home: AuthFormPage(
+        createAccount: false,
+        onContinueToBeta: () {},
+      ),
+    ));
     await tester.tap(find.text('Se connecter'));
     await tester.pump();
     expect(find.text('Saisissez votre téléphone ou e-mail.'), findsOneWidget);

@@ -13,6 +13,7 @@ class WalletHomePage extends StatefulWidget {
     this.transactionHistoryRepository = const UnavailableTransactionHistoryRepository(),
     this.onSend,
     this.onReceive,
+    this.onQr,
     this.onContinue,
   });
 
@@ -20,6 +21,7 @@ class WalletHomePage extends StatefulWidget {
   final TransactionHistoryRepository transactionHistoryRepository;
   final VoidCallback? onSend;
   final VoidCallback? onReceive;
+  final VoidCallback? onQr;
   final VoidCallback? onContinue;
 
   @override
@@ -110,6 +112,15 @@ class _WalletHomePageState extends State<WalletHomePage> {
                         onPressed: widget.onReceive ?? widget.onContinue,
                         icon: const Icon(Icons.south_west),
                         label: const Text('Recevoir'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        key: const Key('wallet-quick-action-qr'),
+                        onPressed: widget.onQr ?? widget.onContinue,
+                        icon: const Icon(Icons.qr_code_scanner),
+                        label: const Text('QR'),
                       ),
                     ),
                   ],

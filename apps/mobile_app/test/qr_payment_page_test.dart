@@ -25,7 +25,8 @@ class FakeQrPaymentRepository implements QrPaymentRepository {
 }
 
 void main() {
-  testWidgets('valid QR moves from validation to review without paying', (tester) async {
+  testWidgets('camera-first page keeps test validation as a non-payment path',
+      (tester) async {
     await tester.pumpWidget(
       MaterialApp(
         home: QrPaymentPage(
@@ -35,11 +36,14 @@ void main() {
       ),
     );
 
+    expect(find.text('Scanner avec la caméra'), findsOneWidget);
+    expect(find.text('Valider la saisie de test'), findsOneWidget);
+
     await tester.enterText(
       find.byType(TextField),
       'AFW|Static|merchant-001|15.50|XAF|Afri Shop|Coffee purchase',
     );
-    await tester.tap(find.text('Valider le QR'));
+    await tester.tap(find.text('Valider la saisie de test'));
     await tester.pump();
 
     expect(find.text('Vérifier avant paiement'), findsOneWidget);
@@ -58,7 +62,7 @@ void main() {
     expect(find.text('Paiement réussi'), findsNothing);
   });
 
-  testWidgets('invalid QR never reaches review', (tester) async {
+  testWidgets('invalid test QR never reaches review', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
         home: QrPaymentPage(
@@ -69,10 +73,11 @@ void main() {
     );
 
     await tester.enterText(find.byType(TextField), 'NOT-AFW|bad');
-    await tester.tap(find.text('Valider le QR'));
+    await tester.tap(find.text('Valider la saisie de test'));
     await tester.pump();
 
     expect(find.textContaining('QR invalide'), findsOneWidget);
     expect(find.text('Vérifier avant paiement'), findsNothing);
+    expect(find.text('Paiement réussi'), findsNothing);
   });
 }

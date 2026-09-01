@@ -10,12 +10,12 @@ class SendReceivePage extends StatefulWidget {
     super.key,
     required this.repository,
     this.initialMode = SendReceiveMode.send,
-    this.onContinue,
+    this.onReturnToWallet,
   });
 
   final TransferRepository repository;
   final SendReceiveMode initialMode;
-  final VoidCallback? onContinue;
+  final VoidCallback? onReturnToWallet;
 
   @override
   State<SendReceivePage> createState() => _SendReceivePageState();
@@ -79,7 +79,15 @@ class _SendReceivePageState extends State<SendReceivePage> {
           title: const Text('Envoyer & Recevoir'),
           bottom: const TabBar(tabs: [Tab(text: 'Envoyer'), Tab(text: 'Recevoir')]),
         ),
-        body: TabBarView(children: [_buildSend(context), _ReceiveTab(repository: widget.repository)]),
+        body: TabBarView(
+          children: [
+            _buildSend(context),
+            _ReceiveTab(
+              repository: widget.repository,
+              onReturnToWallet: widget.onReturnToWallet,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -107,9 +115,14 @@ class _SendReceivePageState extends State<SendReceivePage> {
           const SizedBox(height: 16),
           Card(child: Padding(padding: const EdgeInsets.all(16), child: Text('Payment Intent ${_receipt!.paymentIntentId}\nÉtat: ${_receipt!.status.name}'))),
         ],
-        if (widget.onContinue != null) ...[
+        if (widget.onReturnToWallet != null) ...[
           const SizedBox(height: 20),
-          TextButton(onPressed: widget.onContinue, child: const Text('Continuer')),
+          TextButton.icon(
+            key: const Key('return-to-wallet-send'),
+            onPressed: widget.onReturnToWallet,
+            icon: const Icon(Icons.account_balance_wallet_outlined),
+            label: const Text('Retour au portefeuille'),
+          ),
         ],
       ],
     );
@@ -117,8 +130,10 @@ class _SendReceivePageState extends State<SendReceivePage> {
 }
 
 class _ReceiveTab extends StatelessWidget {
-  const _ReceiveTab({required this.repository});
+  const _ReceiveTab({required this.repository, this.onReturnToWallet});
+
   final TransferRepository repository;
+  final VoidCallback? onReturnToWallet;
 
   @override
   Widget build(BuildContext context) {
@@ -129,10 +144,26 @@ class _ReceiveTab extends StatelessWidget {
           return const Center(child: CircularProgressIndicator());
         }
         if (snapshot.hasError || !snapshot.hasData) {
-          return const Center(child: Padding(
-            padding: EdgeInsets.all(24),
-            child: Text('Réception indisponible. Aucun AfWal ID ou QR de paiement n’est simulé.'),
-          ));
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('Réception indisponible. Aucun AfWal ID ou QR de paiement n’est simulé.'),
+                  if (onReturnToWallet != null) ...[
+                    const SizedBox(height: 20),
+                    TextButton.icon(
+                      key: const Key('return-to-wallet-receive-unavailable'),
+                      onPressed: onReturnToWallet,
+                      icon: const Icon(Icons.account_balance_wallet_outlined),
+                      label: const Text('Retour au portefeuille'),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          );
         }
         final identity = snapshot.data!;
         return ListView(
@@ -148,6 +179,15 @@ class _ReceiveTab extends StatelessWidget {
               const Card(child: Padding(padding: EdgeInsets.all(20), child: Center(child: Text('QR backend disponible'))))
             else
               const Text('QR indisponible : aucun jeton QR backend valide n’a été fourni.'),
+            if (onReturnToWallet != null) ...[
+              const SizedBox(height: 20),
+              TextButton.icon(
+                key: const Key('return-to-wallet-receive'),
+                onPressed: onReturnToWallet,
+                icon: const Icon(Icons.account_balance_wallet_outlined),
+                label: const Text('Retour au portefeuille'),
+              ),
+            ],
           ],
         );
       },

@@ -83,7 +83,13 @@ void main() {
       ),
     ));
 
-    await tester.tap(find.byKey(const Key('qr-confirm-payment')));
+    final confirmButton = find.byKey(const Key('qr-confirm-payment'));
+    await tester.scrollUntilVisible(
+      confirmButton,
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(confirmButton);
     await tester.pumpAndSettle();
 
     expect(repository.initiateCalls, 1);
@@ -115,11 +121,20 @@ void main() {
     ));
 
     expect(find.text('Montant à définir'), findsOneWidget);
-    expect(find.byKey(const Key('qr-dynamic-amount-required')), findsOneWidget);
-    expect(
-      tester.widget<FilledButton>(find.byKey(const Key('qr-confirm-payment')))
-          .onPressed,
-      isNull,
+    final amountRequired = find.byKey(const Key('qr-dynamic-amount-required'));
+    await tester.scrollUntilVisible(
+      amountRequired,
+      200,
+      scrollable: find.byType(Scrollable).first,
     );
+    expect(amountRequired, findsOneWidget);
+
+    final confirmButton = find.byKey(const Key('qr-confirm-payment'));
+    await tester.scrollUntilVisible(
+      confirmButton,
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(tester.widget<FilledButton>(confirmButton).onPressed, isNull);
   });
 }

@@ -7,11 +7,9 @@ import '../services/afriwallet_qr_decoder.dart';
 class QrScannerPage extends StatefulWidget {
   const QrScannerPage({
     super.key,
-    required this.onValidated,
     this.decoder = const AfriWalletQrDecoder(),
   });
 
-  final ValueChanged<QrPaymentPayload> onValidated;
   final AfriWalletQrDecoder decoder;
 
   @override
@@ -43,7 +41,7 @@ class _QrScannerPageState extends State<QrScannerPage> {
       final payload = widget.decoder.decode(rawCode);
       await _controller.stop();
       if (!mounted) return;
-      widget.onValidated(payload);
+      Navigator.of(context).pop<QrPaymentPayload>(payload);
     } catch (error) {
       if (!mounted) return;
       setState(() => _error = error.toString());
@@ -94,7 +92,7 @@ class _QrScannerPageState extends State<QrScannerPage> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   const Text(
-                    'Placez le QR dans le cadre. Le scan seul ne déclenche aucun paiement.',
+                    'Placez le QR dans le cadre. Un QR valide ouvre la vérification; aucun paiement n’est déclenché ici.',
                     textAlign: TextAlign.center,
                     style: TextStyle(color: Colors.white),
                   ),

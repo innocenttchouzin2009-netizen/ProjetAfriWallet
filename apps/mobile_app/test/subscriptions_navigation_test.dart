@@ -211,7 +211,7 @@ void main() {
     expect(find.text('Beta1.14 detailed offer description'), findsOneWidget);
     expect(repository.createSubscriptionCalls, 0);
 
-    await tester.pageBack();
+    await tester.tap(find.byType(BackButton));
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('subscription-offer-detail-page')), findsNothing);

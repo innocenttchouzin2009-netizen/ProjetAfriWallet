@@ -13,6 +13,48 @@ class SubscriptionOfferDetailPage extends StatelessWidget {
   final SubscriptionOffer offer;
   final VoidCallback? onContinue;
 
+  Future<void> _showConfirmation(BuildContext context) async {
+    final localizations = AppLocalizations.of(context)!;
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        key: const Key('subscription-offer-confirmation-dialog'),
+        title: Text(offer.name),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              offer.longDescription.isEmpty ? offer.description : offer.longDescription,
+              key: const Key('subscription-offer-confirmation-description'),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              '${localizations.price}: ${localizations.formatCurrency(offer.price)} ${offer.currency} / ${localizations.monthly}',
+              key: const Key('subscription-offer-confirmation-price'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            key: const Key('subscription-offer-confirmation-cancel'),
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: Text(localizations.close),
+          ),
+          FilledButton(
+            key: const Key('subscription-offer-confirmation-confirm'),
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              onContinue?.call();
+            },
+            child: Text(localizations.subscribe),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
@@ -98,7 +140,7 @@ class SubscriptionOfferDetailPage extends StatelessWidget {
             const SizedBox(height: 24),
             FilledButton(
               key: const Key('subscription-offer-detail-continue'),
-              onPressed: onContinue,
+              onPressed: () => _showConfirmation(context),
               child: Text(localizations.subscribe),
             ),
           ],

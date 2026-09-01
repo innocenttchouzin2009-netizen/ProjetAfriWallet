@@ -54,6 +54,42 @@ void main() {
     expect(find.text('@afwal-id-test'), findsOneWidget);
   });
 
+  testWidgets('send mode exposes explicit return to wallet callback', (tester) async {
+    final repository = _FakeTransferRepository();
+    var returnCount = 0;
+
+    await tester.pumpWidget(MaterialApp(
+      home: SendReceivePage(
+        repository: repository,
+        onReturnToWallet: () => returnCount += 1,
+      ),
+    ));
+
+    expect(find.byKey(const Key('return-to-wallet-send')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('return-to-wallet-send')));
+
+    expect(returnCount, 1);
+  });
+
+  testWidgets('receive mode exposes explicit return to wallet callback', (tester) async {
+    final repository = _FakeTransferRepository();
+    var returnCount = 0;
+
+    await tester.pumpWidget(MaterialApp(
+      home: SendReceivePage(
+        repository: repository,
+        initialMode: SendReceiveMode.receive,
+        onReturnToWallet: () => returnCount += 1,
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('return-to-wallet-receive')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('return-to-wallet-receive')));
+
+    expect(returnCount, 1);
+  });
+
   testWidgets('unavailable repository never simulates transfer', (tester) async {
     await tester.pumpWidget(const MaterialApp(home: SendReceivePage(repository: UnavailableTransferRepository())));
     await tester.enterText(find.widgetWithText(TextField, 'AfWal ID ou identifiant destinataire'), '@receiver');
@@ -74,5 +110,24 @@ void main() {
     expect(find.byKey(const Key('receive-public-label')), findsOneWidget);
     expect(find.text('@afwal-id-test'), findsOneWidget);
     expect(find.textContaining('aucun jeton QR backend valide'), findsOneWidget);
+  });
+
+  testWidgets('unavailable receive still allows return to wallet without simulation', (tester) async {
+    var returnCount = 0;
+
+    await tester.pumpWidget(MaterialApp(
+      home: SendReceivePage(
+        repository: const UnavailableTransferRepository(),
+        initialMode: SendReceiveMode.receive,
+        onReturnToWallet: () => returnCount += 1,
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Aucun AfWal ID ou QR de paiement n’est simulé'), findsOneWidget);
+    expect(find.byKey(const Key('return-to-wallet-receive-unavailable')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('return-to-wallet-receive-unavailable')));
+
+    expect(returnCount, 1);
   });
 }

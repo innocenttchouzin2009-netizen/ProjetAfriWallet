@@ -9,9 +9,11 @@ import 'pages/language_settings_page.dart';
 import 'pages/onboarding_auth_page.dart';
 import 'pages/send_receive_page.dart';
 import 'pages/subscriptions_page.dart';
+import 'pages/transaction_history_page.dart';
 import 'pages/wallet_home_page.dart';
 import 'services/identity_repository.dart';
 import 'services/subscription_repository.dart';
+import 'services/transaction_history_repository.dart';
 import 'services/transfer_repository.dart';
 import 'services/wallet_repository.dart';
 import 'theme/afwal_theme.dart';
@@ -27,12 +29,14 @@ class AfriWalletApp extends StatefulWidget {
     this.identityRepository,
     this.walletRepository,
     this.transferRepository,
+    this.transactionHistoryRepository,
   });
 
   final SubscriptionRepository? repository;
   final IdentityRepository? identityRepository;
   final WalletRepository? walletRepository;
   final TransferRepository? transferRepository;
+  final TransactionHistoryRepository? transactionHistoryRepository;
 
   @override
   State<AfriWalletApp> createState() => _AfriWalletAppState();
@@ -46,6 +50,7 @@ class _AfriWalletAppState extends State<AfriWalletApp> {
   bool _hasVisitedIdentity = false;
   bool _hasVisitedWalletHome = false;
   bool _hasVisitedSendReceive = false;
+  bool _hasVisitedTransactions = false;
   LocaleController? _localeController;
 
   @override
@@ -96,6 +101,12 @@ class _AfriWalletAppState extends State<AfriWalletApp> {
       return SendReceivePage(
         repository: widget.transferRepository ?? const UnavailableTransferRepository(),
         onContinue: () => setState(() => _hasVisitedSendReceive = true),
+      );
+    }
+    if (!_hasVisitedTransactions) {
+      return TransactionHistoryPage(
+        repository: widget.transactionHistoryRepository ?? const UnavailableTransactionHistoryRepository(),
+        onContinue: () => setState(() => _hasVisitedTransactions = true),
       );
     }
     return SubscriptionsPage(

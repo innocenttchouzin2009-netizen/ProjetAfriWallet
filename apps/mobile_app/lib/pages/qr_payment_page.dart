@@ -130,7 +130,7 @@ class _QrPaymentPageState extends State<QrPaymentPage> {
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : const Icon(Icons.verified_outlined),
-              label: const Text('Ouvrir la vérification'),
+              label: const Text('Valider la saisie de test'),
             ),
             if (_error != null) ...[
               const SizedBox(height: 16),

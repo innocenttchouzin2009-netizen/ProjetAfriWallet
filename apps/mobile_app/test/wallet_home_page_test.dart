@@ -84,6 +84,31 @@ void main() {
     expect(find.text('Financial Timeline'), findsOneWidget);
   });
 
+  testWidgets('routes send and receive through distinct callbacks', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(900, 1400));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    var sendCount = 0;
+    var receiveCount = 0;
+
+    await tester.pumpWidget(MaterialApp(
+      home: WalletHomePage(
+        repository: _ReadyWalletRepository(),
+        transactionHistoryRepository: _ReadyTimelineRepository(),
+        onSend: () => sendCount += 1,
+        onReceive: () => receiveCount += 1,
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Envoyer'));
+    expect(sendCount, 1);
+    expect(receiveCount, 0);
+
+    await tester.tap(find.text('Recevoir'));
+    expect(sendCount, 1);
+    expect(receiveCount, 1);
+  });
+
   testWidgets('renders recent financial activity from repository', (tester) async {
     await tester.binding.setSurfaceSize(const Size(900, 1400));
     addTearDown(() => tester.binding.setSurfaceSize(null));

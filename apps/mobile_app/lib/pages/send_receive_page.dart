@@ -3,10 +3,18 @@ import 'package:flutter/material.dart';
 import '../models/payment_transfer.dart';
 import '../services/transfer_repository.dart';
 
+enum SendReceiveMode { send, receive }
+
 class SendReceivePage extends StatefulWidget {
-  const SendReceivePage({super.key, required this.repository, this.onContinue});
+  const SendReceivePage({
+    super.key,
+    required this.repository,
+    this.initialMode = SendReceiveMode.send,
+    this.onContinue,
+  });
 
   final TransferRepository repository;
+  final SendReceiveMode initialMode;
   final VoidCallback? onContinue;
 
   @override
@@ -65,6 +73,7 @@ class _SendReceivePageState extends State<SendReceivePage> {
   Widget build(BuildContext context) {
     return DefaultTabController(
       length: 2,
+      initialIndex: widget.initialMode == SendReceiveMode.send ? 0 : 1,
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Envoyer & Recevoir'),
@@ -83,7 +92,7 @@ class _SendReceivePageState extends State<SendReceivePage> {
         const SizedBox(height: 8),
         const Text('Le transfert est créé uniquement par un service backend autorisé.'),
         const SizedBox(height: 20),
-        TextField(controller: _payeeController, decoration: const InputDecoration(labelText: 'AWID ou identifiant destinataire')),
+        TextField(controller: _payeeController, decoration: const InputDecoration(labelText: 'AfWal ID ou identifiant destinataire')),
         const SizedBox(height: 12),
         TextField(controller: _amountController, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Montant')),
         const SizedBox(height: 12),
@@ -122,7 +131,7 @@ class _ReceiveTab extends StatelessWidget {
         if (snapshot.hasError || !snapshot.hasData) {
           return const Center(child: Padding(
             padding: EdgeInsets.all(24),
-            child: Text('Réception indisponible. Aucun AWID ou QR de paiement n’est simulé.'),
+            child: Text('Réception indisponible. Aucun AfWal ID ou QR de paiement n’est simulé.'),
           ));
         }
         final identity = snapshot.data!;

@@ -11,11 +11,15 @@ class WalletHomePage extends StatefulWidget {
     super.key,
     required this.repository,
     this.transactionHistoryRepository = const UnavailableTransactionHistoryRepository(),
+    this.onSend,
+    this.onReceive,
     this.onContinue,
   });
 
   final WalletRepository repository;
   final TransactionHistoryRepository transactionHistoryRepository;
+  final VoidCallback? onSend;
+  final VoidCallback? onReceive;
   final VoidCallback? onContinue;
 
   @override
@@ -95,7 +99,7 @@ class _WalletHomePageState extends State<WalletHomePage> {
                   children: [
                     Expanded(
                       child: OutlinedButton.icon(
-                        onPressed: widget.onContinue,
+                        onPressed: widget.onSend ?? widget.onContinue,
                         icon: const Icon(Icons.north_east),
                         label: const Text('Envoyer'),
                       ),
@@ -103,7 +107,7 @@ class _WalletHomePageState extends State<WalletHomePage> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: OutlinedButton.icon(
-                        onPressed: widget.onContinue,
+                        onPressed: widget.onReceive ?? widget.onContinue,
                         icon: const Icon(Icons.south_west),
                         label: const Text('Recevoir'),
                       ),

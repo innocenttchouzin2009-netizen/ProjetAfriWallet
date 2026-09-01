@@ -1,0 +1,56 @@
+name: Mobile Beta1.9 Send Receive Routing
+
+on:
+  push:
+    branches:
+      - feature/mobile-beta1.9
+    paths:
+      - 'apps/mobile_app/**'
+      - '.github/workflows/mobile-beta1.9-send-receive-routing.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'apps/mobile_app/**'
+      - '.github/workflows/mobile-beta1.9-send-receive-routing.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/mobile_app
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Flutter version
+        run: flutter --version
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test Send Receive + Wallet Home
+        run: flutter test test/send_receive_page_test.dart test/wallet_home_page_test.dart
+
+      - name: Run complete Flutter test suite
+        run: flutter test
+
+      - name: Verify commit diff
+        working-directory: .
+        run: git diff --check HEAD^ HEAD

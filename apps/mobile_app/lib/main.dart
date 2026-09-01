@@ -88,6 +88,13 @@ class _AfriWalletAppState extends State<AfriWalletApp> {
     });
   }
 
+  void _returnToWalletHome() {
+    setState(() {
+      _sendReceiveInitialMode = SendReceiveMode.send;
+      _hasVisitedWalletHome = false;
+    });
+  }
+
   Widget _buildCurrentExperience() {
     if (!_isLocaleLoaded) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
@@ -118,7 +125,7 @@ class _AfriWalletAppState extends State<AfriWalletApp> {
       return SendReceivePage(
         repository: widget.transferRepository ?? const UnavailableTransferRepository(),
         initialMode: _sendReceiveInitialMode,
-        onContinue: () => setState(() => _hasVisitedSendReceive = true),
+        onReturnToWallet: _returnToWalletHome,
       );
     }
     if (!_hasVisitedTransactions) {

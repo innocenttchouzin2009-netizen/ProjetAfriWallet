@@ -56,6 +56,7 @@ class _AfriWalletAppState extends State<AfriWalletApp> {
   bool _hasVisitedSendReceive = false;
   bool _hasVisitedTransactions = false;
   bool _hasVisitedQrPayments = false;
+  SendReceiveMode _sendReceiveInitialMode = SendReceiveMode.send;
   LocaleController? _localeController;
 
   @override
@@ -80,6 +81,13 @@ class _AfriWalletAppState extends State<AfriWalletApp> {
     setState(() => _locale = locale);
   }
 
+  void _openSendReceive(SendReceiveMode mode) {
+    setState(() {
+      _sendReceiveInitialMode = mode;
+      _hasVisitedWalletHome = true;
+    });
+  }
+
   Widget _buildCurrentExperience() {
     if (!_isLocaleLoaded) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
@@ -101,12 +109,15 @@ class _AfriWalletAppState extends State<AfriWalletApp> {
         repository: widget.walletRepository ?? const UnavailableWalletRepository(),
         transactionHistoryRepository:
             widget.transactionHistoryRepository ?? const UnavailableTransactionHistoryRepository(),
-        onContinue: () => setState(() => _hasVisitedWalletHome = true),
+        onSend: () => _openSendReceive(SendReceiveMode.send),
+        onReceive: () => _openSendReceive(SendReceiveMode.receive),
+        onContinue: () => _openSendReceive(SendReceiveMode.send),
       );
     }
     if (!_hasVisitedSendReceive) {
       return SendReceivePage(
         repository: widget.transferRepository ?? const UnavailableTransferRepository(),
+        initialMode: _sendReceiveInitialMode,
         onContinue: () => setState(() => _hasVisitedSendReceive = true),
       );
     }

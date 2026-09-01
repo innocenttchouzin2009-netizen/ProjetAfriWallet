@@ -5,6 +5,7 @@ import 'localization/language_manager.dart';
 import 'localization/locale_controller.dart';
 import 'pages/beta_welcome_page.dart';
 import 'pages/language_settings_page.dart';
+import 'pages/onboarding_auth_page.dart';
 import 'pages/subscriptions_page.dart';
 import 'services/subscription_repository.dart';
 import 'theme/afwal_theme.dart';
@@ -26,6 +27,7 @@ class _AfriWalletAppState extends State<AfriWalletApp> {
   Locale _locale = const Locale('en');
   bool _isLocaleLoaded = false;
   bool _hasEnteredBeta = false;
+  bool _hasCompletedOnboarding = false;
   LocaleController? _localeController;
 
   @override
@@ -57,6 +59,12 @@ class _AfriWalletAppState extends State<AfriWalletApp> {
 
     if (!_hasEnteredBeta) {
       return BetaWelcomePage(onContinue: () => setState(() => _hasEnteredBeta = true));
+    }
+
+    if (!_hasCompletedOnboarding) {
+      return OnboardingAuthPage(
+        onContinueToBeta: () => setState(() => _hasCompletedOnboarding = true),
+      );
     }
 
     return SubscriptionsPage(

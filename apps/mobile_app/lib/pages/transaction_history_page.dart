@@ -4,10 +4,16 @@ import '../models/transaction_history.dart';
 import '../services/transaction_history_repository.dart';
 
 class TransactionHistoryPage extends StatefulWidget {
-  const TransactionHistoryPage({super.key, required this.repository, required this.onContinue});
+  const TransactionHistoryPage({
+    super.key,
+    required this.repository,
+    required this.onReturnToWallet,
+    this.onContinue,
+  });
 
   final TransactionHistoryRepository repository;
-  final VoidCallback onContinue;
+  final VoidCallback onReturnToWallet;
+  final VoidCallback? onContinue;
 
   @override
   State<TransactionHistoryPage> createState() => _TransactionHistoryPageState();
@@ -24,8 +30,9 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage> {
 
   String _amount(TransactionHistoryItem item) {
     final sign = item.direction == TransactionDirection.incoming ? '+' : '-';
-    final major = item.amountMinor ~/ 100;
-    final minor = (item.amountMinor.abs() % 100).toString().padLeft(2, '0');
+    final absoluteMinor = item.amountMinor.abs();
+    final major = absoluteMinor ~/ 100;
+    final minor = (absoluteMinor % 100).toString().padLeft(2, '0');
     return '$sign$major.$minor ${item.currencyCode}';
   }
 
@@ -61,10 +68,31 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage> {
     );
   }
 
+  Widget _navigationActions({required String returnKey}) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(
+          width: double.infinity,
+          child: FilledButton.icon(
+            key: Key(returnKey),
+            onPressed: widget.onReturnToWallet,
+            icon: const Icon(Icons.account_balance_wallet_outlined),
+            label: const Text('Retour au portefeuille'),
+          ),
+        ),
+        if (widget.onContinue != null) ...[
+          const SizedBox(height: 8),
+          TextButton(onPressed: widget.onContinue, child: const Text('Continuer')),
+        ],
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Transactions')),
+      appBar: AppBar(title: const Text('Financial Timeline')),
       body: FutureBuilder<List<TransactionHistoryItem>>(
         future: _transactions,
         builder: (context, snapshot) {
@@ -80,9 +108,9 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage> {
                   const SizedBox(height: 16),
                   const Text('Historique indisponible', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 8),
-                  const Text('Aucune transaction n’est simulée. Les données doivent provenir du backend AfriWallet.'),
+                  const Text('Aucune transaction n’est simulée. Les données doivent provenir du backend AfWal.'),
                   const SizedBox(height: 24),
-                  FilledButton(onPressed: widget.onContinue, child: const Text('Continuer')),
+                  _navigationActions(returnKey: 'return-to-wallet-history-error'),
                 ]),
               ),
             );
@@ -90,11 +118,14 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage> {
           final items = snapshot.data ?? const <TransactionHistoryItem>[];
           if (items.isEmpty) {
             return Center(
-              child: Column(mainAxisSize: MainAxisSize.min, children: [
-                const Text('Aucune transaction'),
-                const SizedBox(height: 16),
-                FilledButton(onPressed: widget.onContinue, child: const Text('Continuer')),
-              ]),
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  const Text('Aucune transaction'),
+                  const SizedBox(height: 16),
+                  _navigationActions(returnKey: 'return-to-wallet-history-empty'),
+                ]),
+              ),
             );
           }
           return Column(children: [
@@ -116,7 +147,7 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage> {
             ),
             Padding(
               padding: const EdgeInsets.all(16),
-              child: SizedBox(width: double.infinity, child: FilledButton(onPressed: widget.onContinue, child: const Text('Continuer'))),
+              child: _navigationActions(returnKey: 'return-to-wallet-history-list'),
             ),
           ]);
         },

@@ -53,6 +53,7 @@ class _AfriWalletAppState extends State<AfriWalletApp> {
   bool _hasCompletedOnboarding = false;
   bool _hasVisitedIdentity = false;
   bool _hasVisitedWalletHome = false;
+  bool _hasVisitedSendReceive = false;
   bool _hasVisitedTransactions = false;
   bool _hasVisitedQrPayments = false;
   SendReceiveMode _sendReceiveInitialMode = SendReceiveMode.send;
@@ -120,10 +121,40 @@ class _AfriWalletAppState extends State<AfriWalletApp> {
         onContinue: () => _openSendReceive(SendReceiveMode.send),
       );
     }
-    return SendReceivePage(
-      repository: widget.transferRepository ?? const UnavailableTransferRepository(),
-      initialMode: _sendReceiveInitialMode,
-      onReturnToWallet: _returnToWalletHome,
+    if (!_hasVisitedSendReceive) {
+      return SendReceivePage(
+        repository: widget.transferRepository ?? const UnavailableTransferRepository(),
+        initialMode: _sendReceiveInitialMode,
+        onReturnToWallet: _returnToWalletHome,
+        onContinue: () => setState(() => _hasVisitedSendReceive = true),
+      );
+    }
+    if (!_hasVisitedTransactions) {
+      return TransactionHistoryPage(
+        repository: widget.transactionHistoryRepository ?? const UnavailableTransactionHistoryRepository(),
+        onContinue: () => setState(() => _hasVisitedTransactions = true),
+      );
+    }
+    if (!_hasVisitedQrPayments) {
+      return QrPaymentPage(
+        repository: widget.qrPaymentRepository ?? const UnavailableQrPaymentRepository(),
+        onContinue: () => setState(() => _hasVisitedQrPayments = true),
+      );
+    }
+    return SubscriptionsPage(
+      repository: widget.repository,
+      locale: _locale,
+      onOpenSettings: () {
+        Navigator.of(context).push(MaterialPageRoute<void>(
+          builder: (context) => LanguageSettingsPage(
+            onLocaleChanged: (locale) async {
+              await _handleLocaleChanged(locale);
+              if (!context.mounted) return;
+              Navigator.of(context).pop();
+            },
+          ),
+        ));
+      },
     );
   }
 

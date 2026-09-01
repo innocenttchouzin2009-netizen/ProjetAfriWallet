@@ -77,88 +77,95 @@ class _QrPaymentReviewPageState extends State<QrPaymentReviewPage> {
     return Scaffold(
       appBar: AppBar(title: const Text('Paiement QR')),
       body: SafeArea(
-        child: ListView(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
-          children: [
-            const Icon(Icons.qr_code_2, size: 72),
-            const SizedBox(height: 24),
-            Text('Vérifiez avant de payer',
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Icon(Icons.qr_code_2, size: 72),
+              const SizedBox(height: 24),
+              Text(
+                'Vérifiez avant de payer',
                 style: Theme.of(context).textTheme.headlineSmall,
-                textAlign: TextAlign.center),
-            const SizedBox(height: 8),
-            const Text(
-              'Scanner un QR ne déclenche jamais un paiement. Vérifiez les informations puis confirmez explicitement.',
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 32),
-            _ReviewRow(label: 'Marchand', value: merchant),
-            _ReviewRow(label: 'Identifiant', value: payload.merchantId),
-            _ReviewRow(
-              label: 'Montant',
-              value: dynamicAmountRequired
-                  ? 'Montant à définir'
-                  : _formatAmount(payload.amountMinor, payload.currencyCode),
-            ),
-            _ReviewRow(label: 'Devise', value: payload.currencyCode),
-            _ReviewRow(
-              label: 'Type',
-              value: payload.type == QrPaymentType.static
-                  ? 'Statique'
-                  : 'Dynamique',
-            ),
-            if (payload.description.isNotEmpty)
-              _ReviewRow(label: 'Description', value: payload.description),
-            if (payload.isExpired) ...[
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Scanner un QR ne déclenche jamais un paiement. Vérifiez les informations puis confirmez explicitement.',
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 32),
+              _ReviewRow(label: 'Marchand', value: merchant),
+              _ReviewRow(label: 'Identifiant', value: payload.merchantId),
+              _ReviewRow(
+                label: 'Montant',
+                value: dynamicAmountRequired
+                    ? 'Montant à définir'
+                    : _formatAmount(payload.amountMinor, payload.currencyCode),
+              ),
+              _ReviewRow(label: 'Devise', value: payload.currencyCode),
+              _ReviewRow(
+                label: 'Type',
+                value: payload.type == QrPaymentType.static
+                    ? 'Statique'
+                    : 'Dynamique',
+              ),
+              if (payload.description.isNotEmpty)
+                _ReviewRow(label: 'Description', value: payload.description),
+              if (payload.isExpired) ...[
+                const SizedBox(height: 16),
+                const Text(
+                  'Ce QR a expiré. Le paiement ne peut pas être confirmé.',
+                  key: Key('qr-expired'),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+              if (dynamicAmountRequired) ...[
+                const SizedBox(height: 16),
+                const Text(
+                  'QR dynamique : le montant doit être défini avant confirmation.',
+                  key: Key('qr-dynamic-amount-required'),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+              const SizedBox(height: 32),
+              FilledButton.icon(
+                key: const Key('qr-confirm-payment'),
+                onPressed:
+                    _submitting || payload.isExpired || dynamicAmountRequired
+                        ? null
+                        : _confirm,
+                icon: _submitting
+                    ? const SizedBox.square(
+                        dimension: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.lock_outline),
+                label:
+                    Text(_submitting ? 'Vérification…' : 'Confirmer le paiement'),
+              ),
+              const SizedBox(height: 12),
+              TextButton(
+                onPressed: _submitting
+                    ? null
+                    : () => Navigator.of(context).maybePop(),
+                child: const Text('Annuler'),
+              ),
+              if (_error != null) ...[
+                const SizedBox(height: 16),
+                Text(_error!, key: const Key('qr-payment-error')),
+              ],
+              if (_result != null) ...[
+                const SizedBox(height: 16),
+                _PaymentStatusCard(result: _result!),
+              ],
               const SizedBox(height: 16),
               const Text(
-                'Ce QR a expiré. Le paiement ne peut pas être confirmé.',
-                key: Key('qr-expired'),
+                'AfriWallet n’affichera « payé » qu’après confirmation financière autoritaire du backend.',
                 textAlign: TextAlign.center,
               ),
             ],
-            if (dynamicAmountRequired) ...[
-              const SizedBox(height: 16),
-              const Text(
-                'QR dynamique : le montant doit être défini avant confirmation.',
-                key: Key('qr-dynamic-amount-required'),
-                textAlign: TextAlign.center,
-              ),
-            ],
-            const SizedBox(height: 32),
-            FilledButton.icon(
-              key: const Key('qr-confirm-payment'),
-              onPressed: _submitting || payload.isExpired || dynamicAmountRequired
-                  ? null
-                  : _confirm,
-              icon: _submitting
-                  ? const SizedBox.square(
-                      dimension: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.lock_outline),
-              label: Text(_submitting ? 'Vérification…' : 'Confirmer le paiement'),
-            ),
-            const SizedBox(height: 12),
-            TextButton(
-              onPressed: _submitting
-                  ? null
-                  : () => Navigator.of(context).maybePop(),
-              child: const Text('Annuler'),
-            ),
-            if (_error != null) ...[
-              const SizedBox(height: 16),
-              Text(_error!, key: const Key('qr-payment-error')),
-            ],
-            if (_result != null) ...[
-              const SizedBox(height: 16),
-              _PaymentStatusCard(result: _result!),
-            ],
-            const SizedBox(height: 16),
-            const Text(
-              'AfriWallet n’affichera « payé » qu’après confirmation financière autoritaire du backend.',
-              textAlign: TextAlign.center,
-            ),
-          ],
+          ),
         ),
       ),
     );

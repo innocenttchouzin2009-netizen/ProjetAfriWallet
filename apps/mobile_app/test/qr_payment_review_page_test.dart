@@ -28,7 +28,9 @@ class _FakeQrRepository implements QrPaymentRepository {
   }
 
   @override
-  Future<QrPaymentResult> getAuthoritativeStatus(String transferIntentId) async {
+  Future<QrPaymentResult> getAuthoritativeStatus(
+    String transferIntentId,
+  ) async {
     statusCalls++;
     return authoritativeResult;
   }
@@ -44,20 +46,24 @@ void main() {
     description: 'Coffee purchase',
   );
 
-  testWidgets('shows merchant and amount before payment confirmation',
-      (tester) async {
+  testWidgets('shows merchant and amount before payment confirmation', (
+    tester,
+  ) async {
     final repository = _FakeQrRepository(
-      authoritativeResult:
-          const QrPaymentResult(status: QrPaymentStatus.pendingConfirmation),
+      authoritativeResult: const QrPaymentResult(
+        status: QrPaymentStatus.pendingConfirmation,
+      ),
     );
 
-    await tester.pumpWidget(MaterialApp(
-      home: QrPaymentReviewPage(
-        payload: payload,
-        repository: repository,
-        payerWalletId: 'wallet-001',
+    await tester.pumpWidget(
+      MaterialApp(
+        home: QrPaymentReviewPage(
+          payload: payload,
+          repository: repository,
+          payerWalletId: 'wallet-001',
+        ),
       ),
-    ));
+    );
 
     expect(find.text('Afri Shop'), findsOneWidget);
     expect(find.text('15.50 XAF'), findsOneWidget);
@@ -65,8 +71,9 @@ void main() {
     expect(repository.initiateCalls, 0);
   });
 
-  testWidgets('requires backend status before showing payment confirmed',
-      (tester) async {
+  testWidgets('requires backend status before showing payment confirmed', (
+    tester,
+  ) async {
     final repository = _FakeQrRepository(
       authoritativeResult: const QrPaymentResult(
         status: QrPaymentStatus.paid,
@@ -75,13 +82,15 @@ void main() {
       ),
     );
 
-    await tester.pumpWidget(MaterialApp(
-      home: QrPaymentReviewPage(
-        payload: payload,
-        repository: repository,
-        payerWalletId: 'wallet-001',
+    await tester.pumpWidget(
+      MaterialApp(
+        home: QrPaymentReviewPage(
+          payload: payload,
+          repository: repository,
+          payerWalletId: 'wallet-001',
+        ),
       ),
-    ));
+    );
 
     final confirmButton = find.byKey(const Key('qr-confirm-payment'));
     await tester.scrollUntilVisible(
@@ -100,8 +109,9 @@ void main() {
 
   testWidgets('dynamic zero-amount QR cannot be confirmed', (tester) async {
     final repository = _FakeQrRepository(
-      authoritativeResult:
-          const QrPaymentResult(status: QrPaymentStatus.pendingConfirmation),
+      authoritativeResult: const QrPaymentResult(
+        status: QrPaymentStatus.pendingConfirmation,
+      ),
     );
     const dynamicPayload = QrPaymentPayload(
       type: QrPaymentType.dynamic,
@@ -112,13 +122,15 @@ void main() {
       description: 'Open amount',
     );
 
-    await tester.pumpWidget(MaterialApp(
-      home: QrPaymentReviewPage(
-        payload: dynamicPayload,
-        repository: repository,
-        payerWalletId: 'wallet-001',
+    await tester.pumpWidget(
+      MaterialApp(
+        home: QrPaymentReviewPage(
+          payload: dynamicPayload,
+          repository: repository,
+          payerWalletId: 'wallet-001',
+        ),
       ),
-    ));
+    );
 
     expect(find.text('Montant à définir'), findsOneWidget);
     final amountRequired = find.byKey(const Key('qr-dynamic-amount-required'));

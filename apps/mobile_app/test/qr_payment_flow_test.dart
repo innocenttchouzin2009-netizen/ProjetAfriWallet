@@ -26,23 +26,29 @@ class RecordingQrPaymentRepository implements QrPaymentRepository {
   }
 
   @override
-  Future<QrPaymentResult> getAuthoritativeStatus(String transferIntentId) async {
+  Future<QrPaymentResult> getAuthoritativeStatus(
+    String transferIntentId,
+  ) async {
     statusCalls += 1;
     return const QrPaymentResult(status: QrPaymentStatus.pendingConfirmation);
   }
 }
 
 void main() {
-  testWidgets('valid QR opens review without initiating payment', (tester) async {
+  testWidgets('valid QR opens review without initiating payment', (
+    tester,
+  ) async {
     final repository = RecordingQrPaymentRepository();
 
-    await tester.pumpWidget(MaterialApp(
-      home: QrPaymentPage(
-        repository: repository,
-        payerWalletId: 'wallet-test',
-        onContinue: () {},
+    await tester.pumpWidget(
+      MaterialApp(
+        home: QrPaymentPage(
+          repository: repository,
+          payerWalletId: 'wallet-test',
+          onContinue: () {},
+        ),
       ),
-    ));
+    );
 
     await tester.enterText(
       find.byKey(const Key('qr-test-input')),
@@ -60,16 +66,20 @@ void main() {
     expect(repository.statusCalls, 0);
   });
 
-  testWidgets('invalid QR never reaches review or payment initiation', (tester) async {
+  testWidgets('invalid QR never reaches review or payment initiation', (
+    tester,
+  ) async {
     final repository = RecordingQrPaymentRepository();
 
-    await tester.pumpWidget(MaterialApp(
-      home: QrPaymentPage(
-        repository: repository,
-        payerWalletId: 'wallet-test',
-        onContinue: () {},
+    await tester.pumpWidget(
+      MaterialApp(
+        home: QrPaymentPage(
+          repository: repository,
+          payerWalletId: 'wallet-test',
+          onContinue: () {},
+        ),
       ),
-    ));
+    );
 
     await tester.enterText(
       find.byKey(const Key('qr-test-input')),
@@ -84,31 +94,38 @@ void main() {
     expect(repository.statusCalls, 0);
   });
 
-  testWidgets('dynamic zero amount reaches review but confirm remains disabled',
-      (tester) async {
-    final repository = RecordingQrPaymentRepository();
+  testWidgets(
+    'dynamic zero amount reaches review but confirm remains disabled',
+    (tester) async {
+      final repository = RecordingQrPaymentRepository();
 
-    await tester.pumpWidget(MaterialApp(
-      home: QrPaymentPage(
-        repository: repository,
-        payerWalletId: 'wallet-test',
-        onContinue: () {},
-      ),
-    ));
+      await tester.pumpWidget(
+        MaterialApp(
+          home: QrPaymentPage(
+            repository: repository,
+            payerWalletId: 'wallet-test',
+            onContinue: () {},
+          ),
+        ),
+      );
 
-    await tester.enterText(
-      find.byKey(const Key('qr-test-input')),
-      'AFW|Dynamic|merchant-002|0|EUR|Afri Market|Open amount',
-    );
-    await tester.tap(find.byKey(const Key('validate-qr-test-input')));
-    await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const Key('qr-test-input')),
+        'AFW|Dynamic|merchant-002|0|EUR|Afri Market|Open amount',
+      );
+      await tester.tap(find.byKey(const Key('validate-qr-test-input')));
+      await tester.pumpAndSettle();
 
-    expect(find.text('Vérifiez avant de payer'), findsOneWidget);
-    expect(find.byKey(const Key('qr-dynamic-amount-required')), findsOneWidget);
-    final button = tester.widget<FilledButton>(
-      find.byKey(const Key('qr-confirm-payment')),
-    );
-    expect(button.onPressed, isNull);
-    expect(repository.initiateCalls, 0);
-  });
+      expect(find.text('Vérifiez avant de payer'), findsOneWidget);
+      expect(
+        find.byKey(const Key('qr-dynamic-amount-required')),
+        findsOneWidget,
+      );
+      final button = tester.widget<FilledButton>(
+        find.byKey(const Key('qr-confirm-payment')),
+      );
+      expect(button.onPressed, isNull);
+      expect(repository.initiateCalls, 0);
+    },
+  );
 }

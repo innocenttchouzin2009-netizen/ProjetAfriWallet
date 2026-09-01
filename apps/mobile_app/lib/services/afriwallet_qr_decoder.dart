@@ -21,8 +21,8 @@ class AfriWalletQrDecoder {
       'static' => QrPaymentType.static,
       'dynamic' => QrPaymentType.dynamic,
       _ => throw const InvalidQrPaymentException(
-          'The AfriWallet QR payment type is invalid.',
-        ),
+        'The AfriWallet QR payment type is invalid.',
+      ),
     };
 
     final merchantId = parts[2].trim();

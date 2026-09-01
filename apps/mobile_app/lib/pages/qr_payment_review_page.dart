@@ -47,15 +47,18 @@ class _QrPaymentReviewPageState extends State<QrPaymentReviewPage> {
 
       final transferIntentId = initiated.transferIntentId;
       if (transferIntentId == null || transferIntentId.trim().isEmpty) {
-        setState(() => _result = const QrPaymentResult(
-              status: QrPaymentStatus.pendingConfirmation,
-              message: 'Paiement initié, confirmation backend indisponible.',
-            ));
+        setState(
+          () => _result = const QrPaymentResult(
+            status: QrPaymentStatus.pendingConfirmation,
+            message: 'Paiement initié, confirmation backend indisponible.',
+          ),
+        );
         return;
       }
 
-      final authoritative =
-          await widget.repository.getAuthoritativeStatus(transferIntentId);
+      final authoritative = await widget.repository.getAuthoritativeStatus(
+        transferIntentId,
+      );
       if (!mounted) return;
       setState(() => _result = authoritative);
     } catch (error) {
@@ -69,8 +72,9 @@ class _QrPaymentReviewPageState extends State<QrPaymentReviewPage> {
   @override
   Widget build(BuildContext context) {
     final payload = widget.payload;
-    final merchant =
-        payload.merchantName.isEmpty ? payload.merchantId : payload.merchantName;
+    final merchant = payload.merchantName.isEmpty
+        ? payload.merchantId
+        : payload.merchantName;
     final dynamicAmountRequired =
         payload.type == QrPaymentType.dynamic && payload.amountMinor == 0;
 
@@ -133,16 +137,17 @@ class _QrPaymentReviewPageState extends State<QrPaymentReviewPage> {
                 key: const Key('qr-confirm-payment'),
                 onPressed:
                     _submitting || payload.isExpired || dynamicAmountRequired
-                        ? null
-                        : _confirm,
+                    ? null
+                    : _confirm,
                 icon: _submitting
                     ? const SizedBox.square(
                         dimension: 18,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(Icons.lock_outline),
-                label:
-                    Text(_submitting ? 'Vérification…' : 'Confirmer le paiement'),
+                label: Text(
+                  _submitting ? 'Vérification…' : 'Confirmer le paiement',
+                ),
               ),
               const SizedBox(height: 12),
               TextButton(

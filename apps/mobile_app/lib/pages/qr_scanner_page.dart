@@ -5,10 +5,7 @@ import '../models/qr_payment.dart';
 import '../services/afriwallet_qr_decoder.dart';
 
 class QrScannerPage extends StatefulWidget {
-  const QrScannerPage({
-    super.key,
-    this.decoder = const AfriWalletQrDecoder(),
-  });
+  const QrScannerPage({super.key, this.decoder = const AfriWalletQrDecoder()});
 
   final AfriWalletQrDecoder decoder;
 
@@ -66,10 +63,7 @@ class _QrScannerPageState extends State<QrScannerPage> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          MobileScanner(
-            controller: _controller,
-            onDetect: _handleCapture,
-          ),
+          MobileScanner(controller: _controller, onDetect: _handleCapture),
           IgnorePointer(
             child: Center(
               child: Container(

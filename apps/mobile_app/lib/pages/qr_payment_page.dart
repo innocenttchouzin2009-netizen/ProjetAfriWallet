@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/qr_payment.dart';
 import '../services/afriwallet_qr_decoder.dart';
 import '../services/qr_payment_repository.dart';
+import 'qr_scanner_page.dart';
 
 class QrPaymentPage extends StatefulWidget {
   const QrPaymentPage({
@@ -32,6 +33,25 @@ class _QrPaymentPageState extends State<QrPaymentPage> {
     super.dispose();
   }
 
+  Future<void> _openScanner() async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => QrScannerPage(
+          decoder: widget.decoder,
+          onValidated: (payload) {
+            if (!mounted) return;
+            Navigator.of(context).pop();
+            setState(() {
+              _payload = payload;
+              _error = null;
+              _controller.clear();
+            });
+          },
+        ),
+      ),
+    );
+  }
+
   Future<void> _validate() async {
     if (_validating) return;
     setState(() {
@@ -41,8 +61,6 @@ class _QrPaymentPageState extends State<QrPaymentPage> {
     });
 
     try {
-      // Beta1.7 keeps parsing deterministic on-device while the repository
-      // remains the boundary for authoritative backend validation/payment.
       final payload = widget.decoder.decode(_controller.text);
       if (!mounted) return;
       setState(() => _payload = payload);
@@ -88,10 +106,19 @@ class _QrPaymentPageState extends State<QrPaymentPage> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
+            FilledButton.icon(
+              key: const Key('open-qr-scanner'),
+              onPressed: _openScanner,
+              icon: const Icon(Icons.camera_alt_outlined),
+              label: const Text('Scanner avec la caméra'),
+            ),
+            const SizedBox(height: 20),
+            const Divider(),
+            const SizedBox(height: 12),
             TextField(
               controller: _controller,
               decoration: const InputDecoration(
-                labelText: 'QR AfriWallet',
+                labelText: 'QR AfriWallet — saisie de test',
                 hintText: 'AFW|Static|merchant-001|15.50|XAF|...',
                 border: OutlineInputBorder(),
               ),
@@ -99,7 +126,7 @@ class _QrPaymentPageState extends State<QrPaymentPage> {
               maxLines: 3,
             ),
             const SizedBox(height: 12),
-            FilledButton.icon(
+            FilledButton.tonalIcon(
               onPressed: _validating ? null : _validate,
               icon: _validating
                   ? const SizedBox.square(
@@ -107,7 +134,7 @@ class _QrPaymentPageState extends State<QrPaymentPage> {
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : const Icon(Icons.verified_outlined),
-              label: const Text('Valider le QR'),
+              label: const Text('Valider la saisie de test'),
             ),
             if (_error != null) ...[
               const SizedBox(height: 16),

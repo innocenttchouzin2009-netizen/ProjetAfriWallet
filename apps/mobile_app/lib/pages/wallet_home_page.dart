@@ -59,7 +59,7 @@ class _WalletHomePageState extends State<WalletHomePage> {
       MaterialPageRoute<void>(
         builder: (context) => TransactionHistoryPage(
           repository: widget.transactionHistoryRepository,
-          onContinue: () => Navigator.of(context).pop(),
+          onReturnToWallet: () => Navigator.of(context).pop(),
         ),
       ),
     );

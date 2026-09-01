@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile_app/models/transaction_history.dart';
 import 'package:mobile_app/models/wallet_balance.dart';
 import 'package:mobile_app/pages/wallet_home_page.dart';
+import 'package:mobile_app/services/transaction_history_repository.dart';
 import 'package:mobile_app/services/wallet_repository.dart';
 
 class _ReadyWalletRepository implements WalletRepository {
@@ -33,13 +35,42 @@ class _UnavailableWalletRepository implements WalletRepository {
   }
 }
 
+class _ReadyTimelineRepository implements TransactionHistoryRepository {
+  @override
+  Future<List<TransactionHistoryItem>> listTransactions() async => [
+        TransactionHistoryItem(
+          transactionId: 'TX-OLDER',
+          amountMinor: 500,
+          currencyCode: 'EUR',
+          direction: TransactionDirection.outgoing,
+          status: TransactionHistoryStatus.completed,
+          occurredAt: DateTime.utc(2026, 8, 31, 8),
+          reference: 'OLDER',
+          counterpartyLabel: '@older',
+        ),
+        TransactionHistoryItem(
+          transactionId: 'TX-LATEST',
+          amountMinor: 1250,
+          currencyCode: 'EUR',
+          direction: TransactionDirection.incoming,
+          status: TransactionHistoryStatus.completed,
+          occurredAt: DateTime.utc(2026, 9, 1, 8),
+          reference: 'LATEST',
+          counterpartyLabel: '@latest',
+        ),
+      ];
+}
+
 void main() {
   testWidgets('renders balances supplied by wallet repository', (tester) async {
-    await tester.binding.setSurfaceSize(const Size(900, 1200));
+    await tester.binding.setSurfaceSize(const Size(900, 1400));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
     await tester.pumpWidget(MaterialApp(
-      home: WalletHomePage(repository: _ReadyWalletRepository()),
+      home: WalletHomePage(
+        repository: _ReadyWalletRepository(),
+        transactionHistoryRepository: _ReadyTimelineRepository(),
+      ),
     ));
 
     await tester.pumpAndSettle();
@@ -48,8 +79,51 @@ void main() {
     expect(find.text('123.45 EUR'), findsOneWidget);
     expect(find.text('5000.00 XAF'), findsOneWidget);
     expect(find.text('Wallet WALLET-TEST-EUR'), findsOneWidget);
-    expect(find.text('Envoyer bientôt'), findsOneWidget);
-    expect(find.text('Recevoir bientôt'), findsOneWidget);
+    expect(find.text('Envoyer'), findsOneWidget);
+    expect(find.text('Recevoir'), findsOneWidget);
+    expect(find.text('Financial Timeline'), findsOneWidget);
+  });
+
+  testWidgets('renders recent financial activity from repository', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(900, 1400));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(MaterialApp(
+      home: WalletHomePage(
+        repository: _ReadyWalletRepository(),
+        transactionHistoryRepository: _ReadyTimelineRepository(),
+      ),
+    ));
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('@latest'), findsOneWidget);
+    expect(find.text('+12.50 EUR'), findsOneWidget);
+    expect(find.text('@older'), findsOneWidget);
+    expect(find.text('-5.00 EUR'), findsOneWidget);
+    expect(find.text('Voir tout'), findsOneWidget);
+
+    final latestY = tester.getTopLeft(find.text('@latest')).dy;
+    final olderY = tester.getTopLeft(find.text('@older')).dy;
+    expect(latestY, lessThan(olderY));
+  });
+
+  testWidgets('timeline never fabricates transactions when unavailable', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(900, 1400));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(MaterialApp(
+      home: WalletHomePage(
+        repository: _ReadyWalletRepository(),
+        transactionHistoryRepository: const UnavailableTransactionHistoryRepository(),
+      ),
+    ));
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('Timeline indisponible'), findsOneWidget);
+    expect(find.textContaining('Aucune transaction n’est simulée'), findsOneWidget);
+    expect(find.text('Réessayer'), findsOneWidget);
   });
 
   testWidgets('never fabricates balances when repository is unavailable', (tester) async {

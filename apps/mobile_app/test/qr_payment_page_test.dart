@@ -85,4 +85,43 @@ void main() {
     expect(find.text('Vérifiez avant de payer'), findsNothing);
     expect(find.text('Paiement réussi'), findsNothing);
   });
+
+  testWidgets('wallet return invokes dedicated callback without legacy continuation', (tester) async {
+    var returnCount = 0;
+    var continueCount = 0;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: QrPaymentPage(
+          repository: FakeQrPaymentRepository(),
+          onReturnToWallet: () => returnCount += 1,
+          onContinue: () => continueCount += 1,
+        ),
+      ),
+    );
+
+    await tester.tap(find.byKey(const Key('qr-return-to-wallet')));
+
+    expect(returnCount, 1);
+    expect(continueCount, 0);
+  });
+
+  testWidgets('legacy continuation remains available when supplied', (tester) async {
+    var continueCount = 0;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: QrPaymentPage(
+          repository: FakeQrPaymentRepository(),
+          onContinue: () => continueCount += 1,
+        ),
+      ),
+    );
+
+    expect(find.byKey(const Key('qr-return-to-wallet')), findsNothing);
+    expect(find.text('Continuer'), findsOneWidget);
+
+    await tester.tap(find.text('Continuer'));
+    expect(continueCount, 1);
+  });
 }

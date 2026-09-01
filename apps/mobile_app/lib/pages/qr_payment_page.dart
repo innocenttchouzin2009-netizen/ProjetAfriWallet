@@ -10,14 +10,16 @@ class QrPaymentPage extends StatefulWidget {
   const QrPaymentPage({
     super.key,
     required this.repository,
-    required this.onContinue,
+    this.onContinue,
+    this.onReturnToWallet,
     this.decoder = const AfriWalletQrDecoder(),
     this.payerWalletId = 'CURRENT-AUTHENTICATED-WALLET',
   });
 
   final QrPaymentRepository repository;
   final AfriWalletQrDecoder decoder;
-  final VoidCallback onContinue;
+  final VoidCallback? onContinue;
+  final VoidCallback? onReturnToWallet;
   final String payerWalletId;
 
   @override
@@ -142,11 +144,22 @@ class _QrPaymentPageState extends State<QrPaymentPage> {
                 ),
               ),
             ],
-            const SizedBox(height: 24),
-            OutlinedButton(
-              onPressed: widget.onContinue,
-              child: const Text('Continuer'),
-            ),
+            if (widget.onReturnToWallet != null) ...[
+              const SizedBox(height: 24),
+              FilledButton.icon(
+                key: const Key('qr-return-to-wallet'),
+                onPressed: widget.onReturnToWallet,
+                icon: const Icon(Icons.account_balance_wallet_outlined),
+                label: const Text('Retour au portefeuille'),
+              ),
+            ],
+            if (widget.onContinue != null) ...[
+              const SizedBox(height: 12),
+              OutlinedButton(
+                onPressed: widget.onContinue,
+                child: const Text('Continuer'),
+              ),
+            ],
           ],
         ),
       ),

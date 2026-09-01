@@ -1,0 +1,59 @@
+name: Mobile Beta1.12 Wallet Quick Actions
+
+on:
+  push:
+    branches:
+      - feature/mobile-beta1.12
+    paths:
+      - 'apps/mobile_app/**'
+      - '.github/workflows/mobile-beta1.12-wallet-quick-actions.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'apps/mobile_app/**'
+      - '.github/workflows/mobile-beta1.12-wallet-quick-actions.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/mobile_app
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Flutter version
+        run: flutter --version
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test Wallet Home quick actions
+        run: flutter test test/wallet_home_page_test.dart
+
+      - name: Test QR wallet return
+        run: flutter test test/qr_payment_page_test.dart
+
+      - name: Run complete Flutter test suite
+        run: flutter test
+
+      - name: Verify commit diff
+        working-directory: .
+        run: git diff --check HEAD^ HEAD

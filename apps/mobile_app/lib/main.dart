@@ -116,6 +116,7 @@ class _AfriWalletAppState extends State<AfriWalletApp> {
         repository: widget.walletRepository ?? const UnavailableWalletRepository(),
         transactionHistoryRepository:
             widget.transactionHistoryRepository ?? const UnavailableTransactionHistoryRepository(),
+        qrPaymentRepository: widget.qrPaymentRepository ?? const UnavailableQrPaymentRepository(),
         onSend: () => _openSendReceive(SendReceiveMode.send),
         onReceive: () => _openSendReceive(SendReceiveMode.receive),
         onContinue: () => _openSendReceive(SendReceiveMode.send),

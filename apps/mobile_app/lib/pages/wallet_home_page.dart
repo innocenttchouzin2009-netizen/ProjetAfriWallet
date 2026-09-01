@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../models/transaction_history.dart';
 import '../models/wallet_balance.dart';
+import '../services/qr_payment_repository.dart';
 import '../services/transaction_history_repository.dart';
 import '../services/wallet_repository.dart';
+import 'qr_payment_page.dart';
 import 'transaction_history_page.dart';
 
 class WalletHomePage extends StatefulWidget {
@@ -11,15 +13,19 @@ class WalletHomePage extends StatefulWidget {
     super.key,
     required this.repository,
     this.transactionHistoryRepository = const UnavailableTransactionHistoryRepository(),
+    this.qrPaymentRepository = const UnavailableQrPaymentRepository(),
     this.onSend,
     this.onReceive,
+    this.onQr,
     this.onContinue,
   });
 
   final WalletRepository repository;
   final TransactionHistoryRepository transactionHistoryRepository;
+  final QrPaymentRepository qrPaymentRepository;
   final VoidCallback? onSend;
   final VoidCallback? onReceive;
+  final VoidCallback? onQr;
   final VoidCallback? onContinue;
 
   @override
@@ -59,6 +65,17 @@ class _WalletHomePageState extends State<WalletHomePage> {
       MaterialPageRoute<void>(
         builder: (context) => TransactionHistoryPage(
           repository: widget.transactionHistoryRepository,
+          onReturnToWallet: () => Navigator.of(context).pop(),
+        ),
+      ),
+    );
+  }
+
+  void _openQrPayments() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (context) => QrPaymentPage(
+          repository: widget.qrPaymentRepository,
           onReturnToWallet: () => Navigator.of(context).pop(),
         ),
       ),
@@ -110,6 +127,15 @@ class _WalletHomePageState extends State<WalletHomePage> {
                         onPressed: widget.onReceive ?? widget.onContinue,
                         icon: const Icon(Icons.south_west),
                         label: const Text('Recevoir'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        key: const Key('wallet-quick-action-qr'),
+                        onPressed: widget.onQr ?? _openQrPayments,
+                        icon: const Icon(Icons.qr_code_scanner),
+                        label: const Text('QR'),
                       ),
                     ),
                   ],

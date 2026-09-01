@@ -81,14 +81,17 @@ void main() {
     expect(find.text('Wallet WALLET-TEST-EUR'), findsOneWidget);
     expect(find.text('Envoyer'), findsOneWidget);
     expect(find.text('Recevoir'), findsOneWidget);
+    expect(find.byKey(const Key('wallet-quick-action-qr')), findsOneWidget);
+    expect(find.text('QR'), findsOneWidget);
     expect(find.text('Financial Timeline'), findsOneWidget);
   });
 
-  testWidgets('routes send and receive through distinct callbacks', (tester) async {
+  testWidgets('routes send receive and QR through distinct callbacks', (tester) async {
     await tester.binding.setSurfaceSize(const Size(900, 1400));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     var sendCount = 0;
     var receiveCount = 0;
+    var qrCount = 0;
 
     await tester.pumpWidget(MaterialApp(
       home: WalletHomePage(
@@ -96,6 +99,7 @@ void main() {
         transactionHistoryRepository: _ReadyTimelineRepository(),
         onSend: () => sendCount += 1,
         onReceive: () => receiveCount += 1,
+        onQr: () => qrCount += 1,
       ),
     ));
     await tester.pumpAndSettle();
@@ -103,10 +107,43 @@ void main() {
     await tester.tap(find.text('Envoyer'));
     expect(sendCount, 1);
     expect(receiveCount, 0);
+    expect(qrCount, 0);
 
     await tester.tap(find.text('Recevoir'));
     expect(sendCount, 1);
     expect(receiveCount, 1);
+    expect(qrCount, 0);
+
+    await tester.tap(find.byKey(const Key('wallet-quick-action-qr')));
+    expect(sendCount, 1);
+    expect(receiveCount, 1);
+    expect(qrCount, 1);
+  });
+
+  testWidgets('opens QR Payments and returns to Wallet Home', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(900, 1400));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(MaterialApp(
+      home: WalletHomePage(
+        repository: _ReadyWalletRepository(),
+        transactionHistoryRepository: _ReadyTimelineRepository(),
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('wallet-quick-action-qr')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('QR Payments'), findsOneWidget);
+    expect(find.byKey(const Key('qr-return-to-wallet')), findsOneWidget);
+    expect(find.text('Wallet Home'), findsNothing);
+
+    await tester.tap(find.byKey(const Key('qr-return-to-wallet')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Wallet Home'), findsOneWidget);
+    expect(find.text('QR Payments'), findsNothing);
   });
 
   testWidgets('renders recent financial activity from repository', (tester) async {

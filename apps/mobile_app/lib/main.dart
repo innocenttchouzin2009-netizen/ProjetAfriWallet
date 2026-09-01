@@ -4,9 +4,11 @@ import 'l10n/app_localizations.dart';
 import 'localization/language_manager.dart';
 import 'localization/locale_controller.dart';
 import 'pages/beta_welcome_page.dart';
+import 'pages/identity_awid_page.dart';
 import 'pages/language_settings_page.dart';
 import 'pages/onboarding_auth_page.dart';
 import 'pages/subscriptions_page.dart';
+import 'services/identity_repository.dart';
 import 'services/subscription_repository.dart';
 import 'theme/afwal_theme.dart';
 
@@ -15,9 +17,14 @@ void main() {
 }
 
 class AfriWalletApp extends StatefulWidget {
-  const AfriWalletApp({super.key, this.repository});
+  const AfriWalletApp({
+    super.key,
+    this.repository,
+    this.identityRepository,
+  });
 
   final SubscriptionRepository? repository;
+  final IdentityRepository? identityRepository;
 
   @override
   State<AfriWalletApp> createState() => _AfriWalletAppState();
@@ -28,6 +35,7 @@ class _AfriWalletAppState extends State<AfriWalletApp> {
   bool _isLocaleLoaded = false;
   bool _hasEnteredBeta = false;
   bool _hasCompletedOnboarding = false;
+  bool _hasVisitedIdentity = false;
   LocaleController? _localeController;
 
   @override
@@ -64,6 +72,13 @@ class _AfriWalletAppState extends State<AfriWalletApp> {
     if (!_hasCompletedOnboarding) {
       return OnboardingAuthPage(
         onContinueToBeta: () => setState(() => _hasCompletedOnboarding = true),
+      );
+    }
+
+    if (!_hasVisitedIdentity) {
+      return IdentityAwidPage(
+        repository: widget.identityRepository ?? const UnavailableIdentityRepository(),
+        onContinue: () => setState(() => _hasVisitedIdentity = true),
       );
     }
 

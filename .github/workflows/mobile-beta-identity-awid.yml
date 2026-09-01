@@ -1,0 +1,36 @@
+name: Mobile Beta Identity AfWal ID
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'apps/mobile_app/**'
+      - 'docs/mobile/AFW-MOB-BETA1.3.md'
+      - '.github/workflows/mobile-beta-identity-awid.yml'
+  push:
+    branches:
+      - 'feature/mobile-beta1-identity-awid'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/mobile_app
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Flutter pub get
+        run: flutter pub get
+      - name: Flutter analyze
+        run: flutter analyze
+      - name: Flutter tests
+        run: flutter test
+      - name: Diff check
+        working-directory: .
+        run: git diff --check HEAD^ HEAD

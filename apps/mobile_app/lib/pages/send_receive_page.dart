@@ -128,7 +128,7 @@ class _SendReceivePageState extends State<SendReceivePage> {
         ],
         if (widget.onContinue != null) ...[
           const SizedBox(height: 8),
-          TextButton(onPressed: widget.onContinue, child: const Text('Continuer')), 
+          TextButton(onPressed: widget.onContinue, child: const Text('Continuer')),
         ],
       ],
     );

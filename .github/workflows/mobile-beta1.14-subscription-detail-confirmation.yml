@@ -1,0 +1,59 @@
+name: Mobile Beta1.14 Subscription Detail Confirmation
+
+on:
+  push:
+    branches:
+      - feature/mobile-beta1.14
+    paths:
+      - 'apps/mobile_app/**'
+      - '.github/workflows/mobile-beta1.14-subscription-detail-confirmation.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'apps/mobile_app/**'
+      - '.github/workflows/mobile-beta1.14-subscription-detail-confirmation.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/mobile_app
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Flutter version
+        run: flutter --version
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test subscription offer detail and confirmation
+        run: flutter test test/subscription_offer_detail_test.dart
+
+      - name: Test subscriptions navigation
+        run: flutter test test/subscriptions_navigation_test.dart
+
+      - name: Run complete Flutter test suite
+        run: flutter test
+
+      - name: Verify commit diff
+        working-directory: .
+        run: git diff --check HEAD^ HEAD

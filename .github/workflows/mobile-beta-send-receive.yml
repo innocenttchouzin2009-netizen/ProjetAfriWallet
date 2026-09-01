@@ -1,0 +1,31 @@
+name: Mobile Beta Send Receive
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'apps/mobile_app/**'
+      - 'docs/mobile/**'
+      - '.github/workflows/mobile-beta-send-receive.yml'
+  push:
+    branches: [feature/mobile-beta1-send-receive]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/mobile_app
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test
+      - name: Diff check
+        working-directory: .
+        run: git diff --check HEAD^ HEAD

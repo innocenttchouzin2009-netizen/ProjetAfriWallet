@@ -1,16 +1,21 @@
 import 'package:flutter/material.dart';
 
+import '../models/transaction_history.dart';
 import '../models/wallet_balance.dart';
+import '../services/transaction_history_repository.dart';
 import '../services/wallet_repository.dart';
+import 'transaction_history_page.dart';
 
 class WalletHomePage extends StatefulWidget {
   const WalletHomePage({
     super.key,
     required this.repository,
+    this.transactionHistoryRepository = const UnavailableTransactionHistoryRepository(),
     this.onContinue,
   });
 
   final WalletRepository repository;
+  final TransactionHistoryRepository transactionHistoryRepository;
   final VoidCallback? onContinue;
 
   @override
@@ -19,15 +24,41 @@ class WalletHomePage extends StatefulWidget {
 
 class _WalletHomePageState extends State<WalletHomePage> {
   late Future<List<WalletBalance>> _balances;
+  late Future<_TimelineLoadResult> _transactions;
 
   @override
   void initState() {
     super.initState();
     _balances = widget.repository.loadWalletBalances();
+    _transactions = _loadTransactions();
   }
 
-  void _retry() {
+  Future<_TimelineLoadResult> _loadTransactions() async {
+    try {
+      final items = await widget.transactionHistoryRepository.listTransactions();
+      return _TimelineLoadResult(items: items);
+    } catch (error) {
+      return _TimelineLoadResult(error: error);
+    }
+  }
+
+  void _retryBalances() {
     setState(() => _balances = widget.repository.loadWalletBalances());
+  }
+
+  void _retryTransactions() {
+    setState(() => _transactions = _loadTransactions());
+  }
+
+  void _openFinancialTimeline() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (context) => TransactionHistoryPage(
+          repository: widget.transactionHistoryRepository,
+          onContinue: () => Navigator.of(context).pop(),
+        ),
+      ),
+    );
   }
 
   @override
@@ -42,7 +73,7 @@ class _WalletHomePageState extends State<WalletHomePage> {
               return const Center(child: CircularProgressIndicator());
             }
             if (snapshot.hasError) {
-              return _UnavailableState(onRetry: _retry, onContinue: widget.onContinue);
+              return _UnavailableState(onRetry: _retryBalances, onContinue: widget.onContinue);
             }
             final wallets = snapshot.data ?? const <WalletBalance>[];
             if (wallets.isEmpty) {
@@ -53,7 +84,7 @@ class _WalletHomePageState extends State<WalletHomePage> {
               children: [
                 Text('Wallet Home', style: Theme.of(context).textTheme.headlineMedium),
                 const SizedBox(height: 8),
-                const Text('Vos soldes confirmés, par devise.'),
+                const Text('Vos soldes confirmés et votre activité financière récente.'),
                 const SizedBox(height: 20),
                 for (final wallet in wallets) ...[
                   _WalletCard(wallet: wallet),
@@ -64,20 +95,26 @@ class _WalletHomePageState extends State<WalletHomePage> {
                   children: [
                     Expanded(
                       child: OutlinedButton.icon(
-                        onPressed: null,
+                        onPressed: widget.onContinue,
                         icon: const Icon(Icons.north_east),
-                        label: const Text('Envoyer bientôt'),
+                        label: const Text('Envoyer'),
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: OutlinedButton.icon(
-                        onPressed: null,
+                        onPressed: widget.onContinue,
                         icon: const Icon(Icons.south_west),
-                        label: const Text('Recevoir bientôt'),
+                        label: const Text('Recevoir'),
                       ),
                     ),
                   ],
+                ),
+                const SizedBox(height: 28),
+                _FinancialTimelineSection(
+                  transactions: _transactions,
+                  onRetry: _retryTransactions,
+                  onOpenAll: _openFinancialTimeline,
                 ),
                 if (widget.onContinue != null) ...[
                   const SizedBox(height: 20),
@@ -90,6 +127,15 @@ class _WalletHomePageState extends State<WalletHomePage> {
       ),
     );
   }
+}
+
+class _TimelineLoadResult {
+  const _TimelineLoadResult({this.items = const <TransactionHistoryItem>[], this.error});
+
+  final List<TransactionHistoryItem> items;
+  final Object? error;
+
+  bool get hasError => error != null;
 }
 
 class _WalletCard extends StatelessWidget {
@@ -119,6 +165,128 @@ class _WalletCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _FinancialTimelineSection extends StatelessWidget {
+  const _FinancialTimelineSection({
+    required this.transactions,
+    required this.onRetry,
+    required this.onOpenAll,
+  });
+
+  final Future<_TimelineLoadResult> transactions;
+  final VoidCallback onRetry;
+  final VoidCallback onOpenAll;
+
+  String _amount(TransactionHistoryItem item) {
+    final sign = item.direction == TransactionDirection.incoming ? '+' : '-';
+    final absoluteMinor = item.amountMinor.abs();
+    final major = absoluteMinor ~/ 100;
+    final minor = (absoluteMinor % 100).toString().padLeft(2, '0');
+    return '$sign$major.$minor ${item.currencyCode}';
+  }
+
+  String _status(TransactionHistoryStatus status) => switch (status) {
+        TransactionHistoryStatus.pending => 'En attente',
+        TransactionHistoryStatus.completed => 'Terminée',
+        TransactionHistoryStatus.failed => 'Échouée',
+        TransactionHistoryStatus.cancelled => 'Annulée',
+        TransactionHistoryStatus.reversed => 'Contre-passée',
+      };
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text('Financial Timeline', style: Theme.of(context).textTheme.titleLarge),
+            ),
+            TextButton(onPressed: onOpenAll, child: const Text('Voir tout')),
+          ],
+        ),
+        const SizedBox(height: 4),
+        const Text('Les dernières opérations confirmées de votre portefeuille.'),
+        const SizedBox(height: 12),
+        FutureBuilder<_TimelineLoadResult>(
+          future: transactions,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState != ConnectionState.done) {
+              return const Padding(
+                padding: EdgeInsets.symmetric(vertical: 20),
+                child: Center(child: CircularProgressIndicator()),
+              );
+            }
+
+            final result = snapshot.data ?? const _TimelineLoadResult();
+            if (result.hasError) {
+              return Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Timeline indisponible'),
+                      const SizedBox(height: 6),
+                      const Text('Aucune transaction n’est simulée lorsque le service est indisponible.'),
+                      const SizedBox(height: 8),
+                      TextButton(onPressed: onRetry, child: const Text('Réessayer')),
+                    ],
+                  ),
+                ),
+              );
+            }
+
+            final items = [...result.items]
+              ..sort((a, b) => b.occurredAt.compareTo(a.occurredAt));
+            if (items.isEmpty) {
+              return const Card(
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Text('Aucune activité financière pour le moment.'),
+                ),
+              );
+            }
+
+            final recent = items.take(3).toList(growable: false);
+            return Card(
+              child: Column(
+                children: [
+                  for (var index = 0; index < recent.length; index++) ...[
+                    _TimelineTile(item: recent[index], amount: _amount(recent[index]), status: _status(recent[index].status)),
+                    if (index != recent.length - 1) const Divider(height: 1),
+                  ],
+                ],
+              ),
+            );
+          },
+        ),
+      ],
+    );
+  }
+}
+
+class _TimelineTile extends StatelessWidget {
+  const _TimelineTile({required this.item, required this.amount, required this.status});
+
+  final TransactionHistoryItem item;
+  final String amount;
+  final String status;
+
+  @override
+  Widget build(BuildContext context) {
+    final incoming = item.direction == TransactionDirection.incoming;
+    return ListTile(
+      leading: CircleAvatar(
+        child: Icon(incoming ? Icons.south_west : Icons.north_east),
+      ),
+      title: Text(item.counterpartyLabel ?? item.reference),
+      subtitle: Text(status),
+      trailing: Text(amount),
     );
   }
 }

@@ -1,0 +1,56 @@
+name: Mobile Beta1.8 Wallet Home Timeline
+
+on:
+  push:
+    branches:
+      - feature/mobile-beta1.8-wallet-home-timeline
+    paths:
+      - 'apps/mobile_app/**'
+      - '.github/workflows/mobile-beta1.8-wallet-home-timeline.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'apps/mobile_app/**'
+      - '.github/workflows/mobile-beta1.8-wallet-home-timeline.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/mobile_app
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Flutter version
+        run: flutter --version
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test Wallet Home + Financial Timeline
+        run: flutter test test/wallet_home_page_test.dart
+
+      - name: Run complete Flutter test suite
+        run: flutter test
+
+      - name: Verify commit diff
+        working-directory: .
+        run: git diff --check HEAD^ HEAD

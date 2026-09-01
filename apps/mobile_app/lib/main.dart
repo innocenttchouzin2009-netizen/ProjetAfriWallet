@@ -99,6 +99,8 @@ class _AfriWalletAppState extends State<AfriWalletApp> {
     if (!_hasVisitedWalletHome) {
       return WalletHomePage(
         repository: widget.walletRepository ?? const UnavailableWalletRepository(),
+        transactionHistoryRepository:
+            widget.transactionHistoryRepository ?? const UnavailableTransactionHistoryRepository(),
         onContinue: () => setState(() => _hasVisitedWalletHome = true),
       );
     }

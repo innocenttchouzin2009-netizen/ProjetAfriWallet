@@ -5,11 +5,18 @@ import '../models/subscription_models.dart';
 import '../services/subscription_repository.dart';
 
 class SubscriptionsPage extends StatefulWidget {
-  const SubscriptionsPage({super.key, this.repository, this.locale, this.onOpenSettings});
+  const SubscriptionsPage({
+    super.key,
+    this.repository,
+    this.locale,
+    this.onOpenSettings,
+    this.onReturnToWallet,
+  });
 
   final SubscriptionRepository? repository;
   final Locale? locale;
   final VoidCallback? onOpenSettings;
+  final VoidCallback? onReturnToWallet;
 
   @override
   State<SubscriptionsPage> createState() => _SubscriptionsPageState();
@@ -68,6 +75,12 @@ class _SubscriptionsPageState extends State<SubscriptionsPage> {
     final localizations = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
+        leading: widget.onReturnToWallet == null
+            ? null
+            : BackButton(
+                key: const Key('subscriptions-return-to-wallet'),
+                onPressed: widget.onReturnToWallet,
+              ),
         title: Text(localizations.appTitle),
         actions: [
           IconButton(

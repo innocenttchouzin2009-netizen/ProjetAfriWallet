@@ -219,4 +219,44 @@ void main() {
     expect(find.text('Détails'), findsOneWidget);
     expect(repository.createSubscriptionCalls, 0);
   });
+
+  testWidgets('Subscribe opens detail confirmation without creating subscription', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(900, 1400));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final repository = _OfferSubscriptionRepository();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('fr'),
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        home: SubscriptionsPage(repository: repository),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(repository.createSubscriptionCalls, 0);
+    expect(find.text('S’abonner'), findsOneWidget);
+
+    await tester.tap(find.text('S’abonner'));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('subscription-offer-detail-page')), findsOneWidget);
+    expect(find.byKey(const Key('subscription-offer-detail-continue')), findsOneWidget);
+    expect(repository.createSubscriptionCalls, 0);
+
+    await tester.tap(find.byKey(const Key('subscription-offer-detail-continue')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('subscription-offer-confirmation-dialog')), findsOneWidget);
+    expect(repository.createSubscriptionCalls, 0);
+
+    await tester.tap(find.byKey(const Key('subscription-offer-confirmation-confirm')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('subscription-offer-confirmation-dialog')), findsNothing);
+    expect(find.byKey(const Key('subscription-offer-detail-page')), findsOneWidget);
+    expect(repository.createSubscriptionCalls, 0);
+  });
 }

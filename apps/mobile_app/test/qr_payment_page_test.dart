@@ -25,8 +25,9 @@ class FakeQrPaymentRepository implements QrPaymentRepository {
 }
 
 void main() {
-  testWidgets('camera-first page keeps test validation as a non-payment path',
-      (tester) async {
+  testWidgets('camera-first page keeps test validation as a non-payment path', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       MaterialApp(
         home: QrPaymentPage(
@@ -37,7 +38,7 @@ void main() {
     );
 
     expect(find.text('Scanner avec la caméra'), findsOneWidget);
-    expect(find.text('Ouvrir la vérification'), findsOneWidget);
+    expect(find.byKey(const Key('validate-qr-test-input')), findsOneWidget);
 
     await tester.enterText(
       find.byKey(const Key('qr-test-input')),
@@ -73,7 +74,10 @@ void main() {
       ),
     );
 
-    await tester.enterText(find.byKey(const Key('qr-test-input')), 'NOT-AFW|bad');
+    await tester.enterText(
+      find.byKey(const Key('qr-test-input')),
+      'NOT-AFW|bad',
+    );
     await tester.tap(find.byKey(const Key('validate-qr-test-input')));
     await tester.pumpAndSettle();
 

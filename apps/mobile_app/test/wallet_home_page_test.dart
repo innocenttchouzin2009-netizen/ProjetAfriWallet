@@ -35,6 +35,9 @@ class _UnavailableWalletRepository implements WalletRepository {
 
 void main() {
   testWidgets('renders balances supplied by wallet repository', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(900, 1200));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
     await tester.pumpWidget(MaterialApp(
       home: WalletHomePage(repository: _ReadyWalletRepository()),
     ));
@@ -44,7 +47,7 @@ void main() {
     expect(find.text('Wallet Home'), findsOneWidget);
     expect(find.text('123.45 EUR'), findsOneWidget);
     expect(find.text('5000.00 XAF'), findsOneWidget);
-    expect(find.text('WALLET-TEST-EUR'), findsOneWidget);
+    expect(find.text('Wallet WALLET-TEST-EUR'), findsOneWidget);
     expect(find.text('Envoyer bientôt'), findsOneWidget);
     expect(find.text('Recevoir bientôt'), findsOneWidget);
   });

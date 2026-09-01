@@ -37,22 +37,23 @@ void main() {
     );
 
     expect(find.text('Scanner avec la caméra'), findsOneWidget);
-    expect(find.text('Valider la saisie de test'), findsOneWidget);
+    expect(find.text('Ouvrir la vérification'), findsOneWidget);
 
     await tester.enterText(
-      find.byType(TextField),
+      find.byKey(const Key('qr-test-input')),
       'AFW|Static|merchant-001|15.50|XAF|Afri Shop|Coffee purchase',
     );
-    await tester.tap(find.text('Valider la saisie de test'));
-    await tester.pump();
+    await tester.tap(find.byKey(const Key('validate-qr-test-input')));
+    await tester.pumpAndSettle();
 
-    expect(find.text('Vérifier avant paiement'), findsOneWidget);
+    expect(find.text('Vérifiez avant de payer'), findsOneWidget);
     expect(find.text('Afri Shop'), findsOneWidget);
     expect(find.text('15.50 XAF'), findsOneWidget);
-    expect(find.text('Merchant ID : merchant-001'), findsOneWidget);
+    expect(find.text('merchant-001'), findsOneWidget);
 
-    final backendNotice =
-        find.textContaining('confirmation financière devra provenir du backend');
+    final backendNotice = find.textContaining(
+      'confirmation financière autoritaire du backend',
+    );
     await tester.scrollUntilVisible(
       backendNotice,
       200,
@@ -72,12 +73,12 @@ void main() {
       ),
     );
 
-    await tester.enterText(find.byType(TextField), 'NOT-AFW|bad');
-    await tester.tap(find.text('Valider la saisie de test'));
-    await tester.pump();
+    await tester.enterText(find.byKey(const Key('qr-test-input')), 'NOT-AFW|bad');
+    await tester.tap(find.byKey(const Key('validate-qr-test-input')));
+    await tester.pumpAndSettle();
 
-    expect(find.textContaining('QR invalide'), findsOneWidget);
-    expect(find.text('Vérifier avant paiement'), findsNothing);
+    expect(find.byKey(const Key('qr-validation-error')), findsOneWidget);
+    expect(find.text('Vérifiez avant de payer'), findsNothing);
     expect(find.text('Paiement réussi'), findsNothing);
   });
 }

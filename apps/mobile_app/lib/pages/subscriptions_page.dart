@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../l10n/app_localizations.dart';
 import '../models/subscription_models.dart';
 import '../services/subscription_repository.dart';
+import 'subscription_offer_detail_page.dart';
 
 class SubscriptionsPage extends StatefulWidget {
   const SubscriptionsPage({
@@ -290,14 +291,9 @@ class _OfferCard extends StatelessWidget {
                 Expanded(
                   child: OutlinedButton(
                     onPressed: () {
-                      showDialog<void>(
-                        context: context,
-                        builder: (dialogContext) => AlertDialog(
-                          title: Text(offer.name),
-                          content: Text(offer.longDescription),
-                          actions: [
-                            TextButton(onPressed: () => Navigator.of(dialogContext).pop(), child: Text(localizations.close)),
-                          ],
+                      Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => SubscriptionOfferDetailPage(offer: offer),
                         ),
                       );
                     },

@@ -8,8 +8,10 @@ import 'pages/identity_awid_page.dart';
 import 'pages/language_settings_page.dart';
 import 'pages/onboarding_auth_page.dart';
 import 'pages/subscriptions_page.dart';
+import 'pages/wallet_home_page.dart';
 import 'services/identity_repository.dart';
 import 'services/subscription_repository.dart';
+import 'services/wallet_repository.dart';
 import 'theme/afwal_theme.dart';
 
 void main() {
@@ -21,10 +23,12 @@ class AfriWalletApp extends StatefulWidget {
     super.key,
     this.repository,
     this.identityRepository,
+    this.walletRepository,
   });
 
   final SubscriptionRepository? repository;
   final IdentityRepository? identityRepository;
+  final WalletRepository? walletRepository;
 
   @override
   State<AfriWalletApp> createState() => _AfriWalletAppState();
@@ -36,6 +40,7 @@ class _AfriWalletAppState extends State<AfriWalletApp> {
   bool _hasEnteredBeta = false;
   bool _hasCompletedOnboarding = false;
   bool _hasVisitedIdentity = false;
+  bool _hasVisitedWalletHome = false;
   LocaleController? _localeController;
 
   @override
@@ -79,6 +84,13 @@ class _AfriWalletAppState extends State<AfriWalletApp> {
       return IdentityAwidPage(
         repository: widget.identityRepository ?? const UnavailableIdentityRepository(),
         onContinue: () => setState(() => _hasVisitedIdentity = true),
+      );
+    }
+
+    if (!_hasVisitedWalletHome) {
+      return WalletHomePage(
+        repository: widget.walletRepository ?? const UnavailableWalletRepository(),
+        onContinue: () => setState(() => _hasVisitedWalletHome = true),
       );
     }
 

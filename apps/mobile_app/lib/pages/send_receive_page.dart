@@ -10,11 +10,13 @@ class SendReceivePage extends StatefulWidget {
     super.key,
     required this.repository,
     this.initialMode = SendReceiveMode.send,
+    this.onContinue,
     this.onReturnToWallet,
   });
 
   final TransferRepository repository;
   final SendReceiveMode initialMode;
+  final VoidCallback? onContinue;
   final VoidCallback? onReturnToWallet;
 
   @override
@@ -123,6 +125,10 @@ class _SendReceivePageState extends State<SendReceivePage> {
             icon: const Icon(Icons.account_balance_wallet_outlined),
             label: const Text('Retour au portefeuille'),
           ),
+        ],
+        if (widget.onContinue != null) ...[
+          const SizedBox(height: 8),
+          TextButton(onPressed: widget.onContinue, child: const Text('Continuer')), 
         ],
       ],
     );

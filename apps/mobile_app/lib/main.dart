@@ -7,10 +7,12 @@ import 'pages/beta_welcome_page.dart';
 import 'pages/identity_awid_page.dart';
 import 'pages/language_settings_page.dart';
 import 'pages/onboarding_auth_page.dart';
+import 'pages/send_receive_page.dart';
 import 'pages/subscriptions_page.dart';
 import 'pages/wallet_home_page.dart';
 import 'services/identity_repository.dart';
 import 'services/subscription_repository.dart';
+import 'services/transfer_repository.dart';
 import 'services/wallet_repository.dart';
 import 'theme/afwal_theme.dart';
 
@@ -24,11 +26,13 @@ class AfriWalletApp extends StatefulWidget {
     this.repository,
     this.identityRepository,
     this.walletRepository,
+    this.transferRepository,
   });
 
   final SubscriptionRepository? repository;
   final IdentityRepository? identityRepository;
   final WalletRepository? walletRepository;
+  final TransferRepository? transferRepository;
 
   @override
   State<AfriWalletApp> createState() => _AfriWalletAppState();
@@ -41,6 +45,7 @@ class _AfriWalletAppState extends State<AfriWalletApp> {
   bool _hasCompletedOnboarding = false;
   bool _hasVisitedIdentity = false;
   bool _hasVisitedWalletHome = false;
+  bool _hasVisitedSendReceive = false;
   LocaleController? _localeController;
 
   @override
@@ -69,31 +74,30 @@ class _AfriWalletAppState extends State<AfriWalletApp> {
     if (!_isLocaleLoaded) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
-
     if (!_hasEnteredBeta) {
       return BetaWelcomePage(onContinue: () => setState(() => _hasEnteredBeta = true));
     }
-
     if (!_hasCompletedOnboarding) {
-      return OnboardingAuthPage(
-        onContinueToBeta: () => setState(() => _hasCompletedOnboarding = true),
-      );
+      return OnboardingAuthPage(onContinueToBeta: () => setState(() => _hasCompletedOnboarding = true));
     }
-
     if (!_hasVisitedIdentity) {
       return IdentityAwidPage(
         repository: widget.identityRepository ?? const UnavailableIdentityRepository(),
         onContinue: () => setState(() => _hasVisitedIdentity = true),
       );
     }
-
     if (!_hasVisitedWalletHome) {
       return WalletHomePage(
         repository: widget.walletRepository ?? const UnavailableWalletRepository(),
         onContinue: () => setState(() => _hasVisitedWalletHome = true),
       );
     }
-
+    if (!_hasVisitedSendReceive) {
+      return SendReceivePage(
+        repository: widget.transferRepository ?? const UnavailableTransferRepository(),
+        onContinue: () => setState(() => _hasVisitedSendReceive = true),
+      );
+    }
     return SubscriptionsPage(
       repository: widget.repository,
       locale: _locale,
@@ -114,7 +118,7 @@ class _AfriWalletAppState extends State<AfriWalletApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'AfWal',
+      title: 'AfriWallet',
       debugShowCheckedModeBanner: false,
       locale: _locale,
       supportedLocales: AppLocalizations.supportedLocales,

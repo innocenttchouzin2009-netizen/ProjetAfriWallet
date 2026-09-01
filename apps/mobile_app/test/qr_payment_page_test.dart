@@ -46,10 +46,15 @@ void main() {
     expect(find.text('Afri Shop'), findsOneWidget);
     expect(find.text('15.50 XAF'), findsOneWidget);
     expect(find.text('Merchant ID : merchant-001'), findsOneWidget);
-    expect(
-      find.textContaining('confirmation financière devra provenir du backend'),
-      findsOneWidget,
+
+    final backendNotice =
+        find.textContaining('confirmation financière devra provenir du backend');
+    await tester.scrollUntilVisible(
+      backendNotice,
+      200,
+      scrollable: find.byType(Scrollable).first,
     );
+    expect(backendNotice, findsOneWidget);
     expect(find.text('Paiement réussi'), findsNothing);
   });
 

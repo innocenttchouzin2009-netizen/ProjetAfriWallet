@@ -1,13 +1,4 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mobile_app/l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mobile_app/main.dart';
 import 'package:mobile_app/models/subscription_models.dart';
@@ -16,15 +7,15 @@ import 'package:mobile_app/services/subscription_repository.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('subscriptions page renders', (WidgetTester tester) async {
+  testWidgets('app renders Mobile Beta welcome experience', (WidgetTester tester) async {
     SharedPreferences.setMockInitialValues({});
     await tester.pumpWidget(AfriWalletApp(repository: _FakeSubscriptionRepository()));
     await tester.pumpAndSettle();
 
-    final localizations = await AppLocalizations.delegate.load(const Locale('en'));
-
-    expect(find.text(localizations.mySubscriptions), findsOneWidget);
-    expect(find.text(localizations.offers), findsOneWidget);
+    expect(find.text('MOBILE BETA 1'), findsOneWidget);
+    expect(find.text('Une identité.\nUn wallet.\nUne Afrique connectée.'), findsOneWidget);
+    expect(find.text('Découvrir AfWal'), findsOneWidget);
+    expect(find.text('Connecting Africa. Empowering People.'), findsOneWidget);
   });
 }
 

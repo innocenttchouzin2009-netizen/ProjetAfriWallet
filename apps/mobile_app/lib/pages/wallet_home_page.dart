@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import '../models/transaction_history.dart';
 import '../models/wallet_balance.dart';
 import '../services/qr_payment_repository.dart';
+import '../services/subscription_repository.dart';
 import '../services/transaction_history_repository.dart';
 import '../services/wallet_repository.dart';
 import 'qr_payment_page.dart';
+import 'subscriptions_page.dart';
 import 'transaction_history_page.dart';
 
 class WalletHomePage extends StatefulWidget {
@@ -14,18 +16,22 @@ class WalletHomePage extends StatefulWidget {
     required this.repository,
     this.transactionHistoryRepository = const UnavailableTransactionHistoryRepository(),
     this.qrPaymentRepository = const UnavailableQrPaymentRepository(),
+    this.subscriptionRepository,
     this.onSend,
     this.onReceive,
     this.onQr,
+    this.onSubscriptions,
     this.onContinue,
   });
 
   final WalletRepository repository;
   final TransactionHistoryRepository transactionHistoryRepository;
   final QrPaymentRepository qrPaymentRepository;
+  final SubscriptionRepository? subscriptionRepository;
   final VoidCallback? onSend;
   final VoidCallback? onReceive;
   final VoidCallback? onQr;
+  final VoidCallback? onSubscriptions;
   final VoidCallback? onContinue;
 
   @override
@@ -76,6 +82,17 @@ class _WalletHomePageState extends State<WalletHomePage> {
       MaterialPageRoute<void>(
         builder: (context) => QrPaymentPage(
           repository: widget.qrPaymentRepository,
+          onReturnToWallet: () => Navigator.of(context).pop(),
+        ),
+      ),
+    );
+  }
+
+  void _openSubscriptions() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (context) => SubscriptionsPage(
+          repository: widget.subscriptionRepository,
           onReturnToWallet: () => Navigator.of(context).pop(),
         ),
       ),
@@ -139,6 +156,13 @@ class _WalletHomePageState extends State<WalletHomePage> {
                       ),
                     ),
                   ],
+                ),
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  key: const Key('wallet-subscriptions-action'),
+                  onPressed: widget.onSubscriptions ?? _openSubscriptions,
+                  icon: const Icon(Icons.subscriptions_outlined),
+                  label: const Text('Abonnements'),
                 ),
                 const SizedBox(height: 28),
                 _FinancialTimelineSection(

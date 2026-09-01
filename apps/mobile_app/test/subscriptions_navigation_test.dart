@@ -4,6 +4,7 @@ import 'package:mobile_app/l10n/app_localizations.dart';
 import 'package:mobile_app/models/subscription_models.dart';
 import 'package:mobile_app/models/transaction_history.dart';
 import 'package:mobile_app/models/wallet_balance.dart';
+import 'package:mobile_app/pages/subscriptions_page.dart';
 import 'package:mobile_app/pages/wallet_home_page.dart';
 import 'package:mobile_app/services/subscription_repository.dart';
 import 'package:mobile_app/services/transaction_history_repository.dart';
@@ -45,6 +46,50 @@ class _ReadySubscriptionRepository implements SubscriptionRepository {
     String? currency,
     String? query,
   }) async => const [];
+
+  @override
+  Future<List<SubscriptionInvoice>> fetchInvoices(String subscriptionId) async => const [];
+
+  @override
+  Future<List<UserSubscription>> fetchUserSubscriptions() async => const [];
+
+  @override
+  Future<void> toggleAutoRenew(String subscriptionId, bool enabled) async {}
+}
+
+class _OfferSubscriptionRepository implements SubscriptionRepository {
+  int createSubscriptionCalls = 0;
+
+  static const offer = SubscriptionOffer(
+    id: 'offer-beta14',
+    providerId: 'provider-beta14',
+    name: 'Beta14 Premium',
+    description: 'Beta1.14 offer',
+    price: 12.99,
+    currency: 'EUR',
+    country: 'DE',
+    category: 'Entertainment',
+    features: ['Feature A'],
+    longDescription: 'Beta1.14 detailed offer description',
+  );
+
+  @override
+  Future<void> cancelSubscription(String subscriptionId) async {}
+
+  @override
+  Future<void> createSubscription(String offerId) async {
+    createSubscriptionCalls += 1;
+  }
+
+  @override
+  Future<SubscriptionOffer?> fetchOffer(String offerId) async => offer;
+
+  @override
+  Future<List<SubscriptionOffer>> fetchOffers({
+    String? country,
+    String? currency,
+    String? query,
+  }) async => const [offer];
 
   @override
   Future<List<SubscriptionInvoice>> fetchInvoices(String subscriptionId) async => const [];
@@ -138,5 +183,40 @@ void main() {
 
     expect(find.text('Wallet Home'), findsOneWidget);
     expect(find.byKey(const Key('subscriptions-return-to-wallet')), findsNothing);
+  });
+
+  testWidgets('Subscriptions opens offer details and returns without creating subscription', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(900, 1400));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final repository = _OfferSubscriptionRepository();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('fr'),
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        home: SubscriptionsPage(repository: repository),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Beta14 Premium'), findsOneWidget);
+    expect(find.text('Détails'), findsOneWidget);
+
+    await tester.tap(find.text('Détails'));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('subscription-offer-detail-page')), findsOneWidget);
+    expect(find.text('Beta1.14 detailed offer description'), findsOneWidget);
+    expect(repository.createSubscriptionCalls, 0);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('subscription-offer-detail-page')), findsNothing);
+    expect(find.text('Beta14 Premium'), findsOneWidget);
+    expect(find.text('Détails'), findsOneWidget);
+    expect(repository.createSubscriptionCalls, 0);
   });
 }

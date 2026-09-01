@@ -237,9 +237,18 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(repository.createSubscriptionCalls, 0);
-    expect(find.text('S’abonner'), findsOneWidget);
+    final offerCard = find.ancestor(
+      of: find.text('Beta14 Premium'),
+      matching: find.byType(Card),
+    );
+    expect(offerCard, findsOneWidget);
+    final subscribeButton = find.descendant(
+      of: offerCard,
+      matching: find.byType(FilledButton),
+    );
+    expect(subscribeButton, findsOneWidget);
 
-    await tester.tap(find.text('S’abonner'));
+    await tester.tap(subscribeButton);
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('subscription-offer-detail-page')), findsOneWidget);

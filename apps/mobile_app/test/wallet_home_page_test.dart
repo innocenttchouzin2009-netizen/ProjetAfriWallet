@@ -120,6 +120,32 @@ void main() {
     expect(qrCount, 1);
   });
 
+  testWidgets('opens QR Payments and returns to Wallet Home', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(900, 1400));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(MaterialApp(
+      home: WalletHomePage(
+        repository: _ReadyWalletRepository(),
+        transactionHistoryRepository: _ReadyTimelineRepository(),
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('wallet-quick-action-qr')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('QR Payments'), findsOneWidget);
+    expect(find.byKey(const Key('qr-return-to-wallet')), findsOneWidget);
+    expect(find.text('Wallet Home'), findsNothing);
+
+    await tester.tap(find.byKey(const Key('qr-return-to-wallet')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Wallet Home'), findsOneWidget);
+    expect(find.text('QR Payments'), findsNothing);
+  });
+
   testWidgets('renders recent financial activity from repository', (tester) async {
     await tester.binding.setSurfaceSize(const Size(900, 1400));
     addTearDown(() => tester.binding.setSurfaceSize(null));

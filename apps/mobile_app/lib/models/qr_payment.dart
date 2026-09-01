@@ -32,6 +32,21 @@ class QrPaymentPayload {
   final DateTime? expiresAt;
 
   bool get isExpired => expiresAt != null && !expiresAt!.isAfter(DateTime.now().toUtc());
+
+  QrPaymentPayload copyWith({
+    int? amountMinor,
+  }) {
+    return QrPaymentPayload(
+      type: type,
+      merchantId: merchantId,
+      amountMinor: amountMinor ?? this.amountMinor,
+      currencyCode: currencyCode,
+      merchantName: merchantName,
+      description: description,
+      qrId: qrId,
+      expiresAt: expiresAt,
+    );
+  }
 }
 
 class QrPaymentResult {

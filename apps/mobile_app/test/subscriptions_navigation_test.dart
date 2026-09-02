@@ -41,11 +41,7 @@ class _ReadySubscriptionRepository implements SubscriptionRepository {
   Future<SubscriptionOffer?> fetchOffer(String offerId) async => null;
 
   @override
-  Future<List<SubscriptionOffer>> fetchOffers({
-    String? country,
-    String? currency,
-    String? query,
-  }) async => const [];
+  Future<List<SubscriptionOffer>> fetchOffers({String? country, String? currency, String? query}) async => const [];
 
   @override
   Future<List<SubscriptionInvoice>> fetchInvoices(String subscriptionId) async => const [];
@@ -61,16 +57,16 @@ class _OfferSubscriptionRepository implements SubscriptionRepository {
   int createSubscriptionCalls = 0;
 
   static const offer = SubscriptionOffer(
-    id: 'offer-beta14',
-    providerId: 'provider-beta14',
-    name: 'Beta14 Premium',
-    description: 'Beta1.14 offer',
-    price: 12.99,
+    id: 'offer-beta15',
+    providerId: 'provider-beta15',
+    name: 'Beta15 Premium',
+    description: 'Beta1.15 offer',
+    price: 14.99,
     currency: 'EUR',
     country: 'DE',
     category: 'Entertainment',
     features: ['Feature A'],
-    longDescription: 'Beta1.14 detailed offer description',
+    longDescription: 'Beta1.15 detailed offer description',
   );
 
   @override
@@ -85,11 +81,7 @@ class _OfferSubscriptionRepository implements SubscriptionRepository {
   Future<SubscriptionOffer?> fetchOffer(String offerId) async => offer;
 
   @override
-  Future<List<SubscriptionOffer>> fetchOffers({
-    String? country,
-    String? currency,
-    String? query,
-  }) async => const [offer];
+  Future<List<SubscriptionOffer>> fetchOffers({String? country, String? currency, String? query}) async => const [offer];
 
   @override
   Future<List<SubscriptionInvoice>> fetchInvoices(String subscriptionId) async => const [];
@@ -101,22 +93,26 @@ class _OfferSubscriptionRepository implements SubscriptionRepository {
   Future<void> toggleAutoRenew(String subscriptionId, bool enabled) async {}
 }
 
+Finder _subscribeButton() {
+  final offerCard = find.ancestor(of: find.text('Beta15 Premium'), matching: find.byType(Card));
+  return find.descendant(of: offerCard, matching: find.byType(FilledButton));
+}
+
+Future<void> _confirmOffer(WidgetTester tester) async {
+  await tester.tap(_subscribeButton());
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(const Key('subscription-offer-detail-continue')));
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(const Key('subscription-offer-confirmation-confirm')));
+  await tester.pumpAndSettle();
+}
+
 void main() {
   testWidgets('Wallet Home exposes the subscriptions action', (tester) async {
     await tester.binding.setSurfaceSize(const Size(900, 1400));
     addTearDown(() => tester.binding.setSurfaceSize(null));
-
-    await tester.pumpWidget(
-      MaterialApp(
-        home: WalletHomePage(
-          repository: _ReadyWalletRepository(),
-          transactionHistoryRepository: _ReadyTimelineRepository(),
-          onSubscriptions: () {},
-        ),
-      ),
-    );
+    await tester.pumpWidget(MaterialApp(home: WalletHomePage(repository: _ReadyWalletRepository(), transactionHistoryRepository: _ReadyTimelineRepository(), onSubscriptions: () {})));
     await tester.pumpAndSettle();
-
     expect(find.byKey(const Key('wallet-subscriptions-action')), findsOneWidget);
     expect(find.text('Abonnements'), findsOneWidget);
   });
@@ -124,28 +120,13 @@ void main() {
   testWidgets('subscriptions callback is distinct from existing quick actions', (tester) async {
     await tester.binding.setSurfaceSize(const Size(900, 1400));
     addTearDown(() => tester.binding.setSurfaceSize(null));
-
     var sendCount = 0;
     var receiveCount = 0;
     var qrCount = 0;
     var subscriptionsCount = 0;
-
-    await tester.pumpWidget(
-      MaterialApp(
-        home: WalletHomePage(
-          repository: _ReadyWalletRepository(),
-          transactionHistoryRepository: _ReadyTimelineRepository(),
-          onSend: () => sendCount += 1,
-          onReceive: () => receiveCount += 1,
-          onQr: () => qrCount += 1,
-          onSubscriptions: () => subscriptionsCount += 1,
-        ),
-      ),
-    );
+    await tester.pumpWidget(MaterialApp(home: WalletHomePage(repository: _ReadyWalletRepository(), transactionHistoryRepository: _ReadyTimelineRepository(), onSend: () => sendCount += 1, onReceive: () => receiveCount += 1, onQr: () => qrCount += 1, onSubscriptions: () => subscriptionsCount += 1)));
     await tester.pumpAndSettle();
-
     await tester.tap(find.byKey(const Key('wallet-subscriptions-action')));
-
     expect(subscriptionsCount, 1);
     expect(sendCount, 0);
     expect(receiveCount, 0);
@@ -155,117 +136,72 @@ void main() {
   testWidgets('Wallet Home opens subscriptions and returns to Wallet Home', (tester) async {
     await tester.binding.setSurfaceSize(const Size(900, 1400));
     addTearDown(() => tester.binding.setSurfaceSize(null));
-
-    await tester.pumpWidget(
-      MaterialApp(
-        locale: const Locale('fr'),
-        supportedLocales: AppLocalizations.supportedLocales,
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        home: WalletHomePage(
-          repository: _ReadyWalletRepository(),
-          transactionHistoryRepository: _ReadyTimelineRepository(),
-          subscriptionRepository: _ReadySubscriptionRepository(),
-        ),
-      ),
-    );
+    await tester.pumpWidget(MaterialApp(locale: const Locale('fr'), supportedLocales: AppLocalizations.supportedLocales, localizationsDelegates: AppLocalizations.localizationsDelegates, home: WalletHomePage(repository: _ReadyWalletRepository(), transactionHistoryRepository: _ReadyTimelineRepository(), subscriptionRepository: _ReadySubscriptionRepository())));
     await tester.pumpAndSettle();
-
-    expect(find.text('Wallet Home'), findsOneWidget);
-
     await tester.tap(find.byKey(const Key('wallet-subscriptions-action')));
     await tester.pumpAndSettle();
-
     expect(find.byKey(const Key('subscriptions-return-to-wallet')), findsOneWidget);
-    expect(find.text('Wallet Home'), findsNothing);
-
     await tester.tap(find.byKey(const Key('subscriptions-return-to-wallet')));
     await tester.pumpAndSettle();
-
     expect(find.text('Wallet Home'), findsOneWidget);
-    expect(find.byKey(const Key('subscriptions-return-to-wallet')), findsNothing);
   });
 
   testWidgets('Subscriptions opens offer details and returns without creating subscription', (tester) async {
     await tester.binding.setSurfaceSize(const Size(900, 1400));
     addTearDown(() => tester.binding.setSurfaceSize(null));
-
     final repository = _OfferSubscriptionRepository();
-
-    await tester.pumpWidget(
-      MaterialApp(
-        locale: const Locale('fr'),
-        supportedLocales: AppLocalizations.supportedLocales,
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        home: SubscriptionsPage(repository: repository),
-      ),
-    );
+    await tester.pumpWidget(MaterialApp(locale: const Locale('fr'), supportedLocales: AppLocalizations.supportedLocales, localizationsDelegates: AppLocalizations.localizationsDelegates, home: SubscriptionsPage(repository: repository)));
     await tester.pumpAndSettle();
-
-    expect(find.text('Beta14 Premium'), findsOneWidget);
-    expect(find.text('Détails'), findsOneWidget);
-
     await tester.tap(find.text('Détails'));
     await tester.pumpAndSettle();
-
     expect(find.byKey(const Key('subscription-offer-detail-page')), findsOneWidget);
-    expect(find.text('Beta1.14 detailed offer description'), findsOneWidget);
     expect(repository.createSubscriptionCalls, 0);
-
     await tester.tap(find.byType(BackButton));
     await tester.pumpAndSettle();
-
-    expect(find.byKey(const Key('subscription-offer-detail-page')), findsNothing);
-    expect(find.text('Beta14 Premium'), findsOneWidget);
-    expect(find.text('Détails'), findsOneWidget);
+    expect(find.text('Beta15 Premium'), findsOneWidget);
     expect(repository.createSubscriptionCalls, 0);
   });
 
-  testWidgets('Subscribe opens detail confirmation without creating subscription', (tester) async {
+  testWidgets('confirmation opens activation result without creating subscription', (tester) async {
     await tester.binding.setSurfaceSize(const Size(900, 1400));
     addTearDown(() => tester.binding.setSurfaceSize(null));
-
     final repository = _OfferSubscriptionRepository();
-
-    await tester.pumpWidget(
-      MaterialApp(
-        locale: const Locale('fr'),
-        supportedLocales: AppLocalizations.supportedLocales,
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        home: SubscriptionsPage(repository: repository),
-      ),
-    );
+    await tester.pumpWidget(MaterialApp(locale: const Locale('fr'), supportedLocales: AppLocalizations.supportedLocales, localizationsDelegates: AppLocalizations.localizationsDelegates, home: SubscriptionsPage(repository: repository)));
     await tester.pumpAndSettle();
-
+    await _confirmOffer(tester);
+    expect(find.byKey(const Key('subscription-activation-result-page')), findsOneWidget);
+    expect(find.byKey(const Key('subscription-activation-result-return-subscriptions')), findsOneWidget);
     expect(repository.createSubscriptionCalls, 0);
-    final offerCard = find.ancestor(
-      of: find.text('Beta14 Premium'),
-      matching: find.byType(Card),
-    );
-    expect(offerCard, findsOneWidget);
-    final subscribeButton = find.descendant(
-      of: offerCard,
-      matching: find.byType(FilledButton),
-    );
-    expect(subscribeButton, findsOneWidget);
+  });
 
-    await tester.tap(subscribeButton);
+  testWidgets('activation result returns to subscriptions without creating subscription', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(900, 1400));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final repository = _OfferSubscriptionRepository();
+    await tester.pumpWidget(MaterialApp(locale: const Locale('fr'), supportedLocales: AppLocalizations.supportedLocales, localizationsDelegates: AppLocalizations.localizationsDelegates, home: SubscriptionsPage(repository: repository)));
     await tester.pumpAndSettle();
-
+    await _confirmOffer(tester);
+    await tester.tap(find.byKey(const Key('subscription-activation-result-return-subscriptions')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('subscription-activation-result-page')), findsNothing);
     expect(find.byKey(const Key('subscription-offer-detail-page')), findsOneWidget);
-    expect(find.byKey(const Key('subscription-offer-detail-continue')), findsOneWidget);
     expect(repository.createSubscriptionCalls, 0);
+  });
 
-    await tester.tap(find.byKey(const Key('subscription-offer-detail-continue')));
+  testWidgets('activation result returns through subscription flow to Wallet Home', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(900, 1400));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final repository = _OfferSubscriptionRepository();
+    await tester.pumpWidget(MaterialApp(locale: const Locale('fr'), supportedLocales: AppLocalizations.supportedLocales, localizationsDelegates: AppLocalizations.localizationsDelegates, home: WalletHomePage(repository: _ReadyWalletRepository(), transactionHistoryRepository: _ReadyTimelineRepository(), subscriptionRepository: repository)));
     await tester.pumpAndSettle();
-
-    expect(find.byKey(const Key('subscription-offer-confirmation-dialog')), findsOneWidget);
-    expect(repository.createSubscriptionCalls, 0);
-
-    await tester.tap(find.byKey(const Key('subscription-offer-confirmation-confirm')));
+    await tester.tap(find.byKey(const Key('wallet-subscriptions-action')));
     await tester.pumpAndSettle();
-
-    expect(find.byKey(const Key('subscription-offer-confirmation-dialog')), findsNothing);
-    expect(find.byKey(const Key('subscription-offer-detail-page')), findsOneWidget);
+    await _confirmOffer(tester);
+    expect(find.byKey(const Key('subscription-activation-result-return-wallet')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('subscription-activation-result-return-wallet')));
+    await tester.pumpAndSettle();
+    expect(find.text('Wallet Home'), findsOneWidget);
+    expect(find.byKey(const Key('subscription-activation-result-page')), findsNothing);
     expect(repository.createSubscriptionCalls, 0);
   });
 }

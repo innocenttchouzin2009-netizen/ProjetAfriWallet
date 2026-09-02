@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../l10n/app_localizations.dart';
 import '../models/subscription_models.dart';
 import '../services/subscription_repository.dart';
+import 'subscription_activation_result_page.dart';
 import 'subscription_offer_detail_page.dart';
 
 class SubscriptionsPage extends StatefulWidget {
@@ -205,7 +206,12 @@ class _SubscriptionsPageState extends State<SubscriptionsPage> {
         if (_offers.isEmpty)
           Text(localizations.noOffers)
         else
-          ..._offers.map((offer) => _OfferCard(offer: offer)),
+          ..._offers.map(
+            (offer) => _OfferCard(
+              offer: offer,
+              onReturnToWallet: widget.onReturnToWallet,
+            ),
+          ),
       ],
     );
   }
@@ -251,16 +257,35 @@ class _SubscriptionCard extends StatelessWidget {
 }
 
 class _OfferCard extends StatelessWidget {
-  const _OfferCard({required this.offer});
+  const _OfferCard({required this.offer, this.onReturnToWallet});
 
   final SubscriptionOffer offer;
+  final VoidCallback? onReturnToWallet;
+
+  void _openActivationResult(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (resultContext) => SubscriptionActivationResultPage(
+          offer: offer,
+          onReturnToSubscriptions: () => Navigator.of(resultContext).pop(),
+          onReturnToWallet: onReturnToWallet == null
+              ? null
+              : () {
+                  Navigator.of(resultContext).pop();
+                  Navigator.of(context).pop();
+                  onReturnToWallet?.call();
+                },
+        ),
+      ),
+    );
+  }
 
   void _openDetails(BuildContext context, {required bool allowConfirmation}) {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => SubscriptionOfferDetailPage(
+        builder: (detailContext) => SubscriptionOfferDetailPage(
           offer: offer,
-          onContinue: allowConfirmation ? () {} : null,
+          onContinue: allowConfirmation ? () => _openActivationResult(detailContext) : null,
         ),
       ),
     );

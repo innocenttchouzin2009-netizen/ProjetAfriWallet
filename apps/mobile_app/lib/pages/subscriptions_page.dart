@@ -268,7 +268,13 @@ class _OfferCard extends StatelessWidget {
         builder: (resultContext) => SubscriptionActivationResultPage(
           offer: offer,
           onReturnToSubscriptions: () => Navigator.of(resultContext).pop(),
-          onReturnToWallet: onReturnToWallet,
+          onReturnToWallet: onReturnToWallet == null
+              ? null
+              : () {
+                  Navigator.of(resultContext).pop();
+                  Navigator.of(context).pop();
+                  onReturnToWallet?.call();
+                },
         ),
       ),
     );

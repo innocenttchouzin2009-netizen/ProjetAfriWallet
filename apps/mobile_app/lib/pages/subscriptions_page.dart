@@ -206,7 +206,12 @@ class _SubscriptionsPageState extends State<SubscriptionsPage> {
         if (_offers.isEmpty)
           Text(localizations.noOffers)
         else
-          ..._offers.map((offer) => _OfferCard(offer: offer)),
+          ..._offers.map(
+            (offer) => _OfferCard(
+              offer: offer,
+              onReturnToWallet: widget.onReturnToWallet,
+            ),
+          ),
       ],
     );
   }
@@ -252,9 +257,10 @@ class _SubscriptionCard extends StatelessWidget {
 }
 
 class _OfferCard extends StatelessWidget {
-  const _OfferCard({required this.offer});
+  const _OfferCard({required this.offer, this.onReturnToWallet});
 
   final SubscriptionOffer offer;
+  final VoidCallback? onReturnToWallet;
 
   void _openActivationResult(BuildContext context) {
     Navigator.of(context).push(
@@ -262,6 +268,7 @@ class _OfferCard extends StatelessWidget {
         builder: (resultContext) => SubscriptionActivationResultPage(
           offer: offer,
           onReturnToSubscriptions: () => Navigator.of(resultContext).pop(),
+          onReturnToWallet: onReturnToWallet,
         ),
       ),
     );
@@ -294,7 +301,7 @@ class _OfferCard extends StatelessWidget {
             const SizedBox(height: 8),
             Text('${localizations.formatCurrency(offer.price)} ${offer.currency} / ${localizations.monthly}'),
             const SizedBox(height: 8),
-            Wrap(spacing: 8, children: offer.features.map((feature) => Chip(label: Text(feature)).toList()),
+            Wrap(spacing: 8, children: offer.features.map((feature) => Chip(label: Text(feature))).toList()),
             const SizedBox(height: 12),
             Row(
               children: [

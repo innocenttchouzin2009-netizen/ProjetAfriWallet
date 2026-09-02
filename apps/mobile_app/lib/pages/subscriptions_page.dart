@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../l10n/app_localizations.dart';
 import '../models/subscription_models.dart';
 import '../services/subscription_repository.dart';
+import 'subscription_offer_detail_page.dart';
 
 class SubscriptionsPage extends StatefulWidget {
   const SubscriptionsPage({
@@ -204,7 +205,7 @@ class _SubscriptionsPageState extends State<SubscriptionsPage> {
         if (_offers.isEmpty)
           Text(localizations.noOffers)
         else
-          ..._offers.map((offer) => _OfferCard(offer: offer, repository: _repository)),
+          ..._offers.map((offer) => _OfferCard(offer: offer)),
       ],
     );
   }
@@ -250,10 +251,20 @@ class _SubscriptionCard extends StatelessWidget {
 }
 
 class _OfferCard extends StatelessWidget {
-  const _OfferCard({required this.offer, required this.repository});
+  const _OfferCard({required this.offer});
 
   final SubscriptionOffer offer;
-  final SubscriptionRepository repository;
+
+  void _openDetails(BuildContext context, {required bool allowConfirmation}) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => SubscriptionOfferDetailPage(
+          offer: offer,
+          onContinue: allowConfirmation ? () {} : null,
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -277,30 +288,14 @@ class _OfferCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: FilledButton(
-                    onPressed: () async {
-                      await repository.createSubscription(offer.id);
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(localizations.subscriptionCreated)));
-                      }
-                    },
+                    onPressed: () => _openDetails(context, allowConfirmation: true),
                     child: Text(localizations.subscribe),
                   ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: () {
-                      showDialog<void>(
-                        context: context,
-                        builder: (dialogContext) => AlertDialog(
-                          title: Text(offer.name),
-                          content: Text(offer.longDescription),
-                          actions: [
-                            TextButton(onPressed: () => Navigator.of(dialogContext).pop(), child: Text(localizations.close)),
-                          ],
-                        ),
-                      );
-                    },
+                    onPressed: () => _openDetails(context, allowConfirmation: false),
                     child: Text(localizations.details),
                   ),
                 ),

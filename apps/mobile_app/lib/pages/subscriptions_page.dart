@@ -4,6 +4,7 @@ import '../l10n/app_localizations.dart';
 import '../models/subscription_models.dart';
 import '../services/subscription_repository.dart';
 import 'subscription_activation_result_page.dart';
+import 'subscription_detail_page.dart';
 import 'subscription_offer_detail_page.dart';
 
 class SubscriptionsPage extends StatefulWidget {
@@ -62,14 +63,27 @@ class _SubscriptionsPageState extends State<SubscriptionsPage> {
         _subscriptions = results[1] as List<UserSubscription>;
       });
     } catch (_) {
-      setState(() {
-        _isError = true;
-      });
+      setState(() => _isError = true);
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      setState(() => _isLoading = false);
     }
+  }
+
+  void _openSubscriptionDetail(UserSubscription subscription) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (detailContext) => SubscriptionDetailPage(
+          subscription: subscription,
+          onReturnToSubscriptions: () => Navigator.of(detailContext).pop(),
+          onReturnToWallet: widget.onReturnToWallet == null
+              ? null
+              : () {
+                  Navigator.of(detailContext).pop();
+                  widget.onReturnToWallet?.call();
+                },
+        ),
+      ),
+    );
   }
 
   @override
@@ -79,30 +93,16 @@ class _SubscriptionsPageState extends State<SubscriptionsPage> {
       appBar: AppBar(
         leading: widget.onReturnToWallet == null
             ? null
-            : BackButton(
-                key: const Key('subscriptions-return-to-wallet'),
-                onPressed: widget.onReturnToWallet,
-              ),
+            : BackButton(key: const Key('subscriptions-return-to-wallet'), onPressed: widget.onReturnToWallet),
         title: Text(localizations.appTitle),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: widget.onOpenSettings,
-          ),
-        ],
+        actions: [IconButton(icon: const Icon(Icons.settings), onPressed: widget.onOpenSettings)],
       ),
-      body: RefreshIndicator(
-        onRefresh: _loadData,
-        child: _buildBody(),
-      ),
+      body: RefreshIndicator(onRefresh: _loadData, child: _buildBody()),
     );
   }
 
   Widget _buildBody() {
-    if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
+    if (_isLoading) return const Center(child: CircularProgressIndicator());
     if (_isError) {
       final localizations = AppLocalizations.of(context)!;
       return Center(
@@ -141,10 +141,7 @@ class _SubscriptionsPageState extends State<SubscriptionsPage> {
             const SizedBox(height: 12),
             TextField(
               controller: _searchController,
-              decoration: InputDecoration(
-                labelText: localizations.searchOffers,
-                border: const OutlineInputBorder(),
-              ),
+              decoration: InputDecoration(labelText: localizations.searchOffers, border: const OutlineInputBorder()),
               onSubmitted: (_) => _loadData(),
             ),
             const SizedBox(height: 12),
@@ -191,7 +188,12 @@ class _SubscriptionsPageState extends State<SubscriptionsPage> {
         if (_subscriptions.isEmpty)
           Text(localizations.noSubscriptions)
         else
-          ..._subscriptions.map((subscription) => _SubscriptionCard(subscription: subscription)),
+          ..._subscriptions.map(
+            (subscription) => _SubscriptionCard(
+              subscription: subscription,
+              onOpen: () => _openSubscriptionDetail(subscription),
+            ),
+          ),
       ],
     );
   }
@@ -206,50 +208,53 @@ class _SubscriptionsPageState extends State<SubscriptionsPage> {
         if (_offers.isEmpty)
           Text(localizations.noOffers)
         else
-          ..._offers.map(
-            (offer) => _OfferCard(
-              offer: offer,
-              onReturnToWallet: widget.onReturnToWallet,
-            ),
-          ),
+          ..._offers.map((offer) => _OfferCard(offer: offer, onReturnToWallet: widget.onReturnToWallet)),
       ],
     );
   }
 }
 
 class _SubscriptionCard extends StatelessWidget {
-  const _SubscriptionCard({required this.subscription});
+  const _SubscriptionCard({required this.subscription, required this.onOpen});
 
   final UserSubscription subscription;
+  final VoidCallback onOpen;
 
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
     return Card(
+      key: Key('subscription-card-${subscription.id}'),
       margin: const EdgeInsets.only(bottom: 8),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(child: Text(subscription.name, style: const TextStyle(fontWeight: FontWeight.bold))),
-                Chip(label: Text(subscription.status)),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text('${localizations.cycle}: ${subscription.currentCycle}'),
-            Text('${localizations.nextBilling}: ${subscription.nextBillingDate}'),
-            Text('${localizations.price}: ${localizations.formatCurrency(subscription.price)} ${subscription.currency}'),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Switch(value: subscription.autoRenew, onChanged: (_) {}),
-                Text(localizations.autoRenewal),
-              ],
-            ),
-          ],
+      child: InkWell(
+        key: Key('subscription-card-open-${subscription.id}'),
+        onTap: onOpen,
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(child: Text(subscription.name, style: const TextStyle(fontWeight: FontWeight.bold))),
+                  Chip(label: Text(subscription.status)),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text('${localizations.cycle}: ${subscription.currentCycle}'),
+              Text('${localizations.nextBilling}: ${subscription.nextBillingDate}'),
+              Text('${localizations.price}: ${localizations.formatCurrency(subscription.price)} ${subscription.currency}'),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Switch(value: subscription.autoRenew, onChanged: null),
+                  Text(localizations.autoRenewal),
+                  const Spacer(),
+                  const Icon(Icons.chevron_right),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

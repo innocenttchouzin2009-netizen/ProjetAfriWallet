@@ -22,9 +22,29 @@ class SubscriptionInvoicesPage extends StatefulWidget {
 }
 
 class _SubscriptionInvoicesPageState extends State<SubscriptionInvoicesPage> {
+  static const String _allStatusesValue = '__all__';
+
   bool _isLoading = true;
   bool _isError = false;
+  String _selectedStatus = _allStatusesValue;
   List<SubscriptionInvoice> _invoices = const [];
+
+  List<String> get _availableStatuses {
+    final statuses = <String>{};
+    for (final invoice in _invoices) {
+      if (invoice.status.isNotEmpty) {
+        statuses.add(invoice.status);
+      }
+    }
+    return statuses.toList();
+  }
+
+  List<SubscriptionInvoice> get _visibleInvoices {
+    if (_selectedStatus == _allStatusesValue) {
+      return _invoices;
+    }
+    return _invoices.where((invoice) => invoice.status == _selectedStatus).toList();
+  }
 
   @override
   void initState() {
@@ -41,7 +61,12 @@ class _SubscriptionInvoicesPageState extends State<SubscriptionInvoicesPage> {
     try {
       final invoices = await widget.repository.fetchInvoices(widget.subscription.id);
       if (!mounted) return;
-      setState(() => _invoices = invoices);
+      setState(() {
+        _invoices = invoices;
+        if (_selectedStatus != _allStatusesValue && !invoices.any((invoice) => invoice.status == _selectedStatus)) {
+          _selectedStatus = _allStatusesValue;
+        }
+      });
     } catch (_) {
       if (!mounted) return;
       setState(() => _isError = true);
@@ -106,46 +131,87 @@ class _SubscriptionInvoicesPageState extends State<SubscriptionInvoicesPage> {
       );
     }
 
-    return ListView.builder(
-      key: const Key('subscription-invoices-page'),
-      padding: const EdgeInsets.all(16),
-      itemCount: _invoices.length,
-      itemBuilder: (context, index) {
-        final invoice = _invoices[index];
-        return Card(
-          key: Key('subscription-invoice-${invoice.id}'),
-          margin: const EdgeInsets.only(bottom: 12),
-          child: InkWell(
-            key: Key('subscription-invoice-open-${invoice.id}'),
-            onTap: () => _openInvoiceDetail(invoice),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          '${localizations.invoiceId}: ${invoice.id}',
-                          style: const TextStyle(fontWeight: FontWeight.bold),
+    final visibleInvoices = _visibleInvoices;
+    final statuses = _availableStatuses;
+
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          child: DropdownButtonFormField<String>(
+            key: const Key('subscription-invoice-status-filter'),
+            initialValue: _selectedStatus,
+            decoration: InputDecoration(
+              labelText: localizations.invoiceStatusFilter,
+              border: const OutlineInputBorder(),
+            ),
+            items: [
+              DropdownMenuItem<String>(
+                value: _allStatusesValue,
+                child: Text(localizations.allInvoiceStatuses),
+              ),
+              ...statuses.map(
+                (status) => DropdownMenuItem<String>(
+                  value: status,
+                  child: Text(status),
+                ),
+              ),
+            ],
+            onChanged: (value) {
+              if (value == null) return;
+              setState(() => _selectedStatus = value);
+            },
+          ),
+        ),
+        Expanded(
+          child: visibleInvoices.isEmpty
+              ? Center(
+                  key: const Key('subscription-invoices-filtered-empty'),
+                  child: Text(localizations.noInvoicesForStatus),
+                )
+              : ListView.builder(
+                  key: const Key('subscription-invoices-page'),
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                  itemCount: visibleInvoices.length,
+                  itemBuilder: (context, index) {
+                    final invoice = visibleInvoices[index];
+                    return Card(
+                      key: Key('subscription-invoice-${invoice.id}'),
+                      margin: const EdgeInsets.only(bottom: 12),
+                      child: InkWell(
+                        key: Key('subscription-invoice-open-${invoice.id}'),
+                        onTap: () => _openInvoiceDetail(invoice),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      '${localizations.invoiceId}: ${invoice.id}',
+                                      style: const TextStyle(fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                  const Icon(Icons.chevron_right),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Text('${localizations.invoiceStatus}: ${invoice.status}'),
+                              Text('${localizations.invoiceIssueDate}: ${invoice.issueDate}'),
+                              Text(
+                                '${localizations.price}: ${localizations.formatCurrency(invoice.amount)} ${invoice.currency}',
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                      const Icon(Icons.chevron_right),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text('${localizations.invoiceStatus}: ${invoice.status}'),
-                  Text('${localizations.invoiceIssueDate}: ${invoice.issueDate}'),
-                  Text(
-                    '${localizations.price}: ${localizations.formatCurrency(invoice.amount)} ${invoice.currency}',
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
+                    );
+                  },
+                ),
+        ),
+      ],
     );
   }
 }

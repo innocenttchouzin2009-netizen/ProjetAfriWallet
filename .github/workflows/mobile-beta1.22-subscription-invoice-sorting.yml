@@ -1,0 +1,74 @@
+name: Mobile Beta1.22 Subscription Invoice Sorting
+
+on:
+  push:
+    branches:
+      - feature/mobile-beta1.22
+    paths:
+      - 'apps/mobile_app/**'
+      - '.github/workflows/mobile-beta1.22-subscription-invoice-sorting.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'apps/mobile_app/**'
+      - '.github/workflows/mobile-beta1.22-subscription-invoice-sorting.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/mobile_app
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Flutter version
+        run: flutter --version
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Generate localizations
+        run: flutter gen-l10n
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test invoice sorting and discovery
+        run: flutter test test/subscription_invoices_test.dart
+
+      - name: Test invoice status presentation regression
+        run: flutter test test/subscription_invoice_status_presentation_test.dart
+
+      - name: Test invoice detail regression
+        run: flutter test test/subscription_invoice_detail_test.dart
+
+      - name: Test billing navigation regression
+        run: flutter test test/subscription_billing_navigation_test.dart
+
+      - name: Test subscription detail regression
+        run: flutter test test/subscription_detail_test.dart
+
+      - name: Test subscriptions navigation regression
+        run: flutter test test/subscriptions_navigation_test.dart
+
+      - name: Run complete Flutter test suite
+        run: flutter test
+
+      - name: Verify commit diff
+        working-directory: .
+        run: git diff --check HEAD^ HEAD

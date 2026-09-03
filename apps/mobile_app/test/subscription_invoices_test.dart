@@ -124,17 +124,18 @@ void main() {
 
     expect(find.byKey(const Key('subscription-invoice-invoice-paid')), findsOneWidget);
     expect(find.byKey(const Key('subscription-invoice-invoice-pending')), findsOneWidget);
-    expect(find.text('Payée'), findsOneWidget);
-    expect(find.text('En attente'), findsNothing);
+    expect(find.byKey(const Key('subscription-invoice-status-invoice-paid')), findsOneWidget);
+    expect(find.byKey(const Key('subscription-invoice-status-invoice-pending')), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('subscription-invoice-status-filter')));
     await tester.pumpAndSettle();
-    expect(find.text('En attente'), findsOneWidget);
     await tester.tap(find.text('En attente').last);
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('subscription-invoice-invoice-paid')), findsNothing);
+    expect(find.byKey(const Key('subscription-invoice-status-invoice-paid')), findsNothing);
     expect(find.byKey(const Key('subscription-invoice-invoice-pending')), findsOneWidget);
+    expect(find.byKey(const Key('subscription-invoice-status-invoice-pending')), findsOneWidget);
     expect(find.text('En attente'), findsOneWidget);
     expect(repository.fetchInvoicesCalls, 1);
     expect(repository.createCalls, 0);

@@ -9,11 +9,13 @@ class SubscriptionDetailPage extends StatelessWidget {
     required this.subscription,
     this.onReturnToSubscriptions,
     this.onReturnToWallet,
+    this.onOpenBillingHistory,
   });
 
   final UserSubscription subscription;
   final VoidCallback? onReturnToSubscriptions;
   final VoidCallback? onReturnToWallet;
+  final VoidCallback? onOpenBillingHistory;
 
   @override
   Widget build(BuildContext context) {
@@ -79,6 +81,15 @@ class SubscriptionDetailPage extends StatelessWidget {
               onChanged: null,
               title: Text(localizations.autoRenewal),
             ),
+            if (onOpenBillingHistory != null) ...[
+              const SizedBox(height: 16),
+              FilledButton.icon(
+                key: const Key('subscription-detail-billing-history'),
+                onPressed: onOpenBillingHistory,
+                icon: const Icon(Icons.receipt_long_outlined),
+                label: Text(localizations.billingHistory),
+              ),
+            ],
             if (onReturnToWallet != null) ...[
               const SizedBox(height: 16),
               OutlinedButton.icon(

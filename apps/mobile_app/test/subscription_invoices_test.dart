@@ -83,11 +83,53 @@ void main() {
     await tester.pumpWidget(_app(repository));
     await tester.pumpAndSettle();
 
+    expect(find.byKey(const Key('subscription-invoice-status-filter')), findsOneWidget);
     expect(find.byKey(const Key('subscription-invoices-page')), findsOneWidget);
     expect(find.byKey(const Key('subscription-invoice-invoice-beta17-1')), findsOneWidget);
     expect(find.textContaining('invoice-beta17-1'), findsOneWidget);
     expect(find.textContaining('PAID'), findsOneWidget);
     expect(find.textContaining('2026-09-03'), findsOneWidget);
+    expect(repository.fetchInvoicesCalls, 1);
+    expect(repository.createCalls, 0);
+    expect(repository.cancelCalls, 0);
+    expect(repository.toggleCalls, 0);
+  });
+
+  testWidgets('invoice history filters locally by status without mutations', (tester) async {
+    final repository = _InvoiceRepository(
+      invoices: const [
+        SubscriptionInvoice(
+          id: 'invoice-paid',
+          subscriptionId: 'subscription-beta17',
+          amount: 19.99,
+          currency: 'EUR',
+          status: 'PAID',
+          issueDate: '2026-09-03',
+        ),
+        SubscriptionInvoice(
+          id: 'invoice-pending',
+          subscriptionId: 'subscription-beta17',
+          amount: 29.99,
+          currency: 'EUR',
+          status: 'PENDING',
+          issueDate: '2026-10-03',
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(_app(repository));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('subscription-invoice-invoice-paid')), findsOneWidget);
+    expect(find.byKey(const Key('subscription-invoice-invoice-pending')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('subscription-invoice-status-filter')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('PENDING').last);
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('subscription-invoice-invoice-paid')), findsNothing);
+    expect(find.byKey(const Key('subscription-invoice-invoice-pending')), findsOneWidget);
     expect(repository.fetchInvoicesCalls, 1);
     expect(repository.createCalls, 0);
     expect(repository.cancelCalls, 0);

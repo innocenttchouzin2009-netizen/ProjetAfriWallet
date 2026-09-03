@@ -27,6 +27,11 @@
     }
   },
   "autoRenewal": "Renouvellement automatique",
+  "billingHistory": "Historique de facturation",
+  "noInvoices": "Aucune facture disponible",
+  "invoiceId": "Facture",
+  "invoiceStatus": "Statut",
+  "invoiceIssueDate": "Date d’émission",
   "monthly": "mois",
   "subscriptionCreated": "Abonnement créé",
   "subscribe": "S'abonner",

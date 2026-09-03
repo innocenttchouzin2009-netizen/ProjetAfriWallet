@@ -34,6 +34,8 @@ class _SubscriptionInvoicesPageState extends State<SubscriptionInvoicesPage> {
   String _selectedStatus = _allStatusesValue;
   String _selectedSort = _sortNewestFirst;
   String _searchQuery = '';
+  DateTime? _dateFrom;
+  DateTime? _dateTo;
   List<SubscriptionInvoice> _invoices = const [];
 
   List<String> get _availableStatuses {
@@ -44,15 +46,42 @@ class _SubscriptionInvoicesPageState extends State<SubscriptionInvoicesPage> {
     return statuses.toList();
   }
 
+  DateTime? get _earliestIssueDate {
+    final dates = _invoices.map((invoice) => DateTime.tryParse(invoice.issueDate)).whereType<DateTime>().toList();
+    if (dates.isEmpty) return null;
+    dates.sort();
+    return _dateOnly(dates.first);
+  }
+
+  DateTime? get _latestIssueDate {
+    final dates = _invoices.map((invoice) => DateTime.tryParse(invoice.issueDate)).whereType<DateTime>().toList();
+    if (dates.isEmpty) return null;
+    dates.sort();
+    return _dateOnly(dates.last);
+  }
+
+  bool get _hasDateFilter => _dateFrom != null || _dateTo != null;
+
   List<SubscriptionInvoice> get _visibleInvoices {
     final normalizedQuery = _searchQuery.trim().toLowerCase();
     final visibleInvoices = _invoices.where((invoice) {
       final matchesStatus = _selectedStatus == _allStatusesValue || invoice.status == _selectedStatus;
       final matchesSearch = normalizedQuery.isEmpty || invoice.id.toLowerCase().contains(normalizedQuery);
-      return matchesStatus && matchesSearch;
+      final matchesDate = _matchesDateFilter(invoice.issueDate);
+      return matchesStatus && matchesSearch && matchesDate;
     }).toList();
     visibleInvoices.sort(_compareInvoices);
     return visibleInvoices;
+  }
+
+  bool _matchesDateFilter(String issueDate) {
+    if (!_hasDateFilter) return true;
+    final parsed = DateTime.tryParse(issueDate);
+    if (parsed == null) return false;
+    final date = _dateOnly(parsed);
+    if (_dateFrom != null && date.isBefore(_dateFrom!)) return false;
+    if (_dateTo != null && date.isAfter(_dateTo!)) return false;
+    return true;
   }
 
   int _compareInvoices(SubscriptionInvoice first, SubscriptionInvoice second) {
@@ -96,6 +125,39 @@ class _SubscriptionInvoicesPageState extends State<SubscriptionInvoicesPage> {
       default:
         return localizations.invoiceSortNewestFirst;
     }
+  }
+
+  DateTime _dateOnly(DateTime date) => DateTime(date.year, date.month, date.day);
+
+  Future<void> _pickFromDate() async {
+    final initialDate = _dateFrom ?? _earliestIssueDate ?? DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initialDate,
+      firstDate: DateTime(2000),
+      lastDate: _dateTo ?? DateTime(2100),
+    );
+    if (picked == null || !mounted) return;
+    setState(() => _dateFrom = _dateOnly(picked));
+  }
+
+  Future<void> _pickToDate() async {
+    final initialDate = _dateTo ?? _latestIssueDate ?? DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initialDate,
+      firstDate: _dateFrom ?? DateTime(2000),
+      lastDate: DateTime(2100),
+    );
+    if (picked == null || !mounted) return;
+    setState(() => _dateTo = _dateOnly(picked));
+  }
+
+  void _clearDateFilter() {
+    setState(() {
+      _dateFrom = null;
+      _dateTo = null;
+    });
   }
 
   @override
@@ -173,6 +235,7 @@ class _SubscriptionInvoicesPageState extends State<SubscriptionInvoicesPage> {
     final visibleInvoices = _visibleInvoices;
     final statuses = _availableStatuses;
     final hasSearch = _searchQuery.trim().isNotEmpty;
+    final materialLocalizations = MaterialLocalizations.of(context);
 
     return Column(
       children: [
@@ -245,11 +308,65 @@ class _SubscriptionInvoicesPageState extends State<SubscriptionInvoicesPage> {
             },
           ),
         ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          child: InputDecorator(
+            decoration: InputDecoration(
+              labelText: localizations.invoiceDateFilter,
+              border: const OutlineInputBorder(),
+            ),
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                OutlinedButton.icon(
+                  key: const Key('subscription-invoice-date-from'),
+                  onPressed: _pickFromDate,
+                  icon: const Icon(Icons.date_range),
+                  label: Text(
+                    _dateFrom == null
+                        ? '${localizations.invoiceDateFrom}: ${localizations.invoiceDateAny}'
+                        : '${localizations.invoiceDateFrom}: ${materialLocalizations.formatCompactDate(_dateFrom!)}',
+                  ),
+                ),
+                OutlinedButton.icon(
+                  key: const Key('subscription-invoice-date-to'),
+                  onPressed: _pickToDate,
+                  icon: const Icon(Icons.event),
+                  label: Text(
+                    _dateTo == null
+                        ? '${localizations.invoiceDateTo}: ${localizations.invoiceDateAny}'
+                        : '${localizations.invoiceDateTo}: ${materialLocalizations.formatCompactDate(_dateTo!)}',
+                  ),
+                ),
+                if (_hasDateFilter)
+                  TextButton(
+                    key: const Key('subscription-invoice-date-clear'),
+                    onPressed: _clearDateFilter,
+                    child: Text(localizations.clearInvoiceDateFilter),
+                  ),
+              ],
+            ),
+          ),
+        ),
         Expanded(
           child: visibleInvoices.isEmpty
               ? Center(
-                  key: Key(hasSearch ? 'subscription-invoices-search-empty' : 'subscription-invoices-filtered-empty'),
-                  child: Text(hasSearch ? localizations.noInvoicesForSearch : localizations.noInvoicesForStatus),
+                  key: Key(
+                    hasSearch
+                        ? 'subscription-invoices-search-empty'
+                        : _hasDateFilter
+                            ? 'subscription-invoices-date-empty'
+                            : 'subscription-invoices-filtered-empty',
+                  ),
+                  child: Text(
+                    hasSearch
+                        ? localizations.noInvoicesForSearch
+                        : _hasDateFilter
+                            ? localizations.noInvoicesForDateRange
+                            : localizations.noInvoicesForStatus,
+                  ),
                 )
               : ListView.builder(
                   key: const Key('subscription-invoices-page'),

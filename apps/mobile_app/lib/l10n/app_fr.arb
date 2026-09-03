@@ -28,6 +28,7 @@
   },
   "autoRenewal": "Renouvellement automatique",
   "billingHistory": "Historique de facturation",
+  "invoiceDetails": "Détails de la facture",
   "noInvoices": "Aucune facture disponible",
   "invoiceId": "Facture",
   "invoiceStatus": "Statut",

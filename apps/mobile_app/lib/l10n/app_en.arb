@@ -46,6 +46,21 @@
   "invoiceDateAny": "Any date",
   "clearInvoiceDateFilter": "Clear dates",
   "noInvoicesForDateRange": "No invoices in this date range",
+  "invoiceActiveFilters": "Active filters",
+  "resetAllInvoiceFilters": "Reset all filters",
+  "invoiceResultsCount": "{count, plural, =0{No invoices found} =1{1 invoice found} other{{count} invoices found}}",
+  "@invoiceResultsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "invoicePeriod": "Quick period",
+  "invoicePeriodLast30Days": "Last 30 days",
+  "invoicePeriodLast90Days": "Last 90 days",
+  "invoicePeriodThisYear": "This year",
+  "invoicePeriodAllDates": "All dates",
   "invoiceStatusDraft": "Draft",
   "invoiceStatusPending": "Pending",
   "invoiceStatusPaid": "Paid",

@@ -136,7 +136,13 @@ void main() {
     expect(find.byKey(const Key('subscription-invoice-status-invoice-paid')), findsNothing);
     expect(find.byKey(const Key('subscription-invoice-invoice-pending')), findsOneWidget);
     expect(find.byKey(const Key('subscription-invoice-status-invoice-pending')), findsOneWidget);
-    expect(find.text('En attente'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('subscription-invoice-status-invoice-pending')),
+        matching: find.text('En attente'),
+      ),
+      findsOneWidget,
+    );
     expect(repository.fetchInvoicesCalls, 1);
     expect(repository.createCalls, 0);
     expect(repository.cancelCalls, 0);

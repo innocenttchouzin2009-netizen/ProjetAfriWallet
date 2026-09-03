@@ -28,23 +28,24 @@ class _SubscriptionInvoicesPageState extends State<SubscriptionInvoicesPage> {
   bool _isLoading = true;
   bool _isError = false;
   String _selectedStatus = _allStatusesValue;
+  String _searchQuery = '';
   List<SubscriptionInvoice> _invoices = const [];
 
   List<String> get _availableStatuses {
     final statuses = <String>{};
     for (final invoice in _invoices) {
-      if (invoice.status.isNotEmpty) {
-        statuses.add(invoice.status);
-      }
+      if (invoice.status.isNotEmpty) statuses.add(invoice.status);
     }
     return statuses.toList();
   }
 
   List<SubscriptionInvoice> get _visibleInvoices {
-    if (_selectedStatus == _allStatusesValue) {
-      return _invoices;
-    }
-    return _invoices.where((invoice) => invoice.status == _selectedStatus).toList();
+    final normalizedQuery = _searchQuery.trim().toLowerCase();
+    return _invoices.where((invoice) {
+      final matchesStatus = _selectedStatus == _allStatusesValue || invoice.status == _selectedStatus;
+      final matchesSearch = normalizedQuery.isEmpty || invoice.id.toLowerCase().contains(normalizedQuery);
+      return matchesStatus && matchesSearch;
+    }).toList();
   }
 
   @override
@@ -58,7 +59,6 @@ class _SubscriptionInvoicesPageState extends State<SubscriptionInvoicesPage> {
       _isLoading = true;
       _isError = false;
     });
-
     try {
       final invoices = await widget.repository.fetchInvoices(widget.subscription.id);
       if (!mounted) return;
@@ -72,7 +72,6 @@ class _SubscriptionInvoicesPageState extends State<SubscriptionInvoicesPage> {
       if (!mounted) return;
       setState(() => _isError = true);
     }
-
     if (!mounted) return;
     setState(() => _isLoading = false);
   }
@@ -91,7 +90,6 @@ class _SubscriptionInvoicesPageState extends State<SubscriptionInvoicesPage> {
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
-
     return Scaffold(
       appBar: AppBar(
         leading: BackButton(
@@ -100,20 +98,14 @@ class _SubscriptionInvoicesPageState extends State<SubscriptionInvoicesPage> {
         ),
         title: Text(localizations.billingHistory),
       ),
-      body: SafeArea(
-        child: _buildBody(localizations),
-      ),
+      body: SafeArea(child: _buildBody(localizations)),
     );
   }
 
   Widget _buildBody(AppLocalizations localizations) {
     if (_isLoading) {
-      return const Center(
-        key: Key('subscription-invoices-loading'),
-        child: CircularProgressIndicator(),
-      );
+      return const Center(key: Key('subscription-invoices-loading'), child: CircularProgressIndicator());
     }
-
     if (_isError) {
       return Center(
         key: const Key('subscription-invoices-error'),
@@ -124,21 +116,32 @@ class _SubscriptionInvoicesPageState extends State<SubscriptionInvoicesPage> {
         ),
       );
     }
-
     if (_invoices.isEmpty) {
-      return Center(
-        key: const Key('subscription-invoices-empty'),
-        child: Text(localizations.noInvoices),
-      );
+      return Center(key: const Key('subscription-invoices-empty'), child: Text(localizations.noInvoices));
     }
 
     final visibleInvoices = _visibleInvoices;
     final statuses = _availableStatuses;
+    final hasSearch = _searchQuery.trim().isNotEmpty;
 
     return Column(
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          child: TextField(
+            key: const Key('subscription-invoice-search'),
+            decoration: InputDecoration(
+              labelText: localizations.invoiceSearch,
+              hintText: localizations.invoiceSearchHint,
+              prefixIcon: const Icon(Icons.search),
+              border: const OutlineInputBorder(),
+            ),
+            textInputAction: TextInputAction.search,
+            onChanged: (value) => setState(() => _searchQuery = value),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
           child: DropdownButtonFormField<String>(
             key: const Key('subscription-invoice-status-filter'),
             initialValue: _selectedStatus,
@@ -167,8 +170,8 @@ class _SubscriptionInvoicesPageState extends State<SubscriptionInvoicesPage> {
         Expanded(
           child: visibleInvoices.isEmpty
               ? Center(
-                  key: const Key('subscription-invoices-filtered-empty'),
-                  child: Text(localizations.noInvoicesForStatus),
+                  key: Key(hasSearch ? 'subscription-invoices-search-empty' : 'subscription-invoices-filtered-empty'),
+                  child: Text(hasSearch ? localizations.noInvoicesForSearch : localizations.noInvoicesForStatus),
                 )
               : ListView.builder(
                   key: const Key('subscription-invoices-page'),
@@ -211,9 +214,7 @@ class _SubscriptionInvoicesPageState extends State<SubscriptionInvoicesPage> {
                                 ],
                               ),
                               Text('${localizations.invoiceIssueDate}: ${invoice.issueDate}'),
-                              Text(
-                                '${localizations.price}: ${localizations.formatCurrency(invoice.amount)} ${invoice.currency}',
-                              ),
+                              Text('${localizations.price}: ${localizations.formatCurrency(invoice.amount)} ${invoice.currency}'),
                             ],
                           ),
                         ),

@@ -94,6 +94,39 @@ void main() {
     expect(repository.toggleCalls, 0);
   });
 
+  testWidgets('invoice history opens invoice detail and returns without mutations', (tester) async {
+    final repository = _InvoiceRepository(
+      invoices: const [
+        SubscriptionInvoice(
+          id: 'invoice-beta18-1',
+          subscriptionId: 'subscription-beta17',
+          amount: 19.99,
+          currency: 'EUR',
+          status: 'PAID',
+          issueDate: '2026-09-03',
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(_app(repository));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('subscription-invoice-open-invoice-beta18-1')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('subscription-invoice-detail-page')), findsOneWidget);
+    expect(find.textContaining('invoice-beta18-1'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('subscription-invoice-detail-return-history')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('subscription-invoices-page')), findsOneWidget);
+    expect(repository.fetchInvoicesCalls, 1);
+    expect(repository.createCalls, 0);
+    expect(repository.cancelCalls, 0);
+    expect(repository.toggleCalls, 0);
+  });
+
   testWidgets('invoice history exposes an empty state', (tester) async {
     final repository = _InvoiceRepository();
     await tester.pumpWidget(_app(repository));

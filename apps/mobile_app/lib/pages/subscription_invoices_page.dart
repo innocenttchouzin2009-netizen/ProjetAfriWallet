@@ -24,10 +24,15 @@ class SubscriptionInvoicesPage extends StatefulWidget {
 
 class _SubscriptionInvoicesPageState extends State<SubscriptionInvoicesPage> {
   static const String _allStatusesValue = '__all__';
+  static const String _sortNewestFirst = 'newest';
+  static const String _sortOldestFirst = 'oldest';
+  static const String _sortAmountLowToHigh = 'amount-asc';
+  static const String _sortAmountHighToLow = 'amount-desc';
 
   bool _isLoading = true;
   bool _isError = false;
   String _selectedStatus = _allStatusesValue;
+  String _selectedSort = _sortNewestFirst;
   String _searchQuery = '';
   List<SubscriptionInvoice> _invoices = const [];
 
@@ -41,11 +46,56 @@ class _SubscriptionInvoicesPageState extends State<SubscriptionInvoicesPage> {
 
   List<SubscriptionInvoice> get _visibleInvoices {
     final normalizedQuery = _searchQuery.trim().toLowerCase();
-    return _invoices.where((invoice) {
+    final visibleInvoices = _invoices.where((invoice) {
       final matchesStatus = _selectedStatus == _allStatusesValue || invoice.status == _selectedStatus;
       final matchesSearch = normalizedQuery.isEmpty || invoice.id.toLowerCase().contains(normalizedQuery);
       return matchesStatus && matchesSearch;
     }).toList();
+    visibleInvoices.sort(_compareInvoices);
+    return visibleInvoices;
+  }
+
+  int _compareInvoices(SubscriptionInvoice first, SubscriptionInvoice second) {
+    int comparison;
+    switch (_selectedSort) {
+      case _sortOldestFirst:
+        comparison = _compareIssueDates(first, second);
+        break;
+      case _sortAmountLowToHigh:
+        comparison = first.amount.compareTo(second.amount);
+        break;
+      case _sortAmountHighToLow:
+        comparison = second.amount.compareTo(first.amount);
+        break;
+      case _sortNewestFirst:
+      default:
+        comparison = _compareIssueDates(second, first);
+        break;
+    }
+    return comparison != 0 ? comparison : first.id.compareTo(second.id);
+  }
+
+  int _compareIssueDates(SubscriptionInvoice first, SubscriptionInvoice second) {
+    final firstDate = DateTime.tryParse(first.issueDate);
+    final secondDate = DateTime.tryParse(second.issueDate);
+    if (firstDate != null && secondDate != null) {
+      return firstDate.compareTo(secondDate);
+    }
+    return first.issueDate.compareTo(second.issueDate);
+  }
+
+  String _sortLabel(AppLocalizations localizations, String sort) {
+    switch (sort) {
+      case _sortOldestFirst:
+        return localizations.invoiceSortOldestFirst;
+      case _sortAmountLowToHigh:
+        return localizations.invoiceSortAmountLowToHigh;
+      case _sortAmountHighToLow:
+        return localizations.invoiceSortAmountHighToLow;
+      case _sortNewestFirst:
+      default:
+        return localizations.invoiceSortNewestFirst;
+    }
   }
 
   @override
@@ -164,6 +214,34 @@ class _SubscriptionInvoicesPageState extends State<SubscriptionInvoicesPage> {
             onChanged: (value) {
               if (value == null) return;
               setState(() => _selectedStatus = value);
+            },
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          child: DropdownButtonFormField<String>(
+            key: const Key('subscription-invoice-sort'),
+            initialValue: _selectedSort,
+            decoration: InputDecoration(
+              labelText: localizations.invoiceSort,
+              border: const OutlineInputBorder(),
+            ),
+            items: const [
+              _sortNewestFirst,
+              _sortOldestFirst,
+              _sortAmountLowToHigh,
+              _sortAmountHighToLow,
+            ]
+                .map(
+                  (sort) => DropdownMenuItem<String>(
+                    value: sort,
+                    child: Text(_sortLabel(localizations, sort)),
+                  ),
+                )
+                .toList(),
+            onChanged: (value) {
+              if (value == null) return;
+              setState(() => _selectedSort = value);
             },
           ),
         ),

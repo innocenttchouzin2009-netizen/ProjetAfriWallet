@@ -27,6 +27,11 @@
     }
   },
   "autoRenewal": "Auto-renewal",
+  "billingHistory": "Billing history",
+  "noInvoices": "No invoices available",
+  "invoiceId": "Invoice",
+  "invoiceStatus": "Status",
+  "invoiceIssueDate": "Issue date",
   "monthly": "month",
   "subscriptionCreated": "Subscription created",
   "subscribe": "Subscribe",

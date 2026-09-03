@@ -1,0 +1,68 @@
+name: Mobile Beta1.17 Subscription Billing History
+
+on:
+  push:
+    branches:
+      - feature/mobile-beta1.17
+    paths:
+      - 'apps/mobile_app/**'
+      - '.github/workflows/mobile-beta1.17-subscription-billing-history.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'apps/mobile_app/**'
+      - '.github/workflows/mobile-beta1.17-subscription-billing-history.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/mobile_app
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Flutter version
+        run: flutter --version
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Generate localizations
+        run: flutter gen-l10n
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test invoice history
+        run: flutter test test/subscription_invoices_test.dart
+
+      - name: Test billing navigation
+        run: flutter test test/subscription_billing_navigation_test.dart
+
+      - name: Test existing subscription detail
+        run: flutter test test/subscription_detail_test.dart
+
+      - name: Test existing subscriptions navigation
+        run: flutter test test/subscriptions_navigation_test.dart
+
+      - name: Run complete Flutter test suite
+        run: flutter test
+
+      - name: Verify commit diff
+        working-directory: .
+        run: git diff --check HEAD^ HEAD

@@ -24,13 +24,15 @@ Widget _app({VoidCallback? onReturn}) => MaterialApp(
     );
 
 void main() {
-  testWidgets('invoice detail displays read-only invoice data', (tester) async {
+  testWidgets('invoice detail displays localized read-only invoice data', (tester) async {
     await tester.pumpWidget(_app());
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('subscription-invoice-detail-page')), findsOneWidget);
+    expect(find.byKey(const Key('subscription-invoice-detail-status')), findsOneWidget);
     expect(find.textContaining('invoice-beta18-1'), findsOneWidget);
-    expect(find.textContaining('PAID'), findsOneWidget);
+    expect(find.text('Payée'), findsOneWidget);
+    expect(find.text('PAID'), findsNothing);
     expect(find.textContaining('2026-09-03'), findsOneWidget);
     expect(find.textContaining('24,99'), findsOneWidget);
     expect(find.textContaining('EUR'), findsOneWidget);

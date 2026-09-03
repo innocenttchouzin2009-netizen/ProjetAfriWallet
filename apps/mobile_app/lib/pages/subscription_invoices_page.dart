@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../l10n/app_localizations.dart';
 import '../models/subscription_models.dart';
+import '../presentation/subscription_invoice_status_presentation.dart';
 import '../services/subscription_repository.dart';
 import 'subscription_invoice_detail_page.dart';
 
@@ -153,7 +154,7 @@ class _SubscriptionInvoicesPageState extends State<SubscriptionInvoicesPage> {
               ...statuses.map(
                 (status) => DropdownMenuItem<String>(
                   value: status,
-                  child: Text(status),
+                  child: Text(localizeSubscriptionInvoiceStatus(localizations, status)),
                 ),
               ),
             ],
@@ -175,6 +176,7 @@ class _SubscriptionInvoicesPageState extends State<SubscriptionInvoicesPage> {
                   itemCount: visibleInvoices.length,
                   itemBuilder: (context, index) {
                     final invoice = visibleInvoices[index];
+                    final statusLabel = localizeSubscriptionInvoiceStatus(localizations, invoice.status);
                     return Card(
                       key: Key('subscription-invoice-${invoice.id}'),
                       margin: const EdgeInsets.only(bottom: 12),
@@ -198,7 +200,16 @@ class _SubscriptionInvoicesPageState extends State<SubscriptionInvoicesPage> {
                                 ],
                               ),
                               const SizedBox(height: 8),
-                              Text('${localizations.invoiceStatus}: ${invoice.status}'),
+                              Row(
+                                children: [
+                                  Text('${localizations.invoiceStatus}: '),
+                                  Chip(
+                                    key: Key('subscription-invoice-status-${invoice.id}'),
+                                    label: Text(statusLabel),
+                                    visualDensity: VisualDensity.compact,
+                                  ),
+                                ],
+                              ),
                               Text('${localizations.invoiceIssueDate}: ${invoice.issueDate}'),
                               Text(
                                 '${localizations.price}: ${localizations.formatCurrency(invoice.amount)} ${invoice.currency}',

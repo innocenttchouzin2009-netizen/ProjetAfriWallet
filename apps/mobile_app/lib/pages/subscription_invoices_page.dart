@@ -28,11 +28,19 @@ class _SubscriptionInvoicesPageState extends State<SubscriptionInvoicesPage> {
   static const String _sortOldestFirst = 'oldest';
   static const String _sortAmountLowToHigh = 'amount-asc';
   static const String _sortAmountHighToLow = 'amount-desc';
+  static const String _periodAll = 'all';
+  static const String _periodCustom = 'custom';
+  static const String _periodLast30Days = 'last-30-days';
+  static const String _periodLast90Days = 'last-90-days';
+  static const String _periodThisYear = 'this-year';
+
+  final TextEditingController _searchController = TextEditingController();
 
   bool _isLoading = true;
   bool _isError = false;
   String _selectedStatus = _allStatusesValue;
   String _selectedSort = _sortNewestFirst;
+  String _selectedPeriod = _periodAll;
   String _searchQuery = '';
   DateTime? _dateFrom;
   DateTime? _dateTo;
@@ -61,6 +69,9 @@ class _SubscriptionInvoicesPageState extends State<SubscriptionInvoicesPage> {
   }
 
   bool get _hasDateFilter => _dateFrom != null || _dateTo != null;
+  bool get _hasSearchFilter => _searchQuery.trim().isNotEmpty;
+  bool get _hasStatusFilter => _selectedStatus != _allStatusesValue;
+  bool get _hasActiveFilters => _hasSearchFilter || _hasStatusFilter || _hasDateFilter;
 
   List<SubscriptionInvoice> get _visibleInvoices {
     final normalizedQuery = _searchQuery.trim().toLowerCase();
@@ -127,6 +138,20 @@ class _SubscriptionInvoicesPageState extends State<SubscriptionInvoicesPage> {
     }
   }
 
+  String _periodLabel(AppLocalizations localizations, String period) {
+    switch (period) {
+      case _periodLast30Days:
+        return localizations.invoicePeriodLast30Days;
+      case _periodLast90Days:
+        return localizations.invoicePeriodLast90Days;
+      case _periodThisYear:
+        return localizations.invoicePeriodThisYear;
+      case _periodAll:
+      default:
+        return localizations.invoicePeriodAllDates;
+    }
+  }
+
   DateTime _dateOnly(DateTime date) => DateTime(date.year, date.month, date.day);
 
   Future<void> _pickFromDate() async {
@@ -138,7 +163,10 @@ class _SubscriptionInvoicesPageState extends State<SubscriptionInvoicesPage> {
       lastDate: _dateTo ?? DateTime(2100),
     );
     if (picked == null || !mounted) return;
-    setState(() => _dateFrom = _dateOnly(picked));
+    setState(() {
+      _dateFrom = _dateOnly(picked);
+      _selectedPeriod = _periodCustom;
+    });
   }
 
   Future<void> _pickToDate() async {
@@ -150,13 +178,63 @@ class _SubscriptionInvoicesPageState extends State<SubscriptionInvoicesPage> {
       lastDate: DateTime(2100),
     );
     if (picked == null || !mounted) return;
-    setState(() => _dateTo = _dateOnly(picked));
+    setState(() {
+      _dateTo = _dateOnly(picked);
+      _selectedPeriod = _periodCustom;
+    });
   }
 
   void _clearDateFilter() {
     setState(() {
       _dateFrom = null;
       _dateTo = null;
+      _selectedPeriod = _periodAll;
+    });
+  }
+
+  void _applyQuickPeriod(String period) {
+    final today = _dateOnly(DateTime.now());
+    setState(() {
+      _selectedPeriod = period;
+      switch (period) {
+        case _periodLast30Days:
+          _dateFrom = today.subtract(const Duration(days: 29));
+          _dateTo = today;
+          break;
+        case _periodLast90Days:
+          _dateFrom = today.subtract(const Duration(days: 89));
+          _dateTo = today;
+          break;
+        case _periodThisYear:
+          _dateFrom = DateTime(today.year, 1, 1);
+          _dateTo = DateTime(today.year, 12, 31);
+          break;
+        case _periodAll:
+        default:
+          _dateFrom = null;
+          _dateTo = null;
+          break;
+      }
+    });
+  }
+
+  void _clearSearchFilter() {
+    _searchController.clear();
+    setState(() => _searchQuery = '');
+  }
+
+  void _clearStatusFilter() {
+    setState(() => _selectedStatus = _allStatusesValue);
+  }
+
+  void _resetAllFilters() {
+    _searchController.clear();
+    setState(() {
+      _searchQuery = '';
+      _selectedStatus = _allStatusesValue;
+      _dateFrom = null;
+      _dateTo = null;
+      _selectedPeriod = _periodAll;
     });
   }
 
@@ -164,6 +242,12 @@ class _SubscriptionInvoicesPageState extends State<SubscriptionInvoicesPage> {
   void initState() {
     super.initState();
     _loadInvoices();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadInvoices() async {
@@ -234,7 +318,6 @@ class _SubscriptionInvoicesPageState extends State<SubscriptionInvoicesPage> {
 
     final visibleInvoices = _visibleInvoices;
     final statuses = _availableStatuses;
-    final hasSearch = _searchQuery.trim().isNotEmpty;
     final materialLocalizations = MaterialLocalizations.of(context);
 
     return Column(
@@ -243,6 +326,7 @@ class _SubscriptionInvoicesPageState extends State<SubscriptionInvoicesPage> {
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
           child: TextField(
             key: const Key('subscription-invoice-search'),
+            controller: _searchController,
             decoration: InputDecoration(
               labelText: localizations.invoiceSearch,
               hintText: localizations.invoiceSearchHint,
@@ -350,18 +434,99 @@ class _SubscriptionInvoicesPageState extends State<SubscriptionInvoicesPage> {
             ),
           ),
         ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Wrap(
+              key: const Key('subscription-invoice-period-shortcuts'),
+              spacing: 8,
+              runSpacing: 8,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                Text('${localizations.invoicePeriod}:'),
+                for (final period in const [_periodLast30Days, _periodLast90Days, _periodThisYear, _periodAll])
+                  ChoiceChip(
+                    key: Key('subscription-invoice-period-$period'),
+                    label: Text(_periodLabel(localizations, period)),
+                    selected: _selectedPeriod == period,
+                    onSelected: (_) => _applyQuickPeriod(period),
+                  ),
+              ],
+            ),
+          ),
+        ),
+        if (_hasActiveFilters)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Wrap(
+                    key: const Key('subscription-invoice-active-filters'),
+                    spacing: 8,
+                    runSpacing: 8,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      Text('${localizations.invoiceActiveFilters}:'),
+                      if (_hasSearchFilter)
+                        InputChip(
+                          key: const Key('subscription-invoice-active-search'),
+                          label: Text('${localizations.invoiceSearch}: ${_searchQuery.trim()}'),
+                          onDeleted: _clearSearchFilter,
+                        ),
+                      if (_hasStatusFilter)
+                        InputChip(
+                          key: const Key('subscription-invoice-active-status'),
+                          label: Text(
+                            '${localizations.invoiceStatus}: ${localizeSubscriptionInvoiceStatus(localizations, _selectedStatus)}',
+                          ),
+                          onDeleted: _clearStatusFilter,
+                        ),
+                      if (_hasDateFilter)
+                        InputChip(
+                          key: const Key('subscription-invoice-active-date'),
+                          label: Text(
+                            _selectedPeriod != _periodCustom
+                                ? _periodLabel(localizations, _selectedPeriod)
+                                : '${localizations.invoiceDateFrom}: ${_dateFrom == null ? localizations.invoiceDateAny : materialLocalizations.formatCompactDate(_dateFrom!)} · ${localizations.invoiceDateTo}: ${_dateTo == null ? localizations.invoiceDateAny : materialLocalizations.formatCompactDate(_dateTo!)}',
+                          ),
+                          onDeleted: _clearDateFilter,
+                        ),
+                    ],
+                  ),
+                ),
+                TextButton(
+                  key: const Key('subscription-invoice-reset-filters'),
+                  onPressed: _resetAllFilters,
+                  child: Text(localizations.resetAllInvoiceFilters),
+                ),
+              ],
+            ),
+          ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              localizations.invoiceResultsCount(visibleInvoices.length),
+              key: const Key('subscription-invoice-results-count'),
+            ),
+          ),
+        ),
         Expanded(
           child: visibleInvoices.isEmpty
               ? Center(
                   key: Key(
-                    hasSearch
+                    _hasSearchFilter
                         ? 'subscription-invoices-search-empty'
                         : _hasDateFilter
                             ? 'subscription-invoices-date-empty'
                             : 'subscription-invoices-filtered-empty',
                   ),
                   child: Text(
-                    hasSearch
+                    _hasSearchFilter
                         ? localizations.noInvoicesForSearch
                         : _hasDateFilter
                             ? localizations.noInvoicesForDateRange

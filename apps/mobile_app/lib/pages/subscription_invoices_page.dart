@@ -44,10 +44,10 @@ class _SubscriptionInvoicesPageState extends State<SubscriptionInvoicesPage> {
     } catch (_) {
       if (!mounted) return;
       setState(() => _isError = true);
-    } finally {
-      if (!mounted) return;
-      setState(() => _isLoading = false);
     }
+
+    if (!mounted) return;
+    setState(() => _isLoading = false);
   }
 
   @override

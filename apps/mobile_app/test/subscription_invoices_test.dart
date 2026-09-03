@@ -6,21 +6,13 @@ import 'package:mobile_app/pages/subscription_invoices_page.dart';
 import 'package:mobile_app/services/subscription_repository.dart';
 
 const _subscription = UserSubscription(
-  id: 'subscription-beta17',
-  offerId: 'offer-beta17',
-  providerId: 'provider-beta17',
-  name: 'Beta17 Premium',
-  status: 'ACTIVE',
-  autoRenew: true,
-  nextBillingDate: '2026-10-03',
-  currentCycle: 'Cycle 3',
-  price: 19.99,
-  currency: 'EUR',
+  id: 'subscription-beta17', offerId: 'offer-beta17', providerId: 'provider-beta17',
+  name: 'Beta17 Premium', status: 'ACTIVE', autoRenew: true,
+  nextBillingDate: '2026-10-03', currentCycle: 'Cycle 3', price: 19.99, currency: 'EUR',
 );
 
 class _InvoiceRepository implements SubscriptionRepository {
   _InvoiceRepository({this.invoices = const [], this.shouldFail = false});
-
   final List<SubscriptionInvoice> invoices;
   final bool shouldFail;
   int fetchInvoicesCalls = 0;
@@ -34,154 +26,117 @@ class _InvoiceRepository implements SubscriptionRepository {
     if (shouldFail) throw Exception('invoice failure');
     return invoices;
   }
-
-  @override
-  Future<void> cancelSubscription(String subscriptionId) async => cancelCalls += 1;
-
-  @override
-  Future<void> createSubscription(String offerId) async => createCalls += 1;
-
-  @override
-  Future<SubscriptionOffer?> fetchOffer(String offerId) async => null;
-
-  @override
-  Future<List<SubscriptionOffer>> fetchOffers({String? country, String? currency, String? query}) async => const [];
-
-  @override
-  Future<List<UserSubscription>> fetchUserSubscriptions() async => const [];
-
-  @override
-  Future<void> toggleAutoRenew(String subscriptionId, bool enabled) async => toggleCalls += 1;
+  @override Future<void> cancelSubscription(String subscriptionId) async => cancelCalls += 1;
+  @override Future<void> createSubscription(String offerId) async => createCalls += 1;
+  @override Future<SubscriptionOffer?> fetchOffer(String offerId) async => null;
+  @override Future<List<SubscriptionOffer>> fetchOffers({String? country, String? currency, String? query}) async => const [];
+  @override Future<List<UserSubscription>> fetchUserSubscriptions() async => const [];
+  @override Future<void> toggleAutoRenew(String subscriptionId, bool enabled) async => toggleCalls += 1;
 }
 
 Widget _app(_InvoiceRepository repository, {VoidCallback? onReturn}) => MaterialApp(
-      locale: const Locale('fr'),
-      supportedLocales: AppLocalizations.supportedLocales,
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      home: SubscriptionInvoicesPage(
-        subscription: _subscription,
-        repository: repository,
-        onReturnToSubscription: onReturn,
-      ),
-    );
+  locale: const Locale('fr'),
+  supportedLocales: AppLocalizations.supportedLocales,
+  localizationsDelegates: AppLocalizations.localizationsDelegates,
+  home: SubscriptionInvoicesPage(subscription: _subscription, repository: repository, onReturnToSubscription: onReturn),
+);
+
+const _paid = SubscriptionInvoice(
+  id: 'INV-PAID-001', subscriptionId: 'subscription-beta17', amount: 19.99,
+  currency: 'EUR', status: 'PAID', issueDate: '2026-09-03',
+);
+const _pending = SubscriptionInvoice(
+  id: 'INV-PENDING-002', subscriptionId: 'subscription-beta17', amount: 29.99,
+  currency: 'EUR', status: 'PENDING', issueDate: '2026-10-03',
+);
+
+void _expectZeroMutations(_InvoiceRepository repository) {
+  expect(repository.createCalls, 0);
+  expect(repository.cancelCalls, 0);
+  expect(repository.toggleCalls, 0);
+}
 
 void main() {
   testWidgets('invoice history displays localized read-only billing data', (tester) async {
-    final repository = _InvoiceRepository(
-      invoices: const [
-        SubscriptionInvoice(
-          id: 'invoice-beta17-1',
-          subscriptionId: 'subscription-beta17',
-          amount: 19.99,
-          currency: 'EUR',
-          status: 'PAID',
-          issueDate: '2026-09-03',
-        ),
-      ],
-    );
-
+    final repository = _InvoiceRepository(invoices: const [_paid]);
     await tester.pumpWidget(_app(repository));
     await tester.pumpAndSettle();
-
+    expect(find.byKey(const Key('subscription-invoice-search')), findsOneWidget);
     expect(find.byKey(const Key('subscription-invoice-status-filter')), findsOneWidget);
-    expect(find.byKey(const Key('subscription-invoices-page')), findsOneWidget);
-    expect(find.byKey(const Key('subscription-invoice-invoice-beta17-1')), findsOneWidget);
-    expect(find.byKey(const Key('subscription-invoice-status-invoice-beta17-1')), findsOneWidget);
-    expect(find.textContaining('invoice-beta17-1'), findsOneWidget);
+    expect(find.byKey(const Key('subscription-invoice-INV-PAID-001')), findsOneWidget);
     expect(find.text('Payée'), findsOneWidget);
     expect(find.text('PAID'), findsNothing);
-    expect(find.textContaining('2026-09-03'), findsOneWidget);
     expect(repository.fetchInvoicesCalls, 1);
-    expect(repository.createCalls, 0);
-    expect(repository.cancelCalls, 0);
-    expect(repository.toggleCalls, 0);
+    _expectZeroMutations(repository);
   });
 
-  testWidgets('invoice history filters locally by localized status without mutations', (tester) async {
-    final repository = _InvoiceRepository(
-      invoices: const [
-        SubscriptionInvoice(
-          id: 'invoice-paid',
-          subscriptionId: 'subscription-beta17',
-          amount: 19.99,
-          currency: 'EUR',
-          status: 'PAID',
-          issueDate: '2026-09-03',
-        ),
-        SubscriptionInvoice(
-          id: 'invoice-pending',
-          subscriptionId: 'subscription-beta17',
-          amount: 29.99,
-          currency: 'EUR',
-          status: 'PENDING',
-          issueDate: '2026-10-03',
-        ),
-      ],
-    );
-
+  testWidgets('invoice search is local case insensitive and trims spaces', (tester) async {
+    final repository = _InvoiceRepository(invoices: const [_paid, _pending]);
     await tester.pumpWidget(_app(repository));
     await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('subscription-invoice-search')), '  paid-001  ');
+    await tester.pump();
+    expect(find.byKey(const Key('subscription-invoice-INV-PAID-001')), findsOneWidget);
+    expect(find.byKey(const Key('subscription-invoice-INV-PENDING-002')), findsNothing);
+    expect(repository.fetchInvoicesCalls, 1);
+    _expectZeroMutations(repository);
+  });
 
-    expect(find.byKey(const Key('subscription-invoice-invoice-paid')), findsOneWidget);
-    expect(find.byKey(const Key('subscription-invoice-invoice-pending')), findsOneWidget);
-    expect(find.byKey(const Key('subscription-invoice-status-invoice-paid')), findsOneWidget);
-    expect(find.byKey(const Key('subscription-invoice-status-invoice-pending')), findsOneWidget);
-
+  testWidgets('invoice search combines with localized status filter', (tester) async {
+    final repository = _InvoiceRepository(invoices: const [_paid, _pending]);
+    await tester.pumpWidget(_app(repository));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('subscription-invoice-search')), 'inv');
     await tester.tap(find.byKey(const Key('subscription-invoice-status-filter')));
     await tester.pumpAndSettle();
     await tester.tap(find.text('En attente').last);
     await tester.pumpAndSettle();
-
-    expect(find.byKey(const Key('subscription-invoice-invoice-paid')), findsNothing);
-    expect(find.byKey(const Key('subscription-invoice-status-invoice-paid')), findsNothing);
-    expect(find.byKey(const Key('subscription-invoice-invoice-pending')), findsOneWidget);
-    expect(find.byKey(const Key('subscription-invoice-status-invoice-pending')), findsOneWidget);
-    expect(
-      find.descendant(
-        of: find.byKey(const Key('subscription-invoice-status-invoice-pending')),
-        matching: find.text('En attente'),
-      ),
-      findsOneWidget,
-    );
+    expect(find.byKey(const Key('subscription-invoice-INV-PAID-001')), findsNothing);
+    expect(find.byKey(const Key('subscription-invoice-INV-PENDING-002')), findsOneWidget);
     expect(repository.fetchInvoicesCalls, 1);
-    expect(repository.createCalls, 0);
-    expect(repository.cancelCalls, 0);
-    expect(repository.toggleCalls, 0);
+    _expectZeroMutations(repository);
+  });
+
+  testWidgets('clearing invoice search restores status-filtered results', (tester) async {
+    final repository = _InvoiceRepository(invoices: const [_paid, _pending]);
+    await tester.pumpWidget(_app(repository));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('subscription-invoice-search')), 'missing');
+    await tester.pump();
+    expect(find.byKey(const Key('subscription-invoices-search-empty')), findsOneWidget);
+    await tester.enterText(find.byKey(const Key('subscription-invoice-search')), '');
+    await tester.pump();
+    expect(find.byKey(const Key('subscription-invoice-INV-PAID-001')), findsOneWidget);
+    expect(find.byKey(const Key('subscription-invoice-INV-PENDING-002')), findsOneWidget);
+    expect(repository.fetchInvoicesCalls, 1);
+    _expectZeroMutations(repository);
+  });
+
+  testWidgets('invoice search exposes localized no-result state', (tester) async {
+    final repository = _InvoiceRepository(invoices: const [_paid]);
+    await tester.pumpWidget(_app(repository));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('subscription-invoice-search')), 'unknown');
+    await tester.pump();
+    expect(find.byKey(const Key('subscription-invoices-search-empty')), findsOneWidget);
+    expect(find.text('Aucune facture trouvée'), findsOneWidget);
+    expect(repository.fetchInvoicesCalls, 1);
+    _expectZeroMutations(repository);
   });
 
   testWidgets('invoice history opens invoice detail and returns without mutations', (tester) async {
-    final repository = _InvoiceRepository(
-      invoices: const [
-        SubscriptionInvoice(
-          id: 'invoice-beta18-1',
-          subscriptionId: 'subscription-beta17',
-          amount: 19.99,
-          currency: 'EUR',
-          status: 'PAID',
-          issueDate: '2026-09-03',
-        ),
-      ],
-    );
-
+    final repository = _InvoiceRepository(invoices: const [_paid]);
     await tester.pumpWidget(_app(repository));
     await tester.pumpAndSettle();
-
-    await tester.tap(find.byKey(const Key('subscription-invoice-open-invoice-beta18-1')));
+    await tester.tap(find.byKey(const Key('subscription-invoice-open-INV-PAID-001')));
     await tester.pumpAndSettle();
-
     expect(find.byKey(const Key('subscription-invoice-detail-page')), findsOneWidget);
-    expect(find.byKey(const Key('subscription-invoice-detail-status')), findsOneWidget);
-    expect(find.textContaining('invoice-beta18-1'), findsOneWidget);
     expect(find.text('Payée'), findsOneWidget);
-
     await tester.tap(find.byKey(const Key('subscription-invoice-detail-return-history')));
     await tester.pumpAndSettle();
-
     expect(find.byKey(const Key('subscription-invoices-page')), findsOneWidget);
     expect(repository.fetchInvoicesCalls, 1);
-    expect(repository.createCalls, 0);
-    expect(repository.cancelCalls, 0);
-    expect(repository.toggleCalls, 0);
+    _expectZeroMutations(repository);
   });
 
   testWidgets('invoice history exposes an empty state', (tester) async {

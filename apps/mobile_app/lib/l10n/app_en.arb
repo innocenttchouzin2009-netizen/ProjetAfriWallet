@@ -28,6 +28,7 @@
   },
   "autoRenewal": "Auto-renewal",
   "billingHistory": "Billing history",
+  "invoiceDetails": "Invoice details",
   "noInvoices": "No invoices available",
   "invoiceId": "Invoice",
   "invoiceStatus": "Status",

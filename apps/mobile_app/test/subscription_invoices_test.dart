@@ -66,7 +66,7 @@ Widget _app(_InvoiceRepository repository, {VoidCallback? onReturn}) => Material
     );
 
 void main() {
-  testWidgets('invoice history displays read-only billing data', (tester) async {
+  testWidgets('invoice history displays localized read-only billing data', (tester) async {
     final repository = _InvoiceRepository(
       invoices: const [
         SubscriptionInvoice(
@@ -86,8 +86,10 @@ void main() {
     expect(find.byKey(const Key('subscription-invoice-status-filter')), findsOneWidget);
     expect(find.byKey(const Key('subscription-invoices-page')), findsOneWidget);
     expect(find.byKey(const Key('subscription-invoice-invoice-beta17-1')), findsOneWidget);
+    expect(find.byKey(const Key('subscription-invoice-status-invoice-beta17-1')), findsOneWidget);
     expect(find.textContaining('invoice-beta17-1'), findsOneWidget);
-    expect(find.textContaining('PAID'), findsOneWidget);
+    expect(find.text('Payée'), findsOneWidget);
+    expect(find.text('PAID'), findsNothing);
     expect(find.textContaining('2026-09-03'), findsOneWidget);
     expect(repository.fetchInvoicesCalls, 1);
     expect(repository.createCalls, 0);
@@ -95,7 +97,7 @@ void main() {
     expect(repository.toggleCalls, 0);
   });
 
-  testWidgets('invoice history filters locally by status without mutations', (tester) async {
+  testWidgets('invoice history filters locally by localized status without mutations', (tester) async {
     final repository = _InvoiceRepository(
       invoices: const [
         SubscriptionInvoice(
@@ -122,14 +124,18 @@ void main() {
 
     expect(find.byKey(const Key('subscription-invoice-invoice-paid')), findsOneWidget);
     expect(find.byKey(const Key('subscription-invoice-invoice-pending')), findsOneWidget);
+    expect(find.text('Payée'), findsOneWidget);
+    expect(find.text('En attente'), findsNothing);
 
     await tester.tap(find.byKey(const Key('subscription-invoice-status-filter')));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('PENDING').last);
+    expect(find.text('En attente'), findsOneWidget);
+    await tester.tap(find.text('En attente').last);
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('subscription-invoice-invoice-paid')), findsNothing);
     expect(find.byKey(const Key('subscription-invoice-invoice-pending')), findsOneWidget);
+    expect(find.text('En attente'), findsOneWidget);
     expect(repository.fetchInvoicesCalls, 1);
     expect(repository.createCalls, 0);
     expect(repository.cancelCalls, 0);
@@ -157,7 +163,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('subscription-invoice-detail-page')), findsOneWidget);
+    expect(find.byKey(const Key('subscription-invoice-detail-status')), findsOneWidget);
     expect(find.textContaining('invoice-beta18-1'), findsOneWidget);
+    expect(find.text('Payée'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('subscription-invoice-detail-return-history')));
     await tester.pumpAndSettle();

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../l10n/app_localizations.dart';
 import '../models/subscription_models.dart';
 import '../services/subscription_repository.dart';
+import 'subscription_invoice_detail_page.dart';
 
 class SubscriptionInvoicesPage extends StatefulWidget {
   const SubscriptionInvoicesPage({
@@ -48,6 +49,17 @@ class _SubscriptionInvoicesPageState extends State<SubscriptionInvoicesPage> {
 
     if (!mounted) return;
     setState(() => _isLoading = false);
+  }
+
+  void _openInvoiceDetail(SubscriptionInvoice invoice) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (detailContext) => SubscriptionInvoiceDetailPage(
+          invoice: invoice,
+          onReturnToBillingHistory: () => Navigator.of(detailContext).pop(),
+        ),
+      ),
+    );
   }
 
   @override
@@ -103,22 +115,33 @@ class _SubscriptionInvoicesPageState extends State<SubscriptionInvoicesPage> {
         return Card(
           key: Key('subscription-invoice-${invoice.id}'),
           margin: const EdgeInsets.only(bottom: 12),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '${localizations.invoiceId}: ${invoice.id}',
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8),
-                Text('${localizations.invoiceStatus}: ${invoice.status}'),
-                Text('${localizations.invoiceIssueDate}: ${invoice.issueDate}'),
-                Text(
-                  '${localizations.price}: ${localizations.formatCurrency(invoice.amount)} ${invoice.currency}',
-                ),
-              ],
+          child: InkWell(
+            key: Key('subscription-invoice-open-${invoice.id}'),
+            onTap: () => _openInvoiceDetail(invoice),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          '${localizations.invoiceId}: ${invoice.id}',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      const Icon(Icons.chevron_right),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text('${localizations.invoiceStatus}: ${invoice.status}'),
+                  Text('${localizations.invoiceIssueDate}: ${invoice.issueDate}'),
+                  Text(
+                    '${localizations.price}: ${localizations.formatCurrency(invoice.amount)} ${invoice.currency}',
+                  ),
+                ],
+              ),
             ),
           ),
         );

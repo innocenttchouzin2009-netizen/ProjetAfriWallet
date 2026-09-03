@@ -34,8 +34,12 @@ class _InvoiceRepository implements SubscriptionRepository {
   @override Future<void> toggleAutoRenew(String subscriptionId, bool enabled) async => toggleCalls += 1;
 }
 
-Widget _app(_InvoiceRepository repository, {VoidCallback? onReturn}) => MaterialApp(
-  locale: const Locale('fr'),
+Widget _app(
+  _InvoiceRepository repository, {
+  VoidCallback? onReturn,
+  Locale locale = const Locale('fr'),
+}) => MaterialApp(
+  locale: locale,
   supportedLocales: AppLocalizations.supportedLocales,
   localizationsDelegates: AppLocalizations.localizationsDelegates,
   home: SubscriptionInvoicesPage(subscription: _subscription, repository: repository, onReturnToSubscription: onReturn),
@@ -56,6 +60,19 @@ void _expectZeroMutations(_InvoiceRepository repository) {
   expect(repository.toggleCalls, 0);
 }
 
+void _expectInvoiceBefore(WidgetTester tester, String firstId, String secondId) {
+  final first = tester.getTopLeft(find.byKey(Key('subscription-invoice-$firstId'))).dy;
+  final second = tester.getTopLeft(find.byKey(Key('subscription-invoice-$secondId'))).dy;
+  expect(first, lessThan(second));
+}
+
+Future<void> _selectSort(WidgetTester tester, String label) async {
+  await tester.tap(find.byKey(const Key('subscription-invoice-sort')));
+  await tester.pumpAndSettle();
+  await tester.tap(find.text(label).last);
+  await tester.pumpAndSettle();
+}
+
 void main() {
   testWidgets('invoice history displays localized read-only billing data', (tester) async {
     final repository = _InvoiceRepository(invoices: const [_paid]);
@@ -63,9 +80,47 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('subscription-invoice-search')), findsOneWidget);
     expect(find.byKey(const Key('subscription-invoice-status-filter')), findsOneWidget);
+    expect(find.byKey(const Key('subscription-invoice-sort')), findsOneWidget);
+    expect(find.text('Plus récentes d’abord'), findsOneWidget);
     expect(find.byKey(const Key('subscription-invoice-INV-PAID-001')), findsOneWidget);
     expect(find.text('Payée'), findsOneWidget);
     expect(find.text('PAID'), findsNothing);
+    expect(repository.fetchInvoicesCalls, 1);
+    _expectZeroMutations(repository);
+  });
+
+  testWidgets('invoice sorting defaults to newest and supports oldest locally', (tester) async {
+    final repository = _InvoiceRepository(invoices: const [_paid, _pending]);
+    await tester.pumpWidget(_app(repository));
+    await tester.pumpAndSettle();
+    _expectInvoiceBefore(tester, 'INV-PENDING-002', 'INV-PAID-001');
+
+    await _selectSort(tester, 'Plus anciennes d’abord');
+    _expectInvoiceBefore(tester, 'INV-PAID-001', 'INV-PENDING-002');
+    expect(repository.fetchInvoicesCalls, 1);
+    _expectZeroMutations(repository);
+  });
+
+  testWidgets('invoice sorting supports amount ascending and descending locally', (tester) async {
+    final repository = _InvoiceRepository(invoices: const [_pending, _paid]);
+    await tester.pumpWidget(_app(repository));
+    await tester.pumpAndSettle();
+
+    await _selectSort(tester, 'Montant : croissant');
+    _expectInvoiceBefore(tester, 'INV-PAID-001', 'INV-PENDING-002');
+
+    await _selectSort(tester, 'Montant : décroissant');
+    _expectInvoiceBefore(tester, 'INV-PENDING-002', 'INV-PAID-001');
+    expect(repository.fetchInvoicesCalls, 1);
+    _expectZeroMutations(repository);
+  });
+
+  testWidgets('invoice sorting labels are localized in English', (tester) async {
+    final repository = _InvoiceRepository(invoices: const [_paid]);
+    await tester.pumpWidget(_app(repository, locale: const Locale('en')));
+    await tester.pumpAndSettle();
+    expect(find.text('Sort invoices'), findsOneWidget);
+    expect(find.text('Newest first'), findsOneWidget);
     expect(repository.fetchInvoicesCalls, 1);
     _expectZeroMutations(repository);
   });
@@ -82,7 +137,7 @@ void main() {
     _expectZeroMutations(repository);
   });
 
-  testWidgets('invoice search combines with localized status filter', (tester) async {
+  testWidgets('invoice search combines with localized status filter and sorting', (tester) async {
     final repository = _InvoiceRepository(invoices: const [_paid, _pending]);
     await tester.pumpWidget(_app(repository));
     await tester.pumpAndSettle();
@@ -91,6 +146,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('En attente').last);
     await tester.pumpAndSettle();
+    await _selectSort(tester, 'Montant : croissant');
     expect(find.byKey(const Key('subscription-invoice-INV-PAID-001')), findsNothing);
     expect(find.byKey(const Key('subscription-invoice-INV-PENDING-002')), findsOneWidget);
     expect(repository.fetchInvoicesCalls, 1);

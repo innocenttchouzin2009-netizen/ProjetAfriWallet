@@ -5,6 +5,7 @@ import '../models/subscription_models.dart';
 import '../services/subscription_repository.dart';
 import 'subscription_activation_result_page.dart';
 import 'subscription_detail_page.dart';
+import 'subscription_invoices_page.dart';
 import 'subscription_offer_detail_page.dart';
 
 class SubscriptionsPage extends StatefulWidget {
@@ -75,6 +76,17 @@ class _SubscriptionsPageState extends State<SubscriptionsPage> {
         builder: (detailContext) => SubscriptionDetailPage(
           subscription: subscription,
           onReturnToSubscriptions: () => Navigator.of(detailContext).pop(),
+          onOpenBillingHistory: () {
+            Navigator.of(detailContext).push(
+              MaterialPageRoute<void>(
+                builder: (invoiceContext) => SubscriptionInvoicesPage(
+                  subscription: subscription,
+                  repository: _repository,
+                  onReturnToSubscription: () => Navigator.of(invoiceContext).pop(),
+                ),
+              ),
+            );
+          },
           onReturnToWallet: widget.onReturnToWallet == null
               ? null
               : () {

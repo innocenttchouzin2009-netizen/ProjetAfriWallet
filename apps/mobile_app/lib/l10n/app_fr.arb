@@ -46,6 +46,21 @@
   "invoiceDateAny": "Toutes les dates",
   "clearInvoiceDateFilter": "Effacer les dates",
   "noInvoicesForDateRange": "Aucune facture dans cette période",
+  "invoiceActiveFilters": "Filtres actifs",
+  "resetAllInvoiceFilters": "Réinitialiser tous les filtres",
+  "invoiceResultsCount": "{count, plural, =0{Aucune facture trouvée} =1{1 facture trouvée} other{{count} factures trouvées}}",
+  "@invoiceResultsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "invoicePeriod": "Période rapide",
+  "invoicePeriodLast30Days": "30 derniers jours",
+  "invoicePeriodLast90Days": "90 derniers jours",
+  "invoicePeriodThisYear": "Cette année",
+  "invoicePeriodAllDates": "Toutes les dates",
   "invoiceStatusDraft": "Brouillon",
   "invoiceStatusPending": "En attente",
   "invoiceStatusPaid": "Payée",

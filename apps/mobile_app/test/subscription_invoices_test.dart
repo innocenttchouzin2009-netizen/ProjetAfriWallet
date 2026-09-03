@@ -81,7 +81,16 @@ void _expectZeroMutations(_InvoiceRepository repository) {
 }
 
 Future<void> _ensureVisible(WidgetTester tester, Finder finder) async {
-  await tester.ensureVisible(finder);
+  if (finder.evaluate().isEmpty) {
+    await tester.scrollUntilVisible(
+      finder,
+      240,
+      scrollable: find.byType(Scrollable).last,
+    );
+  }
+  if (finder.evaluate().isNotEmpty) {
+    await tester.ensureVisible(finder);
+  }
   await tester.pumpAndSettle();
 }
 

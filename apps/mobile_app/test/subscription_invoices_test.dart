@@ -410,6 +410,7 @@ void main() {
     await tester.enterText(search, 'missing');
     await tester.pumpAndSettle();
     final empty = find.byKey(const Key('subscription-invoices-search-empty'));
+    await _ensureVisible(tester, empty);
     expect(empty, findsOneWidget);
     await _ensureVisible(tester, search);
     expect(search, findsOneWidget);
@@ -428,6 +429,7 @@ void main() {
     await tester.enterText(find.byKey(const Key('subscription-invoice-search')), 'unknown');
     await tester.pumpAndSettle();
     final empty = find.byKey(const Key('subscription-invoices-search-empty'));
+    await _ensureVisible(tester, empty);
     expect(empty, findsOneWidget);
     expect(find.text('Aucune facture trouvée'), findsAtLeastNWidgets(1));
     expect(repository.fetchInvoicesCalls, 1);

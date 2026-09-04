@@ -93,16 +93,22 @@ Future<void> _ensureVisible(WidgetTester tester, Finder finder) async {
     return;
   }
 
-  await tester.scrollUntilVisible(
-    finder,
-    240,
-    scrollable: scrollables.last,
-  );
+  final scrollable = scrollables.last;
+
+  for (var i = 0; i < 12 && finder.evaluate().isEmpty; i++) {
+    await tester.drag(scrollable, const Offset(0, 320));
+    await tester.pumpAndSettle();
+  }
+
+  for (var i = 0; i < 24 && finder.evaluate().isEmpty; i++) {
+    await tester.drag(scrollable, const Offset(0, -240));
+    await tester.pumpAndSettle();
+  }
 
   if (finder.evaluate().isNotEmpty) {
     await tester.ensureVisible(finder);
+    await tester.pumpAndSettle();
   }
-  await tester.pumpAndSettle();
 }
 
 Future<void> _expectInvoiceVisible(WidgetTester tester, String id) async {
@@ -116,6 +122,8 @@ Future<void> _expectInvoiceBefore(WidgetTester tester, String firstId, String se
   final secondFinder = find.byKey(Key('subscription-invoice-$secondId'));
   await _ensureVisible(tester, secondFinder);
   await _ensureVisible(tester, firstFinder);
+  expect(firstFinder, findsOneWidget);
+  expect(secondFinder, findsOneWidget);
   final first = tester.getTopLeft(firstFinder).dy;
   final second = tester.getTopLeft(secondFinder).dy;
   expect(first, lessThan(second));
@@ -124,6 +132,7 @@ Future<void> _expectInvoiceBefore(WidgetTester tester, String firstId, String se
 Future<void> _selectSort(WidgetTester tester, String label) async {
   final finder = find.byKey(const Key('subscription-invoice-sort'));
   await _ensureVisible(tester, finder);
+  expect(finder, findsOneWidget);
   await tester.tap(finder);
   await tester.pumpAndSettle();
   await tester.tap(find.text(label).last);
@@ -133,6 +142,7 @@ Future<void> _selectSort(WidgetTester tester, String label) async {
 Future<void> _selectFromDay(WidgetTester tester, String day) async {
   final finder = find.byKey(const Key('subscription-invoice-date-from'));
   await _ensureVisible(tester, finder);
+  expect(finder, findsOneWidget);
   await tester.tap(finder);
   await tester.pumpAndSettle();
   expect(find.byType(DatePickerDialog), findsOneWidget);
@@ -144,6 +154,7 @@ Future<void> _selectFromDay(WidgetTester tester, String day) async {
 Future<void> _selectQuickPeriod(WidgetTester tester, String period) async {
   final finder = find.byKey(Key('subscription-invoice-period-$period'));
   await _ensureVisible(tester, finder);
+  expect(finder, findsOneWidget);
   await tester.tap(finder);
   await tester.pumpAndSettle();
 }
@@ -151,6 +162,7 @@ Future<void> _selectQuickPeriod(WidgetTester tester, String period) async {
 Future<void> _selectStatus(WidgetTester tester, String label) async {
   final finder = find.byKey(const Key('subscription-invoice-status-filter'));
   await _ensureVisible(tester, finder);
+  expect(finder, findsOneWidget);
   await tester.tap(finder);
   await tester.pumpAndSettle();
   await tester.tap(find.text(label).last);
@@ -293,6 +305,7 @@ void main() {
     await _selectFromDay(tester, '4');
     final search = find.byKey(const Key('subscription-invoice-search'));
     await _ensureVisible(tester, search);
+    expect(search, findsOneWidget);
     await tester.enterText(search, 'inv');
     await _selectStatus(tester, 'En attente');
     await _selectSort(tester, 'Montant : décroissant');
@@ -397,9 +410,9 @@ void main() {
     await tester.enterText(search, 'missing');
     await tester.pumpAndSettle();
     final empty = find.byKey(const Key('subscription-invoices-search-empty'));
-    await _ensureVisible(tester, empty);
     expect(empty, findsOneWidget);
     await _ensureVisible(tester, search);
+    expect(search, findsOneWidget);
     await tester.enterText(search, '');
     await tester.pumpAndSettle();
     await _expectInvoiceVisible(tester, 'INV-PAID-001');
@@ -415,7 +428,6 @@ void main() {
     await tester.enterText(find.byKey(const Key('subscription-invoice-search')), 'unknown');
     await tester.pumpAndSettle();
     final empty = find.byKey(const Key('subscription-invoices-search-empty'));
-    await _ensureVisible(tester, empty);
     expect(empty, findsOneWidget);
     expect(find.text('Aucune facture trouvée'), findsAtLeastNWidgets(1));
     expect(repository.fetchInvoicesCalls, 1);
@@ -428,6 +440,7 @@ void main() {
     await tester.pumpAndSettle();
     final invoice = find.byKey(const Key('subscription-invoice-open-INV-PAID-001'));
     await _ensureVisible(tester, invoice);
+    expect(invoice, findsOneWidget);
     await tester.tap(invoice);
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('subscription-invoice-detail-page')), findsOneWidget);

@@ -74,41 +74,33 @@ class _SubscriptionInvoicePaymentEntryPageState
             const SizedBox(height: 8),
             Text(localizations.selectPaymentMethod),
             const SizedBox(height: 8),
-            RadioListTile<String>(
-              key: const Key('invoice-payment-method-wallet'),
-              value: 'wallet',
+            RadioGroup<String>(
               groupValue: _selectedMethod,
-              title: Text(localizations.paymentMethodWallet),
               onChanged: (value) {
                 setState(() {
                   _selectedMethod = value;
                   _showConfirmation = false;
                 });
               },
-            ),
-            RadioListTile<String>(
-              key: const Key('invoice-payment-method-mobile-money'),
-              value: 'mobile-money',
-              groupValue: _selectedMethod,
-              title: Text(localizations.paymentMethodMobileMoney),
-              onChanged: (value) {
-                setState(() {
-                  _selectedMethod = value;
-                  _showConfirmation = false;
-                });
-              },
-            ),
-            RadioListTile<String>(
-              key: const Key('invoice-payment-method-card'),
-              value: 'card',
-              groupValue: _selectedMethod,
-              title: Text(localizations.paymentMethodCard),
-              onChanged: (value) {
-                setState(() {
-                  _selectedMethod = value;
-                  _showConfirmation = false;
-                });
-              },
+              child: Column(
+                children: [
+                  RadioListTile<String>(
+                    key: const Key('invoice-payment-method-wallet'),
+                    value: 'wallet',
+                    title: Text(localizations.paymentMethodWallet),
+                  ),
+                  RadioListTile<String>(
+                    key: const Key('invoice-payment-method-mobile-money'),
+                    value: 'mobile-money',
+                    title: Text(localizations.paymentMethodMobileMoney),
+                  ),
+                  RadioListTile<String>(
+                    key: const Key('invoice-payment-method-card'),
+                    value: 'card',
+                    title: Text(localizations.paymentMethodCard),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 16),
             FilledButton(

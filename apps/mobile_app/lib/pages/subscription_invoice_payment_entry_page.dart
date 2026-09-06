@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../l10n/app_localizations.dart';
 import '../models/subscription_models.dart';
@@ -13,17 +14,21 @@ enum _PaymentFlowStep {
   receipt,
 }
 
+typedef ReceiptShareAction = Future<void> Function(String shareText);
+
 class SubscriptionInvoicePaymentEntryPage extends StatefulWidget {
   const SubscriptionInvoicePaymentEntryPage({
     super.key,
     required this.invoice,
     this.simulateFailure = false,
     this.receiptPdfService,
+    this.shareReceiptAction,
   });
 
   final SubscriptionInvoice invoice;
   final bool simulateFailure;
   final SubscriptionInvoiceReceiptPdfService? receiptPdfService;
+  final ReceiptShareAction? shareReceiptAction;
 
   @override
   State<SubscriptionInvoicePaymentEntryPage> createState() =>
@@ -86,7 +91,7 @@ class _SubscriptionInvoicePaymentEntryPageState
       );
   }
 
-  Future<void> _showReceiptSharePreview(
+  Future<void> _shareReceipt(
     AppLocalizations localizations,
     SubscriptionInvoice invoice,
     String paymentReference,
@@ -97,38 +102,13 @@ class _SubscriptionInvoicePaymentEntryPageState
       paymentReference,
     );
 
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      builder: (context) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                localizations.receiptSharePreview,
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 8),
-              Text(localizations.receiptSharePreviewHint),
-              const SizedBox(height: 16),
-              SelectableText(
-                shareText,
-                key: const Key('invoice-payment-receipt-share-content'),
-              ),
-              const SizedBox(height: 20),
-              FilledButton(
-                key: const Key('invoice-payment-receipt-share-close'),
-                onPressed: () => Navigator.of(context).pop(),
-                child: Text(localizations.close),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+    final action = widget.shareReceiptAction;
+    if (action != null) {
+      await action(shareText);
+      return;
+    }
+
+    await SharePlus.instance.share(ShareParams(text: shareText));
   }
 
   Future<void> _exportReceipt(
@@ -578,7 +558,7 @@ class _SubscriptionInvoicePaymentEntryPageState
                       const SizedBox(height: 8),
                       OutlinedButton.icon(
                         key: const Key('invoice-payment-receipt-share'),
-                        onPressed: () => _showReceiptSharePreview(
+                        onPressed: () => _shareReceipt(
                           localizations,
                           invoice,
                           paymentReference,

@@ -73,6 +73,22 @@ Future<void> _ensurePaymentEntryVisible(
   await tester.pumpAndSettle();
 }
 
+Future<void> _selectMethodAndContinue(
+  WidgetTester tester,
+  Key methodKey,
+) async {
+  await tester.tap(find.byKey(methodKey));
+  await tester.pumpAndSettle();
+
+  final continueFinder = find.byKey(const Key('invoice-payment-continue'));
+  await _ensurePaymentEntryVisible(tester, continueFinder);
+  final continueButton = tester.widget<FilledButton>(continueFinder);
+  expect(continueButton.onPressed, isNotNull);
+
+  await tester.tap(continueFinder);
+  await tester.pumpAndSettle();
+}
+
 void main() {
   testWidgets('pay now is available only for payable invoices', (tester) async {
     for (final status in ['PENDING', 'OVERDUE', 'FAILED']) {
@@ -149,95 +165,154 @@ void main() {
     await _ensurePaymentEntryVisible(tester, continueFinder);
 
     final continueButton = tester.widget<FilledButton>(continueFinder);
-
     expect(continueButton.onPressed, isNull);
     expect(
-      find.byKey(const Key('invoice-payment-confirmation-preview')),
+      find.byKey(const Key('invoice-payment-confirmation')),
       findsNothing,
     );
   });
 
-  testWidgets('wallet selection reveals read-only confirmation preview',
-      (tester) async {
+  testWidgets('wallet selection opens explicit confirmation step', (tester) async {
     await tester.pumpWidget(_paymentApp());
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const Key('invoice-payment-method-wallet')));
-    await tester.pumpAndSettle();
+    await _selectMethodAndContinue(
+      tester,
+      const Key('invoice-payment-method-wallet'),
+    );
 
-    final continueFinder = find.byKey(const Key('invoice-payment-continue'));
-    await _ensurePaymentEntryVisible(tester, continueFinder);
+    final confirmation = find.byKey(const Key('invoice-payment-confirmation'));
+    await _ensurePaymentEntryVisible(tester, confirmation);
+    expect(confirmation, findsOneWidget);
+    expect(find.text('AfWal balance'), findsOneWidget);
 
-    final continueButton = tester.widget<FilledButton>(continueFinder);
-    expect(continueButton.onPressed, isNotNull);
-
-    await tester.tap(continueFinder);
-    await tester.pumpAndSettle();
-
-    final previewFinder =
-        find.byKey(const Key('invoice-payment-confirmation-preview'));
-    await _ensurePaymentEntryVisible(tester, previewFinder);
-    expect(previewFinder, findsOneWidget);
-
-    final confirmationButton =
-        find.byKey(const Key('invoice-payment-confirm-read-only'));
-    await _ensurePaymentEntryVisible(tester, confirmationButton);
-    expect(confirmationButton, findsOneWidget);
+    final confirmButton = find.byKey(const Key('invoice-payment-confirm'));
+    await _ensurePaymentEntryVisible(tester, confirmButton);
+    expect(confirmButton, findsOneWidget);
   });
 
-  testWidgets('mobile money and card are selectable local placeholders',
-      (tester) async {
-    for (final key in [
-      const Key('invoice-payment-method-mobile-money'),
-      const Key('invoice-payment-method-card'),
+  testWidgets('mobile money and card reach confirmation locally', (tester) async {
+    for (final entry in [
+      (const Key('invoice-payment-method-mobile-money'), 'Mobile Money'),
+      (const Key('invoice-payment-method-card'), 'Card'),
     ]) {
       await tester.pumpWidget(_paymentApp());
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byKey(key));
-      await tester.pumpAndSettle();
+      await _selectMethodAndContinue(tester, entry.$1);
 
-      final continueFinder = find.byKey(const Key('invoice-payment-continue'));
-      await _ensurePaymentEntryVisible(tester, continueFinder);
-
-      final continueButton = tester.widget<FilledButton>(continueFinder);
-      expect(continueButton.onPressed, isNotNull);
+      final confirmation = find.byKey(const Key('invoice-payment-confirmation'));
+      await _ensurePaymentEntryVisible(tester, confirmation);
+      expect(confirmation, findsOneWidget);
+      expect(find.text(entry.$2), findsOneWidget);
     }
   });
 
-  testWidgets('confirmation action remains explicitly read-only', (tester) async {
+  testWidgets('change payment method returns to selection step', (tester) async {
     await tester.pumpWidget(_paymentApp());
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const Key('invoice-payment-method-wallet')));
+    await _selectMethodAndContinue(
+      tester,
+      const Key('invoice-payment-method-wallet'),
+    );
+
+    final changeMethod = find.byKey(const Key('invoice-payment-change-method'));
+    await _ensurePaymentEntryVisible(tester, changeMethod);
+    await tester.tap(changeMethod);
     await tester.pumpAndSettle();
 
-    final continueFinder = find.byKey(const Key('invoice-payment-continue'));
-    await _ensurePaymentEntryVisible(tester, continueFinder);
-    await tester.tap(continueFinder);
-    await tester.pumpAndSettle();
-
-    final confirmationButton =
-        find.byKey(const Key('invoice-payment-confirm-read-only'));
-    await _ensurePaymentEntryVisible(tester, confirmationButton);
-    await tester.tap(confirmationButton);
-    await tester.pump();
-
-    expect(find.byType(SnackBar), findsOneWidget);
+    expect(find.byKey(const Key('invoice-payment-confirmation')), findsNothing);
     expect(
-      find.byKey(const Key('subscription-invoice-payment-entry-page')),
+      find.byKey(const Key('invoice-payment-method-wallet')),
       findsOneWidget,
     );
+    expect(find.byKey(const Key('invoice-payment-continue')), findsOneWidget);
   });
 
-  testWidgets('French payment entry localization is available', (tester) async {
+  testWidgets('confirmation transitions through processing to success result',
+      (tester) async {
+    await tester.pumpWidget(_paymentApp());
+    await tester.pumpAndSettle();
+
+    await _selectMethodAndContinue(
+      tester,
+      const Key('invoice-payment-method-wallet'),
+    );
+
+    final confirmButton = find.byKey(const Key('invoice-payment-confirm'));
+    await _ensurePaymentEntryVisible(tester, confirmButton);
+    await tester.tap(confirmButton);
+    await tester.pump();
+
+    expect(
+      find.byKey(const Key('invoice-payment-processing')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('invoice-payment-result-success')),
+      findsNothing,
+    );
+
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pumpAndSettle();
+
+    final result = find.byKey(const Key('invoice-payment-result-success'));
+    await _ensurePaymentEntryVisible(tester, result);
+    expect(result, findsOneWidget);
+    expect(find.text('Payment successful'), findsOneWidget);
+    expect(find.text('BETA-invoice-beta125-pending'), findsOneWidget);
+    expect(find.text('AfWal balance'), findsOneWidget);
+  });
+
+  testWidgets('result exposes done and back-to-invoices actions', (tester) async {
+    await tester.pumpWidget(_paymentApp());
+    await tester.pumpAndSettle();
+
+    await _selectMethodAndContinue(
+      tester,
+      const Key('invoice-payment-method-card'),
+    );
+
+    final confirmButton = find.byKey(const Key('invoice-payment-confirm'));
+    await _ensurePaymentEntryVisible(tester, confirmButton);
+    await tester.tap(confirmButton);
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pumpAndSettle();
+
+    final done = find.byKey(const Key('invoice-payment-done'));
+    await _ensurePaymentEntryVisible(tester, done);
+    expect(done, findsOneWidget);
+
+    final backToInvoices =
+        find.byKey(const Key('invoice-payment-back-to-invoices'));
+    await _ensurePaymentEntryVisible(tester, backToInvoices);
+    expect(backToInvoices, findsOneWidget);
+  });
+
+  testWidgets('French confirmation and result localization is available',
+      (tester) async {
     await tester.pumpWidget(_paymentApp(locale: const Locale('fr')));
     await tester.pumpAndSettle();
 
-    expect(
-      find.byKey(const Key('subscription-invoice-payment-entry-page')),
-      findsOneWidget,
+    await _selectMethodAndContinue(
+      tester,
+      const Key('invoice-payment-method-wallet'),
     );
-    expect(find.textContaining('paiement', findRichText: true), findsWidgets);
+
+    final confirmation = find.byKey(const Key('invoice-payment-confirmation'));
+    await _ensurePaymentEntryVisible(tester, confirmation);
+    expect(find.textContaining('Confirmer', findRichText: true), findsWidgets);
+
+    final confirmButton = find.byKey(const Key('invoice-payment-confirm'));
+    await _ensurePaymentEntryVisible(tester, confirmButton);
+    await tester.tap(confirmButton);
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pumpAndSettle();
+
+    final result = find.byKey(const Key('invoice-payment-result-success'));
+    await _ensurePaymentEntryVisible(tester, result);
+    expect(result, findsOneWidget);
+    expect(find.textContaining('Paiement', findRichText: true), findsWidgets);
   });
 }

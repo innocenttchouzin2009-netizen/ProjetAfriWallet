@@ -14,9 +14,11 @@ class SubscriptionInvoicePaymentEntryPage extends StatefulWidget {
   const SubscriptionInvoicePaymentEntryPage({
     super.key,
     required this.invoice,
+    this.simulateFailure = false,
   });
 
   final SubscriptionInvoice invoice;
+  final bool simulateFailure;
 
   @override
   State<SubscriptionInvoicePaymentEntryPage> createState() =>
@@ -54,6 +56,13 @@ class _SubscriptionInvoicePaymentEntryPageState
 
     setState(() {
       _step = _PaymentFlowStep.result;
+    });
+  }
+
+  void _retryPayment() {
+    setState(() {
+      _selectedMethod = null;
+      _step = _PaymentFlowStep.method;
     });
   }
 
@@ -234,56 +243,103 @@ class _SubscriptionInvoicePaymentEntryPageState
               ),
             ],
             if (_step == _PaymentFlowStep.result) ...[
-              Card(
-                key: const Key('invoice-payment-result-success'),
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      const Icon(
-                        Icons.check_circle_outline,
-                        size: 56,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        localizations.paymentSuccessful,
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.headlineSmall,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        localizations.paymentSuccessMessage,
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 16),
-                      _SummaryRow(
-                        label: localizations.paymentReference,
-                        value: 'BETA-${invoice.id}',
-                      ),
-                      const Divider(),
-                      _SummaryRow(
-                        label: localizations.paymentMethod,
-                        value: _paymentMethodLabel(localizations),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(localizations.confirmPaymentDisclaimer),
-                      const SizedBox(height: 20),
-                      FilledButton(
-                        key: const Key('invoice-payment-done'),
-                        onPressed: () => Navigator.of(context).pop(),
-                        child: Text(localizations.done),
-                      ),
-                      const SizedBox(height: 8),
-                      OutlinedButton(
-                        key: const Key('invoice-payment-back-to-invoices'),
-                        onPressed: _returnToInvoices,
-                        child: Text(localizations.backToInvoices),
-                      ),
-                    ],
+              if (!widget.simulateFailure)
+                Card(
+                  key: const Key('invoice-payment-result-success'),
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const Icon(
+                          Icons.check_circle_outline,
+                          size: 56,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          localizations.paymentSuccessful,
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.headlineSmall,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          localizations.paymentSuccessMessage,
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 16),
+                        _SummaryRow(
+                          label: localizations.paymentReference,
+                          value: 'BETA-${invoice.id}',
+                        ),
+                        const Divider(),
+                        _SummaryRow(
+                          label: localizations.paymentMethod,
+                          value: _paymentMethodLabel(localizations),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(localizations.confirmPaymentDisclaimer),
+                        const SizedBox(height: 20),
+                        FilledButton(
+                          key: const Key('invoice-payment-done'),
+                          onPressed: () => Navigator.of(context).pop(),
+                          child: Text(localizations.done),
+                        ),
+                        const SizedBox(height: 8),
+                        OutlinedButton(
+                          key: const Key('invoice-payment-back-to-invoices'),
+                          onPressed: _returnToInvoices,
+                          child: Text(localizations.backToInvoices),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
+              if (widget.simulateFailure)
+                Card(
+                  key: const Key('invoice-payment-result-failure'),
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const Icon(
+                          Icons.error_outline,
+                          size: 56,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          localizations.paymentFailed,
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.headlineSmall,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          localizations.paymentFailureMessage,
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 16),
+                        _SummaryRow(
+                          label: localizations.paymentMethod,
+                          value: _paymentMethodLabel(localizations),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(localizations.confirmPaymentDisclaimer),
+                        const SizedBox(height: 20),
+                        FilledButton(
+                          key: const Key('invoice-payment-retry'),
+                          onPressed: _retryPayment,
+                          child: Text(localizations.retry),
+                        ),
+                        const SizedBox(height: 8),
+                        OutlinedButton(
+                          key: const Key('invoice-payment-back-to-invoices'),
+                          onPressed: _returnToInvoices,
+                          child: Text(localizations.backToInvoices),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
             ],
           ],
         ),

@@ -110,7 +110,7 @@ void _expectLiveRegion(WidgetTester tester, String label) {
   final semantics = find.bySemanticsLabel(label);
   expect(semantics, findsOneWidget);
   final node = tester.getSemantics(semantics);
-  expect(node.hasFlag(SemanticsFlag.isLiveRegion), isTrue);
+  expect(node.flagsCollection.isLiveRegion, isTrue);
 }
 
 class _ControlledReceiptPdfService extends SubscriptionInvoiceReceiptPdfService {
@@ -299,7 +299,7 @@ void main() {
     await tester.pumpWidget(
       _app(
         receiptPdfService: service,
-        printReceiptAction: (_, __) async {
+        printReceiptAction: (_, _) async {
           await printGate.future;
           return true;
         },

@@ -94,6 +94,8 @@
   "paymentFailureMessage": "Le paiement de la facture n’a pas pu être effectué.",
   "paymentReference": "Référence du paiement",
   "paymentResult": "Résultat du paiement",
+  "paymentReceipt": "Reçu de paiement",
+  "viewReceipt": "Voir le reçu",
   "done": "Terminé",
   "tryAgain": "Réessayer",
   "backToInvoices": "Retour aux factures",

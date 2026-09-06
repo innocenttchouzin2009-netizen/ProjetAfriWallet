@@ -17,6 +17,7 @@ const _invoice = SubscriptionInvoice(
 Widget _app({
   Locale locale = const Locale('en'),
   bool simulateFailure = false,
+  ReceiptShareAction? shareReceiptAction,
 }) =>
     MaterialApp(
       locale: locale,
@@ -25,6 +26,7 @@ Widget _app({
       home: SubscriptionInvoicePaymentEntryPage(
         invoice: _invoice,
         simulateFailure: simulateFailure,
+        shareReceiptAction: shareReceiptAction,
       ),
     );
 
@@ -59,9 +61,14 @@ Future<void> _reachResult(
   WidgetTester tester, {
   Locale locale = const Locale('en'),
   bool simulateFailure = false,
+  ReceiptShareAction? shareReceiptAction,
 }) async {
   await tester.pumpWidget(
-    _app(locale: locale, simulateFailure: simulateFailure),
+    _app(
+      locale: locale,
+      simulateFailure: simulateFailure,
+      shareReceiptAction: shareReceiptAction,
+    ),
   );
   await tester.pumpAndSettle();
 
@@ -86,8 +93,13 @@ Future<void> _reachResult(
 Future<void> _openReceipt(
   WidgetTester tester, {
   Locale locale = const Locale('en'),
+  ReceiptShareAction? shareReceiptAction,
 }) async {
-  await _reachResult(tester, locale: locale);
+  await _reachResult(
+    tester,
+    locale: locale,
+    shareReceiptAction: shareReceiptAction,
+  );
 
   expect(
     find.byKey(const Key('invoice-payment-result-success')),
@@ -136,33 +148,31 @@ void main() {
     expect(find.text('Reference copied'), findsOneWidget);
   });
 
-  testWidgets('receipt share preview preserves all core receipt data',
+  testWidgets('receipt shares all core data through the native action',
       (tester) async {
-    await _openReceipt(tester);
+    String? sharedText;
+    await _openReceipt(
+      tester,
+      shareReceiptAction: (text) async {
+        sharedText = text;
+      },
+    );
 
     final share = find.byKey(const Key('invoice-payment-receipt-share'));
     await _ensureVisible(tester, share);
     await tester.tap(share);
-    await tester.pumpAndSettle();
+    await tester.pump();
 
-    final contentFinder = find.byKey(
-      const Key('invoice-payment-receipt-share-content'),
-    );
-    expect(contentFinder, findsOneWidget);
-
-    final content = tester.widget<SelectableText>(contentFinder).data!;
-    expect(content, contains('Payment receipt'));
-    expect(content, contains('invoice-beta129-pending'));
-    expect(content, contains('64.50'));
-    expect(content, contains('EUR'));
-    expect(content, contains('AfWal balance'));
-    expect(content, contains('BETA-invoice-beta129-pending'));
-    expect(content, contains('Payment successful'));
+    expect(sharedText, contains('Payment receipt'));
+    expect(sharedText, contains('invoice-beta129-pending'));
+    expect(sharedText, contains('64.50'));
+    expect(sharedText, contains('EUR'));
+    expect(sharedText, contains('AfWal balance'));
+    expect(sharedText, contains('BETA-invoice-beta129-pending'));
+    expect(sharedText, contains('Payment successful'));
     expect(
-      find.text(
-        'This beta prepares receipt text locally. Nothing is sent to another app.',
-      ),
-      findsOneWidget,
+      find.byKey(const Key('invoice-payment-receipt-share-content')),
+      findsNothing,
     );
   });
 
@@ -190,7 +200,14 @@ void main() {
 
   testWidgets('French receipt actions and feedback are localized',
       (tester) async {
-    await _openReceipt(tester, locale: const Locale('fr'));
+    String? sharedText;
+    await _openReceipt(
+      tester,
+      locale: const Locale('fr'),
+      shareReceiptAction: (text) async {
+        sharedText = text;
+      },
+    );
 
     final copy = find.byKey(
       const Key('invoice-payment-receipt-copy-reference'),
@@ -206,15 +223,12 @@ void main() {
     await tester.pump(const Duration(seconds: 5));
 
     final share = find.byKey(const Key('invoice-payment-receipt-share'));
+    await _ensureVisible(tester, share);
     await tester.tap(share);
-    await tester.pumpAndSettle();
+    await tester.pump();
 
-    expect(find.text('Aperçu du partage du reçu'), findsOneWidget);
-    final content = tester.widget<SelectableText>(
-      find.byKey(const Key('invoice-payment-receipt-share-content')),
-    ).data!;
-    expect(content, contains('Reçu de paiement'));
-    expect(content, contains('Paiement réussi'));
-    expect(content, contains('Solde AfWal'));
+    expect(sharedText, contains('Reçu de paiement'));
+    expect(sharedText, contains('Paiement réussi'));
+    expect(sharedText, contains('Solde AfWal'));
   });
 }

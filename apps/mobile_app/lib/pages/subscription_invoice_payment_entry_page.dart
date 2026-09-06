@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../l10n/app_localizations.dart';
 import '../models/subscription_models.dart';
@@ -42,6 +43,88 @@ class _SubscriptionInvoicePaymentEntryPageState
       default:
         return '';
     }
+  }
+
+  String _receiptShareText(
+    AppLocalizations localizations,
+    SubscriptionInvoice invoice,
+    String paymentReference,
+  ) {
+    return [
+      localizations.paymentReceipt,
+      '${localizations.invoiceId}: ${invoice.id}',
+      '${localizations.price}: ${localizations.formatCurrency(invoice.amount)} ${invoice.currency}',
+      '${localizations.paymentMethod}: ${_paymentMethodLabel(localizations)}',
+      '${localizations.paymentReference}: $paymentReference',
+      '${localizations.invoiceStatus}: ${localizations.paymentSuccessful}',
+    ].join('\n');
+  }
+
+  Future<void> _copyPaymentReference(
+    String paymentReference,
+    AppLocalizations localizations,
+  ) async {
+    await Clipboard.setData(ClipboardData(text: paymentReference));
+
+    if (!mounted) {
+      return;
+    }
+
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(
+            localizations.referenceCopied,
+            key: const Key('invoice-payment-receipt-copy-feedback'),
+          ),
+        ),
+      );
+  }
+
+  Future<void> _showReceiptSharePreview(
+    AppLocalizations localizations,
+    SubscriptionInvoice invoice,
+    String paymentReference,
+  ) async {
+    final shareText = _receiptShareText(
+      localizations,
+      invoice,
+      paymentReference,
+    );
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                localizations.receiptSharePreview,
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 8),
+              Text(localizations.receiptSharePreviewHint),
+              const SizedBox(height: 16),
+              SelectableText(
+                shareText,
+                key: const Key('invoice-payment-receipt-share-content'),
+              ),
+              const SizedBox(height: 20),
+              FilledButton(
+                key: const Key('invoice-payment-receipt-share-close'),
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text(localizations.close),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> _confirmPayment() async {
@@ -402,6 +485,29 @@ class _SubscriptionInvoicePaymentEntryPageState
                       const SizedBox(height: 16),
                       Text(localizations.confirmPaymentDisclaimer),
                       const SizedBox(height: 20),
+                      OutlinedButton.icon(
+                        key: const Key(
+                          'invoice-payment-receipt-copy-reference',
+                        ),
+                        onPressed: () => _copyPaymentReference(
+                          paymentReference,
+                          localizations,
+                        ),
+                        icon: const Icon(Icons.copy_outlined),
+                        label: Text(localizations.copyReference),
+                      ),
+                      const SizedBox(height: 8),
+                      OutlinedButton.icon(
+                        key: const Key('invoice-payment-receipt-share'),
+                        onPressed: () => _showReceiptSharePreview(
+                          localizations,
+                          invoice,
+                          paymentReference,
+                        ),
+                        icon: const Icon(Icons.share_outlined),
+                        label: Text(localizations.shareReceipt),
+                      ),
+                      const SizedBox(height: 8),
                       FilledButton(
                         key: const Key('invoice-payment-receipt-done'),
                         onPressed: () => Navigator.of(context).pop(),

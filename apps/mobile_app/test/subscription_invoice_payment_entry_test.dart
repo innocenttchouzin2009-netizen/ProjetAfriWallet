@@ -198,21 +198,34 @@ void main() {
     expect(confirmButton, findsOneWidget);
   });
 
-  testWidgets('mobile money and card reach confirmation locally', (tester) async {
-    for (final entry in [
-      (const Key('invoice-payment-method-mobile-money'), 'Mobile Money'),
-      (const Key('invoice-payment-method-card'), 'Card'),
-    ]) {
-      await tester.pumpWidget(_paymentApp());
-      await tester.pumpAndSettle();
+  testWidgets('mobile money reaches confirmation locally', (tester) async {
+    await tester.pumpWidget(_paymentApp());
+    await tester.pumpAndSettle();
 
-      await _selectMethodAndContinue(tester, entry.$1);
+    await _selectMethodAndContinue(
+      tester,
+      const Key('invoice-payment-method-mobile-money'),
+    );
 
-      final confirmation = find.byKey(const Key('invoice-payment-confirmation'));
-      await _ensurePaymentEntryVisible(tester, confirmation);
-      expect(confirmation, findsOneWidget);
-      expect(find.text(entry.$2), findsOneWidget);
-    }
+    final confirmation = find.byKey(const Key('invoice-payment-confirmation'));
+    await _ensurePaymentEntryVisible(tester, confirmation);
+    expect(confirmation, findsOneWidget);
+    expect(find.text('Mobile Money'), findsOneWidget);
+  });
+
+  testWidgets('card reaches confirmation locally', (tester) async {
+    await tester.pumpWidget(_paymentApp());
+    await tester.pumpAndSettle();
+
+    await _selectMethodAndContinue(
+      tester,
+      const Key('invoice-payment-method-card'),
+    );
+
+    final confirmation = find.byKey(const Key('invoice-payment-confirmation'));
+    await _ensurePaymentEntryVisible(tester, confirmation);
+    expect(confirmation, findsOneWidget);
+    expect(find.text('Card'), findsOneWidget);
   });
 
   testWidgets('change payment method returns to selection step', (tester) async {

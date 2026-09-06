@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../l10n/app_localizations.dart';
 import '../models/subscription_models.dart';
 import '../presentation/subscription_invoice_status_presentation.dart';
+import 'subscription_invoice_payment_entry_page.dart';
 
 class SubscriptionInvoiceDetailPage extends StatelessWidget {
   const SubscriptionInvoiceDetailPage({
@@ -13,6 +14,13 @@ class SubscriptionInvoiceDetailPage extends StatelessWidget {
 
   final SubscriptionInvoice invoice;
   final VoidCallback? onReturnToBillingHistory;
+
+  bool get _isPayable {
+    final status = invoice.status.trim().toLowerCase();
+    return status == 'pending' || status == 'overdue' || status == 'failed';
+  }
+
+  bool get _isPaid => invoice.status.trim().toLowerCase() == 'paid';
 
   @override
   Widget build(BuildContext context) {
@@ -75,6 +83,34 @@ class SubscriptionInvoiceDetailPage extends StatelessWidget {
                 ),
               ),
             ),
+            const SizedBox(height: 16),
+            if (_isPayable)
+              FilledButton.icon(
+                key: const Key('subscription-invoice-pay-now'),
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => SubscriptionInvoicePaymentEntryPage(
+                        invoice: invoice,
+                      ),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.payments_outlined),
+                label: Text(localizations.payNow),
+              )
+            else
+              Card(
+                key: const Key('subscription-invoice-payment-unavailable'),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text(
+                    _isPaid
+                        ? localizations.invoiceAlreadyPaid
+                        : localizations.invoicePaymentUnavailable,
+                  ),
+                ),
+              ),
           ],
         ),
       ),

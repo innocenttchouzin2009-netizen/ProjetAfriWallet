@@ -3,6 +3,13 @@ import 'package:flutter/material.dart';
 import '../l10n/app_localizations.dart';
 import '../models/subscription_models.dart';
 
+enum _PaymentFlowStep {
+  method,
+  confirmation,
+  processing,
+  result,
+}
+
 class SubscriptionInvoicePaymentEntryPage extends StatefulWidget {
   const SubscriptionInvoicePaymentEntryPage({
     super.key,
@@ -19,7 +26,46 @@ class SubscriptionInvoicePaymentEntryPage extends StatefulWidget {
 class _SubscriptionInvoicePaymentEntryPageState
     extends State<SubscriptionInvoicePaymentEntryPage> {
   String? _selectedMethod;
-  bool _showConfirmation = false;
+  _PaymentFlowStep _step = _PaymentFlowStep.method;
+
+  String _paymentMethodLabel(AppLocalizations localizations) {
+    switch (_selectedMethod) {
+      case 'wallet':
+        return localizations.paymentMethodWallet;
+      case 'mobile-money':
+        return localizations.paymentMethodMobileMoney;
+      case 'card':
+        return localizations.paymentMethodCard;
+      default:
+        return '';
+    }
+  }
+
+  Future<void> _confirmPayment() async {
+    setState(() {
+      _step = _PaymentFlowStep.processing;
+    });
+
+    await Future<void>.delayed(const Duration(milliseconds: 250));
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _step = _PaymentFlowStep.result;
+    });
+  }
+
+  void _returnToInvoices() {
+    final navigator = Navigator.of(context);
+    if (navigator.canPop()) {
+      navigator.pop();
+    }
+    if (navigator.canPop()) {
+      navigator.pop();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +74,13 @@ class _SubscriptionInvoicePaymentEntryPageState
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(localizations.invoicePayment),
+        title: Text(
+          _step == _PaymentFlowStep.confirmation
+              ? localizations.paymentConfirmation
+              : _step == _PaymentFlowStep.result
+                  ? localizations.paymentResult
+                  : localizations.invoicePayment,
+        ),
       ),
       body: SafeArea(
         child: ListView(
@@ -67,81 +119,166 @@ class _SubscriptionInvoicePaymentEntryPageState
               ),
             ),
             const SizedBox(height: 24),
-            Text(
-              localizations.paymentMethod,
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 8),
-            Text(localizations.selectPaymentMethod),
-            const SizedBox(height: 8),
-            RadioGroup<String>(
-              groupValue: _selectedMethod,
-              onChanged: (value) {
-                setState(() {
-                  _selectedMethod = value;
-                  _showConfirmation = false;
-                });
-              },
-              child: Column(
-                children: [
-                  RadioListTile<String>(
-                    key: const Key('invoice-payment-method-wallet'),
-                    value: 'wallet',
-                    title: Text(localizations.paymentMethodWallet),
-                  ),
-                  RadioListTile<String>(
-                    key: const Key('invoice-payment-method-mobile-money'),
-                    value: 'mobile-money',
-                    title: Text(localizations.paymentMethodMobileMoney),
-                  ),
-                  RadioListTile<String>(
-                    key: const Key('invoice-payment-method-card'),
-                    value: 'card',
-                    title: Text(localizations.paymentMethodCard),
-                  ),
-                ],
+            if (_step == _PaymentFlowStep.method) ...[
+              Text(
+                localizations.paymentMethod,
+                style: Theme.of(context).textTheme.titleMedium,
               ),
-            ),
-            const SizedBox(height: 16),
-            FilledButton(
-              key: const Key('invoice-payment-continue'),
-              onPressed: _selectedMethod == null
-                  ? null
-                  : () {
-                      setState(() {
-                        _showConfirmation = true;
-                      });
-                    },
-              child: Text(localizations.continueToConfirmation),
-            ),
-            if (_showConfirmation) ...[
-              const SizedBox(height: 24),
+              const SizedBox(height: 8),
+              Text(localizations.selectPaymentMethod),
+              const SizedBox(height: 8),
+              RadioGroup<String>(
+                groupValue: _selectedMethod,
+                onChanged: (value) {
+                  setState(() {
+                    _selectedMethod = value;
+                  });
+                },
+                child: Column(
+                  children: [
+                    RadioListTile<String>(
+                      key: const Key('invoice-payment-method-wallet'),
+                      value: 'wallet',
+                      title: Text(localizations.paymentMethodWallet),
+                    ),
+                    RadioListTile<String>(
+                      key: const Key('invoice-payment-method-mobile-money'),
+                      value: 'mobile-money',
+                      title: Text(localizations.paymentMethodMobileMoney),
+                    ),
+                    RadioListTile<String>(
+                      key: const Key('invoice-payment-method-card'),
+                      value: 'card',
+                      title: Text(localizations.paymentMethodCard),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              FilledButton(
+                key: const Key('invoice-payment-continue'),
+                onPressed: _selectedMethod == null
+                    ? null
+                    : () {
+                        setState(() {
+                          _step = _PaymentFlowStep.confirmation;
+                        });
+                      },
+                child: Text(localizations.continueToConfirmation),
+              ),
+            ],
+            if (_step == _PaymentFlowStep.confirmation) ...[
               Card(
-                key: const Key('invoice-payment-confirmation-preview'),
+                key: const Key('invoice-payment-confirmation'),
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Text(
-                        localizations.confirmInvoicePayment,
+                        localizations.confirmPaymentQuestion,
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 16),
+                      _SummaryRow(
+                        label: localizations.paymentMethod,
+                        value: _paymentMethodLabel(localizations),
+                      ),
+                      const Divider(),
+                      _SummaryRow(
+                        label: localizations.price,
+                        value:
+                            '${localizations.formatCurrency(invoice.amount)} ${invoice.currency}',
+                      ),
+                      const SizedBox(height: 16),
                       Text(localizations.confirmPaymentDisclaimer),
                       const SizedBox(height: 16),
-                      FilledButton.tonal(
-                        key: const Key('invoice-payment-confirm-read-only'),
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                localizations.confirmPaymentDisclaimer,
-                              ),
-                            ),
-                          );
-                        },
+                      FilledButton(
+                        key: const Key('invoice-payment-confirm'),
+                        onPressed: _confirmPayment,
                         child: Text(localizations.confirmInvoicePayment),
+                      ),
+                      const SizedBox(height: 8),
+                      TextButton(
+                        key: const Key('invoice-payment-change-method'),
+                        onPressed: () {
+                          setState(() {
+                            _step = _PaymentFlowStep.method;
+                          });
+                        },
+                        child: Text(localizations.paymentMethod),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+            if (_step == _PaymentFlowStep.processing) ...[
+              Card(
+                key: const Key('invoice-payment-processing'),
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    children: [
+                      const CircularProgressIndicator(),
+                      const SizedBox(height: 16),
+                      Text(
+                        localizations.paymentProcessing,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(localizations.confirmPaymentDisclaimer),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+            if (_step == _PaymentFlowStep.result) ...[
+              Card(
+                key: const Key('invoice-payment-result-success'),
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const Icon(
+                        Icons.check_circle_outline,
+                        size: 56,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        localizations.paymentSuccessful,
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.headlineSmall,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        localizations.paymentSuccessMessage,
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 16),
+                      _SummaryRow(
+                        label: localizations.paymentReference,
+                        value: 'BETA-${invoice.id}',
+                      ),
+                      const Divider(),
+                      _SummaryRow(
+                        label: localizations.paymentMethod,
+                        value: _paymentMethodLabel(localizations),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(localizations.confirmPaymentDisclaimer),
+                      const SizedBox(height: 20),
+                      FilledButton(
+                        key: const Key('invoice-payment-done'),
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: Text(localizations.done),
+                      ),
+                      const SizedBox(height: 8),
+                      OutlinedButton(
+                        key: const Key('invoice-payment-back-to-invoices'),
+                        onPressed: _returnToInvoices,
+                        child: Text(localizations.backToInvoices),
                       ),
                     ],
                   ),

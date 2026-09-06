@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -6,6 +9,7 @@ import 'package:mobile_app/models/subscription_models.dart';
 import 'package:mobile_app/models/subscription_receipt_verification.dart';
 import 'package:mobile_app/pages/subscription_invoice_payment_entry_page.dart';
 import 'package:mobile_app/pages/subscription_receipt_verification_page.dart';
+import 'package:mobile_app/services/subscription_invoice_receipt_pdf_service.dart';
 import 'package:mobile_app/services/subscription_receipt_verification_codec.dart';
 
 const _invoice = SubscriptionInvoice(
@@ -19,13 +23,20 @@ const _invoice = SubscriptionInvoice(
 
 const _verificationCodec = SubscriptionReceiptVerificationCodec();
 
-Widget _app({bool simulateFailure = false}) => MaterialApp(
+Widget _app({
+  bool simulateFailure = false,
+  SubscriptionInvoiceReceiptPdfService? receiptPdfService,
+  ReceiptPrintAction? printReceiptAction,
+}) =>
+    MaterialApp(
       locale: const Locale('en'),
       supportedLocales: AppLocalizations.supportedLocales,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       home: SubscriptionInvoicePaymentEntryPage(
         invoice: _invoice,
         simulateFailure: simulateFailure,
+        receiptPdfService: receiptPdfService,
+        printReceiptAction: printReceiptAction,
       ),
     );
 
@@ -84,11 +95,47 @@ Future<void> _startPayment(WidgetTester tester) async {
   await tester.pump();
 }
 
+Future<void> _openReceipt(WidgetTester tester) async {
+  await _startPayment(tester);
+  await tester.pump(const Duration(milliseconds: 300));
+  await tester.pumpAndSettle();
+
+  final viewReceipt = find.byKey(const Key('invoice-payment-view-receipt'));
+  await _ensureVisible(tester, viewReceipt);
+  await tester.tap(viewReceipt);
+  await tester.pumpAndSettle();
+}
+
 void _expectLiveRegion(WidgetTester tester, String label) {
   final semantics = find.bySemanticsLabel(label);
   expect(semantics, findsOneWidget);
   final node = tester.getSemantics(semantics);
   expect(node.hasFlag(SemanticsFlag.isLiveRegion), isTrue);
+}
+
+class _ControlledReceiptPdfService extends SubscriptionInvoiceReceiptPdfService {
+  _ControlledReceiptPdfService({this.exportGate});
+
+  final Completer<void>? exportGate;
+
+  @override
+  Future<Uint8List> buildPdfBytes(SubscriptionInvoiceReceiptPdfData data) async {
+    return Uint8List.fromList(const [1, 2, 3]);
+  }
+
+  @override
+  Future<SubscriptionInvoiceReceiptPdfExportResult> export({
+    required String invoiceId,
+    required SubscriptionInvoiceReceiptPdfData data,
+  }) async {
+    final gate = exportGate;
+    if (gate != null) await gate.future;
+    return const SubscriptionInvoiceReceiptPdfExportResult(
+      fileName: 'receipt.pdf',
+      path: '/tmp/receipt.pdf',
+      bytesLength: 3,
+    );
+  }
 }
 
 void main() {
@@ -212,5 +259,75 @@ void main() {
     await tester.pumpAndSettle();
 
     _expectLiveRegion(tester, 'Expired receipt');
+  });
+
+  testWidgets('receipt is announced and core actions expose accessible labels',
+      (tester) async {
+    final semantics = tester.ensureSemantics();
+    addTearDown(semantics.dispose);
+
+    await tester.pumpWidget(_app());
+    await tester.pumpAndSettle();
+    await _openReceipt(tester);
+
+    _expectLiveRegion(tester, 'Payment receipt');
+
+    for (final label in [
+      'Verify receipt',
+      'Copy reference',
+      'Share receipt',
+      'Download receipt',
+      'Print receipt',
+      'Done',
+      'Back to invoices',
+    ]) {
+      final action = find.bySemanticsLabel(label);
+      await _ensureVisible(tester, action);
+      expect(action, findsOneWidget);
+    }
+  });
+
+  testWidgets('download and print announce their preparing states',
+      (tester) async {
+    final semantics = tester.ensureSemantics();
+    addTearDown(semantics.dispose);
+
+    final exportGate = Completer<void>();
+    final printGate = Completer<void>();
+    final service = _ControlledReceiptPdfService(exportGate: exportGate);
+
+    await tester.pumpWidget(
+      _app(
+        receiptPdfService: service,
+        printReceiptAction: (_, __) async {
+          await printGate.future;
+          return true;
+        },
+      ),
+    );
+    await tester.pumpAndSettle();
+    await _openReceipt(tester);
+
+    final download = find.byKey(const Key('invoice-payment-receipt-download'));
+    await _ensureVisible(tester, download);
+    await tester.tap(download);
+    await tester.pump();
+
+    _expectLiveRegion(tester, 'Preparing receipt');
+    expect(tester.widget<OutlinedButton>(download).onPressed, isNull);
+
+    exportGate.complete();
+    await tester.pumpAndSettle();
+
+    final print = find.byKey(const Key('invoice-payment-receipt-print'));
+    await _ensureVisible(tester, print);
+    await tester.tap(print);
+    await tester.pump();
+
+    _expectLiveRegion(tester, 'Preparing receipt');
+    expect(tester.widget<OutlinedButton>(print).onPressed, isNull);
+
+    printGate.complete();
+    await tester.pumpAndSettle();
   });
 }

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../l10n/app_localizations.dart';
 import '../models/subscription_models.dart';
+import '../services/subscription_invoice_receipt_pdf_service.dart';
 
 enum _PaymentFlowStep {
   method,
@@ -17,10 +18,12 @@ class SubscriptionInvoicePaymentEntryPage extends StatefulWidget {
     super.key,
     required this.invoice,
     this.simulateFailure = false,
+    this.receiptPdfService,
   });
 
   final SubscriptionInvoice invoice;
   final bool simulateFailure;
+  final SubscriptionInvoiceReceiptPdfService? receiptPdfService;
 
   @override
   State<SubscriptionInvoicePaymentEntryPage> createState() =>
@@ -31,6 +34,7 @@ class _SubscriptionInvoicePaymentEntryPageState
     extends State<SubscriptionInvoicePaymentEntryPage> {
   String? _selectedMethod;
   _PaymentFlowStep _step = _PaymentFlowStep.method;
+  bool _isExportingReceipt = false;
 
   String _paymentMethodLabel(AppLocalizations localizations) {
     switch (_selectedMethod) {
@@ -125,6 +129,81 @@ class _SubscriptionInvoicePaymentEntryPageState
         ),
       ),
     );
+  }
+
+  Future<void> _exportReceipt(
+    AppLocalizations localizations,
+    SubscriptionInvoice invoice,
+    String paymentReference,
+  ) async {
+    if (_isExportingReceipt) {
+      return;
+    }
+
+    setState(() {
+      _isExportingReceipt = true;
+    });
+
+    final service =
+        widget.receiptPdfService ?? SubscriptionInvoiceReceiptPdfService();
+
+    try {
+      final result = await service.export(
+        invoiceId: invoice.id,
+        data: SubscriptionInvoiceReceiptPdfData(
+          brandName: 'AfWal',
+          title: localizations.paymentReceiptDocument,
+          invoiceLabel: localizations.invoiceId,
+          invoiceId: invoice.id,
+          amountLabel: localizations.price,
+          amount:
+              '${localizations.formatCurrency(invoice.amount)} ${invoice.currency}',
+          paymentMethodLabel: localizations.paymentMethod,
+          paymentMethod: _paymentMethodLabel(localizations),
+          paymentReferenceLabel: localizations.paymentReference,
+          paymentReference: paymentReference,
+          statusLabel: localizations.invoiceStatus,
+          status: localizations.paymentSuccessful,
+          disclaimer: localizations.confirmPaymentDisclaimer,
+        ),
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(
+              '${localizations.receiptGenerated}: ${result.fileName}',
+              key: const Key('invoice-payment-receipt-download-feedback'),
+            ),
+          ),
+        );
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(
+              localizations.receiptGenerationFailed,
+              key: const Key('invoice-payment-receipt-download-error'),
+            ),
+          ),
+        );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isExportingReceipt = false;
+        });
+      }
+    }
   }
 
   Future<void> _confirmPayment() async {
@@ -506,6 +585,27 @@ class _SubscriptionInvoicePaymentEntryPageState
                         ),
                         icon: const Icon(Icons.share_outlined),
                         label: Text(localizations.shareReceipt),
+                      ),
+                      const SizedBox(height: 8),
+                      OutlinedButton.icon(
+                        key: const Key('invoice-payment-receipt-download'),
+                        onPressed: _isExportingReceipt
+                            ? null
+                            : () => _exportReceipt(
+                                  localizations,
+                                  invoice,
+                                  paymentReference,
+                                ),
+                        icon: _isExportingReceipt
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(Icons.download_outlined),
+                        label: Text(localizations.downloadReceipt),
                       ),
                       const SizedBox(height: 8),
                       FilledButton(

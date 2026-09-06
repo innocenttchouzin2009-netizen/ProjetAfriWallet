@@ -1,0 +1,77 @@
+name: Mobile Beta1.28 Subscription Invoice Payment Receipt
+
+on:
+  push:
+    branches:
+      - feature/mobile-beta1.28
+    paths:
+      - 'apps/mobile_app/**'
+      - '.github/workflows/mobile-beta1.28-subscription-invoice-payment-receipt.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'apps/mobile_app/**'
+      - '.github/workflows/mobile-beta1.28-subscription-invoice-payment-receipt.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/mobile_app
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Flutter version
+        run: flutter --version
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Generate localizations
+        run: flutter gen-l10n
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test payment receipt completion flow
+        run: flutter test test/subscription_invoice_payment_receipt_test.dart
+
+      - name: Test payment failure and retry regression
+        run: flutter test test/subscription_invoice_payment_entry_test.dart
+
+      - name: Test invoice detail regression
+        run: flutter test test/subscription_invoice_detail_test.dart
+
+      - name: Test advanced invoice discovery regression
+        run: flutter test test/subscription_invoices_test.dart
+
+      - name: Test invoice status presentation regression
+        run: flutter test test/subscription_invoice_status_presentation_test.dart
+
+      - name: Test billing navigation regression
+        run: flutter test test/subscription_billing_navigation_test.dart
+
+      - name: Test subscription detail regression
+        run: flutter test test/subscription_detail_test.dart
+
+      - name: Run complete Flutter test suite
+        run: flutter test
+
+      - name: Verify Beta1.28 diff
+        working-directory: .
+        run: git diff --check f7fe53e32deb5b3456dc730cebc3315f31fdf50b..HEAD

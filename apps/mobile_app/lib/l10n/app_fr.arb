@@ -15,17 +15,7 @@
   "nextBilling": "Prochaine facturation",
   "price": "Prix",
   "formatCurrency": "{amount}",
-  "@formatCurrency": {
-    "placeholders": {
-      "amount": {
-        "type": "double",
-        "format": "decimalPatternDigits",
-        "optionalParameters": {
-          "decimalDigits": 2
-        }
-      }
-    }
-  },
+  "@formatCurrency": {"placeholders": {"amount": {"type": "double", "format": "decimalPatternDigits", "optionalParameters": {"decimalDigits": 2}}}},
   "autoRenewal": "Renouvellement automatique",
   "billingHistory": "Historique de facturation",
   "invoiceDetails": "Détails de la facture",
@@ -49,13 +39,7 @@
   "invoiceActiveFilters": "Filtres actifs",
   "resetAllInvoiceFilters": "Réinitialiser tous les filtres",
   "invoiceResultsCount": "{count, plural, =0{Aucune facture trouvée} =1{1 facture trouvée} other{{count} factures trouvées}}",
-  "@invoiceResultsCount": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
+  "@invoiceResultsCount": {"placeholders": {"count": {"type": "int"}}},
   "invoicePeriod": "Période rapide",
   "invoicePeriodLast30Days": "30 derniers jours",
   "invoicePeriodLast90Days": "90 derniers jours",
@@ -108,6 +92,16 @@
   "receiptPrintPreparing": "Préparation du reçu",
   "receiptPrintFailed": "Impossible de démarrer l’impression du reçu",
   "paymentReceiptDocument": "Document de reçu de paiement",
+  "receiptVerification": "Vérification du reçu",
+  "verifyReceipt": "Vérifier le reçu",
+  "receiptVerificationHint": "Cette bêta vérifie le reçu localement. Elle ne contacte aucun backend de paiement.",
+  "receiptVerificationValid": "Reçu valide",
+  "receiptVerificationInvalid": "Reçu invalide",
+  "receiptVerificationExpired": "Reçu expiré",
+  "receiptVerificationValidMessage": "Le code de vérification du reçu est valide pour ce paiement simulé.",
+  "receiptVerificationInvalidMessage": "Le code de vérification du reçu n’a pas pu être validé.",
+  "receiptVerificationExpiredMessage": "Le code de vérification du reçu a expiré.",
+  "receiptVerificationQr": "QR de vérification du reçu",
   "done": "Terminé",
   "tryAgain": "Réessayer",
   "backToInvoices": "Retour aux factures",

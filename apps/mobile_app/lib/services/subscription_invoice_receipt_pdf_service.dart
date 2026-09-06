@@ -19,6 +19,8 @@ class SubscriptionInvoiceReceiptPdfData {
     required this.paymentReference,
     required this.statusLabel,
     required this.status,
+    required this.verificationLabel,
+    required this.verificationCode,
     required this.disclaimer,
   });
 
@@ -34,6 +36,8 @@ class SubscriptionInvoiceReceiptPdfData {
   final String paymentReference;
   final String statusLabel;
   final String status;
+  final String verificationLabel;
+  final String verificationCode;
   final String disclaimer;
 }
 
@@ -93,6 +97,18 @@ class SubscriptionInvoiceReceiptPdfService {
           _row(data.paymentReferenceLabel, data.paymentReference),
           _row(data.statusLabel, data.status),
           pw.SizedBox(height: 24),
+          pw.Text(
+            data.verificationLabel,
+            style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+          ),
+          pw.SizedBox(height: 12),
+          pw.BarcodeWidget(
+            barcode: pw.Barcode.qrCode(),
+            data: data.verificationCode,
+            width: 120,
+            height: 120,
+          ),
+          pw.SizedBox(height: 24),
           pw.Divider(),
           pw.SizedBox(height: 12),
           pw.Text(
@@ -138,10 +154,7 @@ class SubscriptionInvoiceReceiptPdfService {
             ),
           ),
           pw.SizedBox(width: 12),
-          pw.Expanded(
-            flex: 3,
-            child: pw.Text(value),
-          ),
+          pw.Expanded(flex: 3, child: pw.Text(value)),
         ],
       ),
     );

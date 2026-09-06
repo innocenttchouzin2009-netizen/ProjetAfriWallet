@@ -15,17 +15,7 @@
   "nextBilling": "Next billing",
   "price": "Price",
   "formatCurrency": "{amount}",
-  "@formatCurrency": {
-    "placeholders": {
-      "amount": {
-        "type": "double",
-        "format": "decimalPatternDigits",
-        "optionalParameters": {
-          "decimalDigits": 2
-        }
-      }
-    }
-  },
+  "@formatCurrency": {"placeholders": {"amount": {"type": "double", "format": "decimalPatternDigits", "optionalParameters": {"decimalDigits": 2}}}},
   "autoRenewal": "Auto-renewal",
   "billingHistory": "Billing history",
   "invoiceDetails": "Invoice details",
@@ -49,13 +39,7 @@
   "invoiceActiveFilters": "Active filters",
   "resetAllInvoiceFilters": "Reset all filters",
   "invoiceResultsCount": "{count, plural, =0{No invoices found} =1{1 invoice found} other{{count} invoices found}}",
-  "@invoiceResultsCount": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
+  "@invoiceResultsCount": {"placeholders": {"count": {"type": "int"}}},
   "invoicePeriod": "Quick period",
   "invoicePeriodLast30Days": "Last 30 days",
   "invoicePeriodLast90Days": "Last 90 days",
@@ -108,6 +92,16 @@
   "receiptPrintPreparing": "Preparing receipt",
   "receiptPrintFailed": "Receipt printing could not be started",
   "paymentReceiptDocument": "Payment receipt document",
+  "receiptVerification": "Receipt verification",
+  "verifyReceipt": "Verify receipt",
+  "receiptVerificationHint": "This beta verifies the receipt locally. It does not contact a payment backend.",
+  "receiptVerificationValid": "Valid receipt",
+  "receiptVerificationInvalid": "Invalid receipt",
+  "receiptVerificationExpired": "Expired receipt",
+  "receiptVerificationValidMessage": "The receipt verification code is valid for this simulated payment.",
+  "receiptVerificationInvalidMessage": "The receipt verification code could not be validated.",
+  "receiptVerificationExpiredMessage": "The receipt verification code has expired.",
+  "receiptVerificationQr": "Receipt verification QR",
   "done": "Done",
   "tryAgain": "Try again",
   "backToInvoices": "Back to invoices",

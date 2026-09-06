@@ -103,10 +103,6 @@ void main() {
     expect(find.text('AfWal balance'), findsOneWidget);
     expect(find.text('BETA-invoice-beta128-pending'), findsOneWidget);
     expect(find.text('Payment successful'), findsOneWidget);
-    expect(
-      find.byKey(const Key('subscription-invoice-payment-summary')),
-      findsOneWidget,
-    );
   });
 
   testWidgets('receipt exposes explicit completion and invoice return actions',

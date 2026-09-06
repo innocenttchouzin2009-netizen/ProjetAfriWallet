@@ -39,12 +39,17 @@ Widget _detailApp(SubscriptionInvoice invoice) => MaterialApp(
       home: SubscriptionInvoiceDetailPage(invoice: invoice),
     );
 
-Widget _paymentApp({Locale locale = const Locale('en')}) => MaterialApp(
+Widget _paymentApp({
+  Locale locale = const Locale('en'),
+  bool simulateFailure = false,
+}) =>
+    MaterialApp(
       locale: locale,
       supportedLocales: AppLocalizations.supportedLocales,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
-      home: const SubscriptionInvoicePaymentEntryPage(
+      home: SubscriptionInvoicePaymentEntryPage(
         invoice: _pendingInvoice,
+        simulateFailure: simulateFailure,
       ),
     );
 
@@ -94,6 +99,13 @@ Future<void> _selectMethodAndContinue(
 
   await tester.tap(continueFinder);
   await tester.pumpAndSettle();
+}
+
+Future<void> _confirmPayment(WidgetTester tester) async {
+  final confirmButton = find.byKey(const Key('invoice-payment-confirm'));
+  await _ensurePaymentEntryVisible(tester, confirmButton);
+  await tester.tap(confirmButton);
+  await tester.pump();
 }
 
 void main() {
@@ -260,10 +272,7 @@ void main() {
       const Key('invoice-payment-method-wallet'),
     );
 
-    final confirmButton = find.byKey(const Key('invoice-payment-confirm'));
-    await _ensurePaymentEntryVisible(tester, confirmButton);
-    await tester.tap(confirmButton);
-    await tester.pump();
+    await _confirmPayment(tester);
 
     expect(
       find.byKey(const Key('invoice-payment-processing')),
@@ -285,6 +294,84 @@ void main() {
     expect(find.text('AfWal balance'), findsOneWidget);
   });
 
+  testWidgets('controlled failure reaches localized failure result', (tester) async {
+    await tester.pumpWidget(_paymentApp(simulateFailure: true));
+    await tester.pumpAndSettle();
+
+    await _selectMethodAndContinue(
+      tester,
+      const Key('invoice-payment-method-card'),
+    );
+
+    await _confirmPayment(tester);
+
+    expect(
+      find.byKey(const Key('invoice-payment-processing')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('invoice-payment-result-failure')),
+      findsNothing,
+    );
+
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pumpAndSettle();
+
+    final failure = find.byKey(const Key('invoice-payment-result-failure'));
+    await _ensurePaymentEntryVisible(tester, failure);
+    expect(failure, findsOneWidget);
+    expect(find.byKey(const Key('invoice-payment-result-success')), findsNothing);
+    expect(find.text('Payment failed'), findsOneWidget);
+    expect(
+      find.text('The invoice payment could not be completed.'),
+      findsOneWidget,
+    );
+    expect(find.text('Card'), findsOneWidget);
+    expect(
+      find.byKey(const Key('subscription-invoice-payment-summary')),
+      findsOneWidget,
+    );
+    expect(find.textContaining('invoice-beta125-pending'), findsOneWidget);
+  });
+
+  testWidgets('retry returns to payment method selection and clears selection',
+      (tester) async {
+    await tester.pumpWidget(_paymentApp(simulateFailure: true));
+    await tester.pumpAndSettle();
+
+    await _selectMethodAndContinue(
+      tester,
+      const Key('invoice-payment-method-wallet'),
+    );
+    await _confirmPayment(tester);
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pumpAndSettle();
+
+    final retry = find.byKey(const Key('invoice-payment-retry'));
+    await _ensurePaymentEntryVisible(tester, retry);
+    expect(retry, findsOneWidget);
+    await tester.tap(retry);
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const Key('invoice-payment-result-failure')),
+      findsNothing,
+    );
+    expect(
+      find.byKey(const Key('invoice-payment-method-wallet')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('subscription-invoice-payment-summary')),
+      findsOneWidget,
+    );
+
+    final continueFinder = find.byKey(const Key('invoice-payment-continue'));
+    await _ensurePaymentEntryVisible(tester, continueFinder);
+    final continueButton = tester.widget<FilledButton>(continueFinder);
+    expect(continueButton.onPressed, isNull);
+  });
+
   testWidgets('result exposes done and back-to-invoices actions', (tester) async {
     await tester.pumpWidget(_paymentApp());
     await tester.pumpAndSettle();
@@ -294,9 +381,7 @@ void main() {
       const Key('invoice-payment-method-card'),
     );
 
-    final confirmButton = find.byKey(const Key('invoice-payment-confirm'));
-    await _ensurePaymentEntryVisible(tester, confirmButton);
-    await tester.tap(confirmButton);
+    await _confirmPayment(tester);
     await tester.pump(const Duration(milliseconds: 300));
     await tester.pumpAndSettle();
 
@@ -324,9 +409,7 @@ void main() {
     await _ensurePaymentEntryVisible(tester, confirmation);
     expect(find.textContaining('Confirmer', findRichText: true), findsWidgets);
 
-    final confirmButton = find.byKey(const Key('invoice-payment-confirm'));
-    await _ensurePaymentEntryVisible(tester, confirmButton);
-    await tester.tap(confirmButton);
+    await _confirmPayment(tester);
     await tester.pump(const Duration(milliseconds: 300));
     await tester.pumpAndSettle();
 
@@ -334,5 +417,36 @@ void main() {
     await _ensurePaymentEntryVisible(tester, result);
     expect(result, findsOneWidget);
     expect(find.textContaining('Paiement', findRichText: true), findsWidgets);
+  });
+
+  testWidgets('French failure and retry localization is available', (tester) async {
+    await tester.pumpWidget(
+      _paymentApp(
+        locale: const Locale('fr'),
+        simulateFailure: true,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await _selectMethodAndContinue(
+      tester,
+      const Key('invoice-payment-method-mobile-money'),
+    );
+    await _confirmPayment(tester);
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pumpAndSettle();
+
+    final failure = find.byKey(const Key('invoice-payment-result-failure'));
+    await _ensurePaymentEntryVisible(tester, failure);
+    expect(failure, findsOneWidget);
+    expect(find.text('Échec du paiement'), findsOneWidget);
+    expect(
+      find.text('Le paiement de la facture n’a pas pu être effectué.'),
+      findsOneWidget,
+    );
+
+    final retry = find.byKey(const Key('invoice-payment-retry'));
+    await _ensurePaymentEntryVisible(tester, retry);
+    expect(find.text('Réessayer'), findsOneWidget);
   });
 }

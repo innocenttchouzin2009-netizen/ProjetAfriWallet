@@ -1,5 +1,8 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:printing/printing.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../l10n/app_localizations.dart';
@@ -15,6 +18,10 @@ enum _PaymentFlowStep {
 }
 
 typedef ReceiptShareAction = Future<void> Function(String shareText);
+typedef ReceiptPrintAction = Future<bool> Function(
+  Uint8List pdfBytes,
+  String documentName,
+);
 
 class SubscriptionInvoicePaymentEntryPage extends StatefulWidget {
   const SubscriptionInvoicePaymentEntryPage({
@@ -23,12 +30,14 @@ class SubscriptionInvoicePaymentEntryPage extends StatefulWidget {
     this.simulateFailure = false,
     this.receiptPdfService,
     this.shareReceiptAction,
+    this.printReceiptAction,
   });
 
   final SubscriptionInvoice invoice;
   final bool simulateFailure;
   final SubscriptionInvoiceReceiptPdfService? receiptPdfService;
   final ReceiptShareAction? shareReceiptAction;
+  final ReceiptPrintAction? printReceiptAction;
 
   @override
   State<SubscriptionInvoicePaymentEntryPage> createState() =>
@@ -40,6 +49,7 @@ class _SubscriptionInvoicePaymentEntryPageState
   String? _selectedMethod;
   _PaymentFlowStep _step = _PaymentFlowStep.method;
   bool _isExportingReceipt = false;
+  bool _isPrintingReceipt = false;
 
   String _paymentMethodLabel(AppLocalizations localizations) {
     switch (_selectedMethod) {
@@ -52,6 +62,29 @@ class _SubscriptionInvoicePaymentEntryPageState
       default:
         return '';
     }
+  }
+
+  SubscriptionInvoiceReceiptPdfData _receiptPdfData(
+    AppLocalizations localizations,
+    SubscriptionInvoice invoice,
+    String paymentReference,
+  ) {
+    return SubscriptionInvoiceReceiptPdfData(
+      brandName: 'AfWal',
+      title: localizations.paymentReceiptDocument,
+      invoiceLabel: localizations.invoiceId,
+      invoiceId: invoice.id,
+      amountLabel: localizations.price,
+      amount:
+          '${localizations.formatCurrency(invoice.amount)} ${invoice.currency}',
+      paymentMethodLabel: localizations.paymentMethod,
+      paymentMethod: _paymentMethodLabel(localizations),
+      paymentReferenceLabel: localizations.paymentReference,
+      paymentReference: paymentReference,
+      statusLabel: localizations.invoiceStatus,
+      status: localizations.paymentSuccessful,
+      disclaimer: localizations.confirmPaymentDisclaimer,
+    );
   }
 
   String _receiptShareText(
@@ -111,6 +144,71 @@ class _SubscriptionInvoicePaymentEntryPageState
     await SharePlus.instance.share(ShareParams(text: shareText));
   }
 
+  Future<void> _printReceipt(
+    AppLocalizations localizations,
+    SubscriptionInvoice invoice,
+    String paymentReference,
+  ) async {
+    if (_isPrintingReceipt) {
+      return;
+    }
+
+    setState(() {
+      _isPrintingReceipt = true;
+    });
+
+    final service =
+        widget.receiptPdfService ?? SubscriptionInvoiceReceiptPdfService();
+
+    try {
+      final pdfBytes = await service.buildPdfBytes(
+        _receiptPdfData(localizations, invoice, paymentReference),
+      );
+      final documentName = service.fileNameForInvoice(invoice.id);
+      final action = widget.printReceiptAction;
+      final started = action != null
+          ? await action(pdfBytes, documentName)
+          : await Printing.layoutPdf(
+              name: documentName,
+              onLayout: (_) async => pdfBytes,
+            );
+
+      if (!started && mounted) {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            SnackBar(
+              content: Text(
+                localizations.receiptPrintFailed,
+                key: const Key('invoice-payment-receipt-print-error'),
+              ),
+            ),
+          );
+      }
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(
+              localizations.receiptPrintFailed,
+              key: const Key('invoice-payment-receipt-print-error'),
+            ),
+          ),
+        );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isPrintingReceipt = false;
+        });
+      }
+    }
+  }
+
   Future<void> _exportReceipt(
     AppLocalizations localizations,
     SubscriptionInvoice invoice,
@@ -130,22 +228,7 @@ class _SubscriptionInvoicePaymentEntryPageState
     try {
       final result = await service.export(
         invoiceId: invoice.id,
-        data: SubscriptionInvoiceReceiptPdfData(
-          brandName: 'AfWal',
-          title: localizations.paymentReceiptDocument,
-          invoiceLabel: localizations.invoiceId,
-          invoiceId: invoice.id,
-          amountLabel: localizations.price,
-          amount:
-              '${localizations.formatCurrency(invoice.amount)} ${invoice.currency}',
-          paymentMethodLabel: localizations.paymentMethod,
-          paymentMethod: _paymentMethodLabel(localizations),
-          paymentReferenceLabel: localizations.paymentReference,
-          paymentReference: paymentReference,
-          statusLabel: localizations.invoiceStatus,
-          status: localizations.paymentSuccessful,
-          disclaimer: localizations.confirmPaymentDisclaimer,
-        ),
+        data: _receiptPdfData(localizations, invoice, paymentReference),
       );
 
       if (!mounted) {
@@ -586,6 +669,31 @@ class _SubscriptionInvoicePaymentEntryPageState
                               )
                             : const Icon(Icons.download_outlined),
                         label: Text(localizations.downloadReceipt),
+                      ),
+                      const SizedBox(height: 8),
+                      OutlinedButton.icon(
+                        key: const Key('invoice-payment-receipt-print'),
+                        onPressed: _isPrintingReceipt
+                            ? null
+                            : () => _printReceipt(
+                                  localizations,
+                                  invoice,
+                                  paymentReference,
+                                ),
+                        icon: _isPrintingReceipt
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(Icons.print_outlined),
+                        label: Text(
+                          _isPrintingReceipt
+                              ? localizations.receiptPrintPreparing
+                              : localizations.printReceipt,
+                        ),
                       ),
                       const SizedBox(height: 8),
                       FilledButton(

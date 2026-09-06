@@ -101,7 +101,8 @@ void main() {
     );
     await _ensureVisible(tester, copy);
     await tester.tap(copy);
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
 
     expect(
       find.byKey(const Key('invoice-payment-receipt-copy-feedback')),
@@ -174,8 +175,11 @@ void main() {
     expect(find.text('Partager le reçu'), findsOneWidget);
 
     await tester.tap(copy);
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
     expect(find.text('Référence copiée'), findsOneWidget);
+
+    await tester.pump(const Duration(seconds: 5));
 
     final share = find.byKey(const Key('invoice-payment-receipt-share'));
     await tester.tap(share);

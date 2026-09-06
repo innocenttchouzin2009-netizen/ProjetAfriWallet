@@ -68,6 +68,11 @@ Future<void> _ensurePaymentEntryVisible(
     await tester.pumpAndSettle();
   }
 
+  for (var i = 0; i < 12 && finder.evaluate().isEmpty; i++) {
+    await tester.drag(listView, const Offset(0, 240));
+    await tester.pumpAndSettle();
+  }
+
   expect(finder, findsOneWidget);
   await tester.ensureVisible(finder);
   await tester.pumpAndSettle();
@@ -77,7 +82,9 @@ Future<void> _selectMethodAndContinue(
   WidgetTester tester,
   Key methodKey,
 ) async {
-  await tester.tap(find.byKey(methodKey));
+  final methodFinder = find.byKey(methodKey);
+  await _ensurePaymentEntryVisible(tester, methodFinder);
+  await tester.tap(methodFinder);
   await tester.pumpAndSettle();
 
   final continueFinder = find.byKey(const Key('invoice-payment-continue'));

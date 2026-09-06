@@ -556,12 +556,20 @@ class _SubscriptionInvoicePaymentEntryPageState
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const Icon(Icons.receipt_long_outlined, size: 56),
+                      const ExcludeSemantics(
+                        child: Icon(Icons.receipt_long_outlined, size: 56),
+                      ),
                       const SizedBox(height: 16),
-                      Text(
-                        localizations.paymentReceipt,
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.headlineSmall,
+                      Semantics(
+                        liveRegion: true,
+                        label: localizations.paymentReceipt,
+                        child: ExcludeSemantics(
+                          child: Text(
+                            localizations.paymentReceipt,
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.headlineSmall,
+                          ),
+                        ),
                       ),
                       const SizedBox(height: 20),
                       _SummaryRow(
@@ -648,45 +656,55 @@ class _SubscriptionInvoicePaymentEntryPageState
                         label: Text(localizations.shareReceipt),
                       ),
                       const SizedBox(height: 8),
-                      OutlinedButton.icon(
-                        key: const Key('invoice-payment-receipt-download'),
-                        onPressed: _isExportingReceipt
-                            ? null
-                            : () => _exportReceipt(
-                                  localizations,
-                                  invoice,
-                                  paymentReference,
-                                ),
-                        icon: _isExportingReceipt
-                            ? const SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              )
-                            : const Icon(Icons.download_outlined),
-                        label: Text(localizations.downloadReceipt),
+                      Semantics(
+                        liveRegion: _isExportingReceipt,
+                        child: OutlinedButton.icon(
+                          key: const Key('invoice-payment-receipt-download'),
+                          onPressed: _isExportingReceipt
+                              ? null
+                              : () => _exportReceipt(
+                                    localizations,
+                                    invoice,
+                                    paymentReference,
+                                  ),
+                          icon: _isExportingReceipt
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : const Icon(Icons.download_outlined),
+                          label: Text(
+                            _isExportingReceipt
+                                ? localizations.receiptPrintPreparing
+                                : localizations.downloadReceipt,
+                          ),
+                        ),
                       ),
                       const SizedBox(height: 8),
-                      OutlinedButton.icon(
-                        key: const Key('invoice-payment-receipt-print'),
-                        onPressed: _isPrintingReceipt
-                            ? null
-                            : () => _printReceipt(
-                                  localizations,
-                                  invoice,
-                                  paymentReference,
-                                ),
-                        icon: _isPrintingReceipt
-                            ? const SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              )
-                            : const Icon(Icons.print_outlined),
-                        label: Text(
-                          _isPrintingReceipt
-                              ? localizations.receiptPrintPreparing
-                              : localizations.printReceipt,
+                      Semantics(
+                        liveRegion: _isPrintingReceipt,
+                        child: OutlinedButton.icon(
+                          key: const Key('invoice-payment-receipt-print'),
+                          onPressed: _isPrintingReceipt
+                              ? null
+                              : () => _printReceipt(
+                                    localizations,
+                                    invoice,
+                                    paymentReference,
+                                  ),
+                          icon: _isPrintingReceipt
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : const Icon(Icons.print_outlined),
+                          label: Text(
+                            _isPrintingReceipt
+                                ? localizations.receiptPrintPreparing
+                                : localizations.printReceipt,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 8),

@@ -94,6 +94,8 @@
   "paymentFailureMessage": "The invoice payment could not be completed.",
   "paymentReference": "Payment reference",
   "paymentResult": "Payment result",
+  "paymentReceipt": "Payment receipt",
+  "viewReceipt": "View receipt",
   "done": "Done",
   "tryAgain": "Try again",
   "backToInvoices": "Back to invoices",

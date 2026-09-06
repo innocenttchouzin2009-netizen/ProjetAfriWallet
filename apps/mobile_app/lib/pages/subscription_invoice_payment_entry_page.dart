@@ -8,6 +8,7 @@ enum _PaymentFlowStep {
   confirmation,
   processing,
   result,
+  receipt,
 }
 
 class SubscriptionInvoicePaymentEntryPage extends StatefulWidget {
@@ -80,6 +81,7 @@ class _SubscriptionInvoicePaymentEntryPageState
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
     final invoice = widget.invoice;
+    final paymentReference = 'BETA-${invoice.id}';
 
     return Scaffold(
       appBar: AppBar(
@@ -88,7 +90,9 @@ class _SubscriptionInvoicePaymentEntryPageState
               ? localizations.paymentConfirmation
               : _step == _PaymentFlowStep.result
                   ? localizations.paymentResult
-                  : localizations.invoicePayment,
+                  : _step == _PaymentFlowStep.receipt
+                      ? localizations.paymentReceipt
+                      : localizations.invoicePayment,
         ),
       ),
       body: SafeArea(
@@ -269,7 +273,7 @@ class _SubscriptionInvoicePaymentEntryPageState
                         const SizedBox(height: 16),
                         _SummaryRow(
                           label: localizations.paymentReference,
-                          value: 'BETA-${invoice.id}',
+                          value: paymentReference,
                         ),
                         const Divider(),
                         _SummaryRow(
@@ -280,6 +284,16 @@ class _SubscriptionInvoicePaymentEntryPageState
                         Text(localizations.confirmPaymentDisclaimer),
                         const SizedBox(height: 20),
                         FilledButton(
+                          key: const Key('invoice-payment-view-receipt'),
+                          onPressed: () {
+                            setState(() {
+                              _step = _PaymentFlowStep.receipt;
+                            });
+                          },
+                          child: Text(localizations.viewReceipt),
+                        ),
+                        const SizedBox(height: 8),
+                        TextButton(
                           key: const Key('invoice-payment-done'),
                           onPressed: () => Navigator.of(context).pop(),
                           child: Text(localizations.done),
@@ -340,6 +354,69 @@ class _SubscriptionInvoicePaymentEntryPageState
                     ),
                   ),
                 ),
+            ],
+            if (_step == _PaymentFlowStep.receipt) ...[
+              Card(
+                key: const Key('invoice-payment-receipt'),
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const Icon(
+                        Icons.receipt_long_outlined,
+                        size: 56,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        localizations.paymentReceipt,
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.headlineSmall,
+                      ),
+                      const SizedBox(height: 20),
+                      _SummaryRow(
+                        label: localizations.invoiceId,
+                        value: invoice.id,
+                      ),
+                      const Divider(),
+                      _SummaryRow(
+                        label: localizations.price,
+                        value:
+                            '${localizations.formatCurrency(invoice.amount)} ${invoice.currency}',
+                      ),
+                      const Divider(),
+                      _SummaryRow(
+                        label: localizations.paymentMethod,
+                        value: _paymentMethodLabel(localizations),
+                      ),
+                      const Divider(),
+                      _SummaryRow(
+                        label: localizations.paymentReference,
+                        value: paymentReference,
+                      ),
+                      const Divider(),
+                      _SummaryRow(
+                        label: localizations.invoiceStatus,
+                        value: localizations.paymentSuccessful,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(localizations.confirmPaymentDisclaimer),
+                      const SizedBox(height: 20),
+                      FilledButton(
+                        key: const Key('invoice-payment-receipt-done'),
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: Text(localizations.done),
+                      ),
+                      const SizedBox(height: 8),
+                      OutlinedButton(
+                        key: const Key('invoice-payment-receipt-back-to-invoices'),
+                        onPressed: _returnToInvoices,
+                        child: Text(localizations.backToInvoices),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ],
           ],
         ),

@@ -1,0 +1,101 @@
+name: Mobile Beta1.34 Payment Flow Polish & Accessibility
+
+on:
+  push:
+    branches:
+      - feature/mobile-beta1.34
+    paths:
+      - 'apps/mobile_app/**'
+      - '.github/workflows/mobile-beta1.34-payment-flow-polish-accessibility.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'apps/mobile_app/**'
+      - '.github/workflows/mobile-beta1.34-payment-flow-polish-accessibility.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/mobile_app
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Flutter version
+        run: flutter --version
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Verify lockfile is synchronized
+        run: git diff --exit-code -- pubspec.lock
+
+      - name: Generate localizations
+        run: flutter gen-l10n
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test Beta1.34 payment flow accessibility
+        run: flutter test test/subscription_invoice_payment_accessibility_test.dart
+
+      - name: Test Beta1.33 receipt verification codec regression
+        run: flutter test test/subscription_receipt_verification_codec_test.dart
+
+      - name: Test Beta1.33 receipt verification UX regression
+        run: flutter test test/subscription_invoice_payment_receipt_verification_test.dart
+
+      - name: Test Beta1.32 native receipt print regression
+        run: flutter test test/subscription_invoice_payment_receipt_native_print_test.dart
+
+      - name: Test Beta1.31 native receipt share regression
+        run: flutter test test/subscription_invoice_payment_receipt_native_share_test.dart
+
+      - name: Test Beta1.30 receipt export regression
+        run: flutter test test/subscription_invoice_payment_receipt_export_test.dart
+
+      - name: Test Beta1.29 receipt actions regression
+        run: flutter test test/subscription_invoice_payment_receipt_actions_test.dart
+
+      - name: Test Beta1.28 receipt regression
+        run: flutter test test/subscription_invoice_payment_receipt_test.dart
+
+      - name: Test Beta1.27 payment failure and retry regression
+        run: flutter test test/subscription_invoice_payment_entry_test.dart
+
+      - name: Test invoice detail regression
+        run: flutter test test/subscription_invoice_detail_test.dart
+
+      - name: Test invoice discovery regression
+        run: flutter test test/subscription_invoices_test.dart
+
+      - name: Test invoice status presentation regression
+        run: flutter test test/subscription_invoice_status_presentation_test.dart
+
+      - name: Test billing navigation regression
+        run: flutter test test/subscription_billing_navigation_test.dart
+
+      - name: Test subscription detail regression
+        run: flutter test test/subscription_detail_test.dart
+
+      - name: Run complete Flutter test suite
+        run: flutter test
+
+      - name: Verify Beta1.34 diff
+        working-directory: .
+        run: git diff --check 4963f0b0fd1a04e36600b44b7440d3c1816def05..HEAD

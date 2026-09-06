@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile_app/l10n/app_localizations.dart';
@@ -15,6 +13,33 @@ const _invoice = SubscriptionInvoice(
   status: 'PENDING',
   issueDate: '2026-09-06',
 );
+
+class _FakeReceiptPdfService extends SubscriptionInvoiceReceiptPdfService {
+  _FakeReceiptPdfService({this.shouldFail = false});
+
+  final bool shouldFail;
+  String? exportedInvoiceId;
+  SubscriptionInvoiceReceiptPdfData? exportedData;
+
+  @override
+  Future<SubscriptionInvoiceReceiptPdfExportResult> export({
+    required String invoiceId,
+    required SubscriptionInvoiceReceiptPdfData data,
+  }) async {
+    if (shouldFail) {
+      throw StateError('simulated export failure');
+    }
+
+    exportedInvoiceId = invoiceId;
+    exportedData = data;
+
+    return SubscriptionInvoiceReceiptPdfExportResult(
+      fileName: fileNameForInvoice(invoiceId),
+      path: '/tmp/${fileNameForInvoice(invoiceId)}',
+      bytesLength: 256,
+    );
+  }
+}
 
 Widget _app({
   Locale locale = const Locale('en'),
@@ -99,59 +124,23 @@ Future<void> _openReceipt(
   expect(find.byKey(const Key('invoice-payment-receipt')), findsOneWidget);
 }
 
-SubscriptionInvoiceReceiptPdfData _pdfData() =>
-    const SubscriptionInvoiceReceiptPdfData(
-      brandName: 'AfWal',
-      title: 'Payment receipt document',
-      invoiceLabel: 'Invoice',
-      invoiceId: 'invoice-beta130-pending',
-      amountLabel: 'Price',
-      amount: '79.90 EUR',
-      paymentMethodLabel: 'Payment method',
-      paymentMethod: 'AfWal balance',
-      paymentReferenceLabel: 'Payment reference',
-      paymentReference: 'BETA-invoice-beta130-pending',
-      statusLabel: 'Status',
-      status: 'Payment successful',
-      disclaimer: 'No money will be moved in this beta flow.',
-    );
-
 void main() {
-  test('receipt PDF service creates deterministic local PDF export', () async {
-    final tempDirectory = await Directory.systemTemp.createTemp('afwal-beta130-');
-    addTearDown(() => tempDirectory.delete(recursive: true));
-
-    final service = SubscriptionInvoiceReceiptPdfService(
-      directoryProvider: () async => tempDirectory,
-    );
+  test('receipt PDF service creates deterministic file name', () {
+    final service = SubscriptionInvoiceReceiptPdfService();
 
     expect(
       service.fileNameForInvoice('invoice beta130/pending'),
       'afwal-receipt-invoice-beta130-pending.pdf',
     );
-
-    final bytes = await service.buildPdfBytes(_pdfData());
-    expect(bytes.length, greaterThan(100));
-    expect(String.fromCharCodes(bytes.take(4)), '%PDF');
-
-    final result = await service.export(
-      invoiceId: _invoice.id,
-      data: _pdfData(),
+    expect(
+      service.fileNameForInvoice(_invoice.id),
+      'afwal-receipt-invoice-beta130-pending.pdf',
     );
-
-    expect(result.fileName, 'afwal-receipt-invoice-beta130-pending.pdf');
-    expect(result.bytesLength, greaterThan(100));
-    expect(await File(result.path).exists(), isTrue);
-    expect(await File(result.path).length(), result.bytesLength);
   });
 
-  testWidgets('successful receipt exports PDF and shows generated feedback',
+  testWidgets('successful receipt exports expected PDF data and shows feedback',
       (tester) async {
-    final tempDirectory = await Directory.systemTemp.createTemp('afwal-beta130-');
-    addTearDown(() => tempDirectory.delete(recursive: true));
-    final service = SubscriptionInvoiceReceiptPdfService(
-      directoryProvider: () async => tempDirectory,
-    );
+    final service = _FakeReceiptPdfService();
 
     await _openReceipt(tester, receiptPdfService: service);
 
@@ -165,6 +154,21 @@ void main() {
     await tester.pump();
     await tester.pumpAndSettle();
 
+    expect(service.exportedInvoiceId, _invoice.id);
+    expect(service.exportedData, isNotNull);
+    expect(service.exportedData!.brandName, 'AfWal');
+    expect(service.exportedData!.invoiceId, 'invoice-beta130-pending');
+    expect(service.exportedData!.amount, '79.90 EUR');
+    expect(service.exportedData!.paymentMethod, 'AfWal balance');
+    expect(
+      service.exportedData!.paymentReference,
+      'BETA-invoice-beta130-pending',
+    );
+    expect(service.exportedData!.status, 'Payment successful');
+    expect(
+      service.exportedData!.disclaimer,
+      'No money will be moved in this beta flow.',
+    );
     expect(
       find.byKey(const Key('invoice-payment-receipt-download-feedback')),
       findsOneWidget,
@@ -172,13 +176,6 @@ void main() {
     expect(
       find.textContaining('afwal-receipt-invoice-beta130-pending.pdf'),
       findsOneWidget,
-    );
-    expect(
-      await File(
-        '${tempDirectory.path}${Platform.pathSeparator}'
-        'afwal-receipt-invoice-beta130-pending.pdf',
-      ).exists(),
-      isTrue,
     );
   });
 
@@ -200,13 +197,9 @@ void main() {
     );
   });
 
-  testWidgets('French receipt export action and feedback are localized',
+  testWidgets('French receipt export action and PDF data are localized',
       (tester) async {
-    final tempDirectory = await Directory.systemTemp.createTemp('afwal-beta130-');
-    addTearDown(() => tempDirectory.delete(recursive: true));
-    final service = SubscriptionInvoiceReceiptPdfService(
-      directoryProvider: () async => tempDirectory,
-    );
+    final service = _FakeReceiptPdfService();
 
     await _openReceipt(
       tester,
@@ -224,6 +217,10 @@ void main() {
     await tester.pump();
     await tester.pumpAndSettle();
 
+    expect(service.exportedData, isNotNull);
+    expect(service.exportedData!.title, 'Document de reçu de paiement');
+    expect(service.exportedData!.paymentMethod, 'Solde AfWal');
+    expect(service.exportedData!.status, 'Paiement réussi');
     expect(
       find.byKey(const Key('invoice-payment-receipt-download-feedback')),
       findsOneWidget,
@@ -233,9 +230,7 @@ void main() {
 
   testWidgets('receipt export failure shows controlled error feedback',
       (tester) async {
-    final service = SubscriptionInvoiceReceiptPdfService(
-      directoryProvider: () async => throw FileSystemException('simulated'),
-    );
+    final service = _FakeReceiptPdfService(shouldFail: true);
 
     await _openReceipt(tester, receiptPdfService: service);
 

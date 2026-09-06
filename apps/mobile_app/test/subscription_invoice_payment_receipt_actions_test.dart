@@ -42,6 +42,18 @@ Future<void> _ensureVisible(WidgetTester tester, Finder finder) async {
   await tester.pumpAndSettle();
 }
 
+Future<void> _waitForCopyFeedback(WidgetTester tester) async {
+  final feedback = find.byKey(
+    const Key('invoice-payment-receipt-copy-feedback'),
+  );
+
+  for (var i = 0; i < 20 && feedback.evaluate().isEmpty; i++) {
+    await tester.pump(const Duration(milliseconds: 50));
+  }
+
+  expect(feedback, findsOneWidget);
+}
+
 Future<void> _reachResult(
   WidgetTester tester, {
   Locale locale = const Locale('en'),
@@ -101,13 +113,8 @@ void main() {
     );
     await _ensureVisible(tester, copy);
     await tester.tap(copy);
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300));
+    await _waitForCopyFeedback(tester);
 
-    expect(
-      find.byKey(const Key('invoice-payment-receipt-copy-feedback')),
-      findsOneWidget,
-    );
     expect(find.text('Reference copied'), findsOneWidget);
   });
 
@@ -175,8 +182,7 @@ void main() {
     expect(find.text('Partager le reçu'), findsOneWidget);
 
     await tester.tap(copy);
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300));
+    await _waitForCopyFeedback(tester);
     expect(find.text('Référence copiée'), findsOneWidget);
 
     await tester.pump(const Duration(seconds: 5));

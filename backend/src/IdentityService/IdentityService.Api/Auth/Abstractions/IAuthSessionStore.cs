@@ -12,6 +12,12 @@ public interface IAuthSessionStore
         string refreshTokenHash,
         CancellationToken cancellationToken = default);
 
+    Task<AuthSessionStoreRotationResult> TryRotateRefreshTokenAsync(
+        string currentRefreshTokenHash,
+        string replacementRefreshTokenHash,
+        DateTimeOffset rotatedAtUtc,
+        CancellationToken cancellationToken = default);
+
     Task SaveAsync(
         AuthSession session,
         CancellationToken cancellationToken = default);

@@ -1,0 +1,65 @@
+name: Mobile Beta2.2 Auth & Session Integration
+
+on:
+  push:
+    branches:
+      - feature/mobile-beta2.2
+    paths:
+      - 'apps/mobile_app/**'
+      - '.github/workflows/mobile-beta2.2-auth-session-integration.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'apps/mobile_app/**'
+      - '.github/workflows/mobile-beta2.2-auth-session-integration.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/mobile_app
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Flutter 3.47.2
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.2'
+          cache: true
+
+      - name: Flutter version
+        run: flutter --version
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Verify lockfile is synchronized
+        run: git diff --exit-code -- pubspec.lock
+
+      - name: Generate localizations
+        run: flutter gen-l10n
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test Beta2.2 auth error parser
+        run: flutter test test/auth_error_parser_test.dart
+
+      - name: Test Beta2.2 auth remote data source
+        run: flutter test test/auth_remote_data_source_test.dart
+
+      - name: Run complete Flutter test suite
+        run: flutter test
+
+      - name: Verify diff hygiene
+        working-directory: .
+        run: git diff --check

@@ -27,59 +27,38 @@ class ApiHttpException extends ApiException {
 }
 
 class ApiUnauthorizedException extends ApiHttpException {
-  const ApiUnauthorizedException({String? responseBody})
-    : super(
-        'Authentication is required.',
-        statusCode: 401,
-        responseBody: responseBody,
-      );
+  const ApiUnauthorizedException({super.responseBody})
+    : super('Authentication is required.', statusCode: 401);
 }
 
 class ApiForbiddenException extends ApiHttpException {
-  const ApiForbiddenException({String? responseBody})
-    : super(
-        'Access is forbidden.',
-        statusCode: 403,
-        responseBody: responseBody,
-      );
+  const ApiForbiddenException({super.responseBody})
+    : super('Access is forbidden.', statusCode: 403);
 }
 
 class ApiNotFoundException extends ApiHttpException {
-  const ApiNotFoundException({String? responseBody})
-    : super(
-        'The requested resource was not found.',
-        statusCode: 404,
-        responseBody: responseBody,
-      );
+  const ApiNotFoundException({super.responseBody})
+    : super('The requested resource was not found.', statusCode: 404);
 }
 
 class ApiConflictException extends ApiHttpException {
-  const ApiConflictException({String? responseBody})
+  const ApiConflictException({super.responseBody})
     : super(
         'The request conflicts with the current resource state.',
         statusCode: 409,
-        responseBody: responseBody,
       );
 }
 
 class ApiValidationException extends ApiHttpException {
-  const ApiValidationException({String? responseBody})
-    : super(
-        'The request could not be validated.',
-        statusCode: 422,
-        responseBody: responseBody,
-      );
+  const ApiValidationException({super.responseBody})
+    : super('The request could not be validated.', statusCode: 422);
 }
 
 class ApiServerException extends ApiHttpException {
   const ApiServerException({
-    required int statusCode,
-    String? responseBody,
-  }) : super(
-         'The server could not complete the request.',
-         statusCode: statusCode,
-         responseBody: responseBody,
-       );
+    required super.statusCode,
+    super.responseBody,
+  }) : super('The server could not complete the request.');
 }
 
 class ApiMalformedResponseException extends ApiException {

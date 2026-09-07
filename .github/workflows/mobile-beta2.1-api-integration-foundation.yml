@@ -1,0 +1,65 @@
+name: Mobile Beta2.1 API Integration Foundation
+
+on:
+  push:
+    branches:
+      - feature/mobile-beta2.1
+    paths:
+      - 'apps/mobile_app/**'
+      - '.github/workflows/mobile-beta2.1-api-integration-foundation.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'apps/mobile_app/**'
+      - '.github/workflows/mobile-beta2.1-api-integration-foundation.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/mobile_app
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Flutter 3.47.2
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.2'
+          cache: true
+
+      - name: Flutter version
+        run: flutter --version
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Verify lockfile is synchronized
+        run: git diff --exit-code -- pubspec.lock
+
+      - name: Generate localizations
+        run: flutter gen-l10n
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test Beta2.1 core API client
+        run: flutter test test/api_client_test.dart
+
+      - name: Test Beta2.1 health contract
+        run: flutter test test/health_remote_data_source_test.dart
+
+      - name: Run complete Flutter test suite
+        run: flutter test
+
+      - name: Verify Beta2.1 diff
+        working-directory: .
+        run: git diff --check b07d9a32c31fefa7c7b8ddff2070f29adb186aa8..HEAD

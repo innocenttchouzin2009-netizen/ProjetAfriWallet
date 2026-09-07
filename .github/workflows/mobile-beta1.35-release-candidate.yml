@@ -1,0 +1,89 @@
+name: Mobile Beta1.35 Release Candidate
+
+on:
+  push:
+    branches:
+      - feature/mobile-beta1.35
+    paths:
+      - 'apps/mobile_app/**'
+      - '.github/workflows/mobile-beta1.35-release-candidate.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'apps/mobile_app/**'
+      - '.github/workflows/mobile-beta1.35-release-candidate.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/mobile_app
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Flutter version
+        run: flutter --version
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Verify lockfile is synchronized
+        run: git diff --exit-code -- pubspec.lock
+
+      - name: Generate localizations
+        run: flutter gen-l10n
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test app smoke and theme
+        run: flutter test test/widget_test.dart test/afwal_theme_test.dart
+
+      - name: Test onboarding and identity
+        run: flutter test test/onboarding_auth_page_test.dart test/identity_awid_page_test.dart
+
+      - name: Test wallet, send receive and transactions
+        run: flutter test test/wallet_home_page_test.dart test/send_receive_page_test.dart test/transaction_history_page_test.dart
+
+      - name: Test QR stack
+        run: flutter test test/afriwallet_qr_decoder_test.dart test/qr_scanner_page_test.dart test/qr_payment_page_test.dart test/qr_payment_review_page_test.dart test/qr_payment_flow_test.dart
+
+      - name: Test subscriptions navigation and detail
+        run: flutter test test/subscriptions_navigation_test.dart test/subscription_offer_detail_test.dart test/subscription_detail_test.dart test/subscription_activation_result_test.dart test/subscription_repository_test.dart
+
+      - name: Test billing and invoices
+        run: flutter test test/subscription_billing_navigation_test.dart test/subscription_invoices_test.dart test/subscription_invoice_detail_test.dart test/subscription_invoice_status_presentation_test.dart
+
+      - name: Test payment entry and receipt
+        run: flutter test test/subscription_invoice_payment_entry_test.dart test/subscription_invoice_payment_receipt_test.dart test/subscription_invoice_payment_receipt_actions_test.dart
+
+      - name: Test receipt export share and print
+        run: flutter test test/subscription_invoice_payment_receipt_export_test.dart test/subscription_invoice_payment_receipt_native_share_test.dart test/subscription_invoice_payment_receipt_native_print_test.dart
+
+      - name: Test receipt verification and accessibility
+        run: flutter test test/subscription_receipt_verification_codec_test.dart test/subscription_invoice_payment_receipt_verification_test.dart test/subscription_invoice_payment_accessibility_test.dart
+
+      - name: Test release boundary guards
+        run: flutter test test/mobile_beta12_boundary_test.dart test/mobile_beta13_boundary_test.dart
+
+      - name: Run complete Flutter test suite
+        run: flutter test
+
+      - name: Verify Beta1.35 diff
+        working-directory: .
+        run: git diff --check e2ca9f82ec50ecc2f6f5c35403e2a56fe661d53a..HEAD

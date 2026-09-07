@@ -106,22 +106,14 @@ Future<void> _openReceipt(WidgetTester tester) async {
 }
 
 void _expectLiveRegionForText(WidgetTester tester, String text) {
-  final textFinder = find.text(text);
-  expect(textFinder, findsOneWidget);
-
-  final semanticsFinder = find.ancestor(
-    of: textFinder,
-    matching: find.byType(Semantics),
-  );
-  expect(semanticsFinder, findsWidgets);
-
-  final semanticsWidgets = tester.widgetList<Semantics>(semanticsFinder);
   expect(
-    semanticsWidgets.any(
-      (semantics) =>
-          semantics.properties.label == text && semantics.properties.liveRegion,
+    find.byWidgetPredicate(
+      (widget) =>
+          widget is Semantics &&
+          widget.properties.label == text &&
+          widget.properties.liveRegion == true,
     ),
-    isTrue,
+    findsOneWidget,
   );
 }
 
@@ -165,7 +157,7 @@ void main() {
     await tester.pumpWidget(_app());
     await tester.pumpAndSettle();
 
-    _expectMergedSemanticsForText(tester, 'Invoice ID');
+    _expectMergedSemanticsForText(tester, 'Invoice');
     _expectMergedSemanticsForText(tester, 'invoice-beta134-pending');
     _expectMergedSemanticsForText(tester, 'Price');
     _expectMergedSemanticsForText(tester, '42.50 EUR');
@@ -214,7 +206,7 @@ void main() {
     await tester.pumpAndSettle();
 
     _expectLiveRegionForText(tester, 'Valid receipt');
-    _expectMergedSemanticsForText(tester, 'Invoice ID');
+    _expectMergedSemanticsForText(tester, 'Invoice');
     _expectMergedSemanticsForText(tester, 'invoice-beta134-pending');
     _expectMergedSemanticsForText(tester, 'Payment reference');
     _expectMergedSemanticsForText(

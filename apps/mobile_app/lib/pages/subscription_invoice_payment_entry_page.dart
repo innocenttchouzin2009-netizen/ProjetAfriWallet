@@ -657,6 +657,9 @@ class _SubscriptionInvoicePaymentEntryPageState
                       ),
                       const SizedBox(height: 8),
                       Semantics(
+                        label: _isExportingReceipt
+                            ? localizations.receiptPrintPreparing
+                            : null,
                         liveRegion: _isExportingReceipt,
                         child: OutlinedButton.icon(
                           key: const Key('invoice-payment-receipt-download'),
@@ -683,6 +686,9 @@ class _SubscriptionInvoicePaymentEntryPageState
                       ),
                       const SizedBox(height: 8),
                       Semantics(
+                        label: _isPrintingReceipt
+                            ? localizations.receiptPrintPreparing
+                            : null,
                         liveRegion: _isPrintingReceipt,
                         child: OutlinedButton.icon(
                           key: const Key('invoice-payment-receipt-print'),

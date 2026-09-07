@@ -176,11 +176,17 @@ class _SubscriptionInvoicePaymentEntryPageState
               onLayout: (_) async => pdfBytes,
             );
       if (!started && mounted) {
-        _showReceiptError(localizations.receiptPrintFailed, 'invoice-payment-receipt-print-error');
+        _showReceiptError(
+          localizations.receiptPrintFailed,
+          'invoice-payment-receipt-print-error',
+        );
       }
     } catch (_) {
       if (mounted) {
-        _showReceiptError(localizations.receiptPrintFailed, 'invoice-payment-receipt-print-error');
+        _showReceiptError(
+          localizations.receiptPrintFailed,
+          'invoice-payment-receipt-print-error',
+        );
       }
     } finally {
       if (mounted) setState(() => _isPrintingReceipt = false);
@@ -284,8 +290,10 @@ class _SubscriptionInvoicePaymentEntryPageState
           key: const Key('subscription-invoice-payment-entry-page'),
           padding: const EdgeInsets.all(16),
           children: [
-            Text(localizations.paymentSummary,
-                style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              localizations.paymentSummary,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             const SizedBox(height: 12),
             Card(
               key: const Key('subscription-invoice-payment-summary'),
@@ -294,11 +302,15 @@ class _SubscriptionInvoicePaymentEntryPageState
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _SummaryRow(label: localizations.invoiceId, value: invoice.id),
+                    _SummaryRow(
+                      label: localizations.invoiceId,
+                      value: invoice.id,
+                    ),
                     const Divider(),
                     _SummaryRow(
                       label: localizations.price,
-                      value: '${localizations.formatCurrency(invoice.amount)} ${invoice.currency}',
+                      value:
+                          '${localizations.formatCurrency(invoice.amount)} ${invoice.currency}',
                     ),
                     const Divider(),
                     _SummaryRow(
@@ -311,8 +323,10 @@ class _SubscriptionInvoicePaymentEntryPageState
             ),
             const SizedBox(height: 24),
             if (_step == _PaymentFlowStep.method) ...[
-              Text(localizations.paymentMethod,
-                  style: Theme.of(context).textTheme.titleMedium),
+              Text(
+                localizations.paymentMethod,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
               const SizedBox(height: 8),
               Text(localizations.selectPaymentMethod),
               const SizedBox(height: 8),
@@ -344,7 +358,9 @@ class _SubscriptionInvoicePaymentEntryPageState
                 key: const Key('invoice-payment-continue'),
                 onPressed: _selectedMethod == null
                     ? null
-                    : () => setState(() => _step = _PaymentFlowStep.confirmation),
+                    : () => setState(
+                          () => _step = _PaymentFlowStep.confirmation,
+                        ),
                 child: Text(localizations.continueToConfirmation),
               ),
             ],
@@ -356,8 +372,10 @@ class _SubscriptionInvoicePaymentEntryPageState
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Text(localizations.confirmPaymentQuestion,
-                          style: Theme.of(context).textTheme.titleMedium),
+                      Text(
+                        localizations.confirmPaymentQuestion,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
                       const SizedBox(height: 16),
                       _SummaryRow(
                         label: localizations.paymentMethod,
@@ -366,7 +384,8 @@ class _SubscriptionInvoicePaymentEntryPageState
                       const Divider(),
                       _SummaryRow(
                         label: localizations.price,
-                        value: '${localizations.formatCurrency(invoice.amount)} ${invoice.currency}',
+                        value:
+                            '${localizations.formatCurrency(invoice.amount)} ${invoice.currency}',
                       ),
                       const SizedBox(height: 16),
                       Text(localizations.confirmPaymentDisclaimer),
@@ -379,7 +398,9 @@ class _SubscriptionInvoicePaymentEntryPageState
                       const SizedBox(height: 8),
                       TextButton(
                         key: const Key('invoice-payment-change-method'),
-                        onPressed: () => setState(() => _step = _PaymentFlowStep.method),
+                        onPressed: () => setState(
+                          () => _step = _PaymentFlowStep.method,
+                        ),
                         child: Text(localizations.paymentMethod),
                       ),
                     ],
@@ -396,8 +417,16 @@ class _SubscriptionInvoicePaymentEntryPageState
                     children: [
                       const CircularProgressIndicator(),
                       const SizedBox(height: 16),
-                      Text(localizations.paymentProcessing,
-                          style: Theme.of(context).textTheme.titleMedium),
+                      Semantics(
+                        liveRegion: true,
+                        label: localizations.paymentProcessing,
+                        child: ExcludeSemantics(
+                          child: Text(
+                            localizations.paymentProcessing,
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                        ),
+                      ),
                       const SizedBox(height: 8),
                       Text(localizations.confirmPaymentDisclaimer),
                     ],
@@ -416,12 +445,22 @@ class _SubscriptionInvoicePaymentEntryPageState
                       children: [
                         const Icon(Icons.check_circle_outline, size: 56),
                         const SizedBox(height: 16),
-                        Text(localizations.paymentSuccessful,
-                            textAlign: TextAlign.center,
-                            style: Theme.of(context).textTheme.headlineSmall),
+                        Semantics(
+                          liveRegion: true,
+                          label: localizations.paymentSuccessful,
+                          child: ExcludeSemantics(
+                            child: Text(
+                              localizations.paymentSuccessful,
+                              textAlign: TextAlign.center,
+                              style: Theme.of(context).textTheme.headlineSmall,
+                            ),
+                          ),
+                        ),
                         const SizedBox(height: 8),
-                        Text(localizations.paymentSuccessMessage,
-                            textAlign: TextAlign.center),
+                        Text(
+                          localizations.paymentSuccessMessage,
+                          textAlign: TextAlign.center,
+                        ),
                         const SizedBox(height: 16),
                         _SummaryRow(
                           label: localizations.paymentReference,
@@ -437,7 +476,9 @@ class _SubscriptionInvoicePaymentEntryPageState
                         const SizedBox(height: 20),
                         FilledButton(
                           key: const Key('invoice-payment-view-receipt'),
-                          onPressed: () => setState(() => _step = _PaymentFlowStep.receipt),
+                          onPressed: () => setState(
+                            () => _step = _PaymentFlowStep.receipt,
+                          ),
                           child: Text(localizations.viewReceipt),
                         ),
                         const SizedBox(height: 8),
@@ -466,12 +507,22 @@ class _SubscriptionInvoicePaymentEntryPageState
                       children: [
                         const Icon(Icons.error_outline, size: 56),
                         const SizedBox(height: 16),
-                        Text(localizations.paymentFailed,
-                            textAlign: TextAlign.center,
-                            style: Theme.of(context).textTheme.headlineSmall),
+                        Semantics(
+                          liveRegion: true,
+                          label: localizations.paymentFailed,
+                          child: ExcludeSemantics(
+                            child: Text(
+                              localizations.paymentFailed,
+                              textAlign: TextAlign.center,
+                              style: Theme.of(context).textTheme.headlineSmall,
+                            ),
+                          ),
+                        ),
                         const SizedBox(height: 8),
-                        Text(localizations.paymentFailureMessage,
-                            textAlign: TextAlign.center),
+                        Text(
+                          localizations.paymentFailureMessage,
+                          textAlign: TextAlign.center,
+                        ),
                         const SizedBox(height: 16),
                         _SummaryRow(
                           label: localizations.paymentMethod,
@@ -496,7 +547,8 @@ class _SubscriptionInvoicePaymentEntryPageState
                   ),
                 ),
             ],
-            if (_step == _PaymentFlowStep.receipt && verificationCode != null) ...[
+            if (_step == _PaymentFlowStep.receipt &&
+                verificationCode != null) ...[
               Card(
                 key: const Key('invoice-payment-receipt'),
                 child: Padding(
@@ -504,17 +556,31 @@ class _SubscriptionInvoicePaymentEntryPageState
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const Icon(Icons.receipt_long_outlined, size: 56),
+                      const ExcludeSemantics(
+                        child: Icon(Icons.receipt_long_outlined, size: 56),
+                      ),
                       const SizedBox(height: 16),
-                      Text(localizations.paymentReceipt,
-                          textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.headlineSmall),
+                      Semantics(
+                        liveRegion: true,
+                        label: localizations.paymentReceipt,
+                        child: ExcludeSemantics(
+                          child: Text(
+                            localizations.paymentReceipt,
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.headlineSmall,
+                          ),
+                        ),
+                      ),
                       const SizedBox(height: 20),
-                      _SummaryRow(label: localizations.invoiceId, value: invoice.id),
+                      _SummaryRow(
+                        label: localizations.invoiceId,
+                        value: invoice.id,
+                      ),
                       const Divider(),
                       _SummaryRow(
                         label: localizations.price,
-                        value: '${localizations.formatCurrency(invoice.amount)} ${invoice.currency}',
+                        value:
+                            '${localizations.formatCurrency(invoice.amount)} ${invoice.currency}',
                       ),
                       const Divider(),
                       _SummaryRow(
@@ -537,7 +603,9 @@ class _SubscriptionInvoicePaymentEntryPageState
                         image: true,
                         child: Center(
                           child: QrImageView(
-                            key: const Key('invoice-payment-receipt-verification-qr'),
+                            key: const Key(
+                              'invoice-payment-receipt-verification-qr',
+                            ),
                             data: verificationCode,
                             version: QrVersions.auto,
                             size: 180,
@@ -566,49 +634,84 @@ class _SubscriptionInvoicePaymentEntryPageState
                       Text(localizations.confirmPaymentDisclaimer),
                       const SizedBox(height: 20),
                       OutlinedButton.icon(
-                        key: const Key('invoice-payment-receipt-copy-reference'),
-                        onPressed: () => _copyPaymentReference(paymentReference, localizations),
+                        key: const Key(
+                          'invoice-payment-receipt-copy-reference',
+                        ),
+                        onPressed: () => _copyPaymentReference(
+                          paymentReference,
+                          localizations,
+                        ),
                         icon: const Icon(Icons.copy_outlined),
                         label: Text(localizations.copyReference),
                       ),
                       const SizedBox(height: 8),
                       OutlinedButton.icon(
                         key: const Key('invoice-payment-receipt-share'),
-                        onPressed: () => _shareReceipt(localizations, invoice, paymentReference),
+                        onPressed: () => _shareReceipt(
+                          localizations,
+                          invoice,
+                          paymentReference,
+                        ),
                         icon: const Icon(Icons.share_outlined),
                         label: Text(localizations.shareReceipt),
                       ),
                       const SizedBox(height: 8),
-                      OutlinedButton.icon(
-                        key: const Key('invoice-payment-receipt-download'),
-                        onPressed: _isExportingReceipt
-                            ? null
-                            : () => _exportReceipt(localizations, invoice, paymentReference),
-                        icon: _isExportingReceipt
-                            ? const SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              )
-                            : const Icon(Icons.download_outlined),
-                        label: Text(localizations.downloadReceipt),
+                      Semantics(
+                        label: _isExportingReceipt
+                            ? localizations.receiptPrintPreparing
+                            : null,
+                        liveRegion: _isExportingReceipt,
+                        child: OutlinedButton.icon(
+                          key: const Key('invoice-payment-receipt-download'),
+                          onPressed: _isExportingReceipt
+                              ? null
+                              : () => _exportReceipt(
+                                    localizations,
+                                    invoice,
+                                    paymentReference,
+                                  ),
+                          icon: _isExportingReceipt
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : const Icon(Icons.download_outlined),
+                          label: Text(
+                            _isExportingReceipt
+                                ? localizations.receiptPrintPreparing
+                                : localizations.downloadReceipt,
+                          ),
+                        ),
                       ),
                       const SizedBox(height: 8),
-                      OutlinedButton.icon(
-                        key: const Key('invoice-payment-receipt-print'),
-                        onPressed: _isPrintingReceipt
-                            ? null
-                            : () => _printReceipt(localizations, invoice, paymentReference),
-                        icon: _isPrintingReceipt
-                            ? const SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              )
-                            : const Icon(Icons.print_outlined),
-                        label: Text(_isPrintingReceipt
+                      Semantics(
+                        label: _isPrintingReceipt
                             ? localizations.receiptPrintPreparing
-                            : localizations.printReceipt),
+                            : null,
+                        liveRegion: _isPrintingReceipt,
+                        child: OutlinedButton.icon(
+                          key: const Key('invoice-payment-receipt-print'),
+                          onPressed: _isPrintingReceipt
+                              ? null
+                              : () => _printReceipt(
+                                    localizations,
+                                    invoice,
+                                    paymentReference,
+                                  ),
+                          icon: _isPrintingReceipt
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : const Icon(Icons.print_outlined),
+                          label: Text(
+                            _isPrintingReceipt
+                                ? localizations.receiptPrintPreparing
+                                : localizations.printReceipt,
+                          ),
+                        ),
                       ),
                       const SizedBox(height: 8),
                       FilledButton(
@@ -618,7 +721,9 @@ class _SubscriptionInvoicePaymentEntryPageState
                       ),
                       const SizedBox(height: 8),
                       OutlinedButton(
-                        key: const Key('invoice-payment-receipt-back-to-invoices'),
+                        key: const Key(
+                          'invoice-payment-receipt-back-to-invoices',
+                        ),
                         onPressed: _returnToInvoices,
                         child: Text(localizations.backToInvoices),
                       ),
@@ -642,15 +747,17 @@ class _SummaryRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label, style: Theme.of(context).textTheme.labelMedium),
-          const SizedBox(height: 4),
-          Text(value, style: Theme.of(context).textTheme.bodyLarge),
-        ],
+    return MergeSemantics(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(label, style: Theme.of(context).textTheme.labelMedium),
+            const SizedBox(height: 4),
+            Text(value, style: Theme.of(context).textTheme.bodyLarge),
+          ],
+        ),
       ),
     );
   }

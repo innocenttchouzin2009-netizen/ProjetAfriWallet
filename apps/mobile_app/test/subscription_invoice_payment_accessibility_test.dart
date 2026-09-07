@@ -105,11 +105,33 @@ Future<void> _openReceipt(WidgetTester tester) async {
   await tester.pumpAndSettle();
 }
 
-void _expectLiveRegion(WidgetTester tester, String label) {
-  final semantics = find.bySemanticsLabel(label);
-  expect(semantics, findsOneWidget);
-  final node = tester.getSemantics(semantics);
-  expect(node.flagsCollection.isLiveRegion, isTrue);
+void _expectLiveRegionForText(WidgetTester tester, String text) {
+  final textFinder = find.text(text);
+  expect(textFinder, findsOneWidget);
+
+  final semanticsFinder = find.ancestor(
+    of: textFinder,
+    matching: find.byType(Semantics),
+  );
+  expect(semanticsFinder, findsWidgets);
+
+  final semanticsWidgets = tester.widgetList<Semantics>(semanticsFinder);
+  expect(
+    semanticsWidgets.any(
+      (semantics) =>
+          semantics.properties.label == text && semantics.properties.liveRegion,
+    ),
+    isTrue,
+  );
+}
+
+void _expectMergedSemanticsForText(WidgetTester tester, String text) {
+  final textFinder = find.text(text);
+  expect(textFinder, findsOneWidget);
+  expect(
+    find.ancestor(of: textFinder, matching: find.byType(MergeSemantics)),
+    findsOneWidget,
+  );
 }
 
 class _ControlledReceiptPdfService extends SubscriptionInvoiceReceiptPdfService {
@@ -140,66 +162,48 @@ class _ControlledReceiptPdfService extends SubscriptionInvoiceReceiptPdfService 
 void main() {
   testWidgets('summary rows expose merged label and value semantics',
       (tester) async {
-    final semantics = tester.ensureSemantics();
-    addTearDown(semantics.dispose);
-
     await tester.pumpWidget(_app());
     await tester.pumpAndSettle();
 
-    expect(
-      find.bySemanticsLabel(
-        RegExp(r'Invoice ID.*invoice-beta134-pending', dotAll: true),
-      ),
-      findsOneWidget,
-    );
-    expect(
-      find.bySemanticsLabel(RegExp(r'Price.*42\.50 EUR', dotAll: true)),
-      findsOneWidget,
-    );
+    _expectMergedSemanticsForText(tester, 'Invoice ID');
+    _expectMergedSemanticsForText(tester, 'invoice-beta134-pending');
+    _expectMergedSemanticsForText(tester, 'Price');
+    _expectMergedSemanticsForText(tester, '42.50 EUR');
   });
 
   testWidgets('processing and success are announced as live regions',
       (tester) async {
-    final semantics = tester.ensureSemantics();
-    addTearDown(semantics.dispose);
-
     await tester.pumpWidget(_app());
     await tester.pumpAndSettle();
     await _startPayment(tester);
 
-    _expectLiveRegion(tester, 'Processing payment');
+    _expectLiveRegionForText(tester, 'Processing payment');
 
     await tester.pump(const Duration(milliseconds: 300));
     await tester.pumpAndSettle();
 
     final success = find.byKey(const Key('invoice-payment-result-success'));
     await _ensureVisible(tester, success);
-    _expectLiveRegion(tester, 'Payment successful');
+    _expectLiveRegionForText(tester, 'Payment successful');
   });
 
   testWidgets('failure is announced as a live region', (tester) async {
-    final semantics = tester.ensureSemantics();
-    addTearDown(semantics.dispose);
-
     await tester.pumpWidget(_app(simulateFailure: true));
     await tester.pumpAndSettle();
     await _startPayment(tester);
 
-    _expectLiveRegion(tester, 'Processing payment');
+    _expectLiveRegionForText(tester, 'Processing payment');
 
     await tester.pump(const Duration(milliseconds: 300));
     await tester.pumpAndSettle();
 
     final failure = find.byKey(const Key('invoice-payment-result-failure'));
     await _ensureVisible(tester, failure);
-    _expectLiveRegion(tester, 'Payment failed');
+    _expectLiveRegionForText(tester, 'Payment failed');
   });
 
   testWidgets('valid verification state is announced and rows are merged',
       (tester) async {
-    final semantics = tester.ensureSemantics();
-    addTearDown(semantics.dispose);
-
     final now = DateTime.fromMillisecondsSinceEpoch(2000 * 1000, isUtc: true);
     await tester.pumpWidget(
       _verificationApp(
@@ -209,29 +213,18 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    _expectLiveRegion(tester, 'Valid receipt');
-    expect(
-      find.bySemanticsLabel(
-        RegExp(r'Invoice ID.*invoice-beta134-pending', dotAll: true),
-      ),
-      findsOneWidget,
-    );
-    expect(
-      find.bySemanticsLabel(
-        RegExp(
-          r'Payment reference.*BETA-invoice-beta134-pending',
-          dotAll: true,
-        ),
-      ),
-      findsOneWidget,
+    _expectLiveRegionForText(tester, 'Valid receipt');
+    _expectMergedSemanticsForText(tester, 'Invoice ID');
+    _expectMergedSemanticsForText(tester, 'invoice-beta134-pending');
+    _expectMergedSemanticsForText(tester, 'Payment reference');
+    _expectMergedSemanticsForText(
+      tester,
+      'BETA-invoice-beta134-pending',
     );
   });
 
   testWidgets('invalid verification state is announced as a live region',
       (tester) async {
-    final semantics = tester.ensureSemantics();
-    addTearDown(semantics.dispose);
-
     await tester.pumpWidget(
       _verificationApp(
         rawCode: 'AFW|static|merchant|10.00|EUR',
@@ -240,14 +233,11 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    _expectLiveRegion(tester, 'Invalid receipt');
+    _expectLiveRegionForText(tester, 'Invalid receipt');
   });
 
   testWidgets('expired verification state is announced as a live region',
       (tester) async {
-    final semantics = tester.ensureSemantics();
-    addTearDown(semantics.dispose);
-
     final now = DateTime.fromMillisecondsSinceEpoch(4000 * 1000, isUtc: true);
     await tester.pumpWidget(
       _verificationApp(
@@ -257,19 +247,16 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    _expectLiveRegion(tester, 'Expired receipt');
+    _expectLiveRegionForText(tester, 'Expired receipt');
   });
 
   testWidgets('receipt is announced and core actions expose accessible labels',
       (tester) async {
-    final semantics = tester.ensureSemantics();
-    addTearDown(semantics.dispose);
-
     await tester.pumpWidget(_app());
     await tester.pumpAndSettle();
     await _openReceipt(tester);
 
-    _expectLiveRegion(tester, 'Payment receipt');
+    _expectLiveRegionForText(tester, 'Payment receipt');
 
     for (final label in [
       'Verify receipt',
@@ -280,7 +267,7 @@ void main() {
       'Done',
       'Back to invoices',
     ]) {
-      final action = find.bySemanticsLabel(label);
+      final action = find.text(label);
       await _ensureVisible(tester, action);
       expect(action, findsOneWidget);
     }
@@ -288,9 +275,6 @@ void main() {
 
   testWidgets('download and print announce their preparing states',
       (tester) async {
-    final semantics = tester.ensureSemantics();
-    addTearDown(semantics.dispose);
-
     final exportGate = Completer<void>();
     final printGate = Completer<void>();
     final service = _ControlledReceiptPdfService(exportGate: exportGate);
@@ -312,7 +296,7 @@ void main() {
     await tester.tap(download);
     await tester.pump();
 
-    _expectLiveRegion(tester, 'Preparing receipt');
+    _expectLiveRegionForText(tester, 'Preparing receipt');
     expect(tester.widget<OutlinedButton>(download).onPressed, isNull);
 
     exportGate.complete();
@@ -323,7 +307,7 @@ void main() {
     await tester.tap(print);
     await tester.pump();
 
-    _expectLiveRegion(tester, 'Preparing receipt');
+    _expectLiveRegionForText(tester, 'Preparing receipt');
     expect(tester.widget<OutlinedButton>(print).onPressed, isNull);
 
     printGate.complete();

@@ -3,7 +3,7 @@ name: AFW-BE-AUTH-1 Backend Auth Foundation
 on:
   push:
     branches:
-      - feature/backend-auth-1
+      - fix/backend-auth-1-certification
     paths:
       - 'AfriWallet.sln'
       - 'backend/src/IdentityService/**'

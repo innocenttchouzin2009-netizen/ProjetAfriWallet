@@ -180,7 +180,9 @@ await RunAsync("concurrent refresh attempts allow one rotation and detect reuse"
     Assert(persisted!.Status == AuthSessionStatus.Revoked, "Concurrent reuse detection must revoke the compromised session.");
 });
 
-Console.WriteLine("IdentityService.Auth security and session lifecycle scenarios passed.");
+await PersistenceCertification.RunAsync();
+
+Console.WriteLine("IdentityService.Auth security, session lifecycle and persistence scenarios passed.");
 
 static void Run(string name, Action scenario)
 {

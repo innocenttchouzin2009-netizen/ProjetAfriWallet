@@ -28,10 +28,14 @@ jobs:
     timeout-minutes: 20
 
     steps:
-      - name: Checkout
+      - name: Checkout exact certification target
         uses: actions/checkout@v4
         with:
+          ref: aa2447835d14d7c97e625bc65f86a51457dd150a
           fetch-depth: 0
+
+      - name: Verify exact certification SHA
+        run: test "$(git rev-parse HEAD)" = "aa2447835d14d7c97e625bc65f86a51457dd150a"
 
       - name: Set up .NET 10
         uses: actions/setup-dotnet@v4

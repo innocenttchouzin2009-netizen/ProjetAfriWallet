@@ -8,9 +8,12 @@ public sealed class AuthDbContext(DbContextOptions<AuthDbContext> options) : DbC
 
     public DbSet<AuthSessionEntity> Sessions => Set<AuthSessionEntity>();
 
+    public DbSet<AuthConsumedRefreshTokenEntity> ConsumedRefreshTokens => Set<AuthConsumedRefreshTokenEntity>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfiguration(new AuthUserEntityConfiguration());
         modelBuilder.ApplyConfiguration(new AuthSessionEntityConfiguration());
+        modelBuilder.ApplyConfiguration(new AuthConsumedRefreshTokenEntityConfiguration());
     }
 }

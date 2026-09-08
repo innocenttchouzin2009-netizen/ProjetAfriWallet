@@ -24,10 +24,9 @@ class AuthRemoteDataSourceException implements Exception {
 
 class ApiAuthRemoteDataSource implements AuthRemoteDataSource {
   const ApiAuthRemoteDataSource({
-    required ApiClient apiClient,
-    AuthErrorParser errorParser = const AuthErrorParser(),
-  }) : _apiClient = apiClient,
-       _errorParser = errorParser;
+    required this._apiClient,
+    this._errorParser = const AuthErrorParser(),
+  });
 
   static const String loginPath = '/api/v1/auth/login';
   static const String refreshPath = '/api/v1/auth/refresh';

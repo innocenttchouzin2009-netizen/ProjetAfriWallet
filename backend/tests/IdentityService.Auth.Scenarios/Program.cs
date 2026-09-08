@@ -181,8 +181,9 @@ await RunAsync("concurrent refresh attempts allow one rotation and detect reuse"
 });
 
 await PersistenceCertification.RunAsync();
+await MigrationLifecycleCertification.RunAsync();
 
-Console.WriteLine("IdentityService.Auth security, session lifecycle and persistence scenarios passed.");
+Console.WriteLine("IdentityService.Auth security, session lifecycle, persistence and migration scenarios passed.");
 
 static void Run(string name, Action scenario)
 {

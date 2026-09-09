@@ -7,6 +7,7 @@ on:
     paths:
       - 'backend/src/Ledger/**'
       - 'backend/tests/Ledger.Domain.Scenarios/**'
+      - 'backend/tests/Ledger.Application.Scenarios/**'
       - '.github/workflows/backend-ledger-1.yml'
   pull_request:
     branches:
@@ -14,6 +15,7 @@ on:
     paths:
       - 'backend/src/Ledger/**'
       - 'backend/tests/Ledger.Domain.Scenarios/**'
+      - 'backend/tests/Ledger.Application.Scenarios/**'
       - '.github/workflows/backend-ledger-1.yml'
   workflow_dispatch:
 
@@ -36,3 +38,9 @@ jobs:
 
       - name: Run Ledger Domain scenarios
         run: dotnet run --project backend/tests/Ledger.Domain.Scenarios/Ledger.Domain.Scenarios.csproj --configuration Release
+
+      - name: Build Ledger Application
+        run: dotnet build backend/src/Ledger/Ledger.Application/Ledger.Application.csproj --configuration Release --nologo
+
+      - name: Run Ledger Application scenarios
+        run: dotnet run --project backend/tests/Ledger.Application.Scenarios/Ledger.Application.Scenarios.csproj --configuration Release

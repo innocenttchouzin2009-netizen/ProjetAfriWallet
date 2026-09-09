@@ -6,6 +6,7 @@ on:
       - feature/backend-ledger-1
     paths:
       - 'backend/src/Ledger/**'
+      - 'backend/src/IdentityService/IdentityService.Api/**'
       - 'backend/tests/Ledger.Domain.Scenarios/**'
       - 'backend/tests/Ledger.Application.Scenarios/**'
       - 'backend/tests/Ledger.Persistence.Scenarios/**'
@@ -15,6 +16,7 @@ on:
       - main
     paths:
       - 'backend/src/Ledger/**'
+      - 'backend/src/IdentityService/IdentityService.Api/**'
       - 'backend/tests/Ledger.Domain.Scenarios/**'
       - 'backend/tests/Ledger.Application.Scenarios/**'
       - 'backend/tests/Ledger.Persistence.Scenarios/**'
@@ -52,3 +54,6 @@ jobs:
 
       - name: Run Ledger Persistence scenarios
         run: dotnet run --project backend/tests/Ledger.Persistence.Scenarios/Ledger.Persistence.Scenarios.csproj --configuration Release
+
+      - name: Build Identity API with Ledger HTTP surface
+        run: dotnet build backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj --configuration Release --nologo

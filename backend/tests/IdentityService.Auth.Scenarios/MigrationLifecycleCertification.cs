@@ -1,5 +1,6 @@
 using IdentityService.Api.Auth.Domain;
 using IdentityService.Api.Auth.Persistence;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
@@ -89,6 +90,8 @@ internal static class MigrationLifecycleCertification
         }
         finally
         {
+            SqliteConnection.ClearAllPools();
+
             if (File.Exists(databasePath))
             {
                 File.Delete(databasePath);

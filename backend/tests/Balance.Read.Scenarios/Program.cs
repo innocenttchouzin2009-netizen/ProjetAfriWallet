@@ -28,9 +28,10 @@ static async Task NormalizedKeyIsPassedToReader()
 
     await service.ReadAsync(new BalanceKey(account, " xaf "));
 
-    Assert(reader.LastKey is { } key, "Expected ledger reader to receive a balance key.");
-    Assert(key.AccountId == account, "Ledger reader received the wrong account.");
-    Assert(key.CurrencyCode == "XAF", "Ledger reader must receive the normalized currency.");
+    var key = reader.LastKey;
+    Assert(key.HasValue, "Expected ledger reader to receive a balance key.");
+    Assert(key.Value.AccountId == account, "Ledger reader received the wrong account.");
+    Assert(key.Value.CurrencyCode == "XAF", "Ledger reader must receive the normalized currency.");
 }
 
 static async Task LedgerJournalsAreProjected()

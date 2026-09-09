@@ -89,6 +89,9 @@ internal static class MigrationLifecycleCertification
         }
         finally
         {
+            Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
             if (File.Exists(databasePath))
             {
                 File.Delete(databasePath);

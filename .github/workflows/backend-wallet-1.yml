@@ -7,6 +7,7 @@ on:
     paths:
       - 'backend/src/Wallet/**'
       - 'backend/tests/Wallet.Domain.Scenarios/**'
+      - 'backend/tests/Wallet.Application.Scenarios/**'
       - '.github/workflows/backend-wallet-1.yml'
   pull_request:
     branches:
@@ -14,6 +15,7 @@ on:
     paths:
       - 'backend/src/Wallet/**'
       - 'backend/tests/Wallet.Domain.Scenarios/**'
+      - 'backend/tests/Wallet.Application.Scenarios/**'
       - '.github/workflows/backend-wallet-1.yml'
   workflow_dispatch:
 
@@ -36,3 +38,9 @@ jobs:
 
       - name: Run Wallet Domain scenarios
         run: dotnet run --project backend/tests/Wallet.Domain.Scenarios/Wallet.Domain.Scenarios.csproj --configuration Release
+
+      - name: Build Wallet Application
+        run: dotnet build backend/src/Wallet/Wallet.Application/Wallet.Application.csproj --configuration Release --nologo
+
+      - name: Run Wallet Application scenarios
+        run: dotnet run --project backend/tests/Wallet.Application.Scenarios/Wallet.Application.Scenarios.csproj --configuration Release

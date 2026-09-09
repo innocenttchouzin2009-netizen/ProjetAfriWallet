@@ -6,6 +6,7 @@ on:
       - feature/backend-wallet-1
     paths:
       - 'backend/src/Wallet/**'
+      - 'backend/src/IdentityService/IdentityService.Api/**'
       - 'backend/tests/Wallet.Domain.Scenarios/**'
       - 'backend/tests/Wallet.Application.Scenarios/**'
       - 'backend/tests/Wallet.Persistence.Scenarios/**'
@@ -15,6 +16,7 @@ on:
       - main
     paths:
       - 'backend/src/Wallet/**'
+      - 'backend/src/IdentityService/IdentityService.Api/**'
       - 'backend/tests/Wallet.Domain.Scenarios/**'
       - 'backend/tests/Wallet.Application.Scenarios/**'
       - 'backend/tests/Wallet.Persistence.Scenarios/**'
@@ -52,3 +54,6 @@ jobs:
 
       - name: Run Wallet Persistence scenarios
         run: dotnet run --project backend/tests/Wallet.Persistence.Scenarios/Wallet.Persistence.Scenarios.csproj --configuration Release
+
+      - name: Build Identity API with Wallet HTTP surface
+        run: dotnet build backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj --configuration Release --nologo

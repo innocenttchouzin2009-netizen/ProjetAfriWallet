@@ -8,6 +8,7 @@ on:
       - 'backend/src/Wallet/**'
       - 'backend/tests/Wallet.Domain.Scenarios/**'
       - 'backend/tests/Wallet.Application.Scenarios/**'
+      - 'backend/tests/Wallet.Persistence.Scenarios/**'
       - '.github/workflows/backend-wallet-1.yml'
   pull_request:
     branches:
@@ -16,6 +17,7 @@ on:
       - 'backend/src/Wallet/**'
       - 'backend/tests/Wallet.Domain.Scenarios/**'
       - 'backend/tests/Wallet.Application.Scenarios/**'
+      - 'backend/tests/Wallet.Persistence.Scenarios/**'
       - '.github/workflows/backend-wallet-1.yml'
   workflow_dispatch:
 
@@ -44,3 +46,9 @@ jobs:
 
       - name: Run Wallet Application scenarios
         run: dotnet run --project backend/tests/Wallet.Application.Scenarios/Wallet.Application.Scenarios.csproj --configuration Release
+
+      - name: Build Wallet Persistence
+        run: dotnet build backend/src/Wallet/Wallet.Persistence/Wallet.Persistence.csproj --configuration Release --nologo
+
+      - name: Run Wallet Persistence scenarios
+        run: dotnet run --project backend/tests/Wallet.Persistence.Scenarios/Wallet.Persistence.Scenarios.csproj --configuration Release

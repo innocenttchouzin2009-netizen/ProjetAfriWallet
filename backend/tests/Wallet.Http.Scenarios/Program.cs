@@ -6,6 +6,7 @@ using AfriWallet.Wallet.Application;
 using AfriWallet.Wallet.Domain;
 using IdentityService.Api.Wallet;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;

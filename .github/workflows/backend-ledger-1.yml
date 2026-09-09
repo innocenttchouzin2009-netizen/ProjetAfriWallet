@@ -10,6 +10,7 @@ on:
       - 'backend/tests/Ledger.Domain.Scenarios/**'
       - 'backend/tests/Ledger.Application.Scenarios/**'
       - 'backend/tests/Ledger.Persistence.Scenarios/**'
+      - 'backend/tests/Ledger.Http.Scenarios/**'
       - '.github/workflows/backend-ledger-1.yml'
   pull_request:
     branches:
@@ -20,6 +21,7 @@ on:
       - 'backend/tests/Ledger.Domain.Scenarios/**'
       - 'backend/tests/Ledger.Application.Scenarios/**'
       - 'backend/tests/Ledger.Persistence.Scenarios/**'
+      - 'backend/tests/Ledger.Http.Scenarios/**'
       - '.github/workflows/backend-ledger-1.yml'
   workflow_dispatch:
 
@@ -57,3 +59,6 @@ jobs:
 
       - name: Build Identity API with Ledger HTTP surface
         run: dotnet build backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj --configuration Release --nologo
+
+      - name: Run Ledger HTTP security scenarios
+        run: dotnet run --project backend/tests/Ledger.Http.Scenarios/Ledger.Http.Scenarios.csproj --configuration Release

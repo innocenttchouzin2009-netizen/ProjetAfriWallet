@@ -79,3 +79,32 @@ jobs:
 
       - name: Verify diff cleanliness
         run: git diff --check
+
+  certify-commit-3:
+    name: Certify Commit 3 — Session Lifecycle & Refresh Rotation
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout Commit 3
+        uses: actions/checkout@v4
+        with:
+          ref: 55ed7bc41a6a5472f67ba3869512a3525d7839b3
+          fetch-depth: 0
+
+      - name: Set up .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build IdentityService.Api
+        run: dotnet build backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj --no-restore
+
+      - name: Run AFW-BE-AUTH-1 scenarios
+        run: dotnet run --project backend/tests/IdentityService.Auth.Scenarios
+
+      - name: Verify diff cleanliness
+        run: git diff --check

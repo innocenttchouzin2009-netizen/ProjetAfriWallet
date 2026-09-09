@@ -1,5 +1,6 @@
 name: AFW-BE-AUTH-1 Backend Auth Foundation
 
+# Reconciliation certification: feature/backend-auth-1 synced with current main.
 on:
   push:
     branches:
@@ -41,6 +42,96 @@ jobs:
 
       - name: Restore IdentityService.Auth scenarios
         run: dotnet restore
+
+      - name: Build IdentityService.Api
+        run: dotnet build backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj --no-restore
+
+      - name: Run AFW-BE-AUTH-1 scenarios
+        run: dotnet run --project backend/tests/IdentityService.Auth.Scenarios
+
+      - name: Verify diff cleanliness
+        run: git diff --check
+
+  certify-commit-2:
+    name: Certify Commit 2 — Authentication Security Primitives
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout Commit 2
+        uses: actions/checkout@v4
+        with:
+          ref: 5be0eef3eb9a0480e34592ba830168df3764d836
+          fetch-depth: 0
+
+      - name: Set up .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore historical OpenAPI dependency
+        run: dotnet add backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj package Microsoft.AspNetCore.OpenApi --version 10.0.11
+
+      - name: Restore
+        run: dotnet restore backend/tests/IdentityService.Auth.Scenarios/IdentityService.Auth.Scenarios.csproj
+
+      - name: Build IdentityService.Api
+        run: dotnet build backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj --no-restore
+
+      - name: Run AFW-BE-AUTH-1 scenarios
+        run: dotnet run --project backend/tests/IdentityService.Auth.Scenarios
+
+      - name: Verify diff cleanliness
+        run: git diff --check
+
+  certify-commit-3:
+    name: Certify Commit 3 — Session Lifecycle & Refresh Rotation
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout Commit 3
+        uses: actions/checkout@v4
+        with:
+          ref: 55ed7bc41a6a5472f67ba3869512a3525d7839b3
+          fetch-depth: 0
+
+      - name: Set up .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore
+        run: dotnet restore backend/tests/IdentityService.Auth.Scenarios/IdentityService.Auth.Scenarios.csproj
+
+      - name: Build IdentityService.Api
+        run: dotnet build backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj --no-restore
+
+      - name: Run AFW-BE-AUTH-1 scenarios
+        run: dotnet run --project backend/tests/IdentityService.Auth.Scenarios
+
+      - name: Verify diff cleanliness
+        run: git diff --check
+
+  certify-commit-4:
+    name: Certify Commit 4 — Auth Application Service & Contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout Commit 4
+        uses: actions/checkout@v4
+        with:
+          ref: 22b34ac2725e0ee48da2141c876fd4e41e6dfa77
+          fetch-depth: 0
+
+      - name: Set up .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore
+        run: dotnet restore backend/tests/IdentityService.Auth.Scenarios/IdentityService.Auth.Scenarios.csproj
 
       - name: Build IdentityService.Api
         run: dotnet build backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj --no-restore

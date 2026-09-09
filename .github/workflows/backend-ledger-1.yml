@@ -8,6 +8,7 @@ on:
       - 'backend/src/Ledger/**'
       - 'backend/tests/Ledger.Domain.Scenarios/**'
       - 'backend/tests/Ledger.Application.Scenarios/**'
+      - 'backend/tests/Ledger.Persistence.Scenarios/**'
       - '.github/workflows/backend-ledger-1.yml'
   pull_request:
     branches:
@@ -16,6 +17,7 @@ on:
       - 'backend/src/Ledger/**'
       - 'backend/tests/Ledger.Domain.Scenarios/**'
       - 'backend/tests/Ledger.Application.Scenarios/**'
+      - 'backend/tests/Ledger.Persistence.Scenarios/**'
       - '.github/workflows/backend-ledger-1.yml'
   workflow_dispatch:
 
@@ -44,3 +46,9 @@ jobs:
 
       - name: Run Ledger Application scenarios
         run: dotnet run --project backend/tests/Ledger.Application.Scenarios/Ledger.Application.Scenarios.csproj --configuration Release
+
+      - name: Build Ledger Persistence
+        run: dotnet build backend/src/Ledger/Ledger.Persistence/Ledger.Persistence.csproj --configuration Release --nologo
+
+      - name: Run Ledger Persistence scenarios
+        run: dotnet run --project backend/tests/Ledger.Persistence.Scenarios/Ledger.Persistence.Scenarios.csproj --configuration Release

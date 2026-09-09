@@ -10,6 +10,7 @@ on:
       - 'backend/tests/Wallet.Domain.Scenarios/**'
       - 'backend/tests/Wallet.Application.Scenarios/**'
       - 'backend/tests/Wallet.Persistence.Scenarios/**'
+      - 'backend/tests/Wallet.Http.Scenarios/**'
       - '.github/workflows/backend-wallet-1.yml'
   pull_request:
     branches:
@@ -20,6 +21,7 @@ on:
       - 'backend/tests/Wallet.Domain.Scenarios/**'
       - 'backend/tests/Wallet.Application.Scenarios/**'
       - 'backend/tests/Wallet.Persistence.Scenarios/**'
+      - 'backend/tests/Wallet.Http.Scenarios/**'
       - '.github/workflows/backend-wallet-1.yml'
   workflow_dispatch:
 
@@ -57,3 +59,6 @@ jobs:
 
       - name: Build Identity API with Wallet HTTP surface
         run: dotnet build backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj --configuration Release --nologo
+
+      - name: Run Wallet HTTP security scenarios
+        run: dotnet run --project backend/tests/Wallet.Http.Scenarios/Wallet.Http.Scenarios.csproj --configuration Release

@@ -1,5 +1,7 @@
 using System.Text;
 using System.Text.Json;
+using AfriWallet.Wallet.Application;
+using AfriWallet.Wallet.Persistence;
 using IdentityService.Api.Auth.Abstractions;
 using IdentityService.Api.Auth.Application;
 using IdentityService.Api.Auth.Contracts;
@@ -8,6 +10,7 @@ using IdentityService.Api.Auth.Endpoints;
 using IdentityService.Api.Auth.Lifecycle;
 using IdentityService.Api.Auth.Persistence;
 using IdentityService.Api.Auth.Security;
+using IdentityService.Api.Wallet;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -27,8 +30,14 @@ var jwtOptions = new JwtAccessTokenOptions(
 var authConnectionString = builder.Configuration.GetConnectionString("AuthDatabase") ??
     throw new InvalidOperationException("Auth database connection string is not configured.");
 
+var walletConnectionString = builder.Configuration.GetConnectionString("WalletDatabase") ??
+    Environment.GetEnvironmentVariable("AFW_WALLET_DB_CONNECTION_STRING") ??
+    "Data Source=wallet-registry.db";
+
 builder.Services.AddDbContext<AuthDbContext>(options =>
     options.UseSqlite(authConnectionString));
+builder.Services.AddDbContext<WalletDbContext>(options =>
+    options.UseSqlite(walletConnectionString));
 
 builder.Services.AddSingleton(jwtOptions);
 builder.Services.AddSingleton<IClock, SystemClock>();
@@ -42,6 +51,10 @@ builder.Services.AddSingleton(AuthSessionOptions.Default);
 builder.Services.AddSingleton(AuthApplicationOptions.Default);
 builder.Services.AddScoped<AuthSessionLifecycleService>();
 builder.Services.AddScoped<AuthApplicationService>();
+
+builder.Services.AddScoped<IWalletRepository, EfWalletRepository>();
+builder.Services.AddSingleton<ISupportedCurrencyPolicy, ConfiguredSupportedCurrencyPolicy>();
+builder.Services.AddScoped<WalletRegistryApplicationService>();
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -135,5 +148,6 @@ app.UseAuthorization();
 
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
 app.MapAuthEndpoints();
+app.MapWalletEndpoints();
 
 app.Run();

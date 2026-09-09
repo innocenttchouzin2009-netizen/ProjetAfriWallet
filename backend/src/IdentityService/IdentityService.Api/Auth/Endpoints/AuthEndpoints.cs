@@ -1,7 +1,7 @@
+using System.Security.Claims;
 using IdentityService.Api.Auth.Application;
 using IdentityService.Api.Auth.Contracts;
 using IdentityService.Api.Auth.Domain;
-using IdentityService.Api.Auth.Security;
 
 namespace IdentityService.Api.Auth.Endpoints;
 
@@ -9,12 +9,12 @@ public static class AuthEndpoints
 {
     public static IEndpointRouteBuilder MapAuthEndpoints(this IEndpointRouteBuilder endpoints)
     {
-        endpoints.MapPost(AuthRoutes.Register, RegisterAsync);
-        endpoints.MapPost(AuthRoutes.Login, LoginAsync);
-        endpoints.MapPost(AuthRoutes.Refresh, RefreshAsync);
-        endpoints.MapPost(AuthRoutes.Logout, LogoutAsync);
-        endpoints.MapPost(AuthRoutes.LogoutAll, LogoutAllAsync);
-        endpoints.MapGet(AuthRoutes.Session, GetSessionAsync);
+        endpoints.MapPost(AuthRoutes.Register, RegisterAsync).AllowAnonymous();
+        endpoints.MapPost(AuthRoutes.Login, LoginAsync).AllowAnonymous();
+        endpoints.MapPost(AuthRoutes.Refresh, RefreshAsync).AllowAnonymous();
+        endpoints.MapPost(AuthRoutes.Logout, LogoutAsync).RequireAuthorization();
+        endpoints.MapPost(AuthRoutes.LogoutAll, LogoutAllAsync).RequireAuthorization();
+        endpoints.MapGet(AuthRoutes.Session, GetSessionAsync).RequireAuthorization();
         return endpoints;
     }
 
@@ -40,86 +40,65 @@ public static class AuthEndpoints
         ToHttpResult(await auth.RefreshAsync(request, cancellationToken), context);
 
     private static async Task<IResult> LogoutAsync(
+        ClaimsPrincipal principal,
         AuthApplicationService auth,
-        JwtAccessTokenValidator validator,
         HttpContext context,
         CancellationToken cancellationToken)
     {
-        var principalResult = await ResolveActivePrincipalAsync(auth, validator, context, cancellationToken);
-        if (!principalResult.Succeeded)
+        if (!TryGetPrincipalIds(principal, out _, out var sessionId))
         {
-            return principalResult.Error!;
+            return Unauthorized(context, AuthErrorCode.TokenInvalid, "Invalid access token principal.");
         }
 
-        var result = await auth.LogoutAsync(principalResult.Principal!.SessionId, cancellationToken);
-        return ToHttpResult(result, context, StatusCodes.Status204NoContent);
+        return ToHttpResult(
+            await auth.LogoutAsync(sessionId, cancellationToken),
+            context,
+            StatusCodes.Status204NoContent);
     }
 
     private static async Task<IResult> LogoutAllAsync(
+        ClaimsPrincipal principal,
         AuthApplicationService auth,
-        JwtAccessTokenValidator validator,
         HttpContext context,
         CancellationToken cancellationToken)
     {
-        var principalResult = await ResolveActivePrincipalAsync(auth, validator, context, cancellationToken);
-        if (!principalResult.Succeeded)
+        if (!TryGetPrincipalIds(principal, out var userId, out _))
         {
-            return principalResult.Error!;
+            return Unauthorized(context, AuthErrorCode.TokenInvalid, "Invalid access token principal.");
         }
 
-        var result = await auth.LogoutAllAsync(principalResult.Principal!.UserId, cancellationToken);
-        return ToHttpResult(result, context, StatusCodes.Status204NoContent);
+        return ToHttpResult(
+            await auth.LogoutAllAsync(userId, cancellationToken),
+            context,
+            StatusCodes.Status204NoContent);
     }
 
     private static async Task<IResult> GetSessionAsync(
+        ClaimsPrincipal principal,
         AuthApplicationService auth,
-        JwtAccessTokenValidator validator,
         HttpContext context,
         CancellationToken cancellationToken)
     {
-        var principalResult = await ResolveActivePrincipalAsync(auth, validator, context, cancellationToken);
-        if (!principalResult.Succeeded)
+        if (!TryGetPrincipalIds(principal, out var userId, out var sessionId))
         {
-            return principalResult.Error!;
+            return Unauthorized(context, AuthErrorCode.TokenInvalid, "Invalid access token principal.");
         }
 
-        var principal = principalResult.Principal!;
         return ToHttpResult(
-            await auth.GetSessionAsync(principal.UserId, principal.SessionId, cancellationToken),
+            await auth.GetSessionAsync(userId, sessionId, cancellationToken),
             context);
     }
 
-    private static async Task<PrincipalResolution> ResolveActivePrincipalAsync(
-        AuthApplicationService auth,
-        JwtAccessTokenValidator validator,
-        HttpContext context,
-        CancellationToken cancellationToken)
+    private static bool TryGetPrincipalIds(
+        ClaimsPrincipal principal,
+        out Guid userId,
+        out Guid sessionId)
     {
-        var authorization = context.Request.Headers.Authorization.ToString();
-        if (!authorization.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
-        {
-            return PrincipalResolution.Failure(Unauthorized(context, AuthErrorCode.TokenInvalid, "Bearer access token required."));
-        }
+        userId = Guid.Empty;
+        sessionId = Guid.Empty;
 
-        var token = authorization["Bearer ".Length..].Trim();
-        var principal = validator.Validate(token);
-        if (principal is null)
-        {
-            return PrincipalResolution.Failure(Unauthorized(context, AuthErrorCode.TokenInvalid, "Invalid access token."));
-        }
-
-        var session = await auth.GetSessionAsync(principal.UserId, principal.SessionId, cancellationToken);
-        if (!session.Succeeded || session.Value is null)
-        {
-            return PrincipalResolution.Failure(ToHttpResult(session, context));
-        }
-
-        if (session.Value.TokenVersion != principal.TokenVersion)
-        {
-            return PrincipalResolution.Failure(Unauthorized(context, AuthErrorCode.TokenInvalid, "Stale access token."));
-        }
-
-        return PrincipalResolution.Success(principal);
+        return Guid.TryParse(principal.FindFirstValue("sub"), out userId) &&
+               Guid.TryParse(principal.FindFirstValue("sid"), out sessionId);
     }
 
     private static IResult ToHttpResult<T>(
@@ -162,13 +141,4 @@ public static class AuthEndpoints
         Results.Json(
             new AuthErrorResponse(code, message, context.TraceIdentifier),
             statusCode: StatusCodes.Status401Unauthorized);
-
-    private sealed record PrincipalResolution(
-        bool Succeeded,
-        AuthAccessTokenPrincipal? Principal,
-        IResult? Error)
-    {
-        public static PrincipalResolution Success(AuthAccessTokenPrincipal principal) => new(true, principal, null);
-        public static PrincipalResolution Failure(IResult error) => new(false, null, error);
-    }
 }

@@ -1,6 +1,6 @@
 name: AFW-BE-AUTH-1 Backend Auth Foundation
 
-# Reconciliation certification: feature/backend-auth-1 synced with current main.
+# Final certification: feature/backend-auth-1 reconciled with current main before final Auth PR.
 on:
   push:
     branches:

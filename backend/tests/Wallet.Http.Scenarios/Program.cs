@@ -7,6 +7,7 @@ using AfriWallet.Wallet.Domain;
 using IdentityService.Api.Wallet;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.TestHost;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 var ownerA = Guid.NewGuid();

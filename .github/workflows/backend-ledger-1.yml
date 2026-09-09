@@ -1,0 +1,64 @@
+name: AFW-BE-LEDGER-1 Universal Ledger Engine
+
+on:
+  push:
+    branches:
+      - feature/backend-ledger-1
+    paths:
+      - 'backend/src/Ledger/**'
+      - 'backend/src/IdentityService/IdentityService.Api/**'
+      - 'backend/tests/Ledger.Domain.Scenarios/**'
+      - 'backend/tests/Ledger.Application.Scenarios/**'
+      - 'backend/tests/Ledger.Persistence.Scenarios/**'
+      - 'backend/tests/Ledger.Http.Scenarios/**'
+      - '.github/workflows/backend-ledger-1.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'backend/src/Ledger/**'
+      - 'backend/src/IdentityService/IdentityService.Api/**'
+      - 'backend/tests/Ledger.Domain.Scenarios/**'
+      - 'backend/tests/Ledger.Application.Scenarios/**'
+      - 'backend/tests/Ledger.Persistence.Scenarios/**'
+      - 'backend/tests/Ledger.Http.Scenarios/**'
+      - '.github/workflows/backend-ledger-1.yml'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Validate AFW-BE-LEDGER-1
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build Ledger Domain
+        run: dotnet build backend/src/Ledger/Ledger.Domain/Ledger.Domain.csproj --configuration Release --nologo
+
+      - name: Run Ledger Domain scenarios
+        run: dotnet run --project backend/tests/Ledger.Domain.Scenarios/Ledger.Domain.Scenarios.csproj --configuration Release
+
+      - name: Build Ledger Application
+        run: dotnet build backend/src/Ledger/Ledger.Application/Ledger.Application.csproj --configuration Release --nologo
+
+      - name: Run Ledger Application scenarios
+        run: dotnet run --project backend/tests/Ledger.Application.Scenarios/Ledger.Application.Scenarios.csproj --configuration Release
+
+      - name: Build Ledger Persistence
+        run: dotnet build backend/src/Ledger/Ledger.Persistence/Ledger.Persistence.csproj --configuration Release --nologo
+
+      - name: Run Ledger Persistence scenarios
+        run: dotnet run --project backend/tests/Ledger.Persistence.Scenarios/Ledger.Persistence.Scenarios.csproj --configuration Release
+
+      - name: Build Identity API with Ledger HTTP surface
+        run: dotnet build backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj --configuration Release --nologo
+
+      - name: Run Ledger HTTP security scenarios
+        run: dotnet run --project backend/tests/Ledger.Http.Scenarios/Ledger.Http.Scenarios.csproj --configuration Release

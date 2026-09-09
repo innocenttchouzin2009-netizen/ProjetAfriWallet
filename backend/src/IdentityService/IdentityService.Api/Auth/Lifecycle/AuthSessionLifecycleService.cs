@@ -60,11 +60,11 @@ public sealed class AuthSessionLifecycleService(
         Guid sessionId,
         string reason,
         CancellationToken cancellationToken = default) =>
-        sessionStore.RevokeAsync(sessionId, reason, cancellationToken);
+        sessionStore.RevokeAsync(sessionId, reason, clock.UtcNow, cancellationToken);
 
     public Task RevokeAllForUserAsync(
         Guid userId,
         string reason,
         CancellationToken cancellationToken = default) =>
-        sessionStore.RevokeAllForUserAsync(userId, reason, cancellationToken);
+        sessionStore.RevokeAllForUserAsync(userId, reason, clock.UtcNow, cancellationToken);
 }

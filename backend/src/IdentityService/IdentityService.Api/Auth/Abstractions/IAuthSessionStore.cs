@@ -25,10 +25,12 @@ public interface IAuthSessionStore
     Task RevokeAsync(
         Guid sessionId,
         string reason,
+        DateTimeOffset revokedAtUtc,
         CancellationToken cancellationToken = default);
 
     Task RevokeAllForUserAsync(
         Guid userId,
         string reason,
+        DateTimeOffset revokedAtUtc,
         CancellationToken cancellationToken = default);
 }

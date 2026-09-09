@@ -112,6 +112,7 @@ public sealed class InMemoryAuthSessionStore : IAuthSessionStore
     public Task RevokeAsync(
         Guid sessionId,
         string reason,
+        DateTimeOffset revokedAtUtc,
         CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -119,7 +120,7 @@ public sealed class InMemoryAuthSessionStore : IAuthSessionStore
         {
             if (_sessions.TryGetValue(sessionId, out var session))
             {
-                RevokeCore(session, DateTimeOffset.UtcNow, reason);
+                RevokeCore(session, revokedAtUtc, reason);
             }
         }
 
@@ -129,6 +130,7 @@ public sealed class InMemoryAuthSessionStore : IAuthSessionStore
     public Task RevokeAllForUserAsync(
         Guid userId,
         string reason,
+        DateTimeOffset revokedAtUtc,
         CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -137,7 +139,7 @@ public sealed class InMemoryAuthSessionStore : IAuthSessionStore
             var sessions = _sessions.Values.Where(session => session.UserId == userId).ToArray();
             foreach (var session in sessions)
             {
-                RevokeCore(session, DateTimeOffset.UtcNow, reason);
+                RevokeCore(session, revokedAtUtc, reason);
             }
         }
 

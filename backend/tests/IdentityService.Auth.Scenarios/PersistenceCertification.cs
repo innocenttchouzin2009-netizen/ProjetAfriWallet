@@ -79,8 +79,9 @@ internal static class PersistenceCertification
         await AssertConstraintAsync(db, "Duplicate refresh token hashes must be rejected by the database.");
 
         await CertifyEfStoresAsync(options, now);
+        await CertifyConcurrentRefreshRotationAsync(now);
 
-        Console.WriteLine("PASS: EF auth persistence model, stores and relational constraints");
+        Console.WriteLine("PASS: EF auth persistence model, stores, relational constraints and concurrent refresh rotation");
     }
 
     private static async Task CertifyEfStoresAsync(
@@ -158,11 +159,130 @@ internal static class PersistenceCertification
             RevocationReason = null,
         };
         await sessionStore.SaveAsync(secondSession);
-        await sessionStore.RevokeAllForUserAsync(authUser.Id, "logout_all");
+        var revokedAtUtc = now.AddMinutes(7);
+        await sessionStore.RevokeAllForUserAsync(authUser.Id, "logout_all", revokedAtUtc);
 
         var revokedSecondSession = await sessionStore.GetByIdAsync(secondSession.Id);
         Assert(revokedSecondSession?.Status == AuthSessionStatus.Revoked, "EF logout-all must revoke active sessions for the user.");
         Assert(revokedSecondSession?.RevocationReason == "logout_all", "EF logout-all revocation reason mismatch.");
+        Assert(revokedSecondSession?.RevokedAtUtc == revokedAtUtc, "EF logout-all must persist the explicit revocation timestamp.");
+    }
+
+    private static async Task CertifyConcurrentRefreshRotationAsync(DateTimeOffset now)
+    {
+        var databasePath = Path.Combine(Path.GetTempPath(), $"afw-auth-rotation-{Guid.NewGuid():N}.db");
+        var connectionString = $"Data Source={databasePath};Default Timeout=5";
+        var options = new DbContextOptionsBuilder<AuthDbContext>()
+            .UseSqlite(connectionString)
+            .Options;
+
+        var userId = Guid.NewGuid();
+        var sessionId = Guid.NewGuid();
+        var currentHash = new string('1', 64);
+        var firstReplacementHash = new string('2', 64);
+        var secondReplacementHash = new string('3', 64);
+        var rotatedAtUtc = now.AddMinutes(10);
+
+        try
+        {
+            await using (var setupDb = new AuthDbContext(options))
+            {
+                await setupDb.Database.EnsureCreatedAsync();
+                setupDb.Users.Add(new AuthUserEntity
+                {
+                    Id = userId,
+                    NormalizedIdentifier = $"concurrent-{userId:N}@example.com",
+                    PasswordHash = "password-hash",
+                    CreatedAtUtc = now,
+                });
+                setupDb.Sessions.Add(new AuthSessionEntity
+                {
+                    Id = sessionId,
+                    UserId = userId,
+                    DeviceId = "concurrent-device",
+                    RefreshTokenHash = currentHash,
+                    RefreshTokenFamilyId = Guid.NewGuid(),
+                    CreatedAtUtc = now,
+                    LastSeenAtUtc = now,
+                    ExpiresAtUtc = now.AddDays(30),
+                    TokenVersion = 1,
+                    Status = AuthSessionStatus.Active,
+                });
+                await setupDb.SaveChangesAsync();
+            }
+
+            var start = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var first = RotateConcurrentlyAsync(options, start.Task, currentHash, firstReplacementHash, rotatedAtUtc);
+            var second = RotateConcurrentlyAsync(options, start.Task, currentHash, secondReplacementHash, rotatedAtUtc);
+            start.SetResult();
+
+            var results = await Task.WhenAll(first, second);
+
+            Assert(results.Count(status => status == RefreshRotationStatus.Succeeded) == 1,
+                "Exactly one EF multi-DbContext refresh rotation must succeed.");
+            Assert(results.Count(status => status == RefreshRotationStatus.Reused) == 1,
+                "The losing EF multi-DbContext refresh rotation must resolve as reuse.");
+
+            await using var verificationDb = new AuthDbContext(options);
+            var persistedSession = await verificationDb.Sessions
+                .AsNoTracking()
+                .SingleAsync(candidate => candidate.Id == sessionId);
+            var consumedCount = await verificationDb.ConsumedRefreshTokens
+                .AsNoTracking()
+                .CountAsync(token => token.RefreshTokenHash == currentHash);
+
+            Assert(persistedSession.TokenVersion == 2,
+                "Concurrent EF rotation must advance token version exactly once.");
+            Assert(consumedCount == 1,
+                "Concurrent EF rotation must persist the consumed refresh token exactly once.");
+            Assert(
+                persistedSession.RefreshTokenHash == firstReplacementHash
+                || persistedSession.RefreshTokenHash == secondReplacementHash,
+                "Concurrent EF rotation must persist exactly one replacement refresh hash.");
+        }
+        finally
+        {
+            SqliteConnection.ClearAllPools();
+            if (File.Exists(databasePath))
+            {
+                File.Delete(databasePath);
+            }
+        }
+    }
+
+    private static async Task<RefreshRotationStatus> RotateConcurrentlyAsync(
+        DbContextOptions<AuthDbContext> options,
+        Task start,
+        string currentRefreshTokenHash,
+        string replacementRefreshTokenHash,
+        DateTimeOffset rotatedAtUtc)
+    {
+        await start;
+
+        for (var attempt = 0; attempt < 10; attempt++)
+        {
+            await using var db = new AuthDbContext(options);
+            var store = new EfAuthSessionStore(db);
+
+            try
+            {
+                var result = await store.TryRotateRefreshTokenAsync(
+                    currentRefreshTokenHash,
+                    replacementRefreshTokenHash,
+                    rotatedAtUtc);
+                return result.Status;
+            }
+            catch (SqliteException exception) when (exception.SqliteErrorCode is 5 or 6)
+            {
+                await Task.Delay(25);
+            }
+            catch (DbUpdateException exception) when (exception.InnerException is SqliteException)
+            {
+                await Task.Delay(25);
+            }
+        }
+
+        throw new InvalidOperationException("Concurrent EF refresh rotation did not settle after bounded retries.");
     }
 
     private static async Task AssertConstraintAsync(AuthDbContext db, string message)

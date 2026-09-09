@@ -128,6 +128,7 @@ public sealed class EfAuthSessionStore(AuthDbContext db) : IAuthSessionStore
     public async Task RevokeAsync(
         Guid sessionId,
         string reason,
+        DateTimeOffset revokedAtUtc,
         CancellationToken cancellationToken = default)
     {
         var entity = await db.Sessions
@@ -138,13 +139,14 @@ public sealed class EfAuthSessionStore(AuthDbContext db) : IAuthSessionStore
             return;
         }
 
-        Revoke(entity, DateTimeOffset.UtcNow, reason);
+        Revoke(entity, revokedAtUtc, reason);
         await db.SaveChangesAsync(cancellationToken);
     }
 
     public async Task RevokeAllForUserAsync(
         Guid userId,
         string reason,
+        DateTimeOffset revokedAtUtc,
         CancellationToken cancellationToken = default)
     {
         var sessions = await db.Sessions
@@ -156,7 +158,6 @@ public sealed class EfAuthSessionStore(AuthDbContext db) : IAuthSessionStore
             return;
         }
 
-        var revokedAtUtc = DateTimeOffset.UtcNow;
         foreach (var session in sessions)
         {
             Revoke(session, revokedAtUtc, reason);

@@ -68,6 +68,9 @@ jobs:
         with:
           dotnet-version: 10.0.x
 
+      - name: Restore historical OpenAPI dependency
+        run: dotnet add backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj package Microsoft.AspNetCore.OpenApi --version 10.0.11
+
       - name: Restore
         run: dotnet restore backend/tests/IdentityService.Auth.Scenarios/IdentityService.Auth.Scenarios.csproj
 

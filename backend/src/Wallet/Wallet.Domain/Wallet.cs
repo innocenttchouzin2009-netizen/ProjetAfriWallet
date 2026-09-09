@@ -33,18 +33,38 @@ public sealed class Wallet
         CountryCode? countryCode,
         DateTimeOffset createdAtUtc)
     {
-        if (id.Value == Guid.Empty)
-        {
-            throw new ArgumentException("Wallet id cannot be empty.", nameof(id));
-        }
-
-        if (ownerId == Guid.Empty)
-        {
-            throw new ArgumentException("Owner id cannot be empty.", nameof(ownerId));
-        }
-
-        ArgumentNullException.ThrowIfNull(currency);
+        ValidateIdentity(id, ownerId, currency);
         return new Wallet(id, ownerId, currency, countryCode, createdAtUtc);
+    }
+
+    public static Wallet Restore(
+        WalletId id,
+        Guid ownerId,
+        Currency currency,
+        CountryCode? countryCode,
+        WalletStatus status,
+        DateTimeOffset createdAtUtc,
+        DateTimeOffset updatedAtUtc)
+    {
+        ValidateIdentity(id, ownerId, currency);
+
+        if (!Enum.IsDefined(status))
+        {
+            throw new ArgumentOutOfRangeException(nameof(status), "Wallet status is invalid.");
+        }
+
+        if (updatedAtUtc < createdAtUtc)
+        {
+            throw new ArgumentOutOfRangeException(nameof(updatedAtUtc), "Wallet updated timestamp cannot precede creation.");
+        }
+
+        var wallet = new Wallet(id, ownerId, currency, countryCode, createdAtUtc)
+        {
+            Status = status,
+            UpdatedAtUtc = updatedAtUtc
+        };
+
+        return wallet;
     }
 
     public void Suspend(DateTimeOffset changedAtUtc)
@@ -73,6 +93,21 @@ public sealed class Wallet
     {
         EnsureNotClosed();
         TransitionTo(WalletStatus.Closed, changedAtUtc);
+    }
+
+    private static void ValidateIdentity(WalletId id, Guid ownerId, Currency currency)
+    {
+        if (id.Value == Guid.Empty)
+        {
+            throw new ArgumentException("Wallet id cannot be empty.", nameof(id));
+        }
+
+        if (ownerId == Guid.Empty)
+        {
+            throw new ArgumentException("Owner id cannot be empty.", nameof(ownerId));
+        }
+
+        ArgumentNullException.ThrowIfNull(currency);
     }
 
     private void TransitionTo(WalletStatus target, DateTimeOffset changedAtUtc)

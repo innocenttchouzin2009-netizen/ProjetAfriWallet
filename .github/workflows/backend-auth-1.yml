@@ -111,3 +111,32 @@ jobs:
 
       - name: Verify diff cleanliness
         run: git diff --check
+
+  certify-commit-4:
+    name: Certify Commit 4 — Auth Application Service & Contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout Commit 4
+        uses: actions/checkout@v4
+        with:
+          ref: 22b34ac2725e0ee48da2141c876fd4e41e6dfa77
+          fetch-depth: 0
+
+      - name: Set up .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore
+        run: dotnet restore backend/tests/IdentityService.Auth.Scenarios/IdentityService.Auth.Scenarios.csproj
+
+      - name: Build IdentityService.Api
+        run: dotnet build backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj --no-restore
+
+      - name: Run AFW-BE-AUTH-1 scenarios
+        run: dotnet run --project backend/tests/IdentityService.Auth.Scenarios
+
+      - name: Verify diff cleanliness
+        run: git diff --check

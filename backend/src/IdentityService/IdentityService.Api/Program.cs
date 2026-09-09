@@ -1,5 +1,7 @@
 using System.Text;
 using System.Text.Json;
+using AfriWallet.Ledger.Application;
+using AfriWallet.Ledger.Persistence;
 using AfriWallet.Wallet.Application;
 using AfriWallet.Wallet.Persistence;
 using IdentityService.Api.Auth.Abstractions;
@@ -10,6 +12,7 @@ using IdentityService.Api.Auth.Endpoints;
 using IdentityService.Api.Auth.Lifecycle;
 using IdentityService.Api.Auth.Persistence;
 using IdentityService.Api.Auth.Security;
+using IdentityService.Api.Ledger;
 using IdentityService.Api.Wallet;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -34,10 +37,16 @@ var walletConnectionString = builder.Configuration.GetConnectionString("WalletDa
     Environment.GetEnvironmentVariable("AFW_WALLET_DB_CONNECTION_STRING") ??
     "Data Source=wallet-registry.db";
 
+var ledgerConnectionString = builder.Configuration.GetConnectionString("LedgerDatabase") ??
+    Environment.GetEnvironmentVariable("AFW_LEDGER_DB_CONNECTION_STRING") ??
+    "Data Source=universal-ledger.db";
+
 builder.Services.AddDbContext<AuthDbContext>(options =>
     options.UseSqlite(authConnectionString));
 builder.Services.AddDbContext<WalletDbContext>(options =>
     options.UseSqlite(walletConnectionString));
+builder.Services.AddDbContext<LedgerDbContext>(options =>
+    options.UseSqlite(ledgerConnectionString));
 
 builder.Services.AddSingleton(jwtOptions);
 builder.Services.AddSingleton<IClock, SystemClock>();
@@ -55,6 +64,9 @@ builder.Services.AddScoped<AuthApplicationService>();
 builder.Services.AddScoped<IWalletRepository, EfWalletRepository>();
 builder.Services.AddSingleton<ISupportedCurrencyPolicy, ConfiguredSupportedCurrencyPolicy>();
 builder.Services.AddScoped<WalletRegistryApplicationService>();
+
+builder.Services.AddScoped<IJournalRepository, EfJournalRepository>();
+builder.Services.AddScoped<LedgerPostingApplicationService>();
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -149,5 +161,6 @@ app.UseAuthorization();
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
 app.MapAuthEndpoints();
 app.MapWalletEndpoints();
+app.MapLedgerEndpoints();
 
 app.Run();

@@ -1,0 +1,64 @@
+name: AFW-BE-WALLET-1 Wallet Registry Foundation
+
+on:
+  push:
+    branches:
+      - feature/backend-wallet-1
+    paths:
+      - 'backend/src/Wallet/**'
+      - 'backend/src/IdentityService/IdentityService.Api/**'
+      - 'backend/tests/Wallet.Domain.Scenarios/**'
+      - 'backend/tests/Wallet.Application.Scenarios/**'
+      - 'backend/tests/Wallet.Persistence.Scenarios/**'
+      - 'backend/tests/Wallet.Http.Scenarios/**'
+      - '.github/workflows/backend-wallet-1.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'backend/src/Wallet/**'
+      - 'backend/src/IdentityService/IdentityService.Api/**'
+      - 'backend/tests/Wallet.Domain.Scenarios/**'
+      - 'backend/tests/Wallet.Application.Scenarios/**'
+      - 'backend/tests/Wallet.Persistence.Scenarios/**'
+      - 'backend/tests/Wallet.Http.Scenarios/**'
+      - '.github/workflows/backend-wallet-1.yml'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Validate AFW-BE-WALLET-1
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build Wallet Domain
+        run: dotnet build backend/src/Wallet/Wallet.Domain/Wallet.Domain.csproj --configuration Release --nologo
+
+      - name: Run Wallet Domain scenarios
+        run: dotnet run --project backend/tests/Wallet.Domain.Scenarios/Wallet.Domain.Scenarios.csproj --configuration Release
+
+      - name: Build Wallet Application
+        run: dotnet build backend/src/Wallet/Wallet.Application/Wallet.Application.csproj --configuration Release --nologo
+
+      - name: Run Wallet Application scenarios
+        run: dotnet run --project backend/tests/Wallet.Application.Scenarios/Wallet.Application.Scenarios.csproj --configuration Release
+
+      - name: Build Wallet Persistence
+        run: dotnet build backend/src/Wallet/Wallet.Persistence/Wallet.Persistence.csproj --configuration Release --nologo
+
+      - name: Run Wallet Persistence scenarios
+        run: dotnet run --project backend/tests/Wallet.Persistence.Scenarios/Wallet.Persistence.Scenarios.csproj --configuration Release
+
+      - name: Build Identity API with Wallet HTTP surface
+        run: dotnet build backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj --configuration Release --nologo
+
+      - name: Run Wallet HTTP security scenarios
+        run: dotnet run --project backend/tests/Wallet.Http.Scenarios/Wallet.Http.Scenarios.csproj --configuration Release

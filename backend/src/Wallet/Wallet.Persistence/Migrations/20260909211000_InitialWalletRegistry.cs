@@ -1,9 +1,12 @@
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
 namespace AfriWallet.Wallet.Persistence.Migrations;
 
+[DbContext(typeof(WalletDbContext))]
+[Migration("20260909211000_InitialWalletRegistry")]
 public partial class InitialWalletRegistry : Migration
 {
     protected override void Up(MigrationBuilder migrationBuilder)

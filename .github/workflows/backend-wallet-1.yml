@@ -1,0 +1,38 @@
+name: AFW-BE-WALLET-1 Wallet Registry Foundation
+
+on:
+  push:
+    branches:
+      - feature/backend-wallet-1
+    paths:
+      - 'backend/src/Wallet/**'
+      - 'backend/tests/Wallet.Domain.Scenarios/**'
+      - '.github/workflows/backend-wallet-1.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'backend/src/Wallet/**'
+      - 'backend/tests/Wallet.Domain.Scenarios/**'
+      - '.github/workflows/backend-wallet-1.yml'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Validate AFW-BE-WALLET-1
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build Wallet Domain
+        run: dotnet build backend/src/Wallet/Wallet.Domain/Wallet.Domain.csproj --configuration Release --nologo
+
+      - name: Run Wallet Domain scenarios
+        run: dotnet run --project backend/tests/Wallet.Domain.Scenarios/Wallet.Domain.Scenarios.csproj --configuration Release

@@ -12,6 +12,8 @@
     <ProjectReference Include="../../Fx/Fx.Infrastructure/Fx.Infrastructure.csproj" />
     <ProjectReference Include="../../Ledger/Ledger.Application/Ledger.Application.csproj" />
     <ProjectReference Include="../../Ledger/Ledger.Persistence/Ledger.Persistence.csproj" />
+    <ProjectReference Include="../../Transfer/Transfer.Application/Transfer.Application.csproj" />
+    <ProjectReference Include="../../Transfer/Transfer.Infrastructure/Transfer.Infrastructure.csproj" />
     <ProjectReference Include="../../Wallet/Wallet.Application/Wallet.Application.csproj" />
     <ProjectReference Include="../../Wallet/Wallet.Persistence/Wallet.Persistence.csproj" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.11" />

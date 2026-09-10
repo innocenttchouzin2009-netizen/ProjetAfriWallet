@@ -1,0 +1,64 @@
+name: AFW-BE-TRANSFER-1 Internal Wallet Transfer Engine
+
+on:
+  push:
+    branches:
+      - feature/backend-transfer-1
+    paths:
+      - 'backend/src/Transfer/**'
+      - 'backend/src/IdentityService/IdentityService.Api/**'
+      - 'backend/tests/Transfer.Domain.Application.Scenarios/**'
+      - 'backend/tests/Transfer.Orchestration.Scenarios/**'
+      - 'backend/tests/Transfer.Infrastructure.Scenarios/**'
+      - 'backend/tests/Transfer.Http.Scenarios/**'
+      - '.github/workflows/backend-transfer-1.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'backend/src/Transfer/**'
+      - 'backend/src/IdentityService/IdentityService.Api/**'
+      - 'backend/tests/Transfer.Domain.Application.Scenarios/**'
+      - 'backend/tests/Transfer.Orchestration.Scenarios/**'
+      - 'backend/tests/Transfer.Infrastructure.Scenarios/**'
+      - 'backend/tests/Transfer.Http.Scenarios/**'
+      - '.github/workflows/backend-transfer-1.yml'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Validate AFW-BE-TRANSFER-1
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build Transfer Domain
+        run: dotnet build backend/src/Transfer/Transfer.Domain/Transfer.Domain.csproj --configuration Release --nologo
+
+      - name: Build Transfer Application
+        run: dotnet build backend/src/Transfer/Transfer.Application/Transfer.Application.csproj --configuration Release --nologo
+
+      - name: Run Transfer Domain/Application scenarios
+        run: dotnet run --project backend/tests/Transfer.Domain.Application.Scenarios/Transfer.Domain.Application.Scenarios.csproj --configuration Release
+
+      - name: Run Transfer orchestration scenarios
+        run: dotnet run --project backend/tests/Transfer.Orchestration.Scenarios/Transfer.Orchestration.Scenarios.csproj --configuration Release
+
+      - name: Build Transfer Infrastructure
+        run: dotnet build backend/src/Transfer/Transfer.Infrastructure/Transfer.Infrastructure.csproj --configuration Release --nologo
+
+      - name: Run Transfer concrete adapter scenarios
+        run: dotnet run --project backend/tests/Transfer.Infrastructure.Scenarios/Transfer.Infrastructure.Scenarios.csproj --configuration Release
+
+      - name: Build Identity API with Transfer HTTP surface
+        run: dotnet build backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj --configuration Release --nologo
+
+      - name: Run Transfer HTTP security integration scenarios
+        run: dotnet run --project backend/tests/Transfer.Http.Scenarios/Transfer.Http.Scenarios.csproj --configuration Release

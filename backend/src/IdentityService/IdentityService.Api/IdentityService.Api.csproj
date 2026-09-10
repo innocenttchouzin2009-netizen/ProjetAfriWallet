@@ -6,6 +6,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="../../Balance/Balance.Application/Balance.Application.csproj" />
+    <ProjectReference Include="../../Balance/Balance.Infrastructure/Balance.Infrastructure.csproj" />
     <ProjectReference Include="../../Ledger/Ledger.Application/Ledger.Application.csproj" />
     <ProjectReference Include="../../Ledger/Ledger.Persistence/Ledger.Persistence.csproj" />
     <ProjectReference Include="../../Wallet/Wallet.Application/Wallet.Application.csproj" />

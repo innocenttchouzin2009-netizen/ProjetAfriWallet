@@ -1,5 +1,7 @@
 using System.Text;
 using System.Text.Json;
+using AfriWallet.Balance.Application;
+using AfriWallet.Balance.Infrastructure;
 using AfriWallet.Ledger.Application;
 using AfriWallet.Ledger.Persistence;
 using AfriWallet.Wallet.Application;
@@ -12,6 +14,7 @@ using IdentityService.Api.Auth.Endpoints;
 using IdentityService.Api.Auth.Lifecycle;
 using IdentityService.Api.Auth.Persistence;
 using IdentityService.Api.Auth.Security;
+using IdentityService.Api.Balance;
 using IdentityService.Api.Ledger;
 using IdentityService.Api.Wallet;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -67,6 +70,10 @@ builder.Services.AddScoped<WalletRegistryApplicationService>();
 
 builder.Services.AddScoped<IJournalRepository, EfJournalRepository>();
 builder.Services.AddScoped<LedgerPostingApplicationService>();
+
+builder.Services.AddScoped<ILedgerJournalReader, EfLedgerJournalReader>();
+builder.Services.AddScoped<BalanceProjectionService>();
+builder.Services.AddScoped<LedgerBackedBalanceReadService>();
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -162,5 +169,6 @@ app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
 app.MapAuthEndpoints();
 app.MapWalletEndpoints();
 app.MapLedgerEndpoints();
+app.MapBalanceEndpoints();
 
 app.Run();

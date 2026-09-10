@@ -10,6 +10,7 @@ on:
       - 'backend/tests/Balance.Projection.Scenarios/**'
       - 'backend/tests/Balance.Read.Scenarios/**'
       - 'backend/tests/Balance.Infrastructure.Scenarios/**'
+      - 'backend/tests/Balance.Http.Scenarios/**'
       - '.github/workflows/backend-balance-1.yml'
   pull_request:
     branches:
@@ -20,6 +21,7 @@ on:
       - 'backend/tests/Balance.Projection.Scenarios/**'
       - 'backend/tests/Balance.Read.Scenarios/**'
       - 'backend/tests/Balance.Infrastructure.Scenarios/**'
+      - 'backend/tests/Balance.Http.Scenarios/**'
       - '.github/workflows/backend-balance-1.yml'
   workflow_dispatch:
 
@@ -57,3 +59,6 @@ jobs:
 
       - name: Build Identity API with Balance HTTP surface
         run: dotnet build backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj --configuration Release --nologo
+
+      - name: Run Balance HTTP security integration scenarios
+        run: dotnet run --project backend/tests/Balance.Http.Scenarios/Balance.Http.Scenarios.csproj --configuration Release

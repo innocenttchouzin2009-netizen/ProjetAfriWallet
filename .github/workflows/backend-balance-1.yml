@@ -6,6 +6,7 @@ on:
       - feature/backend-balance-1
     paths:
       - 'backend/src/Balance/**'
+      - 'backend/src/IdentityService/IdentityService.Api/**'
       - 'backend/tests/Balance.Projection.Scenarios/**'
       - 'backend/tests/Balance.Read.Scenarios/**'
       - 'backend/tests/Balance.Infrastructure.Scenarios/**'
@@ -15,6 +16,7 @@ on:
       - main
     paths:
       - 'backend/src/Balance/**'
+      - 'backend/src/IdentityService/IdentityService.Api/**'
       - 'backend/tests/Balance.Projection.Scenarios/**'
       - 'backend/tests/Balance.Read.Scenarios/**'
       - 'backend/tests/Balance.Infrastructure.Scenarios/**'
@@ -52,3 +54,6 @@ jobs:
 
       - name: Run Balance concrete ledger adapter scenarios
         run: dotnet run --project backend/tests/Balance.Infrastructure.Scenarios/Balance.Infrastructure.Scenarios.csproj --configuration Release
+
+      - name: Build Identity API with Balance HTTP surface
+        run: dotnet build backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj --configuration Release --nologo

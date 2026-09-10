@@ -8,8 +8,8 @@ await RunAsync("orchestration posts balanced journal", async () =>
     var sourceAccount = AccountId.New();
     var targetAccount = AccountId.New();
     var wallets = new FakeWalletReader(
-        new(sourceWallet, sourceAccount, "XAF", true),
-        new(targetWallet, targetAccount, "XAF", true));
+        new TransferWalletSnapshot(sourceWallet, sourceAccount, "XAF", true),
+        new TransferWalletSnapshot(targetWallet, targetAccount, "XAF", true));
     var balances = new FakeBalanceReader(10_000);
     var ledger = new FakeLedgerPort();
     var service = CreateService(wallets, balances, ledger);
@@ -30,7 +30,9 @@ await RunAsync("orchestration reads source balance", async () =>
     var sourceAccount = AccountId.New();
     var balances = new FakeBalanceReader(5_000);
     var service = CreateService(
-        new FakeWalletReader(new(source, sourceAccount, "EUR", true), new(target, AccountId.New(), "EUR", true)),
+        new FakeWalletReader(
+            new TransferWalletSnapshot(source, sourceAccount, "EUR", true),
+            new TransferWalletSnapshot(target, AccountId.New(), "EUR", true)),
         balances,
         new FakeLedgerPort());
 
@@ -42,7 +44,7 @@ await RunAsync("missing source wallet is rejected", async () =>
 {
     var target = Guid.NewGuid();
     var service = CreateService(
-        new FakeWalletReader(new(target, AccountId.New(), "XAF", true)),
+        new FakeWalletReader(new TransferWalletSnapshot(target, AccountId.New(), "XAF", true)),
         new FakeBalanceReader(10_000),
         new FakeLedgerPort());
     await ExpectAsync<InvalidOperationException>(() => service.ExecuteAsync(new(Guid.NewGuid(), target, 100, Guid.NewGuid(), DateTimeOffset.UtcNow)));
@@ -54,7 +56,9 @@ await RunAsync("insufficient funds prevent posting", async () =>
     var target = Guid.NewGuid();
     var ledger = new FakeLedgerPort();
     var service = CreateService(
-        new FakeWalletReader(new(source, AccountId.New(), "XAF", true), new(target, AccountId.New(), "XAF", true)),
+        new FakeWalletReader(
+            new TransferWalletSnapshot(source, AccountId.New(), "XAF", true),
+            new TransferWalletSnapshot(target, AccountId.New(), "XAF", true)),
         new FakeBalanceReader(99),
         ledger);
     await ExpectAsync<InvalidOperationException>(() => service.ExecuteAsync(new(source, target, 100, Guid.NewGuid(), DateTimeOffset.UtcNow)));
@@ -77,7 +81,9 @@ await RunAsync("cancellation token propagates to every port", async () =>
     var token = cts.Token;
     var source = Guid.NewGuid();
     var target = Guid.NewGuid();
-    var wallets = new FakeWalletReader(new(source, AccountId.New(), "XAF", true), new(target, AccountId.New(), "XAF", true));
+    var wallets = new FakeWalletReader(
+        new TransferWalletSnapshot(source, AccountId.New(), "XAF", true),
+        new TransferWalletSnapshot(target, AccountId.New(), "XAF", true));
     var balances = new FakeBalanceReader(1_000);
     var ledger = new FakeLedgerPort();
     var service = CreateService(wallets, balances, ledger);

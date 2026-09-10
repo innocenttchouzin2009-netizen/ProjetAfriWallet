@@ -8,6 +8,7 @@ on:
       - 'backend/src/Fx/**'
       - 'backend/tests/Fx.Domain.Application.Scenarios/**'
       - 'backend/tests/Fx.Quote.Scenarios/**'
+      - 'backend/tests/Fx.Infrastructure.Scenarios/**'
       - '.github/workflows/backend-fx-1.yml'
   pull_request:
     branches:
@@ -16,6 +17,7 @@ on:
       - 'backend/src/Fx/**'
       - 'backend/tests/Fx.Domain.Application.Scenarios/**'
       - 'backend/tests/Fx.Quote.Scenarios/**'
+      - 'backend/tests/Fx.Infrastructure.Scenarios/**'
       - '.github/workflows/backend-fx-1.yml'
   workflow_dispatch:
 
@@ -44,3 +46,9 @@ jobs:
 
       - name: Run FX Quote provider/application scenarios
         run: dotnet run --project backend/tests/Fx.Quote.Scenarios/Fx.Quote.Scenarios.csproj --configuration Release
+
+      - name: Build FX Infrastructure
+        run: dotnet build backend/src/Fx/Fx.Infrastructure/Fx.Infrastructure.csproj --configuration Release --nologo
+
+      - name: Run FX concrete provider scenarios
+        run: dotnet run --project backend/tests/Fx.Infrastructure.Scenarios/Fx.Infrastructure.Scenarios.csproj --configuration Release

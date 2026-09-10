@@ -2,6 +2,8 @@ using System.Text;
 using System.Text.Json;
 using AfriWallet.Balance.Application;
 using AfriWallet.Balance.Infrastructure;
+using AfriWallet.Fx.Application;
+using AfriWallet.Fx.Infrastructure;
 using AfriWallet.Ledger.Application;
 using AfriWallet.Ledger.Persistence;
 using AfriWallet.Wallet.Application;
@@ -15,6 +17,7 @@ using IdentityService.Api.Auth.Lifecycle;
 using IdentityService.Api.Auth.Persistence;
 using IdentityService.Api.Auth.Security;
 using IdentityService.Api.Balance;
+using IdentityService.Api.Fx;
 using IdentityService.Api.Ledger;
 using IdentityService.Api.Wallet;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -43,6 +46,8 @@ var walletConnectionString = builder.Configuration.GetConnectionString("WalletDa
 var ledgerConnectionString = builder.Configuration.GetConnectionString("LedgerDatabase") ??
     Environment.GetEnvironmentVariable("AFW_LEDGER_DB_CONNECTION_STRING") ??
     "Data Source=universal-ledger.db";
+
+var configuredFxRates = FxConfiguration.LoadRates(builder.Configuration);
 
 builder.Services.AddDbContext<AuthDbContext>(options =>
     options.UseSqlite(authConnectionString));
@@ -74,6 +79,13 @@ builder.Services.AddScoped<LedgerPostingApplicationService>();
 builder.Services.AddScoped<ILedgerJournalReader, EfLedgerJournalReader>();
 builder.Services.AddScoped<BalanceProjectionService>();
 builder.Services.AddScoped<LedgerBackedBalanceReadService>();
+
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton<IFxQuoteProvider>(services =>
+    new ConfiguredFxQuoteProvider(
+        configuredFxRates,
+        services.GetRequiredService<TimeProvider>()));
+builder.Services.AddSingleton<FxQuoteApplicationService>();
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -170,5 +182,6 @@ app.MapAuthEndpoints();
 app.MapWalletEndpoints();
 app.MapLedgerEndpoints();
 app.MapBalanceEndpoints();
+app.MapFxEndpoints();
 
 app.Run();

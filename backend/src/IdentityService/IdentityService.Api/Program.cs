@@ -19,6 +19,7 @@ using IdentityService.Api.Auth.Security;
 using IdentityService.Api.Balance;
 using IdentityService.Api.Fx;
 using IdentityService.Api.Ledger;
+using IdentityService.Api.Transfer;
 using IdentityService.Api.Wallet;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -86,6 +87,8 @@ builder.Services.AddSingleton<IFxQuoteProvider>(services =>
         configuredFxRates,
         services.GetRequiredService<TimeProvider>()));
 builder.Services.AddSingleton<FxQuoteApplicationService>();
+
+builder.Services.AddInternalTransferModule(builder.Configuration);
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -183,5 +186,6 @@ app.MapWalletEndpoints();
 app.MapLedgerEndpoints();
 app.MapBalanceEndpoints();
 app.MapFxEndpoints();
+app.MapTransferEndpoints();
 
 app.Run();

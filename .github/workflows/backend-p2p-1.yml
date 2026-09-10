@@ -1,0 +1,41 @@
+name: AFW-BE-P2P-1 Recipient Resolution & P2P Transfer Foundation
+
+on:
+  push:
+    branches:
+      - feature/backend-p2p-1
+    paths:
+      - 'backend/src/P2P/**'
+      - 'backend/tests/P2P.Domain.Application.Scenarios/**'
+      - '.github/workflows/backend-p2p-1.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'backend/src/P2P/**'
+      - 'backend/tests/P2P.Domain.Application.Scenarios/**'
+      - '.github/workflows/backend-p2p-1.yml'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Validate AFW-BE-P2P-1
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build P2P Domain
+        run: dotnet build backend/src/P2P/P2P.Domain/P2P.Domain.csproj --configuration Release --nologo
+
+      - name: Build P2P Application
+        run: dotnet build backend/src/P2P/P2P.Application/P2P.Application.csproj --configuration Release --nologo
+
+      - name: Run P2P recipient resolution scenarios
+        run: dotnet run --project backend/tests/P2P.Domain.Application.Scenarios/P2P.Domain.Application.Scenarios.csproj --configuration Release

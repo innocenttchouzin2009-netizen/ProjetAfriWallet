@@ -12,6 +12,7 @@ on:
       - 'backend/tests/Fx.Domain.Application.Scenarios/**'
       - 'backend/tests/Fx.Quote.Scenarios/**'
       - 'backend/tests/Fx.Infrastructure.Scenarios/**'
+      - 'backend/tests/Fx.Http.Scenarios/**'
       - '.github/workflows/backend-fx-1.yml'
   pull_request:
     branches:
@@ -24,6 +25,7 @@ on:
       - 'backend/tests/Fx.Domain.Application.Scenarios/**'
       - 'backend/tests/Fx.Quote.Scenarios/**'
       - 'backend/tests/Fx.Infrastructure.Scenarios/**'
+      - 'backend/tests/Fx.Http.Scenarios/**'
       - '.github/workflows/backend-fx-1.yml'
   workflow_dispatch:
 
@@ -61,3 +63,6 @@ jobs:
 
       - name: Build Identity API with FX HTTP surface
         run: dotnet build backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj --configuration Release --nologo
+
+      - name: Run FX HTTP security integration scenarios
+        run: dotnet run --project backend/tests/Fx.Http.Scenarios/Fx.Http.Scenarios.csproj --configuration Release

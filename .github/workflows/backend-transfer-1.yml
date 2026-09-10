@@ -6,6 +6,7 @@ on:
       - feature/backend-transfer-1
     paths:
       - 'backend/src/Transfer/**'
+      - 'backend/src/IdentityService/IdentityService.Api/**'
       - 'backend/tests/Transfer.Domain.Application.Scenarios/**'
       - 'backend/tests/Transfer.Orchestration.Scenarios/**'
       - 'backend/tests/Transfer.Infrastructure.Scenarios/**'
@@ -15,6 +16,7 @@ on:
       - main
     paths:
       - 'backend/src/Transfer/**'
+      - 'backend/src/IdentityService/IdentityService.Api/**'
       - 'backend/tests/Transfer.Domain.Application.Scenarios/**'
       - 'backend/tests/Transfer.Orchestration.Scenarios/**'
       - 'backend/tests/Transfer.Infrastructure.Scenarios/**'
@@ -52,3 +54,6 @@ jobs:
 
       - name: Run Transfer concrete adapter scenarios
         run: dotnet run --project backend/tests/Transfer.Infrastructure.Scenarios/Transfer.Infrastructure.Scenarios.csproj --configuration Release
+
+      - name: Build Identity API with Transfer HTTP surface
+        run: dotnet build backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj --configuration Release --nologo

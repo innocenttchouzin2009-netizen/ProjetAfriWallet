@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Balance.Application/Balance.Application.csproj" />
+    <ProjectReference Include="../../Ledger/Ledger.Persistence/Ledger.Persistence.csproj" />
+  </ItemGroup>
+</Project>

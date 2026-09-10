@@ -8,6 +8,7 @@ on:
       - 'backend/src/Transfer/**'
       - 'backend/tests/Transfer.Domain.Application.Scenarios/**'
       - 'backend/tests/Transfer.Orchestration.Scenarios/**'
+      - 'backend/tests/Transfer.Infrastructure.Scenarios/**'
       - '.github/workflows/backend-transfer-1.yml'
   pull_request:
     branches:
@@ -16,6 +17,7 @@ on:
       - 'backend/src/Transfer/**'
       - 'backend/tests/Transfer.Domain.Application.Scenarios/**'
       - 'backend/tests/Transfer.Orchestration.Scenarios/**'
+      - 'backend/tests/Transfer.Infrastructure.Scenarios/**'
       - '.github/workflows/backend-transfer-1.yml'
   workflow_dispatch:
 
@@ -44,3 +46,9 @@ jobs:
 
       - name: Run Transfer orchestration scenarios
         run: dotnet run --project backend/tests/Transfer.Orchestration.Scenarios/Transfer.Orchestration.Scenarios.csproj --configuration Release
+
+      - name: Build Transfer Infrastructure
+        run: dotnet build backend/src/Transfer/Transfer.Infrastructure/Transfer.Infrastructure.csproj --configuration Release --nologo
+
+      - name: Run Transfer concrete adapter scenarios
+        run: dotnet run --project backend/tests/Transfer.Infrastructure.Scenarios/Transfer.Infrastructure.Scenarios.csproj --configuration Release

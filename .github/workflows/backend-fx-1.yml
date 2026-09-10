@@ -1,0 +1,41 @@
+name: AFW-BE-FX-1 Currency & FX Engine
+
+on:
+  push:
+    branches:
+      - feature/backend-fx-1
+    paths:
+      - 'backend/src/Fx/**'
+      - 'backend/tests/Fx.Domain.Application.Scenarios/**'
+      - '.github/workflows/backend-fx-1.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'backend/src/Fx/**'
+      - 'backend/tests/Fx.Domain.Application.Scenarios/**'
+      - '.github/workflows/backend-fx-1.yml'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Validate AFW-BE-FX-1
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build FX Domain
+        run: dotnet build backend/src/Fx/Fx.Domain/Fx.Domain.csproj --configuration Release --nologo
+
+      - name: Build FX Application
+        run: dotnet build backend/src/Fx/Fx.Application/Fx.Application.csproj --configuration Release --nologo
+
+      - name: Run FX Domain/Application scenarios
+        run: dotnet run --project backend/tests/Fx.Domain.Application.Scenarios/Fx.Domain.Application.Scenarios.csproj --configuration Release

@@ -6,6 +6,9 @@ on:
       - feature/backend-fx-1
     paths:
       - 'backend/src/Fx/**'
+      - 'backend/src/IdentityService/IdentityService.Api/Fx/**'
+      - 'backend/src/IdentityService/IdentityService.Api/Program.cs'
+      - 'backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj'
       - 'backend/tests/Fx.Domain.Application.Scenarios/**'
       - 'backend/tests/Fx.Quote.Scenarios/**'
       - 'backend/tests/Fx.Infrastructure.Scenarios/**'
@@ -15,6 +18,9 @@ on:
       - main
     paths:
       - 'backend/src/Fx/**'
+      - 'backend/src/IdentityService/IdentityService.Api/Fx/**'
+      - 'backend/src/IdentityService/IdentityService.Api/Program.cs'
+      - 'backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj'
       - 'backend/tests/Fx.Domain.Application.Scenarios/**'
       - 'backend/tests/Fx.Quote.Scenarios/**'
       - 'backend/tests/Fx.Infrastructure.Scenarios/**'
@@ -52,3 +58,6 @@ jobs:
 
       - name: Run FX concrete provider scenarios
         run: dotnet run --project backend/tests/Fx.Infrastructure.Scenarios/Fx.Infrastructure.Scenarios.csproj --configuration Release
+
+      - name: Build Identity API with FX HTTP surface
+        run: dotnet build backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj --configuration Release --nologo

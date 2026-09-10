@@ -21,11 +21,13 @@ public sealed class EfLedgerJournalReader(LedgerDbContext dbContext) : ILedgerJo
                 journal.CurrencyCode == currencyCode &&
                 journal.Lines.Any(line => line.AccountId == accountId))
             .Include(journal => journal.Lines)
-            .OrderBy(journal => journal.PostedAtUtc)
-            .ThenBy(journal => journal.Id)
             .ToListAsync(cancellationToken);
 
-        return entities.Select(ToDomain).ToArray();
+        return entities
+            .OrderBy(journal => journal.PostedAtUtc)
+            .ThenBy(journal => journal.Id)
+            .Select(ToDomain)
+            .ToArray();
     }
 
     private static JournalEntry ToDomain(LedgerJournalEntity entity) =>

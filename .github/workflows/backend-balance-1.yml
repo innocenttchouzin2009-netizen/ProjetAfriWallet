@@ -8,6 +8,7 @@ on:
       - 'backend/src/Balance/**'
       - 'backend/tests/Balance.Projection.Scenarios/**'
       - 'backend/tests/Balance.Read.Scenarios/**'
+      - 'backend/tests/Balance.Infrastructure.Scenarios/**'
       - '.github/workflows/backend-balance-1.yml'
   pull_request:
     branches:
@@ -16,6 +17,7 @@ on:
       - 'backend/src/Balance/**'
       - 'backend/tests/Balance.Projection.Scenarios/**'
       - 'backend/tests/Balance.Read.Scenarios/**'
+      - 'backend/tests/Balance.Infrastructure.Scenarios/**'
       - '.github/workflows/backend-balance-1.yml'
   workflow_dispatch:
 
@@ -39,8 +41,14 @@ jobs:
       - name: Build Balance Application
         run: dotnet build backend/src/Balance/Balance.Application/Balance.Application.csproj --configuration Release --nologo
 
+      - name: Build Balance Infrastructure
+        run: dotnet build backend/src/Balance/Balance.Infrastructure/Balance.Infrastructure.csproj --configuration Release --nologo
+
       - name: Run Balance projection scenarios
         run: dotnet run --project backend/tests/Balance.Projection.Scenarios/Balance.Projection.Scenarios.csproj --configuration Release
 
       - name: Run Balance ledger-backed read scenarios
         run: dotnet run --project backend/tests/Balance.Read.Scenarios/Balance.Read.Scenarios.csproj --configuration Release
+
+      - name: Run Balance concrete ledger adapter scenarios
+        run: dotnet run --project backend/tests/Balance.Infrastructure.Scenarios/Balance.Infrastructure.Scenarios.csproj --configuration Release

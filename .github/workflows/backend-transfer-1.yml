@@ -7,6 +7,7 @@ on:
     paths:
       - 'backend/src/Transfer/**'
       - 'backend/tests/Transfer.Domain.Application.Scenarios/**'
+      - 'backend/tests/Transfer.Orchestration.Scenarios/**'
       - '.github/workflows/backend-transfer-1.yml'
   pull_request:
     branches:
@@ -14,6 +15,7 @@ on:
     paths:
       - 'backend/src/Transfer/**'
       - 'backend/tests/Transfer.Domain.Application.Scenarios/**'
+      - 'backend/tests/Transfer.Orchestration.Scenarios/**'
       - '.github/workflows/backend-transfer-1.yml'
   workflow_dispatch:
 
@@ -39,3 +41,6 @@ jobs:
 
       - name: Run Transfer Domain/Application scenarios
         run: dotnet run --project backend/tests/Transfer.Domain.Application.Scenarios/Transfer.Domain.Application.Scenarios.csproj --configuration Release
+
+      - name: Run Transfer orchestration scenarios
+        run: dotnet run --project backend/tests/Transfer.Orchestration.Scenarios/Transfer.Orchestration.Scenarios.csproj --configuration Release

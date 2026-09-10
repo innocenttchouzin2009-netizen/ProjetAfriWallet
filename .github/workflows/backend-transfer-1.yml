@@ -1,0 +1,41 @@
+name: AFW-BE-TRANSFER-1 Internal Wallet Transfer Engine
+
+on:
+  push:
+    branches:
+      - feature/backend-transfer-1
+    paths:
+      - 'backend/src/Transfer/**'
+      - 'backend/tests/Transfer.Domain.Application.Scenarios/**'
+      - '.github/workflows/backend-transfer-1.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'backend/src/Transfer/**'
+      - 'backend/tests/Transfer.Domain.Application.Scenarios/**'
+      - '.github/workflows/backend-transfer-1.yml'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Validate AFW-BE-TRANSFER-1
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build Transfer Domain
+        run: dotnet build backend/src/Transfer/Transfer.Domain/Transfer.Domain.csproj --configuration Release --nologo
+
+      - name: Build Transfer Application
+        run: dotnet build backend/src/Transfer/Transfer.Application/Transfer.Application.csproj --configuration Release --nologo
+
+      - name: Run Transfer Domain/Application scenarios
+        run: dotnet run --project backend/tests/Transfer.Domain.Application.Scenarios/Transfer.Domain.Application.Scenarios.csproj --configuration Release

@@ -7,6 +7,7 @@ on:
     paths:
       - 'backend/src/PaymentRequests/**'
       - 'backend/tests/PaymentRequests.Domain.Scenarios/**'
+      - 'backend/tests/PaymentRequests.Application.Scenarios/**'
       - '.github/workflows/backend-request-1.yml'
   pull_request:
     branches:
@@ -14,6 +15,7 @@ on:
     paths:
       - 'backend/src/PaymentRequests/**'
       - 'backend/tests/PaymentRequests.Domain.Scenarios/**'
+      - 'backend/tests/PaymentRequests.Application.Scenarios/**'
       - '.github/workflows/backend-request-1.yml'
   workflow_dispatch:
 
@@ -36,3 +38,9 @@ jobs:
 
       - name: Run payment request domain lifecycle scenarios
         run: dotnet run --project backend/tests/PaymentRequests.Domain.Scenarios/PaymentRequests.Domain.Scenarios.csproj --configuration Release
+
+      - name: Build Payment Requests Application
+        run: dotnet build backend/src/PaymentRequests/PaymentRequests.Application/PaymentRequests.Application.csproj --configuration Release --nologo
+
+      - name: Run payment request application orchestration scenarios
+        run: dotnet run --project backend/tests/PaymentRequests.Application.Scenarios/PaymentRequests.Application.Scenarios.csproj --configuration Release

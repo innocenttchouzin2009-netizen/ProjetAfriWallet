@@ -18,7 +18,10 @@ public static class PaymentRequestsComposition
         services.AddDbContext<PaymentRequestDbContext>(options => options.UseSqlite(connectionString));
         services.AddScoped<IPaymentRequestRepository, EfPaymentRequestRepository>();
         services.AddScoped<IPaymentRequestRecipientResolver, P2PRecipientResolver>();
+        services.AddScoped<IPaymentRequestWalletOwnershipReader, WalletPaymentRequestOwnershipReader>();
+        services.AddScoped<IPaymentRequestPaymentPort, P2PPaymentRequestPaymentPort>();
         services.AddScoped<PaymentRequestApplicationService>();
+        services.AddScoped<PaymentRequestActionService>();
         return services;
     }
 }

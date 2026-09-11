@@ -51,34 +51,7 @@ public sealed class PaymentRequest
         DateTimeOffset createdAtUtc,
         DateTimeOffset? expiresAtUtc = null)
     {
-        ArgumentNullException.ThrowIfNull(payerReference);
-        ArgumentNullException.ThrowIfNull(currency);
-
-        if (requesterWalletId.Value == Guid.Empty)
-        {
-            throw new ArgumentException("Requester wallet id cannot be empty.", nameof(requesterWalletId));
-        }
-
-        if (amountMinor <= 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(amountMinor), "Payment request amount must be positive.");
-        }
-
-        if (correlationId == Guid.Empty)
-        {
-            throw new ArgumentException("Correlation id cannot be empty.", nameof(correlationId));
-        }
-
-        EnsureUtc(createdAtUtc, nameof(createdAtUtc));
-
-        if (expiresAtUtc is not null)
-        {
-            EnsureUtc(expiresAtUtc.Value, nameof(expiresAtUtc));
-            if (expiresAtUtc.Value <= createdAtUtc)
-            {
-                throw new ArgumentException("Expiration must be later than creation time.", nameof(expiresAtUtc));
-            }
-        }
+        ValidateCore(requesterWalletId, payerReference, currency, amountMinor, correlationId, createdAtUtc, expiresAtUtc);
 
         return new PaymentRequest(
             PaymentRequestId.New(),
@@ -89,6 +62,153 @@ public sealed class PaymentRequest
             correlationId,
             createdAtUtc,
             expiresAtUtc);
+    }
+
+    public static PaymentRequest Restore(
+        PaymentRequestId id,
+        WalletId requesterWalletId,
+        RecipientReference payerReference,
+        Currency currency,
+        long amountMinor,
+        Guid correlationId,
+        DateTimeOffset createdAtUtc,
+        DateTimeOffset? expiresAtUtc,
+        DateTimeOffset updatedAtUtc,
+        PaymentRequestStatus status,
+        WalletId? acceptedPayerWalletId,
+        DateTimeOffset? acceptedAtUtc,
+        Guid? transferId,
+        DateTimeOffset? closedAtUtc)
+    {
+        if (id.Value == Guid.Empty)
+        {
+            throw new ArgumentException("Payment request id cannot be empty.", nameof(id));
+        }
+
+        ValidateCore(requesterWalletId, payerReference, currency, amountMinor, correlationId, createdAtUtc, expiresAtUtc);
+        EnsureUtc(updatedAtUtc, nameof(updatedAtUtc));
+        if (updatedAtUtc < createdAtUtc)
+        {
+            throw new ArgumentException("Updated timestamp cannot precede creation time.", nameof(updatedAtUtc));
+        }
+
+        if (acceptedAtUtc is not null)
+        {
+            EnsureUtc(acceptedAtUtc.Value, nameof(acceptedAtUtc));
+            if (acceptedAtUtc.Value < createdAtUtc || acceptedAtUtc.Value > updatedAtUtc)
+            {
+                throw new ArgumentException("Acceptance timestamp is inconsistent with request timeline.", nameof(acceptedAtUtc));
+            }
+        }
+
+        if (closedAtUtc is not null)
+        {
+            EnsureUtc(closedAtUtc.Value, nameof(closedAtUtc));
+            if (closedAtUtc.Value < createdAtUtc || closedAtUtc.Value != updatedAtUtc)
+            {
+                throw new ArgumentException("Closed timestamp is inconsistent with request timeline.", nameof(closedAtUtc));
+            }
+        }
+
+        var hasAcceptedWallet = acceptedPayerWalletId is not null;
+        var hasAcceptedAt = acceptedAtUtc is not null;
+        if (hasAcceptedWallet != hasAcceptedAt)
+        {
+            throw new ArgumentException("Accepted payer wallet and acceptance timestamp must be present together.");
+        }
+
+        if (acceptedPayerWalletId is not null)
+        {
+            if (acceptedPayerWalletId.Value.Value == Guid.Empty)
+            {
+                throw new ArgumentException("Accepted payer wallet id cannot be empty.", nameof(acceptedPayerWalletId));
+            }
+
+            if (acceptedPayerWalletId.Value == requesterWalletId)
+            {
+                throw new InvalidOperationException("Requester and payer wallets must be different.");
+            }
+        }
+
+        switch (status)
+        {
+            case PaymentRequestStatus.Pending:
+                if (acceptedPayerWalletId is not null || transferId is not null || closedAtUtc is not null || updatedAtUtc != createdAtUtc)
+                {
+                    throw new InvalidOperationException("Pending payment request persistence state is inconsistent.");
+                }
+                break;
+
+            case PaymentRequestStatus.Accepted:
+                if (acceptedPayerWalletId is null || acceptedAtUtc is null || transferId is not null || closedAtUtc is not null || updatedAtUtc != acceptedAtUtc.Value)
+                {
+                    throw new InvalidOperationException("Accepted payment request persistence state is inconsistent.");
+                }
+                EnsureNotPastExpiration(expiresAtUtc, acceptedAtUtc.Value);
+                break;
+
+            case PaymentRequestStatus.Declined:
+                if (acceptedPayerWalletId is not null || transferId is not null || closedAtUtc is null)
+                {
+                    throw new InvalidOperationException("Declined payment request persistence state is inconsistent.");
+                }
+                EnsureNotPastExpiration(expiresAtUtc, closedAtUtc.Value);
+                break;
+
+            case PaymentRequestStatus.Cancelled:
+                if (transferId is not null || closedAtUtc is null)
+                {
+                    throw new InvalidOperationException("Cancelled payment request persistence state is inconsistent.");
+                }
+                if (acceptedAtUtc is not null && closedAtUtc.Value < acceptedAtUtc.Value)
+                {
+                    throw new InvalidOperationException("Cancellation cannot precede acceptance.");
+                }
+                EnsureNotPastExpiration(expiresAtUtc, closedAtUtc.Value);
+                break;
+
+            case PaymentRequestStatus.Expired:
+                if (transferId is not null || closedAtUtc is null || expiresAtUtc is null || closedAtUtc.Value < expiresAtUtc.Value)
+                {
+                    throw new InvalidOperationException("Expired payment request persistence state is inconsistent.");
+                }
+                if (acceptedAtUtc is not null && closedAtUtc.Value < acceptedAtUtc.Value)
+                {
+                    throw new InvalidOperationException("Expiration cannot precede acceptance.");
+                }
+                break;
+
+            case PaymentRequestStatus.Paid:
+                if (acceptedPayerWalletId is null || acceptedAtUtc is null || transferId is null || transferId == Guid.Empty || closedAtUtc is null || closedAtUtc.Value < acceptedAtUtc.Value)
+                {
+                    throw new InvalidOperationException("Paid payment request persistence state is inconsistent.");
+                }
+                EnsureNotPastExpiration(expiresAtUtc, closedAtUtc.Value);
+                break;
+
+            default:
+                throw new ArgumentOutOfRangeException(nameof(status), status, "Unsupported payment request status.");
+        }
+
+        var restored = new PaymentRequest(
+            id,
+            requesterWalletId,
+            payerReference,
+            currency,
+            amountMinor,
+            correlationId,
+            createdAtUtc,
+            expiresAtUtc)
+        {
+            UpdatedAtUtc = updatedAtUtc,
+            Status = status,
+            AcceptedPayerWalletId = acceptedPayerWalletId,
+            AcceptedAtUtc = acceptedAtUtc,
+            TransferId = transferId,
+            ClosedAtUtc = closedAtUtc
+        };
+
+        return restored;
     }
 
     public void Accept(WalletId payerWalletId, DateTimeOffset acceptedAtUtc)
@@ -167,6 +287,45 @@ public sealed class PaymentRequest
         Close(PaymentRequestStatus.Paid, paidAtUtc);
     }
 
+    private static void ValidateCore(
+        WalletId requesterWalletId,
+        RecipientReference payerReference,
+        Currency currency,
+        long amountMinor,
+        Guid correlationId,
+        DateTimeOffset createdAtUtc,
+        DateTimeOffset? expiresAtUtc)
+    {
+        ArgumentNullException.ThrowIfNull(payerReference);
+        ArgumentNullException.ThrowIfNull(currency);
+
+        if (requesterWalletId.Value == Guid.Empty)
+        {
+            throw new ArgumentException("Requester wallet id cannot be empty.", nameof(requesterWalletId));
+        }
+
+        if (amountMinor <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(amountMinor), "Payment request amount must be positive.");
+        }
+
+        if (correlationId == Guid.Empty)
+        {
+            throw new ArgumentException("Correlation id cannot be empty.", nameof(correlationId));
+        }
+
+        EnsureUtc(createdAtUtc, nameof(createdAtUtc));
+
+        if (expiresAtUtc is not null)
+        {
+            EnsureUtc(expiresAtUtc.Value, nameof(expiresAtUtc));
+            if (expiresAtUtc.Value <= createdAtUtc)
+            {
+                throw new ArgumentException("Expiration must be later than creation time.", nameof(expiresAtUtc));
+            }
+        }
+    }
+
     private void EnsurePending()
     {
         if (Status != PaymentRequestStatus.Pending)
@@ -183,9 +342,11 @@ public sealed class PaymentRequest
         }
     }
 
-    private void EnsureNotExpired(DateTimeOffset atUtc)
+    private void EnsureNotExpired(DateTimeOffset atUtc) => EnsureNotPastExpiration(ExpiresAtUtc, atUtc);
+
+    private static void EnsureNotPastExpiration(DateTimeOffset? expiresAtUtc, DateTimeOffset atUtc)
     {
-        if (ExpiresAtUtc is not null && atUtc >= ExpiresAtUtc.Value)
+        if (expiresAtUtc is not null && atUtc >= expiresAtUtc.Value)
         {
             throw new InvalidOperationException("Payment request has expired.");
         }

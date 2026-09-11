@@ -90,6 +90,17 @@ sealed class InMemoryRepository : IPaymentRequestRepository
         AddCalls++;
         return Task.CompletedTask;
     }
+    public Task UpdateAsync(PaymentRequest request, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        if (!byId.ContainsKey(request.Id.Value))
+        {
+            throw new InvalidOperationException("Payment request was not found.");
+        }
+        byId[request.Id.Value] = request;
+        byCorrelation[request.CorrelationId] = request;
+        return Task.CompletedTask;
+    }
     public Task<PaymentRequest?> GetAsync(PaymentRequestId id, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();

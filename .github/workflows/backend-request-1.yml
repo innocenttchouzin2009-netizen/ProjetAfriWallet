@@ -1,0 +1,38 @@
+name: AFW-BE-REQUEST-1 Payment Request & Request-to-Pay Engine
+
+on:
+  push:
+    branches:
+      - feature/backend-request-1
+    paths:
+      - 'backend/src/PaymentRequests/**'
+      - 'backend/tests/PaymentRequests.Domain.Scenarios/**'
+      - '.github/workflows/backend-request-1.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'backend/src/PaymentRequests/**'
+      - 'backend/tests/PaymentRequests.Domain.Scenarios/**'
+      - '.github/workflows/backend-request-1.yml'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Validate AFW-BE-REQUEST-1
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build Payment Requests Domain
+        run: dotnet build backend/src/PaymentRequests/PaymentRequests.Domain/PaymentRequests.Domain.csproj --configuration Release --nologo
+
+      - name: Run payment request domain lifecycle scenarios
+        run: dotnet run --project backend/tests/PaymentRequests.Domain.Scenarios/PaymentRequests.Domain.Scenarios.csproj --configuration Release

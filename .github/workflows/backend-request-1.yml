@@ -1,0 +1,80 @@
+name: AFW-BE-REQUEST-1 Payment Request & Request-to-Pay Engine
+
+on:
+  push:
+    branches:
+      - feature/backend-request-1
+    paths:
+      - 'backend/src/PaymentRequests/**'
+      - 'backend/src/IdentityService/IdentityService.Api/PaymentRequests/**'
+      - 'backend/src/IdentityService/IdentityService.Api/Program.cs'
+      - 'backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj'
+      - 'backend/src/IdentityService/IdentityService.Api/appsettings.json'
+      - 'backend/tests/PaymentRequests.Domain.Scenarios/**'
+      - 'backend/tests/PaymentRequests.Application.Scenarios/**'
+      - 'backend/tests/PaymentRequests.Persistence.Scenarios/**'
+      - 'backend/tests/PaymentRequests.Http.Scenarios/**'
+      - 'backend/tests/PaymentRequests.Actions.Scenarios/**'
+      - 'backend/tests/PaymentRequests.Actions.Http.Scenarios/**'
+      - '.github/workflows/backend-request-1.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'backend/src/PaymentRequests/**'
+      - 'backend/src/IdentityService/IdentityService.Api/PaymentRequests/**'
+      - 'backend/src/IdentityService/IdentityService.Api/Program.cs'
+      - 'backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj'
+      - 'backend/src/IdentityService/IdentityService.Api/appsettings.json'
+      - 'backend/tests/PaymentRequests.Domain.Scenarios/**'
+      - 'backend/tests/PaymentRequests.Application.Scenarios/**'
+      - 'backend/tests/PaymentRequests.Persistence.Scenarios/**'
+      - 'backend/tests/PaymentRequests.Http.Scenarios/**'
+      - 'backend/tests/PaymentRequests.Actions.Scenarios/**'
+      - 'backend/tests/PaymentRequests.Actions.Http.Scenarios/**'
+      - '.github/workflows/backend-request-1.yml'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Validate AFW-BE-REQUEST-1
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build Payment Requests Domain
+        run: dotnet build backend/src/PaymentRequests/PaymentRequests.Domain/PaymentRequests.Domain.csproj --configuration Release --nologo
+
+      - name: Run payment request domain lifecycle scenarios
+        run: dotnet run --project backend/tests/PaymentRequests.Domain.Scenarios/PaymentRequests.Domain.Scenarios.csproj --configuration Release
+
+      - name: Build Payment Requests Application
+        run: dotnet build backend/src/PaymentRequests/PaymentRequests.Application/PaymentRequests.Application.csproj --configuration Release --nologo
+
+      - name: Run payment request application orchestration scenarios
+        run: dotnet run --project backend/tests/PaymentRequests.Application.Scenarios/PaymentRequests.Application.Scenarios.csproj --configuration Release
+
+      - name: Run payment request action and P2P execution scenarios
+        run: dotnet run --project backend/tests/PaymentRequests.Actions.Scenarios/PaymentRequests.Actions.Scenarios.csproj --configuration Release
+
+      - name: Build Payment Requests Persistence
+        run: dotnet build backend/src/PaymentRequests/PaymentRequests.Persistence/PaymentRequests.Persistence.csproj --configuration Release --nologo
+
+      - name: Run payment request persistence scenarios
+        run: dotnet run --project backend/tests/PaymentRequests.Persistence.Scenarios/PaymentRequests.Persistence.Scenarios.csproj --configuration Release
+
+      - name: Build IdentityService host with Payment Requests wiring
+        run: dotnet build backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj --configuration Release --nologo
+
+      - name: Run protected payment request HTTP scenarios
+        run: dotnet run --project backend/tests/PaymentRequests.Http.Scenarios/PaymentRequests.Http.Scenarios.csproj --configuration Release
+
+      - name: Run authenticated payment request action HTTP scenarios
+        run: dotnet run --project backend/tests/PaymentRequests.Actions.Http.Scenarios/PaymentRequests.Actions.Http.Scenarios.csproj --configuration Release

@@ -6,6 +6,7 @@ using AfriWallet.Fx.Application;
 using AfriWallet.Fx.Infrastructure;
 using AfriWallet.Ledger.Application;
 using AfriWallet.Ledger.Persistence;
+using AfriWallet.P2P.Directory.Persistence;
 using AfriWallet.Wallet.Application;
 using AfriWallet.Wallet.Persistence;
 using IdentityService.Api.Auth.Abstractions;
@@ -49,6 +50,10 @@ var ledgerConnectionString = builder.Configuration.GetConnectionString("LedgerDa
     Environment.GetEnvironmentVariable("AFW_LEDGER_DB_CONNECTION_STRING") ??
     "Data Source=universal-ledger.db";
 
+var recipientDirectoryConnectionString = builder.Configuration.GetConnectionString("P2PRecipientDirectory") ??
+    Environment.GetEnvironmentVariable("AFW_P2P_RECIPIENT_DIRECTORY_DB_CONNECTION_STRING") ??
+    "Data Source=p2p-recipient-directory.db";
+
 var configuredFxRates = FxConfiguration.LoadRates(builder.Configuration);
 
 builder.Services.AddDbContext<AuthDbContext>(options =>
@@ -91,6 +96,7 @@ builder.Services.AddSingleton<FxQuoteApplicationService>();
 
 builder.Services.AddInternalTransferModule(builder.Configuration);
 builder.Services.AddP2PCore();
+builder.Services.AddAuthoritativeP2PRecipientDirectory(recipientDirectoryConnectionString);
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

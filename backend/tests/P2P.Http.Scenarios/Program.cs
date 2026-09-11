@@ -162,11 +162,13 @@ sealed class P2PHttpFixture : IAsyncDisposable
         builder.Services.AddSingleton<IWalletRepository>(wallets);
         builder.Services.AddP2PCore();
 
-        Assert(
-            builder.Services.Any(descriptor =>
+        if (!builder.Services.Any(descriptor =>
                 descriptor.ServiceType == typeof(IP2PTransferPort) &&
-                descriptor.ImplementationType == typeof(InternalTransferP2PPort)),
-            "P2P core must wire IP2PTransferPort to InternalTransferP2PPort before host overrides used by this HTTP harness.");
+                descriptor.ImplementationType == typeof(InternalTransferP2PPort)))
+        {
+            throw new InvalidOperationException(
+                "P2P core must wire IP2PTransferPort to InternalTransferP2PPort before host overrides used by this HTTP harness.");
+        }
 
         if (configureRecipientProviders)
         {

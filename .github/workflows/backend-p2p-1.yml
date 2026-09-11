@@ -7,6 +7,7 @@ on:
     paths:
       - 'backend/src/P2P/**'
       - 'backend/tests/P2P.Domain.Application.Scenarios/**'
+      - 'backend/tests/P2P.Infrastructure.Scenarios/**'
       - '.github/workflows/backend-p2p-1.yml'
   pull_request:
     branches:
@@ -14,6 +15,7 @@ on:
     paths:
       - 'backend/src/P2P/**'
       - 'backend/tests/P2P.Domain.Application.Scenarios/**'
+      - 'backend/tests/P2P.Infrastructure.Scenarios/**'
       - '.github/workflows/backend-p2p-1.yml'
   workflow_dispatch:
 
@@ -37,5 +39,11 @@ jobs:
       - name: Build P2P Application
         run: dotnet build backend/src/P2P/P2P.Application/P2P.Application.csproj --configuration Release --nologo
 
-      - name: Run P2P recipient resolution scenarios
+      - name: Run P2P recipient resolution and orchestration scenarios
         run: dotnet run --project backend/tests/P2P.Domain.Application.Scenarios/P2P.Domain.Application.Scenarios.csproj --configuration Release
+
+      - name: Build P2P Infrastructure
+        run: dotnet build backend/src/P2P/P2P.Infrastructure/P2P.Infrastructure.csproj --configuration Release --nologo
+
+      - name: Run P2P concrete recipient adapter scenarios
+        run: dotnet run --project backend/tests/P2P.Infrastructure.Scenarios/P2P.Infrastructure.Scenarios.csproj --configuration Release

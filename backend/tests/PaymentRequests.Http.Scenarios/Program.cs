@@ -117,6 +117,8 @@ static void Assert(bool condition, string message)
 
 sealed class PaymentRequestHttpFixture : IAsyncDisposable
 {
+    private static readonly DateTimeOffset StableExpirationUtc = new(2030, 1, 1, 0, 0, 0, TimeSpan.Zero);
+
     private PaymentRequestHttpFixture(WebApplication app, InMemoryRepository repository, FixedResolver resolver,
         Guid ownerId, Guid foreignOwnerId, Guid requesterWalletId, Guid foreignWalletId, Guid payerWalletId)
     {
@@ -140,7 +142,7 @@ sealed class PaymentRequestHttpFixture : IAsyncDisposable
     public Guid PayerWalletId { get; }
 
     public CreatePaymentRequestHttpRequest Request(Guid correlationId) =>
-        new(RequesterWalletId, "afwal-id", "payer.one", "XAF", 2_500, correlationId, DateTimeOffset.UtcNow.AddHours(1));
+        new(RequesterWalletId, "afwal-id", "payer.one", "XAF", 2_500, correlationId, StableExpirationUtc);
 
     public static async Task<PaymentRequestHttpFixture> CreateAsync()
     {

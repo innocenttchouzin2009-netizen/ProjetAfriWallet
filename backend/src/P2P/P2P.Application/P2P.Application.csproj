@@ -6,6 +6,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../../Wallet/Wallet.Domain/Wallet.Domain.csproj" />
+    <ProjectReference Include="../../Transfer/Transfer.Application/Transfer.Application.csproj" />
     <ProjectReference Include="../P2P.Domain/P2P.Domain.csproj" />
   </ItemGroup>
 </Project>

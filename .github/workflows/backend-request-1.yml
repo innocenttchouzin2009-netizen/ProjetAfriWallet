@@ -8,6 +8,7 @@ on:
       - 'backend/src/PaymentRequests/**'
       - 'backend/tests/PaymentRequests.Domain.Scenarios/**'
       - 'backend/tests/PaymentRequests.Application.Scenarios/**'
+      - 'backend/tests/PaymentRequests.Persistence.Scenarios/**'
       - '.github/workflows/backend-request-1.yml'
   pull_request:
     branches:
@@ -16,6 +17,7 @@ on:
       - 'backend/src/PaymentRequests/**'
       - 'backend/tests/PaymentRequests.Domain.Scenarios/**'
       - 'backend/tests/PaymentRequests.Application.Scenarios/**'
+      - 'backend/tests/PaymentRequests.Persistence.Scenarios/**'
       - '.github/workflows/backend-request-1.yml'
   workflow_dispatch:
 
@@ -44,3 +46,9 @@ jobs:
 
       - name: Run payment request application orchestration scenarios
         run: dotnet run --project backend/tests/PaymentRequests.Application.Scenarios/PaymentRequests.Application.Scenarios.csproj --configuration Release
+
+      - name: Build Payment Requests Persistence
+        run: dotnet build backend/src/PaymentRequests/PaymentRequests.Persistence/PaymentRequests.Persistence.csproj --configuration Release --nologo
+
+      - name: Run payment request persistence scenarios
+        run: dotnet run --project backend/tests/PaymentRequests.Persistence.Scenarios/PaymentRequests.Persistence.Scenarios.csproj --configuration Release

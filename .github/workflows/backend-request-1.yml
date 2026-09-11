@@ -6,18 +6,28 @@ on:
       - feature/backend-request-1
     paths:
       - 'backend/src/PaymentRequests/**'
+      - 'backend/src/IdentityService/IdentityService.Api/PaymentRequests/**'
+      - 'backend/src/IdentityService/IdentityService.Api/Program.cs'
+      - 'backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj'
+      - 'backend/src/IdentityService/IdentityService.Api/appsettings.json'
       - 'backend/tests/PaymentRequests.Domain.Scenarios/**'
       - 'backend/tests/PaymentRequests.Application.Scenarios/**'
       - 'backend/tests/PaymentRequests.Persistence.Scenarios/**'
+      - 'backend/tests/PaymentRequests.Http.Scenarios/**'
       - '.github/workflows/backend-request-1.yml'
   pull_request:
     branches:
       - main
     paths:
       - 'backend/src/PaymentRequests/**'
+      - 'backend/src/IdentityService/IdentityService.Api/PaymentRequests/**'
+      - 'backend/src/IdentityService/IdentityService.Api/Program.cs'
+      - 'backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj'
+      - 'backend/src/IdentityService/IdentityService.Api/appsettings.json'
       - 'backend/tests/PaymentRequests.Domain.Scenarios/**'
       - 'backend/tests/PaymentRequests.Application.Scenarios/**'
       - 'backend/tests/PaymentRequests.Persistence.Scenarios/**'
+      - 'backend/tests/PaymentRequests.Http.Scenarios/**'
       - '.github/workflows/backend-request-1.yml'
   workflow_dispatch:
 
@@ -52,3 +62,9 @@ jobs:
 
       - name: Run payment request persistence scenarios
         run: dotnet run --project backend/tests/PaymentRequests.Persistence.Scenarios/PaymentRequests.Persistence.Scenarios.csproj --configuration Release
+
+      - name: Build IdentityService host with Payment Requests wiring
+        run: dotnet build backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj --configuration Release --nologo
+
+      - name: Run protected payment request HTTP scenarios
+        run: dotnet run --project backend/tests/PaymentRequests.Http.Scenarios/PaymentRequests.Http.Scenarios.csproj --configuration Release

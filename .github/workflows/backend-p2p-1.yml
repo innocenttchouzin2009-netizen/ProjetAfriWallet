@@ -6,16 +6,24 @@ on:
       - feature/backend-p2p-1
     paths:
       - 'backend/src/P2P/**'
+      - 'backend/src/IdentityService/IdentityService.Api/P2P/**'
+      - 'backend/src/IdentityService/IdentityService.Api/Program.cs'
+      - 'backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj'
       - 'backend/tests/P2P.Domain.Application.Scenarios/**'
       - 'backend/tests/P2P.Infrastructure.Scenarios/**'
+      - 'backend/tests/P2P.Http.Scenarios/**'
       - '.github/workflows/backend-p2p-1.yml'
   pull_request:
     branches:
       - main
     paths:
       - 'backend/src/P2P/**'
+      - 'backend/src/IdentityService/IdentityService.Api/P2P/**'
+      - 'backend/src/IdentityService/IdentityService.Api/Program.cs'
+      - 'backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj'
       - 'backend/tests/P2P.Domain.Application.Scenarios/**'
       - 'backend/tests/P2P.Infrastructure.Scenarios/**'
+      - 'backend/tests/P2P.Http.Scenarios/**'
       - '.github/workflows/backend-p2p-1.yml'
   workflow_dispatch:
 
@@ -47,3 +55,9 @@ jobs:
 
       - name: Run P2P concrete recipient adapter scenarios
         run: dotnet run --project backend/tests/P2P.Infrastructure.Scenarios/P2P.Infrastructure.Scenarios.csproj --configuration Release
+
+      - name: Build IdentityService host with P2P wiring
+        run: dotnet build backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj --configuration Release --nologo
+
+      - name: Run protected P2P HTTP scenarios
+        run: dotnet run --project backend/tests/P2P.Http.Scenarios/P2P.Http.Scenarios.csproj --configuration Release

@@ -92,13 +92,14 @@ await AssertThrowsAsync<ArgumentException>(() => p2pService.ExecuteAsync(new Exe
     Guid.Empty,
     DateTimeOffset.UtcNow)), "empty P2P correlation id rejected");
 
+var nonUtcTimestamp = new DateTimeOffset(2026, 9, 11, 9, 0, 0, TimeSpan.FromHours(2));
 await AssertThrowsAsync<ArgumentException>(() => p2pService.ExecuteAsync(new ExecuteP2PTransferCommand(
     sourceWalletId,
     RecipientReference.FromAfWalId("leaty.237"),
     eur,
     1_000,
     Guid.NewGuid(),
-    DateTimeOffset.Now)), "non-UTC P2P timestamp rejected");
+    nonUtcTimestamp)), "non-UTC P2P timestamp rejected");
 
 using var cts = new CancellationTokenSource();
 cts.Cancel();

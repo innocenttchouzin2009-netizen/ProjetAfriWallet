@@ -21,6 +21,7 @@ using IdentityService.Api.Balance;
 using IdentityService.Api.Fx;
 using IdentityService.Api.Ledger;
 using IdentityService.Api.P2P;
+using IdentityService.Api.PaymentRequests;
 using IdentityService.Api.Transfer;
 using IdentityService.Api.Wallet;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -53,6 +54,10 @@ var ledgerConnectionString = builder.Configuration.GetConnectionString("LedgerDa
 var recipientDirectoryConnectionString = builder.Configuration.GetConnectionString("P2PRecipientDirectory") ??
     Environment.GetEnvironmentVariable("AFW_P2P_RECIPIENT_DIRECTORY_DB_CONNECTION_STRING") ??
     "Data Source=p2p-recipient-directory.db";
+
+var paymentRequestsConnectionString = builder.Configuration.GetConnectionString("PaymentRequestsDatabase") ??
+    Environment.GetEnvironmentVariable("AFW_PAYMENT_REQUESTS_DB_CONNECTION_STRING") ??
+    "Data Source=payment-requests.db";
 
 var configuredFxRates = FxConfiguration.LoadRates(builder.Configuration);
 
@@ -97,6 +102,7 @@ builder.Services.AddSingleton<FxQuoteApplicationService>();
 builder.Services.AddInternalTransferModule(builder.Configuration);
 builder.Services.AddP2PCore();
 builder.Services.AddAuthoritativeP2PRecipientDirectory(recipientDirectoryConnectionString);
+builder.Services.AddPaymentRequests(paymentRequestsConnectionString);
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -196,5 +202,6 @@ app.MapBalanceEndpoints();
 app.MapFxEndpoints();
 app.MapTransferEndpoints();
 app.MapP2PEndpoints();
+app.MapPaymentRequestEndpoints();
 
 app.Run();

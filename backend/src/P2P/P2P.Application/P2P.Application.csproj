@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../Wallet/Wallet.Domain/Wallet.Domain.csproj" />
+    <ProjectReference Include="../../Transfer/Transfer.Application/Transfer.Application.csproj" />
+    <ProjectReference Include="../P2P.Domain/P2P.Domain.csproj" />
+  </ItemGroup>
+</Project>

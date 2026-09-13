@@ -19,14 +19,14 @@ var payerWallet = WalletId.From(Guid.NewGuid());
 var currency = Currency.Create("XAF");
 var payerReference = RecipientReference.FromAfWalId("payer.one");
 
-PaymentRequest NewRequest() => PaymentRequest.Create(
+PaymentRequest NewRequest(DateTimeOffset? expiresAtUtc = null) => PaymentRequest.Create(
     requesterWallet,
     payerReference,
     currency,
     2_500,
     Guid.NewGuid(),
     createdAt,
-    createdAt.AddHours(1));
+    expiresAtUtc ?? createdAt.AddHours(1));
 
 var ownership = new FixedOwnershipReader(new Dictionary<Guid, Guid>
 {
@@ -75,7 +75,7 @@ var ownership = new FixedOwnershipReader(new Dictionary<Guid, Guid>
     Assert(transferPort.Calls == 0, "Cancel must not execute money movement.");
 }
 
-// Accept resolves the payer, validates actor ownership and pays payer -> requester.
+// Accept resolves the payer, persists Accepted, validates actor ownership and pays payer -> requester.
 {
     var original = NewRequest();
     var repository = new CloningRepository(original);
@@ -100,10 +100,17 @@ var ownership = new FixedOwnershipReader(new Dictionary<Guid, Guid>
     Assert(transferPort.TargetWalletId == requesterWallet.Value, "Payment target must be requester wallet.");
     Assert(transferPort.AmountMinor == 2_500, "Payment amount must match request.");
     Assert(transferPort.CorrelationId == original.Id.Value, "Transfer correlation must be deterministic request id.");
-    Assert(repository.UpdateCalls == 1, "Paid state must persist once after successful transfer.");
+    Assert(repository.UpdateCalls == 2, "Accepted and Paid states must each be persisted.");
+
+    var replay = await service.AcceptAndPayAsync(original.Id, payerOwner, actionAt.AddMinutes(1));
+    Assert(replay.Status == PaymentRequestActionStatus.Success, "Paid replay must be idempotent.");
+    Assert(replay.Request?.Status == PaymentRequestStatus.Paid, "Paid replay must remain Paid.");
+    Assert(replay.Request?.TransferId == transferPort.TransferId, "Paid replay must preserve the original transfer id.");
+    Assert(transferPort.Calls == 1, "Paid replay must not execute a second transfer.");
+    Assert(repository.UpdateCalls == 2, "Paid replay must not persist an extra transition.");
 }
 
-// Transfer failure must not persist Accepted/Paid state.
+// Transfer failure must leave a durable Accepted state for controlled retry/reconciliation.
 {
     var original = NewRequest();
     var repository = new CloningRepository(original);
@@ -121,9 +128,52 @@ var ownership = new FixedOwnershipReader(new Dictionary<Guid, Guid>
     }
     catch (InvalidOperationException ex) when (ex.Message == "transfer failed") { }
 
-    Assert(repository.UpdateCalls == 0, "Failed transfer must not persist Accepted or Paid state.");
+    Assert(repository.UpdateCalls == 1, "Failed transfer must persist Accepted before money execution.");
     var persisted = await repository.GetAsync(original.Id);
-    Assert(persisted?.Status == PaymentRequestStatus.Pending, "Durable state must remain Pending after failed transfer.");
+    Assert(persisted?.Status == PaymentRequestStatus.Accepted, "Durable state must remain Accepted after failed transfer.");
+    Assert(persisted?.AcceptedPayerWalletId == payerWallet, "Durable Accepted state must preserve payer wallet.");
+}
+
+// A previously persisted Accepted request can retry payment without accepting a second time.
+{
+    var accepted = NewRequest();
+    accepted.Accept(payerWallet, actionAt);
+    var repository = new CloningRepository(accepted);
+    var transferPort = new RecordingP2PTransferPort();
+    var service = new PaymentRequestActionService(
+        repository,
+        new FixedResolver(payerWallet),
+        ownership,
+        new P2PPaymentRequestPaymentPort(transferPort));
+
+    var paid = await service.AcceptAndPayAsync(accepted.Id, payerOwner, actionAt.AddMinutes(1));
+    Assert(paid.Status == PaymentRequestActionStatus.Success, "Accepted retry must be payable.");
+    Assert(paid.Request?.Status == PaymentRequestStatus.Paid, "Accepted retry must become Paid.");
+    Assert(transferPort.Calls == 1, "Accepted retry must execute one transfer.");
+    Assert(repository.UpdateCalls == 1, "Accepted retry must persist only the Paid transition.");
+}
+
+// An Accepted request that has reached its expiration must fail before transfer execution.
+{
+    var accepted = NewRequest(createdAt.AddMinutes(6));
+    accepted.Accept(payerWallet, createdAt.AddMinutes(1));
+    var repository = new CloningRepository(accepted);
+    var transferPort = new RecordingP2PTransferPort();
+    var service = new PaymentRequestActionService(
+        repository,
+        new FixedResolver(payerWallet),
+        ownership,
+        new P2PPaymentRequestPaymentPort(transferPort));
+
+    try
+    {
+        await service.AcceptAndPayAsync(accepted.Id, payerOwner, createdAt.AddMinutes(6));
+        throw new InvalidOperationException("Expected expiration failure.");
+    }
+    catch (InvalidOperationException ex) when (ex.Message.Contains("expired", StringComparison.OrdinalIgnoreCase)) { }
+
+    Assert(transferPort.Calls == 0, "Expired Accepted retry must not execute transfer.");
+    Assert(repository.UpdateCalls == 0, "Expired Accepted retry must not change durable state.");
 }
 
 // Missing recipient fails closed before transfer.

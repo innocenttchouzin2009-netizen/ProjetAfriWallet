@@ -1,0 +1,38 @@
+name: AFW-BE-RECON-1 Transfer Receipt Lookup & Reconciliation
+
+on:
+  push:
+    branches:
+      - feature/backend-recon-1
+    paths:
+      - 'backend/src/Reconciliation/**'
+      - 'backend/tests/Reconciliation.Application.Scenarios/**'
+      - '.github/workflows/backend-recon-1.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'backend/src/Reconciliation/**'
+      - 'backend/tests/Reconciliation.Application.Scenarios/**'
+      - '.github/workflows/backend-recon-1.yml'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Validate AFW-BE-RECON-1
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build Reconciliation Application
+        run: dotnet build backend/src/Reconciliation/Reconciliation.Application/Reconciliation.Application.csproj --configuration Release --nologo
+
+      - name: Run transfer receipt lookup scenarios
+        run: dotnet run --project backend/tests/Reconciliation.Application.Scenarios/Reconciliation.Application.Scenarios.csproj --configuration Release

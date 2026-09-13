@@ -132,8 +132,8 @@ sealed class ReconciliationHttpFixture : IAsyncDisposable
         var creditAccount = new AccountId(Guid.NewGuid());
         var transferId = Guid.NewGuid();
         var correlationId = Guid.NewGuid();
-        var journalId = JournalEntryId.New();
-        var nonTransferJournalId = JournalEntryId.New();
+        var journalId = AfriWallet.Ledger.Domain.JournalEntryId.New();
+        var nonTransferJournalId = AfriWallet.Ledger.Domain.JournalEntryId.New();
         var now = new DateTimeOffset(2026, 9, 13, 7, 30, 0, TimeSpan.Zero);
 
         var sourceWallet = Wallet.Create(WalletId.From(sourceWalletId), sourceOwnerId, Currency.Create("XAF"), null, now);

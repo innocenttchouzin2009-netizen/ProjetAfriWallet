@@ -7,6 +7,7 @@ on:
     paths:
       - 'backend/src/Reconciliation/**'
       - 'backend/tests/Reconciliation.Application.Scenarios/**'
+      - 'backend/tests/Reconciliation.Infrastructure.Scenarios/**'
       - '.github/workflows/backend-recon-1.yml'
   pull_request:
     branches:
@@ -14,6 +15,7 @@ on:
     paths:
       - 'backend/src/Reconciliation/**'
       - 'backend/tests/Reconciliation.Application.Scenarios/**'
+      - 'backend/tests/Reconciliation.Infrastructure.Scenarios/**'
       - '.github/workflows/backend-recon-1.yml'
   workflow_dispatch:
 
@@ -36,3 +38,9 @@ jobs:
 
       - name: Run transfer receipt lookup scenarios
         run: dotnet run --project backend/tests/Reconciliation.Application.Scenarios/Reconciliation.Application.Scenarios.csproj --configuration Release
+
+      - name: Build Reconciliation Infrastructure
+        run: dotnet build backend/src/Reconciliation/Reconciliation.Infrastructure/Reconciliation.Infrastructure.csproj --configuration Release --nologo
+
+      - name: Run wallet-aware transfer reconciliation scenarios
+        run: dotnet run --project backend/tests/Reconciliation.Infrastructure.Scenarios/Reconciliation.Infrastructure.Scenarios.csproj --configuration Release

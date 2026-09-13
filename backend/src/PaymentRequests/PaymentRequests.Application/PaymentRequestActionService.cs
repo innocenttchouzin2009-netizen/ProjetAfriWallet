@@ -90,7 +90,37 @@ public sealed class PaymentRequestActionService(
             return PaymentRequestActionResult.ActorNotAllowed();
         }
 
-        request.Accept(payerWalletId.Value, actionAtUtc);
+        if (request.Status == PaymentRequestStatus.Paid)
+        {
+            return PaymentRequestActionResult.Succeeded(request);
+        }
+
+        if (request.Status == PaymentRequestStatus.Pending)
+        {
+            request.Accept(payerWalletId.Value, actionAtUtc);
+            await repository.UpdateAsync(request, cancellationToken);
+        }
+        else if (request.Status == PaymentRequestStatus.Accepted)
+        {
+            if (request.AcceptedPayerWalletId is null || request.AcceptedPayerWalletId.Value != payerWalletId.Value)
+            {
+                throw new InvalidOperationException("Accepted payer wallet does not match the resolved payer.");
+            }
+
+            if (actionAtUtc < request.UpdatedAtUtc)
+            {
+                throw new ArgumentException("Action timestamp cannot move backwards.", nameof(actionAtUtc));
+            }
+
+            if (request.ExpiresAtUtc is not null && actionAtUtc >= request.ExpiresAtUtc.Value)
+            {
+                throw new InvalidOperationException("Payment request has expired.");
+            }
+        }
+        else
+        {
+            throw new InvalidOperationException($"Payment request in status {request.Status} cannot be accepted and paid.");
+        }
 
         // The payment correlation is deterministically bound to the request id so a retry
         // cannot create a second ledger journal through the certified transfer engine.

@@ -22,6 +22,7 @@ using IdentityService.Api.Fx;
 using IdentityService.Api.Ledger;
 using IdentityService.Api.P2P;
 using IdentityService.Api.PaymentRequests;
+using IdentityService.Api.Reconciliation;
 using IdentityService.Api.Transfer;
 using IdentityService.Api.Wallet;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -103,6 +104,7 @@ builder.Services.AddInternalTransferModule(builder.Configuration);
 builder.Services.AddP2PCore();
 builder.Services.AddAuthoritativeP2PRecipientDirectory(recipientDirectoryConnectionString);
 builder.Services.AddPaymentRequests(paymentRequestsConnectionString);
+builder.Services.AddReconciliationModule(builder.Configuration);
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -203,5 +205,6 @@ app.MapFxEndpoints();
 app.MapTransferEndpoints();
 app.MapP2PEndpoints();
 app.MapPaymentRequestEndpoints();
+app.MapReconciliationEndpoints();
 
 app.Run();

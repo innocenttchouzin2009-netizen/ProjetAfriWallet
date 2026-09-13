@@ -17,6 +17,8 @@
     <ProjectReference Include="../../P2P/P2P.Directory.Persistence/P2P.Directory.Persistence.csproj" />
     <ProjectReference Include="../../PaymentRequests/PaymentRequests.Application/PaymentRequests.Application.csproj" />
     <ProjectReference Include="../../PaymentRequests/PaymentRequests.Persistence/PaymentRequests.Persistence.csproj" />
+    <ProjectReference Include="../../Reconciliation/Reconciliation.Application/Reconciliation.Application.csproj" />
+    <ProjectReference Include="../../Reconciliation/Reconciliation.Infrastructure/Reconciliation.Infrastructure.csproj" />
     <ProjectReference Include="../../Transfer/Transfer.Application/Transfer.Application.csproj" />
     <ProjectReference Include="../../Transfer/Transfer.Infrastructure/Transfer.Infrastructure.csproj" />
     <ProjectReference Include="../../Wallet/Wallet.Application/Wallet.Application.csproj" />

@@ -6,16 +6,24 @@ on:
       - feature/backend-recon-1
     paths:
       - 'backend/src/Reconciliation/**'
+      - 'backend/src/IdentityService/IdentityService.Api/Reconciliation/**'
+      - 'backend/src/IdentityService/IdentityService.Api/Program.cs'
+      - 'backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj'
       - 'backend/tests/Reconciliation.Application.Scenarios/**'
       - 'backend/tests/Reconciliation.Infrastructure.Scenarios/**'
+      - 'backend/tests/Reconciliation.Http.Scenarios/**'
       - '.github/workflows/backend-recon-1.yml'
   pull_request:
     branches:
       - main
     paths:
       - 'backend/src/Reconciliation/**'
+      - 'backend/src/IdentityService/IdentityService.Api/Reconciliation/**'
+      - 'backend/src/IdentityService/IdentityService.Api/Program.cs'
+      - 'backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj'
       - 'backend/tests/Reconciliation.Application.Scenarios/**'
       - 'backend/tests/Reconciliation.Infrastructure.Scenarios/**'
+      - 'backend/tests/Reconciliation.Http.Scenarios/**'
       - '.github/workflows/backend-recon-1.yml'
   workflow_dispatch:
 
@@ -44,3 +52,9 @@ jobs:
 
       - name: Run wallet-aware transfer reconciliation scenarios
         run: dotnet run --project backend/tests/Reconciliation.Infrastructure.Scenarios/Reconciliation.Infrastructure.Scenarios.csproj --configuration Release
+
+      - name: Build IdentityService host with Reconciliation wiring
+        run: dotnet build backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj --configuration Release --nologo
+
+      - name: Run protected reconciliation HTTP scenarios
+        run: dotnet run --project backend/tests/Reconciliation.Http.Scenarios/Reconciliation.Http.Scenarios.csproj --configuration Release

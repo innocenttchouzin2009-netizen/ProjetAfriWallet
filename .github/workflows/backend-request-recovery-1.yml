@@ -1,0 +1,53 @@
+name: AFW-BE-REQUEST-RECOVERY-1 Payment Reconciliation
+
+on:
+  push:
+    branches:
+      - feature/backend-request-recovery-1
+    paths:
+      - 'backend/src/PaymentRequests/PaymentRequests.Application/**'
+      - 'backend/src/IdentityService/IdentityService.Api/PaymentRequests/PaymentRequestsComposition.cs'
+      - 'backend/tests/PaymentRequests.Recovery.Scenarios/**'
+      - 'backend/tests/PaymentRequests.Recovery.Adapter.Scenarios/**'
+      - 'backend/tests/PaymentRequests.Recovery.Composition.Scenarios/**'
+      - '.github/workflows/backend-request-recovery-1.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'backend/src/PaymentRequests/PaymentRequests.Application/**'
+      - 'backend/src/IdentityService/IdentityService.Api/PaymentRequests/PaymentRequestsComposition.cs'
+      - 'backend/tests/PaymentRequests.Recovery.Scenarios/**'
+      - 'backend/tests/PaymentRequests.Recovery.Adapter.Scenarios/**'
+      - 'backend/tests/PaymentRequests.Recovery.Composition.Scenarios/**'
+      - '.github/workflows/backend-request-recovery-1.yml'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Validate AFW-BE-REQUEST-RECOVERY-1
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build Payment Requests Application
+        run: dotnet build backend/src/PaymentRequests/PaymentRequests.Application/PaymentRequests.Application.csproj --configuration Release --nologo
+
+      - name: Run payment request reconciliation scenarios
+        run: dotnet run --project backend/tests/PaymentRequests.Recovery.Scenarios/PaymentRequests.Recovery.Scenarios.csproj --configuration Release
+
+      - name: Run transfer correlation reconciliation adapter scenarios
+        run: dotnet run --project backend/tests/PaymentRequests.Recovery.Adapter.Scenarios/PaymentRequests.Recovery.Adapter.Scenarios.csproj --configuration Release
+
+      - name: Build IdentityService host with recovery wiring
+        run: dotnet build backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj --configuration Release --nologo
+
+      - name: Run recovery composition and end-to-end reconciliation scenarios
+        run: dotnet run --project backend/tests/PaymentRequests.Recovery.Composition.Scenarios/PaymentRequests.Recovery.Composition.Scenarios.csproj --configuration Release

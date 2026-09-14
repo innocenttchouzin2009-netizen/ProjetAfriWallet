@@ -24,9 +24,11 @@ public static class PaymentRequestsComposition
         services.AddScoped<IPaymentRequestPaymentPort, P2PPaymentRequestPaymentPort>();
         services.AddScoped<IPaymentRequestOwnedWalletReader, WalletRegistryOwnedWalletReader>();
         services.AddScoped<IPaymentRequestOwnedRecipientReferenceReader, AuthoritativeRecipientReferenceReader>();
+        services.AddScoped<IPaymentRequestReconciliationPort, TransferCorrelationPaymentRequestReconciliationPort>();
         services.AddScoped<PaymentRequestApplicationService>();
         services.AddScoped<PaymentRequestActionService>();
         services.AddScoped<AuthorizedPaymentRequestQueryService>();
+        services.AddScoped<PaymentRequestRecoveryService>();
         return services;
     }
 }

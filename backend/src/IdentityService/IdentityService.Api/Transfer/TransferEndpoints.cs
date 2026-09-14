@@ -2,6 +2,7 @@ using System.Security.Claims;
 using AfriWallet.Transfer.Application;
 using AfriWallet.Wallet.Application;
 using AfriWallet.Wallet.Domain;
+using Microsoft.AspNetCore.Mvc;
 
 namespace IdentityService.Api.Transfer;
 
@@ -98,7 +99,7 @@ public static class TransferEndpoints
         Guid correlationId,
         ClaimsPrincipal principal,
         IWalletRepository walletRepository,
-        TransferCorrelationLookupService lookupService,
+        [FromServices] TransferCorrelationLookupService lookupService,
         HttpContext httpContext,
         CancellationToken cancellationToken)
     {

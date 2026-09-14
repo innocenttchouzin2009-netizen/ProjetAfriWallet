@@ -1,3 +1,4 @@
+using AfriWallet.Notifications.Application;
 using AfriWallet.PaymentRequests.Application;
 using AfriWallet.PaymentRequests.Infrastructure;
 using AfriWallet.PaymentRequests.Persistence;
@@ -24,6 +25,8 @@ public static class PaymentRequestsComposition
         services.AddScoped<IPaymentRequestPaymentPort, P2PPaymentRequestPaymentPort>();
         services.AddScoped<IPaymentRequestOwnedWalletReader, WalletRegistryOwnedWalletReader>();
         services.AddScoped<IPaymentRequestOwnedRecipientReferenceReader, AuthoritativeRecipientReferenceReader>();
+        services.AddScoped<IPaymentRequestEventPublisher, LoggingPaymentRequestEventPublisher>();
+        services.AddScoped<PaymentRequestEventDispatcher>();
         services.AddScoped<PaymentRequestApplicationService>();
         services.AddScoped<PaymentRequestActionService>();
         services.AddScoped<AuthorizedPaymentRequestQueryService>();

@@ -1,14 +1,41 @@
+using AfriWallet.Notifications.Application;
+using AfriWallet.Notifications.Domain;
 using AfriWallet.PaymentRequests.Domain;
 using AfriWallet.Wallet.Domain;
 
 namespace AfriWallet.PaymentRequests.Application;
 
-public sealed class PaymentRequestActionService(
-    IPaymentRequestRepository repository,
-    IPaymentRequestRecipientResolver recipientResolver,
-    IPaymentRequestWalletOwnershipReader walletOwnershipReader,
-    IPaymentRequestPaymentPort paymentPort)
+public sealed class PaymentRequestActionService
 {
+    private readonly IPaymentRequestRepository repository;
+    private readonly IPaymentRequestRecipientResolver recipientResolver;
+    private readonly IPaymentRequestWalletOwnershipReader walletOwnershipReader;
+    private readonly IPaymentRequestPaymentPort paymentPort;
+    private readonly PaymentRequestEventDispatcher? eventDispatcher;
+
+    public PaymentRequestActionService(
+        IPaymentRequestRepository repository,
+        IPaymentRequestRecipientResolver recipientResolver,
+        IPaymentRequestWalletOwnershipReader walletOwnershipReader,
+        IPaymentRequestPaymentPort paymentPort)
+        : this(repository, recipientResolver, walletOwnershipReader, paymentPort, null)
+    {
+    }
+
+    public PaymentRequestActionService(
+        IPaymentRequestRepository repository,
+        IPaymentRequestRecipientResolver recipientResolver,
+        IPaymentRequestWalletOwnershipReader walletOwnershipReader,
+        IPaymentRequestPaymentPort paymentPort,
+        PaymentRequestEventDispatcher? eventDispatcher)
+    {
+        this.repository = repository;
+        this.recipientResolver = recipientResolver;
+        this.walletOwnershipReader = walletOwnershipReader;
+        this.paymentPort = paymentPort;
+        this.eventDispatcher = eventDispatcher;
+    }
+
     public async Task<PaymentRequestActionResult> DeclineAsync(
         PaymentRequestId id,
         Guid actorUserId,
@@ -38,6 +65,7 @@ public sealed class PaymentRequestActionService(
 
         request.Decline(actionAtUtc);
         await repository.UpdateAsync(request, cancellationToken);
+        await PublishAsync(request, PaymentRequestEventKind.Declined, request.UpdatedAtUtc, null, cancellationToken);
         return PaymentRequestActionResult.Succeeded(request);
     }
 
@@ -61,6 +89,30 @@ public sealed class PaymentRequestActionService(
 
         request.Cancel(actionAtUtc);
         await repository.UpdateAsync(request, cancellationToken);
+        await PublishAsync(request, PaymentRequestEventKind.Cancelled, request.UpdatedAtUtc, null, cancellationToken);
+        return PaymentRequestActionResult.Succeeded(request);
+    }
+
+    public async Task<PaymentRequestActionResult> ExpireAsync(
+        PaymentRequestId id,
+        DateTimeOffset expiredAtUtc,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateSystemTimestamp(expiredAtUtc);
+        var request = await repository.GetAsync(id, cancellationToken);
+        if (request is null)
+        {
+            return PaymentRequestActionResult.NotFound();
+        }
+
+        if (request.Status == PaymentRequestStatus.Expired)
+        {
+            return PaymentRequestActionResult.Succeeded(request);
+        }
+
+        request.Expire(expiredAtUtc);
+        await repository.UpdateAsync(request, cancellationToken);
+        await PublishAsync(request, PaymentRequestEventKind.Expired, request.UpdatedAtUtc, null, cancellationToken);
         return PaymentRequestActionResult.Succeeded(request);
     }
 
@@ -117,6 +169,12 @@ public sealed class PaymentRequestActionService(
         {
             request.Accept(payerWalletId, actionAtUtc);
             await repository.UpdateAsync(request, cancellationToken);
+            await PublishAsync(
+                request,
+                PaymentRequestEventKind.Accepted,
+                request.AcceptedAtUtc ?? request.UpdatedAtUtc,
+                null,
+                cancellationToken);
         }
         else
         {
@@ -151,8 +209,26 @@ public sealed class PaymentRequestActionService(
 
         request.MarkPaid(payment.TransferId, payment.CreatedAtUtc);
         await repository.UpdateAsync(request, cancellationToken);
+        await PublishAsync(
+            request,
+            PaymentRequestEventKind.Paid,
+            request.ClosedAtUtc ?? payment.CreatedAtUtc,
+            payment.TransferId,
+            cancellationToken);
         return PaymentRequestActionResult.Succeeded(request);
     }
+
+    private Task PublishAsync(
+        PaymentRequest request,
+        PaymentRequestEventKind kind,
+        DateTimeOffset occurredAtUtc,
+        Guid? transferId,
+        CancellationToken cancellationToken) =>
+        eventDispatcher is null
+            ? Task.CompletedTask
+            : eventDispatcher.PublishAsync(
+                PaymentRequestEvent.New(request.Id.Value, kind, occurredAtUtc, transferId),
+                cancellationToken);
 
     private static WalletId RequireAcceptedPayerWallet(PaymentRequest request)
     {
@@ -171,6 +247,11 @@ public sealed class PaymentRequestActionService(
             throw new ArgumentException("Actor user id cannot be empty.", nameof(actorUserId));
         }
 
+        ValidateSystemTimestamp(actionAtUtc);
+    }
+
+    private static void ValidateSystemTimestamp(DateTimeOffset actionAtUtc)
+    {
         if (actionAtUtc.Offset != TimeSpan.Zero)
         {
             throw new ArgumentException("Action timestamp must be UTC.", nameof(actionAtUtc));

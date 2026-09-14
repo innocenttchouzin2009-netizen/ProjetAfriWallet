@@ -7,5 +7,6 @@
   <ItemGroup>
     <ProjectReference Include="../PaymentRequests.Domain/PaymentRequests.Domain.csproj" />
     <ProjectReference Include="../../P2P/P2P.Application/P2P.Application.csproj" />
+    <ProjectReference Include="../../Notifications/Notifications.Application/Notifications.Application.csproj" />
   </ItemGroup>
 </Project>

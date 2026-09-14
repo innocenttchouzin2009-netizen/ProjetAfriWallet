@@ -6,14 +6,18 @@ on:
       - feature/backend-request-reconcile-1
     paths:
       - 'backend/src/PaymentRequests/PaymentRequests.Reconciliation.Application/**'
+      - 'backend/src/PaymentRequests/PaymentRequests.Reconciliation.Persistence/**'
       - 'backend/tests/PaymentRequests.Reconciliation.Application.Scenarios/**'
+      - 'backend/tests/PaymentRequests.Reconciliation.Persistence.Scenarios/**'
       - '.github/workflows/backend-request-reconcile-1.yml'
   pull_request:
     branches:
       - main
     paths:
       - 'backend/src/PaymentRequests/PaymentRequests.Reconciliation.Application/**'
+      - 'backend/src/PaymentRequests/PaymentRequests.Reconciliation.Persistence/**'
       - 'backend/tests/PaymentRequests.Reconciliation.Application.Scenarios/**'
+      - 'backend/tests/PaymentRequests.Reconciliation.Persistence.Scenarios/**'
       - '.github/workflows/backend-request-reconcile-1.yml'
   workflow_dispatch:
 
@@ -36,3 +40,9 @@ jobs:
 
       - name: Run reconciliation application scenarios
         run: dotnet run --project backend/tests/PaymentRequests.Reconciliation.Application.Scenarios/PaymentRequests.Reconciliation.Application.Scenarios.csproj --configuration Release
+
+      - name: Build reconciliation persistence
+        run: dotnet build backend/src/PaymentRequests/PaymentRequests.Reconciliation.Persistence/PaymentRequests.Reconciliation.Persistence.csproj --configuration Release --nologo
+
+      - name: Run reconciliation persistence scenarios
+        run: dotnet run --project backend/tests/PaymentRequests.Reconciliation.Persistence.Scenarios/PaymentRequests.Reconciliation.Persistence.Scenarios.csproj --configuration Release

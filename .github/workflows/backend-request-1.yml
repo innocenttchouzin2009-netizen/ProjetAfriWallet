@@ -72,6 +72,7 @@ jobs:
       - name: Run payment request persistence scenarios
         run: dotnet run --project backend/tests/PaymentRequests.Persistence.Scenarios/PaymentRequests.Persistence.Scenarios.csproj --configuration Release
 
+      # Commit 4 certification: lifecycle mutation + integration outbox must share one persistence boundary.
       - name: Run transactional payment request outbox scenarios
         run: dotnet run --project backend/tests/PaymentRequests.Outbox.Scenarios/PaymentRequests.Outbox.Scenarios.csproj --configuration Release
 

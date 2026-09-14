@@ -6,14 +6,22 @@ on:
       - feature/backend-notification-1
     paths:
       - 'backend/src/Notifications/**'
+      - 'backend/src/PaymentRequests/PaymentRequests.Application/**'
+      - 'backend/src/IdentityService/IdentityService.Api/PaymentRequests/**'
+      - 'backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj'
       - 'backend/tests/Notifications.PaymentRequestEvents.Scenarios/**'
+      - 'backend/tests/Notifications.PaymentRequestEmission.Scenarios/**'
       - '.github/workflows/backend-notification-1.yml'
   pull_request:
     branches:
       - main
     paths:
       - 'backend/src/Notifications/**'
+      - 'backend/src/PaymentRequests/PaymentRequests.Application/**'
+      - 'backend/src/IdentityService/IdentityService.Api/PaymentRequests/**'
+      - 'backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj'
       - 'backend/tests/Notifications.PaymentRequestEvents.Scenarios/**'
+      - 'backend/tests/Notifications.PaymentRequestEmission.Scenarios/**'
       - '.github/workflows/backend-notification-1.yml'
   workflow_dispatch:
 
@@ -39,3 +47,21 @@ jobs:
 
       - name: Run payment request event foundation scenarios
         run: dotnet run --project backend/tests/Notifications.PaymentRequestEvents.Scenarios/Notifications.PaymentRequestEvents.Scenarios.csproj --configuration Release
+
+      - name: Build Payment Requests Application with event integration
+        run: dotnet build backend/src/PaymentRequests/PaymentRequests.Application/PaymentRequests.Application.csproj --configuration Release --nologo
+
+      - name: Run existing payment request application scenarios
+        run: dotnet run --project backend/tests/PaymentRequests.Application.Scenarios/PaymentRequests.Application.Scenarios.csproj --configuration Release
+
+      - name: Run existing payment request action scenarios
+        run: dotnet run --project backend/tests/PaymentRequests.Actions.Scenarios/PaymentRequests.Actions.Scenarios.csproj --configuration Release
+
+      - name: Run payment request action hardening scenarios
+        run: dotnet run --project backend/tests/PaymentRequests.ActionHardening.Scenarios/PaymentRequests.ActionHardening.Scenarios.csproj --configuration Release
+
+      - name: Build IdentityService host with event wiring
+        run: dotnet build backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj --configuration Release --nologo
+
+      - name: Run payment request event emission integration scenarios
+        run: dotnet run --project backend/tests/Notifications.PaymentRequestEmission.Scenarios/Notifications.PaymentRequestEmission.Scenarios.csproj --configuration Release

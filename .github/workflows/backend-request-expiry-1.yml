@@ -1,0 +1,38 @@
+name: AFW-BE-REQUEST-EXPIRY-1 Payment Request Expiration
+
+on:
+  push:
+    branches:
+      - feature/backend-request-expiry-1
+    paths:
+      - 'backend/src/PaymentRequests/PaymentRequests.Application/**'
+      - 'backend/tests/PaymentRequests.Expiry.Scenarios/**'
+      - '.github/workflows/backend-request-expiry-1.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'backend/src/PaymentRequests/PaymentRequests.Application/**'
+      - 'backend/tests/PaymentRequests.Expiry.Scenarios/**'
+      - '.github/workflows/backend-request-expiry-1.yml'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Validate AFW-BE-REQUEST-EXPIRY-1
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build Payment Requests Application
+        run: dotnet build backend/src/PaymentRequests/PaymentRequests.Application/PaymentRequests.Application.csproj --configuration Release --nologo
+
+      - name: Run payment request expiration scenarios
+        run: dotnet run --project backend/tests/PaymentRequests.Expiry.Scenarios/PaymentRequests.Expiry.Scenarios.csproj --configuration Release

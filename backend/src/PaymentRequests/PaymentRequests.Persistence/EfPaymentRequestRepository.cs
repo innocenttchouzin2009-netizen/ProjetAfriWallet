@@ -41,6 +41,8 @@ public sealed class EfPaymentRequestRepository(PaymentRequestDbContext dbContext
         cancellationToken.ThrowIfCancellationRequested();
 
         dbContext.PaymentRequests.Add(PaymentRequestEntityMapper.ToEntity(request));
+        dbContext.PaymentRequestIntegrationOutbox.Add(PaymentRequestOutboxFactory.Created(request));
+
         try
         {
             await dbContext.SaveChangesAsync(cancellationToken);
@@ -49,7 +51,7 @@ public sealed class EfPaymentRequestRepository(PaymentRequestDbContext dbContext
         {
             dbContext.ChangeTracker.Clear();
             throw new InvalidOperationException(
-                "Payment request id or correlation id is already persisted.",
+                "Payment request creation or transactional outbox write violated a persistence constraint.",
                 exception);
         }
     }
@@ -69,7 +71,14 @@ public sealed class EfPaymentRequestRepository(PaymentRequestDbContext dbContext
             throw new InvalidOperationException("Payment request was not found.");
         }
 
+        var previousStatus = (PaymentRequestStatus)entity.Status;
         PaymentRequestEntityMapper.Apply(entity, request);
+
+        if (previousStatus != request.Status)
+        {
+            dbContext.PaymentRequestIntegrationOutbox.Add(PaymentRequestOutboxFactory.Transition(request));
+        }
+
         try
         {
             await dbContext.SaveChangesAsync(cancellationToken);
@@ -78,7 +87,7 @@ public sealed class EfPaymentRequestRepository(PaymentRequestDbContext dbContext
         {
             dbContext.ChangeTracker.Clear();
             throw new InvalidOperationException(
-                "Payment request persistence update violated an idempotency constraint.",
+                "Payment request lifecycle update or transactional outbox write violated a persistence constraint.",
                 exception);
         }
     }

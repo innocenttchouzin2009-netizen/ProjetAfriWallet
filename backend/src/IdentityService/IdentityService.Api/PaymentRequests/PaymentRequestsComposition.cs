@@ -20,8 +20,32 @@ public static class PaymentRequestsComposition
         services.AddScoped<IPaymentRequestRecipientResolver, P2PRecipientResolver>();
         services.AddScoped<IPaymentRequestWalletOwnershipReader, WalletPaymentRequestOwnershipReader>();
         services.AddScoped<IPaymentRequestPaymentPort, P2PPaymentRequestPaymentPort>();
+        services.AddScoped<IPaymentRequestOutboxStore, EfPaymentRequestOutboxStore>();
         services.AddScoped<PaymentRequestApplicationService>();
         services.AddScoped<PaymentRequestActionService>();
+        return services;
+    }
+
+    public static IServiceCollection AddPaymentRequestOutboxHosting(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        ArgumentNullException.ThrowIfNull(configuration);
+
+        var section = configuration.GetSection(PaymentRequestOutboxHostingOptions.SectionName);
+        var options = new PaymentRequestOutboxHostingOptions
+        {
+            Enabled = section.GetValue<bool?>("Enabled") ?? false,
+            IntervalSeconds = section.GetValue<int?>("IntervalSeconds") ?? 30,
+            BatchSize = section.GetValue<int?>("BatchSize") ?? 50,
+            MaxDeliveryAttempts = section.GetValue<int?>("MaxDeliveryAttempts") ?? 3
+        };
+        options.Validate();
+
+        services.AddSingleton(options);
+        services.AddSingleton<PaymentRequestOutboxOperationalState>();
+        services.AddSingleton<PaymentRequestOutboxDispatchCoordinator>();
+        services.AddHostedService<PaymentRequestOutboxHostedService>();
         return services;
     }
 }

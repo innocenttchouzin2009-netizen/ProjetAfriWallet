@@ -179,7 +179,7 @@ static PaymentRequest CreateAcceptedRequest(
     return request;
 }
 
-static PaymentRequestPaymentReceipt MatchingReceipt(
+static PaymentRequestReconciliationReceipt MatchingReceipt(
     PaymentRequest request,
     Guid transferId,
     DateTimeOffset createdAtUtc) => new(
@@ -191,12 +191,12 @@ static PaymentRequestPaymentReceipt MatchingReceipt(
         request.Id.Value,
         createdAtUtc);
 
-sealed class FakeReceiptReader(PaymentRequestPaymentReceipt? receipt) : IPaymentRequestPaymentReceiptReader
+sealed class FakeReceiptReader(PaymentRequestReconciliationReceipt? receipt) : IPaymentRequestPaymentReceiptReader
 {
     public int Calls { get; private set; }
     public Guid? LastCorrelationId { get; private set; }
 
-    public Task<PaymentRequestPaymentReceipt?> FindByCorrelationIdAsync(
+    public Task<PaymentRequestReconciliationReceipt?> FindByCorrelationIdAsync(
         Guid correlationId,
         CancellationToken cancellationToken = default)
     {

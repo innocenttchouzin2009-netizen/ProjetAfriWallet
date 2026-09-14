@@ -5,7 +5,7 @@ namespace AfriWallet.PaymentRequests.Application;
 public sealed class TransferCorrelationPaymentReceiptReader(ITransferReceiptReader receiptReader)
     : IPaymentRequestPaymentReceiptReader
 {
-    public async Task<PaymentRequestPaymentReceipt?> FindByCorrelationIdAsync(
+    public async Task<PaymentRequestReconciliationReceipt?> FindByCorrelationIdAsync(
         Guid correlationId,
         CancellationToken cancellationToken = default)
     {
@@ -20,7 +20,7 @@ public sealed class TransferCorrelationPaymentReceiptReader(ITransferReceiptRead
             return null;
         }
 
-        return new PaymentRequestPaymentReceipt(
+        return new PaymentRequestReconciliationReceipt(
             receipt.TransferId.Value,
             receipt.SourceWalletId,
             receipt.TargetWalletId,

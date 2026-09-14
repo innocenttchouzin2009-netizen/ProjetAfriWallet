@@ -2,7 +2,7 @@ using AfriWallet.PaymentRequests.Domain;
 
 namespace AfriWallet.PaymentRequests.Application;
 
-public sealed record PaymentRequestPaymentReceipt(
+public sealed record PaymentRequestReconciliationReceipt(
     Guid TransferId,
     Guid SourceWalletId,
     Guid TargetWalletId,

@@ -45,7 +45,7 @@ public sealed class PaymentRequestReconciliationService(
         return PaymentRequestReconciliationResult.Reconciled(request);
     }
 
-    private static void ValidateReceipt(PaymentRequest request, PaymentRequestPaymentReceipt receipt)
+    private static void ValidateReceipt(PaymentRequest request, PaymentRequestReconciliationReceipt receipt)
     {
         if (receipt.TransferId == Guid.Empty)
         {

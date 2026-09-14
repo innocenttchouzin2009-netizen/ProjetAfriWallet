@@ -2,7 +2,7 @@ namespace AfriWallet.PaymentRequests.Application;
 
 public interface IPaymentRequestPaymentReceiptReader
 {
-    Task<PaymentRequestPaymentReceipt?> FindByCorrelationIdAsync(
+    Task<PaymentRequestReconciliationReceipt?> FindByCorrelationIdAsync(
         Guid correlationId,
         CancellationToken cancellationToken = default);
 }

@@ -61,7 +61,7 @@ var delivery = new FlakyDeliveryPort(failuresBeforeSuccess: 1);
 var processor = new PaymentRequestEventOutboxProcessor(
     store,
     delivery,
-    new PaymentRequestEventDeliveryOptions(3, TimeSpan.FromMinutes(1), TimeSpan.FromSeconds(10)));
+    new PaymentRequestEventDeliveryOptions(4, TimeSpan.FromMinutes(1), TimeSpan.FromSeconds(10)));
 await store.MarkFailedAsync(crashedId, now.AddMinutes(1), "release for processor", now.AddMinutes(1), false);
 var firstPass = await processor.ProcessBatchAsync(10, now.AddMinutes(1));
 Assert(firstPass == 0, "First delivery attempt must fail and schedule retry.");

@@ -1,6 +1,7 @@
 using AfriWallet.PaymentRequests.Application;
 using AfriWallet.PaymentRequests.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace IdentityService.Api.PaymentRequests;
 
@@ -42,6 +43,7 @@ public static class PaymentRequestsComposition
         };
         options.Validate();
 
+        services.TryAddSingleton(TimeProvider.System);
         services.AddSingleton(options);
         services.AddSingleton<PaymentRequestOutboxOperationalState>();
         services.AddSingleton<PaymentRequestOutboxDispatchCoordinator>();

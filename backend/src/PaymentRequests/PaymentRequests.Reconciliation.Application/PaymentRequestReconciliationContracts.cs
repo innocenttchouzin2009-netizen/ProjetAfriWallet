@@ -20,6 +20,11 @@ public enum PaymentRequestReconciliationStatus
     TransferReceiptNotFound = 5
 }
 
+public sealed record PaymentRequestReconciliationRecord(
+    PaymentRequestId RequestId,
+    PaymentRequestReconciliationStatus Status,
+    Guid? TransferId);
+
 public sealed record PaymentRequestReconciliationResult(
     PaymentRequestReconciliationStatus Status,
     PaymentRequest? Request)

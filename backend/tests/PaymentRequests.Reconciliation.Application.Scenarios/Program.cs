@@ -46,23 +46,31 @@ var receiptReader = new FixedReceiptReader(new TransferReceiptSnapshot(
     accepted.AmountMinor,
     accepted.Id.Value,
     receiptAt));
-var service = new PaymentRequestReconciliationService(repository, receiptReader);
+var records = new InMemoryReconciliationRecordRepository();
+var service = new PaymentRequestReconciliationService(repository, receiptReader, records);
 
 var reconciled = await service.ReconcileAsync(accepted.Id);
 Assert(reconciled.Status == PaymentRequestReconciliationStatus.Reconciled, "Accepted request with matching receipt must reconcile.");
 Assert(reconciled.Request?.Status == PaymentRequestStatus.Paid, "Reconciled request must be paid.");
 Assert(reconciled.Request?.TransferId == transferId, "Transfer id must be persisted on request.");
-Assert(repository.UpdateCalls == 1, "Reconciliation must persist exactly one update.");
+Assert(repository.UpdateCalls == 1, "Reconciliation must persist exactly one request update.");
+Assert(records.Get(accepted.Id)?.Status == PaymentRequestReconciliationStatus.Reconciled, "Reconciliation record must be durable through the record port.");
+Assert(records.Get(accepted.Id)?.TransferId == transferId, "Reconciliation record must preserve transfer id.");
 Assert(receiptReader.LastCorrelationId == accepted.Id.Value, "Receipt lookup must use deterministic request id correlation.");
 
 var replay = await service.ReconcileAsync(accepted.Id);
 Assert(replay.Status == PaymentRequestReconciliationStatus.AlreadyPaid, "Paid request reconciliation must be idempotent.");
-Assert(repository.UpdateCalls == 1, "Paid replay must not update again.");
+Assert(repository.UpdateCalls == 1, "Paid replay must not update request again.");
 Assert(receiptReader.Calls == 1, "Paid replay must not query receipt again.");
+Assert(records.Count == 1, "Replay must upsert one reconciliation record, not add duplicates.");
+Assert(records.Get(accepted.Id)?.Status == PaymentRequestReconciliationStatus.AlreadyPaid, "Replay must refresh durable status.");
 
-var missingRequestService = new PaymentRequestReconciliationService(new InMemoryRepository(), new FixedReceiptReader(null));
-var missingRequest = await missingRequestService.ReconcileAsync(PaymentRequestId.From(Guid.NewGuid()));
+var missingRecords = new InMemoryReconciliationRecordRepository();
+var missingId = PaymentRequestId.From(Guid.NewGuid());
+var missingRequestService = new PaymentRequestReconciliationService(new InMemoryRepository(), new FixedReceiptReader(null), missingRecords);
+var missingRequest = await missingRequestService.ReconcileAsync(missingId);
 Assert(missingRequest.Status == PaymentRequestReconciliationStatus.NotFound, "Unknown request must return NotFound.");
+Assert(missingRecords.Get(missingId)?.Status == PaymentRequestReconciliationStatus.NotFound, "NotFound must be recorded.");
 
 var pending = PaymentRequest.Create(
     requesterWallet,
@@ -73,24 +81,31 @@ var pending = PaymentRequest.Create(
     createdAt,
     createdAt.AddHours(1));
 var pendingReader = new FixedReceiptReader(null);
-var pendingResult = await new PaymentRequestReconciliationService(new InMemoryRepository(pending), pendingReader).ReconcileAsync(pending.Id);
+var pendingRecords = new InMemoryReconciliationRecordRepository();
+var pendingResult = await new PaymentRequestReconciliationService(new InMemoryRepository(pending), pendingReader, pendingRecords).ReconcileAsync(pending.Id);
 Assert(pendingResult.Status == PaymentRequestReconciliationStatus.NotEligible, "Pending request must not reconcile.");
 Assert(pendingReader.Calls == 0, "Ineligible request must not query transfer receipts.");
+Assert(pendingRecords.Get(pending.Id)?.Status == PaymentRequestReconciliationStatus.NotEligible, "NotEligible must be recorded.");
 
 var noReceipt = AcceptedRequest();
-var noReceiptResult = await new PaymentRequestReconciliationService(new InMemoryRepository(noReceipt), new FixedReceiptReader(null)).ReconcileAsync(noReceipt.Id);
+var noReceiptRecords = new InMemoryReconciliationRecordRepository();
+var noReceiptResult = await new PaymentRequestReconciliationService(new InMemoryRepository(noReceipt), new FixedReceiptReader(null), noReceiptRecords).ReconcileAsync(noReceipt.Id);
 Assert(noReceiptResult.Status == PaymentRequestReconciliationStatus.TransferReceiptNotFound, "Missing receipt must be explicit.");
 Assert(noReceipt.Status == PaymentRequestStatus.Accepted, "Missing receipt must leave request accepted.");
+Assert(noReceiptRecords.Get(noReceipt.Id)?.Status == PaymentRequestReconciliationStatus.TransferReceiptNotFound, "Missing receipt state must be recorded for later retry.");
 
 var mismatch = AcceptedRequest();
+var mismatchRecords = new InMemoryReconciliationRecordRepository();
 var mismatchService = new PaymentRequestReconciliationService(
     new InMemoryRepository(mismatch),
     new FixedReceiptReader(new TransferReceiptSnapshot(
-        Guid.NewGuid(), payerWallet.Value, requesterWallet.Value, mismatch.AmountMinor + 1, mismatch.Id.Value, receiptAt)));
+        Guid.NewGuid(), payerWallet.Value, requesterWallet.Value, mismatch.AmountMinor + 1, mismatch.Id.Value, receiptAt)),
+    mismatchRecords);
 await AssertThrowsAsync<InvalidOperationException>(
     () => mismatchService.ReconcileAsync(mismatch.Id),
     "Mismatched transfer receipt must fail closed.");
 Assert(mismatch.Status == PaymentRequestStatus.Accepted, "Mismatch must not mark request paid.");
+Assert(mismatchRecords.Count == 0, "Mismatch must not persist a false successful state.");
 
 using var cts = new CancellationTokenSource();
 cts.Cancel();
@@ -98,7 +113,7 @@ await AssertThrowsAsync<OperationCanceledException>(
     () => service.ReconcileAsync(accepted.Id, cts.Token),
     "Cancellation must propagate.");
 
-Console.WriteLine("AFW-BE-REQUEST-RECONCILE-1 application foundation scenarios: PASS");
+Console.WriteLine("AFW-BE-REQUEST-RECONCILE-1 application durable-state scenarios: PASS");
 
 sealed class InMemoryRepository(params PaymentRequest[] requests) : IPaymentRequestRepository
 {
@@ -130,6 +145,26 @@ sealed class InMemoryRepository(params PaymentRequest[] requests) : IPaymentRequ
         cancellationToken.ThrowIfCancellationRequested();
         values[request.Id.Value] = request;
         UpdateCalls++;
+        return Task.CompletedTask;
+    }
+}
+
+sealed class InMemoryReconciliationRecordRepository : IPaymentRequestReconciliationRecordRepository
+{
+    private readonly Dictionary<Guid, PaymentRequestReconciliationRecord> values = new();
+    public int Count => values.Count;
+    public PaymentRequestReconciliationRecord? Get(PaymentRequestId id) => values.GetValueOrDefault(id.Value);
+
+    public Task<PaymentRequestReconciliationRecord?> GetAsync(PaymentRequestId requestId, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        return Task.FromResult(Get(requestId));
+    }
+
+    public Task UpsertAsync(PaymentRequestReconciliationRecord record, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        values[record.RequestId.Value] = record;
         return Task.CompletedTask;
     }
 }

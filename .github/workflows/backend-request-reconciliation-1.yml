@@ -1,0 +1,38 @@
+name: AFW-BE-REQUEST-RECONCILIATION-1 Payment Execution Reconciliation
+
+on:
+  push:
+    branches:
+      - feature/backend-request-reconciliation-1
+    paths:
+      - 'backend/src/PaymentRequests/PaymentRequests.Application/**'
+      - 'backend/tests/PaymentRequests.Reconciliation.Scenarios/**'
+      - '.github/workflows/backend-request-reconciliation-1.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'backend/src/PaymentRequests/PaymentRequests.Application/**'
+      - 'backend/tests/PaymentRequests.Reconciliation.Scenarios/**'
+      - '.github/workflows/backend-request-reconciliation-1.yml'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Validate AFW-BE-REQUEST-RECONCILIATION-1
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build Payment Requests Application
+        run: dotnet build backend/src/PaymentRequests/PaymentRequests.Application/PaymentRequests.Application.csproj --configuration Release --nologo
+
+      - name: Run payment request reconciliation scenarios
+        run: dotnet run --project backend/tests/PaymentRequests.Reconciliation.Scenarios/PaymentRequests.Reconciliation.Scenarios.csproj --configuration Release

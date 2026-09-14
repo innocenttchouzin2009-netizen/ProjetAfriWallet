@@ -6,14 +6,20 @@ on:
       - feature/backend-request-reconciliation-1
     paths:
       - 'backend/src/PaymentRequests/PaymentRequests.Application/**'
+      - 'backend/src/IdentityService/IdentityService.Api/PaymentRequests/**'
+      - 'backend/src/IdentityService/IdentityService.Api/Program.cs'
       - 'backend/tests/PaymentRequests.Reconciliation.Scenarios/**'
+      - 'backend/tests/PaymentRequests.Reconciliation.Http.Scenarios/**'
       - '.github/workflows/backend-request-reconciliation-1.yml'
   pull_request:
     branches:
       - main
     paths:
       - 'backend/src/PaymentRequests/PaymentRequests.Application/**'
+      - 'backend/src/IdentityService/IdentityService.Api/PaymentRequests/**'
+      - 'backend/src/IdentityService/IdentityService.Api/Program.cs'
       - 'backend/tests/PaymentRequests.Reconciliation.Scenarios/**'
+      - 'backend/tests/PaymentRequests.Reconciliation.Http.Scenarios/**'
       - '.github/workflows/backend-request-reconciliation-1.yml'
   workflow_dispatch:
 
@@ -36,3 +42,9 @@ jobs:
 
       - name: Run payment request reconciliation scenarios
         run: dotnet run --project backend/tests/PaymentRequests.Reconciliation.Scenarios/PaymentRequests.Reconciliation.Scenarios.csproj --configuration Release
+
+      - name: Build IdentityService host with reconciliation wiring
+        run: dotnet build backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj --configuration Release --nologo
+
+      - name: Run protected reconciliation trigger scenarios
+        run: dotnet run --project backend/tests/PaymentRequests.Reconciliation.Http.Scenarios/PaymentRequests.Reconciliation.Http.Scenarios.csproj --configuration Release

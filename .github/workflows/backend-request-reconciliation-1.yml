@@ -9,6 +9,7 @@ on:
       - 'backend/src/IdentityService/IdentityService.Api/PaymentRequests/**'
       - 'backend/src/IdentityService/IdentityService.Api/Program.cs'
       - 'backend/tests/PaymentRequests.Reconciliation.Scenarios/**'
+      - 'backend/tests/PaymentRequests.Reconciliation.Integration.Scenarios/**'
       - 'backend/tests/PaymentRequests.Reconciliation.Http.Scenarios/**'
       - '.github/workflows/backend-request-reconciliation-1.yml'
   pull_request:
@@ -19,6 +20,7 @@ on:
       - 'backend/src/IdentityService/IdentityService.Api/PaymentRequests/**'
       - 'backend/src/IdentityService/IdentityService.Api/Program.cs'
       - 'backend/tests/PaymentRequests.Reconciliation.Scenarios/**'
+      - 'backend/tests/PaymentRequests.Reconciliation.Integration.Scenarios/**'
       - 'backend/tests/PaymentRequests.Reconciliation.Http.Scenarios/**'
       - '.github/workflows/backend-request-reconciliation-1.yml'
   workflow_dispatch:
@@ -42,6 +44,9 @@ jobs:
 
       - name: Run payment request reconciliation scenarios
         run: dotnet run --project backend/tests/PaymentRequests.Reconciliation.Scenarios/PaymentRequests.Reconciliation.Scenarios.csproj --configuration Release
+
+      - name: Run reconciliation end-to-end integrity scenarios
+        run: dotnet run --project backend/tests/PaymentRequests.Reconciliation.Integration.Scenarios/PaymentRequests.Reconciliation.Integration.Scenarios.csproj --configuration Release
 
       - name: Build IdentityService host with reconciliation wiring
         run: dotnet build backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj --configuration Release --nologo

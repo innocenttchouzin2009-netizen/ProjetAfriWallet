@@ -1,3 +1,4 @@
+using AfriWallet.Ledger.Application;
 using AfriWallet.Ledger.Domain;
 using AfriWallet.Transfer.Application;
 using AfriWallet.Transfer.Infrastructure;
@@ -18,6 +19,11 @@ public static class TransferComposition
         services.AddScoped<ITransferWalletReader, WalletRegistryTransferWalletReader>();
         services.AddScoped<ITransferBalanceReader, BalanceProjectionTransferBalanceReader>();
         services.AddScoped<ITransferLedgerPort, UniversalLedgerTransferLedgerPort>();
+        services.AddScoped<ITransferReceiptReader>(services =>
+            new LedgerBackedTransferReceiptReader(
+                services.GetRequiredService<IJournalRepository>(),
+                mappings));
+        services.AddScoped<TransferCorrelationLookupService>();
         services.AddScoped<InternalTransferPlanningService>();
         services.AddScoped<InternalTransferOrchestrationService>();
 

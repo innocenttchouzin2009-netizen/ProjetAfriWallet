@@ -16,6 +16,16 @@ public sealed record InternalTransferResponse(
     Guid JournalEntryId,
     DateTimeOffset PostedAtUtc);
 
+public sealed record TransferReceiptResponse(
+    Guid TransferId,
+    Guid SourceWalletId,
+    Guid TargetWalletId,
+    string CurrencyCode,
+    long AmountMinor,
+    Guid CorrelationId,
+    Guid JournalEntryId,
+    DateTimeOffset PostedAtUtc);
+
 public sealed record TransferErrorResponse(string Code, string Message, string TraceId);
 
 public static class TransferErrorCode

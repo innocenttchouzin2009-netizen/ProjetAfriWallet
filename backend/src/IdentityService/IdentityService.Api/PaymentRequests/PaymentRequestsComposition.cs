@@ -20,8 +20,10 @@ public static class PaymentRequestsComposition
         services.AddScoped<IPaymentRequestRecipientResolver, P2PRecipientResolver>();
         services.AddScoped<IPaymentRequestWalletOwnershipReader, WalletPaymentRequestOwnershipReader>();
         services.AddScoped<IPaymentRequestPaymentPort, P2PPaymentRequestPaymentPort>();
+        services.AddScoped<IPaymentRequestPaymentReceiptReader, TransferCorrelationPaymentReceiptReader>();
         services.AddScoped<PaymentRequestApplicationService>();
         services.AddScoped<PaymentRequestActionService>();
+        services.AddScoped<PaymentRequestReconciliationService>();
         return services;
     }
 }

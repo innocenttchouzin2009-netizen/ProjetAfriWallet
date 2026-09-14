@@ -6,14 +6,18 @@ on:
       - feature/backend-request-expiry-1
     paths:
       - 'backend/src/PaymentRequests/PaymentRequests.Application/**'
+      - 'backend/src/PaymentRequests/PaymentRequests.Persistence/**'
       - 'backend/tests/PaymentRequests.Expiry.Scenarios/**'
+      - 'backend/tests/PaymentRequests.Expiry.Persistence.Scenarios/**'
       - '.github/workflows/backend-request-expiry-1.yml'
   pull_request:
     branches:
       - main
     paths:
       - 'backend/src/PaymentRequests/PaymentRequests.Application/**'
+      - 'backend/src/PaymentRequests/PaymentRequests.Persistence/**'
       - 'backend/tests/PaymentRequests.Expiry.Scenarios/**'
+      - 'backend/tests/PaymentRequests.Expiry.Persistence.Scenarios/**'
       - '.github/workflows/backend-request-expiry-1.yml'
   workflow_dispatch:
 
@@ -36,3 +40,9 @@ jobs:
 
       - name: Run payment request expiration scenarios
         run: dotnet run --project backend/tests/PaymentRequests.Expiry.Scenarios/PaymentRequests.Expiry.Scenarios.csproj --configuration Release
+
+      - name: Build Payment Requests Persistence
+        run: dotnet build backend/src/PaymentRequests/PaymentRequests.Persistence/PaymentRequests.Persistence.csproj --configuration Release --nologo
+
+      - name: Run SQLite due-request reader scenarios
+        run: dotnet run --project backend/tests/PaymentRequests.Expiry.Persistence.Scenarios/PaymentRequests.Expiry.Persistence.Scenarios.csproj --configuration Release

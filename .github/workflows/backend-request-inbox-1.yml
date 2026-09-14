@@ -8,6 +8,7 @@ on:
       - 'backend/src/PaymentRequests/**'
       - 'backend/tests/PaymentRequests.Query.Scenarios/**'
       - 'backend/tests/PaymentRequests.AuthorizedQuery.Scenarios/**'
+      - 'backend/tests/PaymentRequests.OwnershipAdapters.Scenarios/**'
       - '.github/workflows/backend-request-inbox-1.yml'
   pull_request:
     branches:
@@ -16,6 +17,7 @@ on:
       - 'backend/src/PaymentRequests/**'
       - 'backend/tests/PaymentRequests.Query.Scenarios/**'
       - 'backend/tests/PaymentRequests.AuthorizedQuery.Scenarios/**'
+      - 'backend/tests/PaymentRequests.OwnershipAdapters.Scenarios/**'
       - '.github/workflows/backend-request-inbox-1.yml'
   workflow_dispatch:
 
@@ -39,8 +41,14 @@ jobs:
       - name: Build Payment Requests Persistence
         run: dotnet build backend/src/PaymentRequests/PaymentRequests.Persistence/PaymentRequests.Persistence.csproj --configuration Release --nologo
 
+      - name: Build Payment Requests Infrastructure
+        run: dotnet build backend/src/PaymentRequests/PaymentRequests.Infrastructure/PaymentRequests.Infrastructure.csproj --configuration Release --nologo
+
       - name: Run payment request query read model scenarios
         run: dotnet run --project backend/tests/PaymentRequests.Query.Scenarios/PaymentRequests.Query.Scenarios.csproj --configuration Release
 
       - name: Run authorized inbox/outbox orchestration scenarios
         run: dotnet run --project backend/tests/PaymentRequests.AuthorizedQuery.Scenarios/PaymentRequests.AuthorizedQuery.Scenarios.csproj --configuration Release
+
+      - name: Run concrete ownership scope adapter scenarios
+        run: dotnet run --project backend/tests/PaymentRequests.OwnershipAdapters.Scenarios/PaymentRequests.OwnershipAdapters.Scenarios.csproj --configuration Release

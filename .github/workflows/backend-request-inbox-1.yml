@@ -1,0 +1,68 @@
+name: AFW-BE-REQUEST-INBOX-1 Payment Request Query Read Model
+
+on:
+  push:
+    branches:
+      - feature/backend-request-inbox-1
+    paths:
+      - 'backend/src/PaymentRequests/**'
+      - 'backend/src/IdentityService/IdentityService.Api/PaymentRequests/**'
+      - 'backend/src/IdentityService/IdentityService.Api/Program.cs'
+      - 'backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj'
+      - 'backend/tests/PaymentRequests.Query.Scenarios/**'
+      - 'backend/tests/PaymentRequests.AuthorizedQuery.Scenarios/**'
+      - 'backend/tests/PaymentRequests.OwnershipAdapters.Scenarios/**'
+      - 'backend/tests/PaymentRequests.InboxOutbox.Http.Scenarios/**'
+      - '.github/workflows/backend-request-inbox-1.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'backend/src/PaymentRequests/**'
+      - 'backend/src/IdentityService/IdentityService.Api/PaymentRequests/**'
+      - 'backend/src/IdentityService/IdentityService.Api/Program.cs'
+      - 'backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj'
+      - 'backend/tests/PaymentRequests.Query.Scenarios/**'
+      - 'backend/tests/PaymentRequests.AuthorizedQuery.Scenarios/**'
+      - 'backend/tests/PaymentRequests.OwnershipAdapters.Scenarios/**'
+      - 'backend/tests/PaymentRequests.InboxOutbox.Http.Scenarios/**'
+      - '.github/workflows/backend-request-inbox-1.yml'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Validate AFW-BE-REQUEST-INBOX-1
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build Payment Requests Application
+        run: dotnet build backend/src/PaymentRequests/PaymentRequests.Application/PaymentRequests.Application.csproj --configuration Release --nologo
+
+      - name: Build Payment Requests Persistence
+        run: dotnet build backend/src/PaymentRequests/PaymentRequests.Persistence/PaymentRequests.Persistence.csproj --configuration Release --nologo
+
+      - name: Build Payment Requests Infrastructure
+        run: dotnet build backend/src/PaymentRequests/PaymentRequests.Infrastructure/PaymentRequests.Infrastructure.csproj --configuration Release --nologo
+
+      - name: Run payment request query read model scenarios
+        run: dotnet run --project backend/tests/PaymentRequests.Query.Scenarios/PaymentRequests.Query.Scenarios.csproj --configuration Release
+
+      - name: Run authorized inbox/outbox orchestration scenarios
+        run: dotnet run --project backend/tests/PaymentRequests.AuthorizedQuery.Scenarios/PaymentRequests.AuthorizedQuery.Scenarios.csproj --configuration Release
+
+      - name: Run concrete ownership scope adapter scenarios
+        run: dotnet run --project backend/tests/PaymentRequests.OwnershipAdapters.Scenarios/PaymentRequests.OwnershipAdapters.Scenarios.csproj --configuration Release
+
+      - name: Build IdentityService host with Inbox/Outbox wiring
+        run: dotnet build backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj --configuration Release --nologo
+
+      - name: Run protected Inbox/Outbox HTTP scenarios
+        run: dotnet run --project backend/tests/PaymentRequests.InboxOutbox.Http.Scenarios/PaymentRequests.InboxOutbox.Http.Scenarios.csproj --configuration Release

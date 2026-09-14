@@ -1,4 +1,5 @@
 using AfriWallet.PaymentRequests.Application;
+using AfriWallet.PaymentRequests.Infrastructure;
 using AfriWallet.PaymentRequests.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -17,11 +18,15 @@ public static class PaymentRequestsComposition
 
         services.AddDbContext<PaymentRequestDbContext>(options => options.UseSqlite(connectionString));
         services.AddScoped<IPaymentRequestRepository, EfPaymentRequestRepository>();
+        services.AddScoped<IPaymentRequestQueryRepository, EfPaymentRequestRepository>();
         services.AddScoped<IPaymentRequestRecipientResolver, P2PRecipientResolver>();
         services.AddScoped<IPaymentRequestWalletOwnershipReader, WalletPaymentRequestOwnershipReader>();
         services.AddScoped<IPaymentRequestPaymentPort, P2PPaymentRequestPaymentPort>();
+        services.AddScoped<IPaymentRequestOwnedWalletReader, WalletRegistryOwnedWalletReader>();
+        services.AddScoped<IPaymentRequestOwnedRecipientReferenceReader, AuthoritativeRecipientReferenceReader>();
         services.AddScoped<PaymentRequestApplicationService>();
         services.AddScoped<PaymentRequestActionService>();
+        services.AddScoped<AuthorizedPaymentRequestQueryService>();
         return services;
     }
 }

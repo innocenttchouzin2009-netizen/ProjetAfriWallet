@@ -203,5 +203,6 @@ app.MapFxEndpoints();
 app.MapTransferEndpoints();
 app.MapP2PEndpoints();
 app.MapPaymentRequestEndpoints();
+app.MapPaymentRequestInboxOutboxEndpoints();
 
 app.Run();

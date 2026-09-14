@@ -65,8 +65,10 @@ var processor = new PaymentRequestEventOutboxProcessor(
 await store.MarkFailedAsync(crashedId, now.AddMinutes(1), "release for processor", now.AddMinutes(1), false);
 var firstPass = await processor.ProcessBatchAsync(10, now.AddMinutes(1));
 Assert(firstPass == 0, "First delivery attempt must fail and schedule retry.");
-var secondPass = await processor.ProcessBatchAsync(10, now.AddMinutes(1).AddSeconds(10));
-Assert(secondPass == 1, "Second delivery attempt must succeed.");
+var beforeBackoff = await processor.ProcessBatchAsync(10, now.AddMinutes(1).AddSeconds(39));
+Assert(beforeBackoff == 0, "Exponential backoff must prevent early retry delivery.");
+var secondPass = await processor.ProcessBatchAsync(10, now.AddMinutes(1).AddSeconds(40));
+Assert(secondPass == 1, "Delivery must succeed when the exponential retry window opens.");
 
 var deadId = Guid.NewGuid();
 Assert(await store.EnqueueAsync(new PaymentRequestEventEnvelope(deadId, requestId, "payment-request.declined", now, "{}"), now),

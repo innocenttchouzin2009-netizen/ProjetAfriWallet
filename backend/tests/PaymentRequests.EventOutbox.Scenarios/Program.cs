@@ -44,7 +44,8 @@ Assert(tooEarly.Count == 0, "Retry event must not be visible before AvailableAtU
 var retry = await store.ClaimBatchAsync(10, now.AddSeconds(30), TimeSpan.FromMinutes(5));
 Assert(retry.Count == 1 && retry[0].AttemptCount == 2, "Retry must be claimed and increment attempts.");
 await store.MarkDeliveredAsync(eventId, now.AddSeconds(30));
-Assert((await db.PaymentRequestEventOutbox.SingleAsync()).Status == (int)PaymentRequestEventOutboxStatus.Delivered,
+Assert((await db.PaymentRequestEventOutbox.AsNoTracking().SingleAsync(x => x.EventId == eventId)).Status ==
+       (int)PaymentRequestEventOutboxStatus.Delivered,
     "Delivered event must be terminal.");
 
 var crashedId = Guid.NewGuid();

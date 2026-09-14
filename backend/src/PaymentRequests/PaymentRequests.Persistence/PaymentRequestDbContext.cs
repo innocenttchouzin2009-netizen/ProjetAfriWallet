@@ -24,5 +24,10 @@ public sealed class PaymentRequestDbContext(DbContextOptions<PaymentRequestDbCon
         request.Property(x => x.Status).IsRequired();
         request.Property(x => x.AcceptedAtUtc).HasMaxLength(64);
         request.Property(x => x.ClosedAtUtc).HasMaxLength(64);
+
+        request.HasIndex(x => new { x.RequesterWalletId, x.CreatedAtUtc, x.Id });
+        request.HasIndex(x => new { x.PayerReferenceKind, x.PayerReferenceValue, x.CreatedAtUtc, x.Id });
+        request.HasIndex(x => new { x.AcceptedPayerWalletId, x.CreatedAtUtc, x.Id });
+        request.HasIndex(x => new { x.Status, x.CreatedAtUtc, x.Id });
     }
 }

@@ -14,6 +14,7 @@ on:
       - 'backend/tests/PaymentRequests.Application.Scenarios/**'
       - 'backend/tests/PaymentRequests.Persistence.Scenarios/**'
       - 'backend/tests/PaymentRequests.Outbox.Scenarios/**'
+      - 'backend/tests/PaymentRequests.Outbox.Dispatcher.Scenarios/**'
       - 'backend/tests/PaymentRequests.Http.Scenarios/**'
       - 'backend/tests/PaymentRequests.Actions.Scenarios/**'
       - 'backend/tests/PaymentRequests.Actions.Http.Scenarios/**'
@@ -31,6 +32,7 @@ on:
       - 'backend/tests/PaymentRequests.Application.Scenarios/**'
       - 'backend/tests/PaymentRequests.Persistence.Scenarios/**'
       - 'backend/tests/PaymentRequests.Outbox.Scenarios/**'
+      - 'backend/tests/PaymentRequests.Outbox.Dispatcher.Scenarios/**'
       - 'backend/tests/PaymentRequests.Http.Scenarios/**'
       - 'backend/tests/PaymentRequests.Actions.Scenarios/**'
       - 'backend/tests/PaymentRequests.Actions.Http.Scenarios/**'
@@ -72,9 +74,11 @@ jobs:
       - name: Run payment request persistence scenarios
         run: dotnet run --project backend/tests/PaymentRequests.Persistence.Scenarios/PaymentRequests.Persistence.Scenarios.csproj --configuration Release
 
-      # Commit 4 certification: lifecycle mutation + integration outbox must share one persistence boundary.
       - name: Run transactional payment request outbox scenarios
         run: dotnet run --project backend/tests/PaymentRequests.Outbox.Scenarios/PaymentRequests.Outbox.Scenarios.csproj --configuration Release
+
+      - name: Run payment request outbox dispatcher scenarios
+        run: dotnet run --project backend/tests/PaymentRequests.Outbox.Dispatcher.Scenarios/PaymentRequests.Outbox.Dispatcher.Scenarios.csproj --configuration Release
 
       - name: Build IdentityService host with Payment Requests wiring
         run: dotnet build backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj --configuration Release --nologo

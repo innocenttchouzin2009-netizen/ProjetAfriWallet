@@ -51,6 +51,15 @@ builder.Services.AddSingleton<IWalletRepository>(walletRepository);
 builder.Services.AddSingleton<ITransferReceiptReader>(receiptReader);
 builder.Services.AddScoped<TransferCorrelationLookupService>();
 
+// MapTransferEndpoints also exposes the existing POST /internal route. Register its
+// application graph so endpoint metadata can be created, while keeping these
+// correlation scenarios strictly read-only and never invoking money movement.
+builder.Services.AddSingleton<ITransferWalletReader, NoopTransferWalletReader>();
+builder.Services.AddSingleton<ITransferBalanceReader, NoopTransferBalanceReader>();
+builder.Services.AddSingleton<ITransferLedgerPort, NoopTransferLedgerPort>();
+builder.Services.AddSingleton<InternalTransferPlanningService>();
+builder.Services.AddScoped<InternalTransferOrchestrationService>();
+
 var app = builder.Build();
 app.UseAuthentication();
 app.UseAuthorization();
@@ -171,6 +180,36 @@ sealed class FakeWalletRepository(IEnumerable<Wallet> wallets) : IWalletReposito
 
     public Task UpdateAsync(Wallet wallet, CancellationToken cancellationToken = default) =>
         throw new InvalidOperationException("Read-only HTTP scenarios must not update wallets.");
+}
+
+sealed class NoopTransferWalletReader : ITransferWalletReader
+{
+    public Task<TransferWalletSnapshot?> GetAsync(
+        Guid walletId,
+        CancellationToken cancellationToken = default) =>
+        throw new InvalidOperationException("Correlation HTTP scenarios must not execute transfers.");
+}
+
+sealed class NoopTransferBalanceReader : ITransferBalanceReader
+{
+    public Task<long> GetAvailableMinorAsync(
+        AccountId accountId,
+        string currencyCode,
+        CancellationToken cancellationToken = default) =>
+        throw new InvalidOperationException("Correlation HTTP scenarios must not read transfer balances.");
+}
+
+sealed class NoopTransferLedgerPort : ITransferLedgerPort
+{
+    public Task<bool> ExistsByCorrelationIdAsync(
+        Guid correlationId,
+        CancellationToken cancellationToken = default) =>
+        throw new InvalidOperationException("Correlation HTTP scenarios must not execute transfers.");
+
+    public Task PostAsync(
+        JournalEntry journalEntry,
+        CancellationToken cancellationToken = default) =>
+        throw new InvalidOperationException("Correlation HTTP scenarios must never post ledger journals.");
 }
 
 sealed class HeaderTestAuthHandler(

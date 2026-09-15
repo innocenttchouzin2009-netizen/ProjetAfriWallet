@@ -20,6 +20,7 @@ public sealed class PaymentRequestEventOutboxHostedWorker(
     IServiceScopeFactory scopeFactory,
     TimeProvider timeProvider,
     PaymentRequestEventDispatchWorkerOptions options,
+    PaymentRequestEventOutboxWorkerState state,
     ILogger<PaymentRequestEventOutboxHostedWorker> logger)
     : BackgroundService
 {
@@ -45,12 +46,16 @@ public sealed class PaymentRequestEventOutboxHostedWorker(
                     var transport = scope.ServiceProvider.GetService<IPaymentRequestEventTransport>();
                     if (transport is null)
                     {
+                        state.MarkTransportUnavailable("TransportUnavailable");
                         logger.LogDebug("No IPaymentRequestEventTransport is registered; payment request outbox dispatch is idle.");
                     }
                     else
                     {
+                        var startedAt = timeProvider.GetUtcNow();
+                        state.MarkCycleStarted(startedAt);
                         var processor = scope.ServiceProvider.GetRequiredService<PaymentRequestEventOutboxProcessor>();
-                        await processor.ProcessBatchAsync(options.BatchSize, timeProvider.GetUtcNow(), stoppingToken);
+                        var delivered = await processor.ProcessBatchAsync(options.BatchSize, startedAt, stoppingToken);
+                        state.MarkCycleSucceeded(timeProvider.GetUtcNow(), delivered);
                     }
                 }
                 catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
@@ -59,7 +64,8 @@ public sealed class PaymentRequestEventOutboxHostedWorker(
                 }
                 catch (Exception exception)
                 {
-                    logger.LogError(exception, "Payment request outbox dispatch cycle failed.");
+                    state.MarkCycleFailed(timeProvider.GetUtcNow(), exception.GetType().Name);
+                    logger.LogError("Payment request outbox dispatch cycle failed with {FailureType}.", exception.GetType().Name);
                 }
 
                 try

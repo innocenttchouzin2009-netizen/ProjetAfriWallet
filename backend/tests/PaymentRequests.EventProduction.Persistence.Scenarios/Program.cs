@@ -83,6 +83,10 @@ try
         rollbackRequest.CreatedAtUtc);
     await mutationStore.AddAsync(rollbackRequest, rollbackCreated);
 
+    // Ensure the duplicate EventId conflict is raised by SQLite during SaveChanges,
+    // not earlier by EF's in-memory identity map.
+    db.ChangeTracker.Clear();
+
     rollbackRequest.Accept(WalletId.From(Guid.NewGuid()), createdAt.AddMinutes(3));
     var duplicateEvent = PaymentRequestLifecycleEventFactory.Create(
         rollbackRequest,

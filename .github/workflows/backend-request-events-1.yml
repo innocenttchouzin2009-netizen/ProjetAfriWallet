@@ -37,5 +37,5 @@ jobs:
       - name: Build Payment Requests Persistence
         run: dotnet build backend/src/PaymentRequests/PaymentRequests.Persistence/PaymentRequests.Persistence.csproj --configuration Release --nologo
 
-      - name: Run durable payment request event outbox scenarios
+      - name: Run durable payment request event outbox and transport scenarios
         run: dotnet run --project backend/tests/PaymentRequests.EventOutbox.Scenarios/PaymentRequests.EventOutbox.Scenarios.csproj --configuration Release

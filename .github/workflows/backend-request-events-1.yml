@@ -6,14 +6,22 @@ on:
       - feature/backend-request-events-1
     paths:
       - 'backend/src/PaymentRequests/**'
+      - 'backend/src/IdentityService/IdentityService.Api/PaymentRequests/**'
+      - 'backend/src/IdentityService/IdentityService.Api/Program.cs'
       - 'backend/tests/PaymentRequests.EventOutbox.Scenarios/**'
+      - 'backend/tests/PaymentRequests.EventWorker.Scenarios/**'
+      - 'backend/tests/PaymentRequests.EventOutbox.Operational.Scenarios/**'
       - '.github/workflows/backend-request-events-1.yml'
   pull_request:
     branches:
       - main
     paths:
       - 'backend/src/PaymentRequests/**'
+      - 'backend/src/IdentityService/IdentityService.Api/PaymentRequests/**'
+      - 'backend/src/IdentityService/IdentityService.Api/Program.cs'
       - 'backend/tests/PaymentRequests.EventOutbox.Scenarios/**'
+      - 'backend/tests/PaymentRequests.EventWorker.Scenarios/**'
+      - 'backend/tests/PaymentRequests.EventOutbox.Operational.Scenarios/**'
       - '.github/workflows/backend-request-events-1.yml'
   workflow_dispatch:
 
@@ -37,5 +45,14 @@ jobs:
       - name: Build Payment Requests Persistence
         run: dotnet build backend/src/PaymentRequests/PaymentRequests.Persistence/PaymentRequests.Persistence.csproj --configuration Release --nologo
 
-      - name: Run durable payment request event outbox scenarios
+      - name: Run durable payment request event outbox and transport scenarios
         run: dotnet run --project backend/tests/PaymentRequests.EventOutbox.Scenarios/PaymentRequests.EventOutbox.Scenarios.csproj --configuration Release
+
+      - name: Build IdentityService host with outbox worker wiring
+        run: dotnet build backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj --configuration Release --nologo
+
+      - name: Run hosted outbox worker scenarios
+        run: dotnet run --project backend/tests/PaymentRequests.EventWorker.Scenarios/PaymentRequests.EventWorker.Scenarios.csproj --configuration Release
+
+      - name: Run operational outbox observability and readiness scenarios
+        run: dotnet run --project backend/tests/PaymentRequests.EventOutbox.Operational.Scenarios/PaymentRequests.EventOutbox.Operational.Scenarios.csproj --configuration Release

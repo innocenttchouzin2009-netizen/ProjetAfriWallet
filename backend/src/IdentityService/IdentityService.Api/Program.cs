@@ -204,5 +204,6 @@ app.MapTransferEndpoints();
 app.MapP2PEndpoints();
 app.MapPaymentRequestEndpoints();
 app.MapPaymentRequestInboxOutboxEndpoints();
+app.MapPaymentRequestEventOutboxOperationalEndpoints();
 
 app.Run();

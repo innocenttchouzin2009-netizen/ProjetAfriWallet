@@ -15,6 +15,8 @@ public sealed record PaymentRequestEventOutboxDispatcherSnapshot(
     DateTimeOffset? LastCycleCompletedAtUtc,
     int LastDeliveredCount,
     long TotalDeliveredCount,
+    long TotalCycleCount,
+    long TotalFailedCycleCount,
     int ConsecutiveFailures,
     string? LastError);
 
@@ -25,6 +27,8 @@ public sealed class PaymentRequestEventOutboxDispatcherState
         PaymentRequestEventOutboxDispatcherStatus.Idle,
         null,
         null,
+        0,
+        0,
         0,
         0,
         0,
@@ -55,6 +59,8 @@ public sealed class PaymentRequestEventOutboxDispatcherState
         Status = PaymentRequestEventOutboxDispatcherStatus.Blocked,
         LastCycleCompletedAtUtc = atUtc,
         LastDeliveredCount = 0,
+        TotalCycleCount = current.TotalCycleCount + 1,
+        TotalFailedCycleCount = current.TotalFailedCycleCount + 1,
         ConsecutiveFailures = current.ConsecutiveFailures + 1,
         LastError = error
     });
@@ -72,6 +78,7 @@ public sealed class PaymentRequestEventOutboxDispatcherState
         LastCycleCompletedAtUtc = atUtc,
         LastDeliveredCount = deliveredCount,
         TotalDeliveredCount = current.TotalDeliveredCount + deliveredCount,
+        TotalCycleCount = current.TotalCycleCount + 1,
         ConsecutiveFailures = 0,
         LastError = null
     });
@@ -81,6 +88,8 @@ public sealed class PaymentRequestEventOutboxDispatcherState
         Status = PaymentRequestEventOutboxDispatcherStatus.Faulted,
         LastCycleCompletedAtUtc = atUtc,
         LastDeliveredCount = 0,
+        TotalCycleCount = current.TotalCycleCount + 1,
+        TotalFailedCycleCount = current.TotalFailedCycleCount + 1,
         ConsecutiveFailures = current.ConsecutiveFailures + 1,
         LastError = error
     });

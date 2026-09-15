@@ -26,7 +26,9 @@ public static class PaymentRequestEventOutboxHostingExtensions
         services.AddSingleton(deliveryOptions);
         services.AddSingleton<PaymentRequestEventOutboxDispatcherState>();
         services.AddScoped<IPaymentRequestEventOutboxStore, EfPaymentRequestEventOutboxStore>();
+        services.AddScoped<IPaymentRequestEventOutboxDiagnostics, EfPaymentRequestEventOutboxDiagnostics>();
         services.AddScoped<PaymentRequestEventOutboxProcessor>();
+        services.AddScoped<PaymentRequestEventOutboxOperationalHealthService>();
         services.AddHostedService<PaymentRequestEventOutboxHostedService>();
         return services;
     }

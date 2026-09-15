@@ -196,6 +196,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
+app.MapPaymentRequestEventOutboxOperationalEndpoints();
 app.MapAuthEndpoints();
 app.MapWalletEndpoints();
 app.MapLedgerEndpoints();

@@ -8,7 +8,10 @@ on:
       - 'backend/src/IdentityService/IdentityService.Api/PaymentRequests/PaymentRequestEventOutbox*'
       - 'backend/src/IdentityService/IdentityService.Api/Program.cs'
       - 'backend/src/IdentityService/IdentityService.Api/appsettings.json'
+      - 'backend/src/PaymentRequests/PaymentRequests.Application/PaymentRequestEventOutbox*'
+      - 'backend/src/PaymentRequests/PaymentRequests.Persistence/*PaymentRequestEventOutbox*'
       - 'backend/tests/PaymentRequests.EventOutbox.Hosting.Scenarios/**'
+      - 'backend/tests/PaymentRequests.EventOutbox.Operational.Scenarios/**'
       - '.github/workflows/backend-request-event-outbox-hosting-1.yml'
   pull_request:
     branches:
@@ -17,7 +20,10 @@ on:
       - 'backend/src/IdentityService/IdentityService.Api/PaymentRequests/PaymentRequestEventOutbox*'
       - 'backend/src/IdentityService/IdentityService.Api/Program.cs'
       - 'backend/src/IdentityService/IdentityService.Api/appsettings.json'
+      - 'backend/src/PaymentRequests/PaymentRequests.Application/PaymentRequestEventOutbox*'
+      - 'backend/src/PaymentRequests/PaymentRequests.Persistence/*PaymentRequestEventOutbox*'
       - 'backend/tests/PaymentRequests.EventOutbox.Hosting.Scenarios/**'
+      - 'backend/tests/PaymentRequests.EventOutbox.Operational.Scenarios/**'
       - '.github/workflows/backend-request-event-outbox-hosting-1.yml'
   workflow_dispatch:
 
@@ -50,3 +56,6 @@ jobs:
 
       - name: Run payment request event outbox hosting scenarios
         run: dotnet run --project backend/tests/PaymentRequests.EventOutbox.Hosting.Scenarios/PaymentRequests.EventOutbox.Hosting.Scenarios.csproj --configuration Release
+
+      - name: Run payment request event outbox operational health scenarios
+        run: dotnet run --project backend/tests/PaymentRequests.EventOutbox.Operational.Scenarios/PaymentRequests.EventOutbox.Operational.Scenarios.csproj --configuration Release

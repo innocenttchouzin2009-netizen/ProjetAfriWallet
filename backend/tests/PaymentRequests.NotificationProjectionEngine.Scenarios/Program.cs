@@ -62,13 +62,14 @@ Assert(recipientResolver.Calls == 1, "Created event must resolve payer from orig
 var replay = await engine.ProjectAsync(createdEvent);
 Assert(replay.ProjectedCount == 0 && replay.DuplicateCount == 2, "Replayed event must be idempotent through projection store.");
 Assert(store.Notifications.Count == 2, "Replay must not create duplicate projections.");
+Assert(recipientResolver.Calls == 2, "Replay may resolve audiences again before the projection store enforces idempotence.");
 
 request.Accept(payerWallet.Id, createdAt.AddMinutes(5));
 var acceptedEvent = PaymentRequestLifecycleEventFactory.ToEnvelope(
     PaymentRequestLifecycleEventFactory.Create(request, PaymentRequestLifecycleEventKind.Accepted, request.UpdatedAtUtc));
 var acceptedResult = await engine.ProjectAsync(acceptedEvent);
 Assert(acceptedResult.ProjectedCount == 2, "Accepted event must project both audiences.");
-Assert(recipientResolver.Calls == 1, "Accepted event must use accepted payer wallet and avoid re-resolving public recipient reference.");
+Assert(recipientResolver.Calls == 2, "Accepted event must use accepted payer wallet and avoid re-resolving public recipient reference.");
 
 var ignored = await engine.ProjectAsync(new PaymentRequestEventEnvelope(
     Guid.NewGuid(),

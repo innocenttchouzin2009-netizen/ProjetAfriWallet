@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../PaymentRequests/PaymentRequests.Application/PaymentRequests.Application.csproj" />
+    <ProjectReference Include="../../Wallet/Wallet.Application/Wallet.Application.csproj" />
+  </ItemGroup>
+</Project>

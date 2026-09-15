@@ -7,8 +7,10 @@ on:
     paths:
       - 'backend/src/PaymentRequests/**'
       - 'backend/src/IdentityService/IdentityService.Api/PaymentRequests/**'
+      - 'backend/src/IdentityService/IdentityService.Api/Program.cs'
       - 'backend/tests/PaymentRequests.EventOutbox.Scenarios/**'
       - 'backend/tests/PaymentRequests.EventWorker.Scenarios/**'
+      - 'backend/tests/PaymentRequests.EventOutbox.Operational.Scenarios/**'
       - '.github/workflows/backend-request-events-1.yml'
   pull_request:
     branches:
@@ -16,8 +18,10 @@ on:
     paths:
       - 'backend/src/PaymentRequests/**'
       - 'backend/src/IdentityService/IdentityService.Api/PaymentRequests/**'
+      - 'backend/src/IdentityService/IdentityService.Api/Program.cs'
       - 'backend/tests/PaymentRequests.EventOutbox.Scenarios/**'
       - 'backend/tests/PaymentRequests.EventWorker.Scenarios/**'
+      - 'backend/tests/PaymentRequests.EventOutbox.Operational.Scenarios/**'
       - '.github/workflows/backend-request-events-1.yml'
   workflow_dispatch:
 
@@ -49,3 +53,6 @@ jobs:
 
       - name: Run hosted outbox worker scenarios
         run: dotnet run --project backend/tests/PaymentRequests.EventWorker.Scenarios/PaymentRequests.EventWorker.Scenarios.csproj --configuration Release
+
+      - name: Run operational outbox observability and readiness scenarios
+        run: dotnet run --project backend/tests/PaymentRequests.EventOutbox.Operational.Scenarios/PaymentRequests.EventOutbox.Operational.Scenarios.csproj --configuration Release

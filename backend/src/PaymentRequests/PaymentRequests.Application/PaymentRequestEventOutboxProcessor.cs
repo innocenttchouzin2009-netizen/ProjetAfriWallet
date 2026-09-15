@@ -38,24 +38,39 @@ public sealed class PaymentRequestEventOutboxProcessor(
             {
                 throw;
             }
+            catch (PaymentRequestEventDeliveryException exception)
+            {
+                var permanent = exception.FailureKind == PaymentRequestEventDeliveryFailureKind.Permanent;
+                await MarkFailureAsync(item, nowUtc, exception.Message, permanent, cancellationToken);
+            }
             catch (Exception exception)
             {
-                var deadLetter = item.AttemptCount >= options.MaxAttempts;
-                DateTimeOffset? nextAttempt = deadLetter
-                    ? null
-                    : nowUtc.Add(ComputeRetryDelay(item.AttemptCount));
-
-                await outboxStore.MarkFailedAsync(
-                    item.Event.EventId,
-                    nowUtc,
-                    exception.Message,
-                    nextAttempt,
-                    deadLetter,
-                    cancellationToken);
+                await MarkFailureAsync(item, nowUtc, exception.Message, permanent: false, cancellationToken);
             }
         }
 
         return delivered;
+    }
+
+    private async Task MarkFailureAsync(
+        PaymentRequestEventOutboxItem item,
+        DateTimeOffset nowUtc,
+        string error,
+        bool permanent,
+        CancellationToken cancellationToken)
+    {
+        var deadLetter = permanent || item.AttemptCount >= options.MaxAttempts;
+        DateTimeOffset? nextAttempt = deadLetter
+            ? null
+            : nowUtc.Add(ComputeRetryDelay(item.AttemptCount));
+
+        await outboxStore.MarkFailedAsync(
+            item.Event.EventId,
+            nowUtc,
+            error,
+            nextAttempt,
+            deadLetter,
+            cancellationToken);
     }
 
     private TimeSpan ComputeRetryDelay(int attemptCount)

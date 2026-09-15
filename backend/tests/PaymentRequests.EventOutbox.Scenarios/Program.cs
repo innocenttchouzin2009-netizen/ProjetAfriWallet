@@ -82,7 +82,59 @@ await alwaysFail.ProcessBatchAsync(10, now.AddHours(1).AddSeconds(1));
 var dead = await db.PaymentRequestEventOutbox.AsNoTracking().SingleAsync(x => x.EventId == deadId);
 Assert(dead.Status == (int)PaymentRequestEventOutboxStatus.DeadLetter, "Event must dead-letter after max attempts.");
 
-Console.WriteLine("AFW-BE-REQUEST-EVENTS-1 durable event outbox scenarios: PASS");
+var dispatchEventId = Guid.NewGuid();
+var dispatchAt = now.AddHours(2);
+var dispatchEnvelope = new PaymentRequestEventEnvelope(
+    dispatchEventId,
+    requestId,
+    "payment-request.paid",
+    dispatchAt,
+    "{\"amountMinor\":2500}");
+Assert(await store.EnqueueAsync(dispatchEnvelope, dispatchAt), "Provider-neutral dispatch event enqueue must succeed.");
+var capturingTransport = new CapturingTransport();
+var dispatchProcessor = new PaymentRequestEventOutboxProcessor(
+    store,
+    new ProviderNeutralPaymentRequestEventDeliveryAdapter(capturingTransport),
+    new PaymentRequestEventDeliveryOptions(3, TimeSpan.FromMinutes(1), TimeSpan.FromSeconds(5)));
+Assert(await dispatchProcessor.ProcessBatchAsync(10, dispatchAt) == 1, "Provider-neutral transport success must mark delivery.");
+Assert(capturingTransport.LastDispatch is not null, "Transport must receive a dispatch envelope.");
+Assert(capturingTransport.LastDispatch!.EventId == dispatchEventId, "Transport event id mismatch.");
+Assert(capturingTransport.LastDispatch.PaymentRequestId == requestId.Value, "Transport payment request id mismatch.");
+Assert(capturingTransport.LastDispatch.EventType == "payment-request.paid", "Transport event type mismatch.");
+Assert(capturingTransport.LastDispatch.PayloadJson == "{\"amountMinor\":2500}", "Transport payload mismatch.");
+
+var transientId = Guid.NewGuid();
+var transientAt = now.AddHours(3);
+Assert(await store.EnqueueAsync(
+    new PaymentRequestEventEnvelope(transientId, requestId, "payment-request.accepted", transientAt, "{}"),
+    transientAt), "Transient event enqueue must succeed.");
+var transientProcessor = new PaymentRequestEventOutboxProcessor(
+    store,
+    new ProviderNeutralPaymentRequestEventDeliveryAdapter(
+        new FailingTransport(PaymentRequestEventTransportFailureKind.Transient)),
+    new PaymentRequestEventDeliveryOptions(5, TimeSpan.FromMinutes(1), TimeSpan.FromSeconds(5)));
+Assert(await transientProcessor.ProcessBatchAsync(10, transientAt) == 0, "Transient transport failure must not count as delivered.");
+var transientRow = await db.PaymentRequestEventOutbox.AsNoTracking().SingleAsync(x => x.EventId == transientId);
+Assert(transientRow.Status == (int)PaymentRequestEventOutboxStatus.Retry, "Transient transport failure must map to Retry.");
+Assert(transientRow.AttemptCount == 1, "Transient transport failure must consume one attempt.");
+
+var permanentId = Guid.NewGuid();
+var permanentAt = now.AddHours(4);
+Assert(await store.EnqueueAsync(
+    new PaymentRequestEventEnvelope(permanentId, requestId, "payment-request.cancelled", permanentAt, "{}"),
+    permanentAt), "Permanent event enqueue must succeed.");
+var permanentProcessor = new PaymentRequestEventOutboxProcessor(
+    store,
+    new ProviderNeutralPaymentRequestEventDeliveryAdapter(
+        new FailingTransport(PaymentRequestEventTransportFailureKind.Permanent)),
+    new PaymentRequestEventDeliveryOptions(5, TimeSpan.FromMinutes(1), TimeSpan.FromSeconds(5)));
+Assert(await permanentProcessor.ProcessBatchAsync(10, permanentAt) == 0, "Permanent transport failure must not count as delivered.");
+var permanentRow = await db.PaymentRequestEventOutbox.AsNoTracking().SingleAsync(x => x.EventId == permanentId);
+Assert(permanentRow.Status == (int)PaymentRequestEventOutboxStatus.DeadLetter,
+    "Permanent transport failure must dead-letter immediately.");
+Assert(permanentRow.AttemptCount == 1, "Permanent transport failure must dead-letter on the first attempt.");
+
+Console.WriteLine("AFW-BE-REQUEST-EVENTS-1 durable event outbox and provider-neutral transport scenarios: PASS");
 
 sealed class FlakyDeliveryPort(int failuresBeforeSuccess) : IPaymentRequestEventDeliveryPort
 {
@@ -94,5 +146,26 @@ sealed class FlakyDeliveryPort(int failuresBeforeSuccess) : IPaymentRequestEvent
         calls++;
         if (calls <= failuresBeforeSuccess) throw new InvalidOperationException("simulated delivery failure");
         return Task.CompletedTask;
+    }
+}
+
+sealed class CapturingTransport : IPaymentRequestEventTransport
+{
+    public PaymentRequestEventDispatch? LastDispatch { get; private set; }
+
+    public Task DispatchAsync(PaymentRequestEventDispatch dispatch, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        LastDispatch = dispatch;
+        return Task.CompletedTask;
+    }
+}
+
+sealed class FailingTransport(PaymentRequestEventTransportFailureKind failureKind) : IPaymentRequestEventTransport
+{
+    public Task DispatchAsync(PaymentRequestEventDispatch dispatch, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        throw new PaymentRequestEventTransportException(failureKind, $"simulated {failureKind} transport failure");
     }
 }

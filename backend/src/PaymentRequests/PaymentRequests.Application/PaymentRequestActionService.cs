@@ -7,7 +7,8 @@ public sealed class PaymentRequestActionService(
     IPaymentRequestRepository repository,
     IPaymentRequestRecipientResolver recipientResolver,
     IPaymentRequestWalletOwnershipReader walletOwnershipReader,
-    IPaymentRequestPaymentPort paymentPort)
+    IPaymentRequestPaymentPort paymentPort,
+    IPaymentRequestLifecycleMutationStore? lifecycleMutationStore = null)
 {
     public async Task<PaymentRequestActionResult> DeclineAsync(
         PaymentRequestId id,
@@ -37,7 +38,7 @@ public sealed class PaymentRequestActionService(
         }
 
         request.Decline(actionAtUtc);
-        await repository.UpdateAsync(request, cancellationToken);
+        await PersistUpdateAsync(request, PaymentRequestLifecycleEventKind.Declined, cancellationToken);
         return PaymentRequestActionResult.Succeeded(request);
     }
 
@@ -60,7 +61,7 @@ public sealed class PaymentRequestActionService(
         }
 
         request.Cancel(actionAtUtc);
-        await repository.UpdateAsync(request, cancellationToken);
+        await PersistUpdateAsync(request, PaymentRequestLifecycleEventKind.Cancelled, cancellationToken);
         return PaymentRequestActionResult.Succeeded(request);
     }
 
@@ -116,7 +117,7 @@ public sealed class PaymentRequestActionService(
         if (request.Status == PaymentRequestStatus.Pending)
         {
             request.Accept(payerWalletId, actionAtUtc);
-            await repository.UpdateAsync(request, cancellationToken);
+            await PersistUpdateAsync(request, PaymentRequestLifecycleEventKind.Accepted, cancellationToken);
         }
         else
         {
@@ -131,8 +132,6 @@ public sealed class PaymentRequestActionService(
             }
         }
 
-        // The payment correlation is deterministically bound to the request id so a retry
-        // cannot create a second ledger journal through the certified transfer engine.
         var payment = await paymentPort.ExecuteAsync(
             payerWalletId.Value,
             request.RequesterWalletId.Value,
@@ -150,8 +149,23 @@ public sealed class PaymentRequestActionService(
         }
 
         request.MarkPaid(payment.TransferId, payment.CreatedAtUtc);
-        await repository.UpdateAsync(request, cancellationToken);
+        await PersistUpdateAsync(request, PaymentRequestLifecycleEventKind.Paid, cancellationToken);
         return PaymentRequestActionResult.Succeeded(request);
+    }
+
+    private async Task PersistUpdateAsync(
+        PaymentRequest request,
+        PaymentRequestLifecycleEventKind kind,
+        CancellationToken cancellationToken)
+    {
+        if (lifecycleMutationStore is null)
+        {
+            await repository.UpdateAsync(request, cancellationToken);
+            return;
+        }
+
+        var lifecycleEvent = PaymentRequestLifecycleEventFactory.Create(request, kind, request.UpdatedAtUtc);
+        await lifecycleMutationStore.UpdateAsync(request, lifecycleEvent, cancellationToken);
     }
 
     private static WalletId RequireAcceptedPayerWallet(PaymentRequest request)

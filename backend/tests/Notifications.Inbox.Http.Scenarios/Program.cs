@@ -5,6 +5,7 @@ using System.Text.Encodings.Web;
 using AfriWallet.Notifications.Application;
 using AfriWallet.Notifications.Domain;
 using AfriWallet.Notifications.Persistence;
+using AfriWallet.PaymentRequests.Application;
 using IdentityService.Api.Notifications;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
@@ -27,8 +28,8 @@ try
     builder.Services.AddAuthorization();
     builder.Services.AddInAppNotifications(connectionString);
 
-    Assert(builder.Services.Any(x => x.ServiceType == typeof(IPaymentRequestEventPublisher) && x.ImplementationType == typeof(InAppPaymentRequestEventPublisher)),
-        "Composition must wire the in-app payment request event publisher.");
+    Assert(builder.Services.Any(x => x.ServiceType == typeof(IPaymentRequestEventTransport) && x.ImplementationType == typeof(InAppPaymentRequestEventTransport)),
+        "Composition must wire the durable payment request event transport to the in-app inbox.");
     Assert(builder.Services.Any(x => x.ServiceType == typeof(NotificationRetentionService)),
         "Composition must wire notification retention service.");
 

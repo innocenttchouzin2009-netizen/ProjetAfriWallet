@@ -29,6 +29,8 @@ try
 
     Assert(builder.Services.Any(x => x.ServiceType == typeof(IPaymentRequestEventPublisher) && x.ImplementationType == typeof(InAppPaymentRequestEventPublisher)),
         "Composition must wire the in-app payment request event publisher.");
+    Assert(builder.Services.Any(x => x.ServiceType == typeof(NotificationRetentionService)),
+        "Composition must wire notification retention service.");
 
     var app = builder.Build();
     app.UseAuthentication();
@@ -70,15 +72,23 @@ try
     var anonymousResponse = await anonymous.GetAsync("/api/v1/notifications");
     Assert(anonymousResponse.StatusCode == HttpStatusCode.Unauthorized, "Notification inbox must require authentication.");
 
-    var listResponse = await client.GetAsync("/api/v1/notifications?limit=50");
-    Assert(listResponse.StatusCode == HttpStatusCode.OK, "Authenticated inbox list must return 200.");
-    var list = await listResponse.Content.ReadFromJsonAsync<List<InAppNotificationSnapshot>>();
-    Assert(list is { Count: 2 }, "Inbox must contain only notifications owned by the authenticated user.");
-    Assert(list![0].CreatedAtUtc >= list[1].CreatedAtUtc, "Inbox must be ordered newest first.");
+    var firstPageResponse = await client.GetAsync("/api/v1/notifications?limit=1");
+    Assert(firstPageResponse.StatusCode == HttpStatusCode.OK, "Authenticated inbox page must return 200.");
+    var firstPage = await firstPageResponse.Content.ReadFromJsonAsync<NotificationInboxPage>();
+    Assert(firstPage is { Items.Count: 1 } && !string.IsNullOrWhiteSpace(firstPage.NextCursor), "First page must expose one item and a next cursor.");
+
+    var secondPageResponse = await client.GetAsync($"/api/v1/notifications?limit=1&cursor={Uri.EscapeDataString(firstPage!.NextCursor!)}");
+    var secondPage = await secondPageResponse.Content.ReadFromJsonAsync<NotificationInboxPage>();
+    Assert(secondPage is { Items.Count: 1 }, "Second page must contain the remaining owned notification.");
+    Assert(secondPage!.Items[0].Id != firstPage.Items[0].Id, "Cursor pagination must not repeat items.");
+    Assert(secondPage.NextCursor is null, "Final page must not emit another cursor.");
+
+    var invalidCursor = await client.GetAsync("/api/v1/notifications?cursor=not-a-valid-cursor");
+    Assert(invalidCursor.StatusCode == HttpStatusCode.BadRequest, "Malformed cursor must return 400.");
 
     var unreadResponse = await client.GetAsync("/api/v1/notifications?unreadOnly=true&limit=50");
-    var unread = await unreadResponse.Content.ReadFromJsonAsync<List<InAppNotificationSnapshot>>();
-    Assert(unread is { Count: 1 } && unread[0].Id == firstId, "Unread filter must return only unread notifications.");
+    var unread = await unreadResponse.Content.ReadFromJsonAsync<NotificationInboxPage>();
+    Assert(unread is { Items.Count: 1 } && unread.Items[0].Id == firstId, "Unread filter must return only unread notifications.");
 
     var countResponse = await client.GetAsync("/api/v1/notifications/unread-count");
     var count = await countResponse.Content.ReadFromJsonAsync<NotificationUnreadCountResponse>();
@@ -108,7 +118,7 @@ try
     Assert(missingRead.StatusCode == HttpStatusCode.NotFound, "Unknown notification mark-as-read must return 404.");
 
     Assert(secondId != Guid.Empty, "Read notification fixture must be persisted.");
-    Console.WriteLine("AFW-BE-NOTIFICATION-1 protected in-app inbox HTTP and read-state scenarios: PASS");
+    Console.WriteLine("AFW-BE-NOTIFICATION-1 protected paged in-app inbox HTTP scenarios: PASS");
 
     await app.DisposeAsync();
 }

@@ -18,6 +18,7 @@ public static class NotificationEndpoints
     private static async Task<IResult> ListAsync(
         bool? unreadOnly,
         int? limit,
+        string? cursor,
         ClaimsPrincipal principal,
         InAppNotificationInboxService service,
         CancellationToken cancellationToken)
@@ -25,8 +26,8 @@ public static class NotificationEndpoints
         if (!TryGetUserId(principal, out var userId)) return Results.Unauthorized();
         try
         {
-            var items = await service.ListAsync(userId, unreadOnly ?? false, limit ?? 50, cancellationToken);
-            return Results.Ok(items);
+            var page = await service.ListAsync(userId, unreadOnly ?? false, limit ?? 50, cursor, cancellationToken);
+            return Results.Ok(page);
         }
         catch (ArgumentException exception)
         {

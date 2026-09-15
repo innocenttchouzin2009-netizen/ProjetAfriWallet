@@ -1,3 +1,4 @@
+using System.Text;
 using AfriWallet.Notifications.Domain;
 
 namespace AfriWallet.Notifications.Application;
@@ -15,27 +16,76 @@ public sealed record InAppNotificationSnapshot(
     public bool IsRead => ReadAtUtc is not null;
 }
 
+public sealed record NotificationInboxCursor
+{
+    public NotificationInboxCursor(DateTimeOffset createdAtUtc, Guid notificationId)
+    {
+        if (notificationId == Guid.Empty)
+            throw new ArgumentException("Notification id cannot be empty.", nameof(notificationId));
+        if (createdAtUtc.Offset != TimeSpan.Zero)
+            throw new ArgumentException("Cursor timestamp must be UTC.", nameof(createdAtUtc));
+        CreatedAtUtc = createdAtUtc;
+        NotificationId = notificationId;
+    }
+
+    public DateTimeOffset CreatedAtUtc { get; }
+    public Guid NotificationId { get; }
+}
+
+public sealed record NotificationInboxPage(
+    IReadOnlyList<InAppNotificationSnapshot> Items,
+    string? NextCursor);
+
+public sealed record NotificationRetentionOptions
+{
+    public NotificationRetentionOptions(TimeSpan activeInboxRetention)
+    {
+        if (activeInboxRetention <= TimeSpan.Zero)
+            throw new ArgumentOutOfRangeException(nameof(activeInboxRetention));
+        ActiveInboxRetention = activeInboxRetention;
+    }
+
+    public TimeSpan ActiveInboxRetention { get; }
+    public static NotificationRetentionOptions Default { get; } = new(TimeSpan.FromDays(90));
+}
+
 public interface IInAppNotificationRepository
 {
-    Task<IReadOnlyList<InAppNotification>> ListAsync(Guid userId, bool unreadOnly, int limit, CancellationToken cancellationToken = default);
+    Task<bool> AddAsync(InAppNotification notification, CancellationToken cancellationToken = default);
     Task<InAppNotification?> GetAsync(Guid userId, Guid notificationId, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<InAppNotification>> ListPageAsync(
+        Guid userId,
+        bool unreadOnly,
+        int limit,
+        NotificationInboxCursor? cursor,
+        CancellationToken cancellationToken = default);
     Task<int> CountUnreadAsync(Guid userId, CancellationToken cancellationToken = default);
-    Task AddAsync(InAppNotification notification, CancellationToken cancellationToken = default);
     Task UpdateAsync(InAppNotification notification, CancellationToken cancellationToken = default);
+    Task<int> ArchiveBeforeAsync(DateTimeOffset cutoffUtc, DateTimeOffset archivedAtUtc, CancellationToken cancellationToken = default);
 }
 
 public sealed class InAppNotificationInboxService(IInAppNotificationRepository repository)
 {
-    public async Task<IReadOnlyList<InAppNotificationSnapshot>> ListAsync(
+    public async Task<NotificationInboxPage> ListAsync(
         Guid userId,
         bool unreadOnly,
         int limit,
+        string? cursor = null,
         CancellationToken cancellationToken = default)
     {
         ValidateUser(userId);
-        if (limit is < 1 or > 100) throw new ArgumentOutOfRangeException(nameof(limit), "Limit must be between 1 and 100.");
-        var items = await repository.ListAsync(userId, unreadOnly, limit, cancellationToken);
-        return items.Select(ToSnapshot).ToArray();
+        if (limit is < 1 or > 100)
+            throw new ArgumentOutOfRangeException(nameof(limit), "Limit must be between 1 and 100.");
+
+        var decodedCursor = DecodeCursor(cursor);
+        var rows = await repository.ListPageAsync(userId, unreadOnly, checked(limit + 1), decodedCursor, cancellationToken);
+        var hasMore = rows.Count > limit;
+        var pageRows = rows.Take(limit).ToArray();
+        var nextCursor = hasMore && pageRows.Length > 0
+            ? EncodeCursor(new NotificationInboxCursor(pageRows[^1].CreatedAtUtc, pageRows[^1].Id))
+            : null;
+
+        return new NotificationInboxPage(pageRows.Select(ToSnapshot).ToArray(), nextCursor);
     }
 
     public async Task<InAppNotificationSnapshot?> GetAsync(
@@ -69,6 +119,36 @@ public sealed class InAppNotificationInboxService(IInAppNotificationRepository r
         return ToSnapshot(item);
     }
 
+    internal static string EncodeCursor(NotificationInboxCursor cursor)
+    {
+        var payload = $"{cursor.CreatedAtUtc.UtcTicks:D19}|{cursor.NotificationId:N}";
+        return Convert.ToBase64String(Encoding.UTF8.GetBytes(payload))
+            .TrimEnd('=')
+            .Replace('+', '-')
+            .Replace('/', '_');
+    }
+
+    internal static NotificationInboxCursor? DecodeCursor(string? cursor)
+    {
+        if (string.IsNullOrWhiteSpace(cursor)) return null;
+        try
+        {
+            var base64 = cursor.Trim().Replace('-', '+').Replace('_', '/');
+            base64 = base64.PadRight(base64.Length + ((4 - base64.Length % 4) % 4), '=');
+            var payload = Encoding.UTF8.GetString(Convert.FromBase64String(base64));
+            var parts = payload.Split('|');
+            if (parts.Length != 2 ||
+                !long.TryParse(parts[0], out var utcTicks) ||
+                !Guid.TryParseExact(parts[1], "N", out var notificationId))
+                throw new FormatException();
+            return new NotificationInboxCursor(new DateTimeOffset(utcTicks, TimeSpan.Zero), notificationId);
+        }
+        catch (Exception exception) when (exception is FormatException or ArgumentException or ArgumentOutOfRangeException)
+        {
+            throw new ArgumentException("Notification cursor is invalid.", nameof(cursor));
+        }
+    }
+
     private static void ValidateUser(Guid userId)
     {
         if (userId == Guid.Empty) throw new ArgumentException("User id cannot be empty.", nameof(userId));
@@ -96,5 +176,18 @@ public sealed class InAppNotificationInboxService(IInAppNotificationRepository r
             item.TransferId,
             title,
             message);
+    }
+}
+
+public sealed class NotificationRetentionService(
+    IInAppNotificationRepository repository,
+    NotificationRetentionOptions options)
+{
+    public async Task<int> ArchiveExpiredAsync(DateTimeOffset nowUtc, CancellationToken cancellationToken = default)
+    {
+        if (nowUtc.Offset != TimeSpan.Zero)
+            throw new ArgumentException("Current timestamp must be UTC.", nameof(nowUtc));
+        var cutoff = nowUtc.Subtract(options.ActiveInboxRetention);
+        return await repository.ArchiveBeforeAsync(cutoff, nowUtc, cancellationToken);
     }
 }

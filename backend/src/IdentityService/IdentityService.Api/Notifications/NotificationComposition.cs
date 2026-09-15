@@ -19,6 +19,8 @@ public static class NotificationComposition
         services.AddDbContext<NotificationInboxDbContext>(options => options.UseSqlite(connectionString));
         services.AddScoped<IInAppNotificationRepository, EfInAppNotificationRepository>();
         services.AddScoped<InAppNotificationInboxService>();
+        services.AddScoped<NotificationRetentionService>();
+        services.AddSingleton(NotificationRetentionOptions.Default);
         services.AddScoped<AfriWallet.Notifications.Application.IPaymentRequestEventPublisher, InAppPaymentRequestEventPublisher>();
         return services;
     }

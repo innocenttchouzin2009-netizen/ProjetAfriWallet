@@ -8,6 +8,8 @@ public sealed class InAppNotificationEntity
     public Guid PaymentRequestId { get; set; }
     public int EventKind { get; set; }
     public string CreatedAtUtc { get; set; } = string.Empty;
+    public string SortKey { get; set; } = string.Empty;
     public Guid? TransferId { get; set; }
     public string? ReadAtUtc { get; set; }
+    public string? ArchivedAtUtc { get; set; }
 }

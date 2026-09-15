@@ -4,7 +4,8 @@ namespace AfriWallet.PaymentRequests.Application;
 
 public sealed class PaymentRequestRecoveryService(
     IPaymentRequestRepository repository,
-    IPaymentRequestReconciliationPort reconciliationPort)
+    IPaymentRequestReconciliationPort reconciliationPort,
+    IPaymentRequestLifecycleMutationStore? lifecycleMutationStore = null)
 {
     public async Task<PaymentRequestRecoveryResult> ReconcileAsync(
         PaymentRequestId id,
@@ -47,7 +48,19 @@ public sealed class PaymentRequestRecoveryService(
         ValidateReceipt(request, receipt);
 
         request.MarkPaid(receipt.TransferId, receipt.CreatedAtUtc);
-        await repository.UpdateAsync(request, cancellationToken);
+        if (lifecycleMutationStore is null)
+        {
+            await repository.UpdateAsync(request, cancellationToken);
+        }
+        else
+        {
+            var lifecycleEvent = PaymentRequestLifecycleEventFactory.Create(
+                request,
+                PaymentRequestLifecycleEventKind.Paid,
+                request.UpdatedAtUtc);
+            await lifecycleMutationStore.UpdateAsync(request, lifecycleEvent, cancellationToken);
+        }
+
         return PaymentRequestRecoveryResult.Reconciled(request);
     }
 

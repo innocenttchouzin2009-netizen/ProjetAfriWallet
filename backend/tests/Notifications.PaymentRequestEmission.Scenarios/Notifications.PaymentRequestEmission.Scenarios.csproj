@@ -6,7 +6,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="../../src/Notifications/Notifications.Application/Notifications.Application.csproj" />
-    <ProjectReference Include="../../src/PaymentRequests/PaymentRequests.Application/PaymentRequests.Application.csproj" />
+    <ProjectReference Include="../../src/IdentityService/IdentityService.Api/IdentityService.Api.csproj" />
+    <ProjectReference Include="../../src/Notifications/Notifications.Persistence/Notifications.Persistence.csproj" />
+    <ProjectReference Include="../../src/PaymentRequests/PaymentRequests.Persistence/PaymentRequests.Persistence.csproj" />
+    <ProjectReference Include="../../src/Wallet/Wallet.Application/Wallet.Application.csproj" />
+    <ProjectReference Include="../../src/Wallet/Wallet.Domain/Wallet.Domain.csproj" />
   </ItemGroup>
 </Project>

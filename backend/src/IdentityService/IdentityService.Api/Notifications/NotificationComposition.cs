@@ -2,6 +2,7 @@ using AfriWallet.Notifications.Application;
 using AfriWallet.Notifications.Persistence;
 using AfriWallet.P2P.Domain;
 using AfriWallet.P2P.Infrastructure;
+using AfriWallet.PaymentRequests.Application;
 using AfriWallet.PaymentRequests.Persistence;
 using AfriWallet.Wallet.Application;
 using AfriWallet.Wallet.Domain;
@@ -21,56 +22,135 @@ public static class NotificationComposition
         services.AddScoped<InAppNotificationInboxService>();
         services.AddScoped<NotificationRetentionService>();
         services.AddSingleton(NotificationRetentionOptions.Default);
-        services.AddScoped<AfriWallet.Notifications.Application.IPaymentRequestEventPublisher, InAppPaymentRequestEventPublisher>();
+        services.AddScoped<IPaymentRequestEventTransport, InAppPaymentRequestEventTransport>();
         return services;
     }
 }
 
-public sealed class InAppPaymentRequestEventPublisher(
+public sealed class InAppPaymentRequestEventTransport(
     PaymentRequestDbContext paymentRequestDbContext,
     IWalletRepository walletRepository,
     IAfWalIdentityDirectory afWalIdentityDirectory,
     IQrRecipientDirectory qrRecipientDirectory,
     IInAppNotificationRepository notificationRepository)
-    : AfriWallet.Notifications.Application.IPaymentRequestEventPublisher
+    : IPaymentRequestEventTransport
 {
-    public async Task PublishAsync(
-        AfriWallet.Notifications.Domain.PaymentRequestEvent paymentRequestEvent,
+    public async Task DispatchAsync(
+        PaymentRequestEventDispatch dispatch,
         CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(paymentRequestEvent);
         cancellationToken.ThrowIfCancellationRequested();
 
-        var request = await paymentRequestDbContext.PaymentRequests.AsNoTracking()
-            .SingleOrDefaultAsync(x => x.Id == paymentRequestEvent.PaymentRequestId, cancellationToken);
-        if (request is null) return;
-
-        var audience = new HashSet<Guid>();
-        var requesterWallet = await walletRepository.GetAsync(WalletId.From(request.RequesterWalletId), cancellationToken);
-        var requesterUserId = requesterWallet?.OwnerId;
-
-        Guid? payerUserId = (RecipientReferenceKind)request.PayerReferenceKind switch
+        try
         {
-            RecipientReferenceKind.AfWalId => await afWalIdentityDirectory.ResolveOwnerIdAsync(request.PayerReferenceValue, cancellationToken),
-            RecipientReferenceKind.QrToken => await qrRecipientDirectory.ResolveOwnerIdAsync(request.PayerReferenceValue, cancellationToken),
-            _ => null
+            var kind = MapKind(dispatch.EventType);
+            var request = await paymentRequestDbContext.PaymentRequests.AsNoTracking()
+                .SingleOrDefaultAsync(x => x.Id == dispatch.PaymentRequestId, cancellationToken);
+
+            if (request is null)
+            {
+                throw new PaymentRequestEventTransportException(
+                    PaymentRequestEventTransportFailureKind.Permanent,
+                    $"Payment request {dispatch.PaymentRequestId} was not found for notification delivery.");
+            }
+
+            Guid? transferId = kind == AfriWallet.Notifications.Domain.PaymentRequestEventKind.Paid
+                ? request.TransferId
+                : null;
+
+            var notificationEvent = AfriWallet.Notifications.Domain.PaymentRequestEvent.Create(
+                dispatch.EventId,
+                dispatch.PaymentRequestId,
+                kind,
+                dispatch.OccurredAtUtc,
+                transferId);
+
+            var audience = new HashSet<Guid>();
+            var requesterWallet = await walletRepository.GetAsync(WalletId.From(request.RequesterWalletId), cancellationToken);
+            var requesterUserId = requesterWallet?.OwnerId;
+            var payerUserId = await ResolvePayerUserIdAsync(request, cancellationToken);
+
+            if (kind == AfriWallet.Notifications.Domain.PaymentRequestEventKind.Created)
+            {
+                AddAudience(audience, payerUserId);
+            }
+            else
+            {
+                AddAudience(audience, requesterUserId);
+                AddAudience(audience, payerUserId);
+            }
+
+            foreach (var userId in audience)
+            {
+                await notificationRepository.AddAsync(
+                    AfriWallet.Notifications.Domain.InAppNotification.New(userId, notificationEvent),
+                    cancellationToken);
+            }
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (PaymentRequestEventTransportException)
+        {
+            throw;
+        }
+        catch (ArgumentException exception)
+        {
+            throw new PaymentRequestEventTransportException(
+                PaymentRequestEventTransportFailureKind.Permanent,
+                exception.Message,
+                exception);
+        }
+        catch (Exception exception)
+        {
+            throw new PaymentRequestEventTransportException(
+                PaymentRequestEventTransportFailureKind.Transient,
+                "In-app notification delivery failed.",
+                exception);
+        }
+    }
+
+    private async Task<Guid?> ResolvePayerUserIdAsync(
+        PaymentRequestEntity request,
+        CancellationToken cancellationToken)
+    {
+        if (request.AcceptedPayerWalletId is Guid acceptedPayerWalletId && acceptedPayerWalletId != Guid.Empty)
+        {
+            var wallet = await walletRepository.GetAsync(WalletId.From(acceptedPayerWalletId), cancellationToken);
+            if (wallet is not null && wallet.OwnerId != Guid.Empty)
+                return wallet.OwnerId;
+        }
+
+        return (RecipientReferenceKind)request.PayerReferenceKind switch
+        {
+            RecipientReferenceKind.AfWalId => await afWalIdentityDirectory.ResolveOwnerIdAsync(
+                request.PayerReferenceValue,
+                cancellationToken),
+            RecipientReferenceKind.QrToken => await qrRecipientDirectory.ResolveOwnerIdAsync(
+                request.PayerReferenceValue,
+                cancellationToken),
+            _ => throw new ArgumentException("Unsupported payment request payer reference kind.")
+        };
+    }
+
+    private static AfriWallet.Notifications.Domain.PaymentRequestEventKind MapKind(string eventType) =>
+        eventType switch
+        {
+            "payment-request.created" => AfriWallet.Notifications.Domain.PaymentRequestEventKind.Created,
+            "payment-request.accepted" => AfriWallet.Notifications.Domain.PaymentRequestEventKind.Accepted,
+            "payment-request.declined" => AfriWallet.Notifications.Domain.PaymentRequestEventKind.Declined,
+            "payment-request.cancelled" => AfriWallet.Notifications.Domain.PaymentRequestEventKind.Cancelled,
+            "payment-request.expired" => AfriWallet.Notifications.Domain.PaymentRequestEventKind.Expired,
+            "payment-request.paid" => AfriWallet.Notifications.Domain.PaymentRequestEventKind.Paid,
+            _ => throw new PaymentRequestEventTransportException(
+                PaymentRequestEventTransportFailureKind.Permanent,
+                $"Unsupported payment request event type '{eventType}'.")
         };
 
-        if (paymentRequestEvent.Kind == AfriWallet.Notifications.Domain.PaymentRequestEventKind.Created)
-        {
-            if (payerUserId is not null && payerUserId != Guid.Empty) audience.Add(payerUserId.Value);
-        }
-        else
-        {
-            if (requesterUserId is not null && requesterUserId != Guid.Empty) audience.Add(requesterUserId.Value);
-            if (payerUserId is not null && payerUserId != Guid.Empty) audience.Add(payerUserId.Value);
-        }
-
-        foreach (var userId in audience)
-        {
-            await notificationRepository.AddAsync(
-                AfriWallet.Notifications.Domain.InAppNotification.New(userId, paymentRequestEvent),
-                cancellationToken);
-        }
+    private static void AddAudience(HashSet<Guid> audience, Guid? userId)
+    {
+        if (userId is Guid value && value != Guid.Empty)
+            audience.Add(value);
     }
 }

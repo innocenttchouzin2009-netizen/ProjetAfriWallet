@@ -1,4 +1,3 @@
-using AfriWallet.Notifications.Application;
 using AfriWallet.PaymentRequests.Application;
 using AfriWallet.PaymentRequests.Infrastructure;
 using AfriWallet.PaymentRequests.Persistence;
@@ -20,6 +19,7 @@ public static class PaymentRequestsComposition
         services.AddDbContext<PaymentRequestDbContext>(options => options.UseSqlite(connectionString));
         services.AddScoped<IPaymentRequestRepository, EfPaymentRequestRepository>();
         services.AddScoped<IPaymentRequestQueryRepository, EfPaymentRequestRepository>();
+        services.AddScoped<IPaymentRequestLifecycleMutationStore, EfPaymentRequestLifecycleMutationStore>();
         services.AddScoped<IPaymentRequestRecipientResolver, P2PRecipientResolver>();
         services.AddScoped<IPaymentRequestWalletOwnershipReader, WalletPaymentRequestOwnershipReader>();
         services.AddScoped<IPaymentRequestPaymentPort, P2PPaymentRequestPaymentPort>();
@@ -31,8 +31,6 @@ public static class PaymentRequestsComposition
         services.AddScoped<IPaymentRequestEventDeliveryPort, ProviderNeutralPaymentRequestEventDeliveryAdapter>();
         services.AddScoped<PaymentRequestEventOutboxProcessor>();
         services.AddScoped<PaymentRequestEventOutboxOperationalHealthService>();
-        services.AddScoped<IPaymentRequestEventPublisher, LoggingPaymentRequestEventPublisher>();
-        services.AddScoped<PaymentRequestEventDispatcher>();
         services.AddScoped<PaymentRequestApplicationService>();
         services.AddScoped<PaymentRequestActionService>();
         services.AddScoped<AuthorizedPaymentRequestQueryService>();

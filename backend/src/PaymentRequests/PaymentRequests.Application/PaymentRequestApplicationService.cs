@@ -1,32 +1,12 @@
-using AfriWallet.Notifications.Application;
-using AfriWallet.Notifications.Domain;
 using AfriWallet.PaymentRequests.Domain;
 
 namespace AfriWallet.PaymentRequests.Application;
 
-public sealed class PaymentRequestApplicationService
+public sealed class PaymentRequestApplicationService(
+    IPaymentRequestRepository repository,
+    IPaymentRequestRecipientResolver recipientResolver,
+    IPaymentRequestLifecycleMutationStore? lifecycleMutationStore = null)
 {
-    private readonly IPaymentRequestRepository repository;
-    private readonly IPaymentRequestRecipientResolver recipientResolver;
-    private readonly PaymentRequestEventDispatcher? eventDispatcher;
-
-    public PaymentRequestApplicationService(
-        IPaymentRequestRepository repository,
-        IPaymentRequestRecipientResolver recipientResolver)
-        : this(repository, recipientResolver, null)
-    {
-    }
-
-    public PaymentRequestApplicationService(
-        IPaymentRequestRepository repository,
-        IPaymentRequestRecipientResolver recipientResolver,
-        PaymentRequestEventDispatcher? eventDispatcher)
-    {
-        this.repository = repository;
-        this.recipientResolver = recipientResolver;
-        this.eventDispatcher = eventDispatcher;
-    }
-
     public async Task<CreatePaymentRequestResult> CreateAsync(
         CreatePaymentRequestCommand command,
         CancellationToken cancellationToken = default)
@@ -72,8 +52,19 @@ public sealed class PaymentRequestApplicationService
             command.CreatedAtUtc,
             command.ExpiresAtUtc);
 
-        await repository.AddAsync(request, cancellationToken);
-        await PublishAsync(request, PaymentRequestEventKind.Created, request.CreatedAtUtc, null, cancellationToken);
+        if (lifecycleMutationStore is null)
+        {
+            await repository.AddAsync(request, cancellationToken);
+        }
+        else
+        {
+            var lifecycleEvent = PaymentRequestLifecycleEventFactory.Create(
+                request,
+                PaymentRequestLifecycleEventKind.Created,
+                request.CreatedAtUtc);
+            await lifecycleMutationStore.AddAsync(request, lifecycleEvent, cancellationToken);
+        }
+
         return CreatePaymentRequestResult.Created(request);
     }
 
@@ -85,18 +76,6 @@ public sealed class PaymentRequestApplicationService
         var request = await repository.GetAsync(id, cancellationToken);
         return request is null ? null : PaymentRequestMappings.ToSnapshot(request);
     }
-
-    private Task PublishAsync(
-        PaymentRequest request,
-        PaymentRequestEventKind kind,
-        DateTimeOffset occurredAtUtc,
-        Guid? transferId,
-        CancellationToken cancellationToken) =>
-        eventDispatcher is null
-            ? Task.CompletedTask
-            : eventDispatcher.PublishAsync(
-                PaymentRequestEvent.New(request.Id.Value, kind, occurredAtUtc, transferId),
-                cancellationToken);
 
     private static void EnsureEquivalent(PaymentRequest existing, CreatePaymentRequestCommand command)
     {

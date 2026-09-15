@@ -25,11 +25,22 @@ public static class PaymentRequestsComposition
         services.AddScoped<IPaymentRequestPaymentPort, P2PPaymentRequestPaymentPort>();
         services.AddScoped<IPaymentRequestOwnedWalletReader, WalletRegistryOwnedWalletReader>();
         services.AddScoped<IPaymentRequestOwnedRecipientReferenceReader, AuthoritativeRecipientReferenceReader>();
+        services.AddScoped<IPaymentRequestReconciliationPort, TransferCorrelationPaymentRequestReconciliationPort>();
+        services.AddScoped<IPaymentRequestEventOutboxStore, EfPaymentRequestEventOutboxStore>();
+        services.AddScoped<IPaymentRequestEventOutboxDiagnostics, EfPaymentRequestEventOutboxDiagnostics>();
+        services.AddScoped<IPaymentRequestEventDeliveryPort, ProviderNeutralPaymentRequestEventDeliveryAdapter>();
+        services.AddScoped<PaymentRequestEventOutboxProcessor>();
+        services.AddScoped<PaymentRequestEventOutboxOperationalHealthService>();
         services.AddScoped<IPaymentRequestEventPublisher, LoggingPaymentRequestEventPublisher>();
         services.AddScoped<PaymentRequestEventDispatcher>();
         services.AddScoped<PaymentRequestApplicationService>();
         services.AddScoped<PaymentRequestActionService>();
         services.AddScoped<AuthorizedPaymentRequestQueryService>();
+        services.AddScoped<PaymentRequestRecoveryService>();
+        services.AddSingleton(TimeProvider.System);
+        services.AddSingleton(PaymentRequestEventDispatchWorkerOptions.Default);
+        services.AddSingleton<PaymentRequestEventOutboxWorkerState>();
+        services.AddHostedService<PaymentRequestEventOutboxHostedWorker>();
         return services;
     }
 }

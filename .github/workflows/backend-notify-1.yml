@@ -1,0 +1,38 @@
+name: AFW-BE-NOTIFY-1 Notification Delivery
+
+on:
+  push:
+    branches:
+      - feature/backend-notify-1
+    paths:
+      - 'backend/src/Notifications/**'
+      - 'backend/tests/Notifications.Application.Scenarios/**'
+      - '.github/workflows/backend-notify-1.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'backend/src/Notifications/**'
+      - 'backend/tests/Notifications.Application.Scenarios/**'
+      - '.github/workflows/backend-notify-1.yml'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Validate AFW-BE-NOTIFY-1
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build Notifications Application
+        run: dotnet build backend/src/Notifications/Notifications.Application/Notifications.Application.csproj --configuration Release --nologo
+
+      - name: Run notification delivery and in-app adapter scenarios
+        run: dotnet run --project backend/tests/Notifications.Application.Scenarios/Notifications.Application.Scenarios.csproj --configuration Release

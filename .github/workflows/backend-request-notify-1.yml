@@ -7,7 +7,11 @@ on:
     paths:
       - 'backend/src/PaymentRequests/PaymentRequests.Domain/PaymentRequestNotification.cs'
       - 'backend/src/PaymentRequests/PaymentRequests.Application/PaymentRequestNotificationProjectionContracts.cs'
+      - 'backend/src/PaymentRequests/PaymentRequests.Application/PaymentRequestNotificationProjectionEngine.cs'
+      - 'backend/src/PaymentRequests/PaymentRequests.Application/PaymentRequestNotificationAudienceResolver.cs'
+      - 'backend/src/PaymentRequests/PaymentRequests.Application/PaymentRequests.Application.csproj'
       - 'backend/tests/PaymentRequests.NotificationProjection.Scenarios/**'
+      - 'backend/tests/PaymentRequests.NotificationProjectionEngine.Scenarios/**'
       - '.github/workflows/backend-request-notify-1.yml'
   pull_request:
     branches:
@@ -15,7 +19,11 @@ on:
     paths:
       - 'backend/src/PaymentRequests/PaymentRequests.Domain/PaymentRequestNotification.cs'
       - 'backend/src/PaymentRequests/PaymentRequests.Application/PaymentRequestNotificationProjectionContracts.cs'
+      - 'backend/src/PaymentRequests/PaymentRequests.Application/PaymentRequestNotificationProjectionEngine.cs'
+      - 'backend/src/PaymentRequests/PaymentRequests.Application/PaymentRequestNotificationAudienceResolver.cs'
+      - 'backend/src/PaymentRequests/PaymentRequests.Application/PaymentRequests.Application.csproj'
       - 'backend/tests/PaymentRequests.NotificationProjection.Scenarios/**'
+      - 'backend/tests/PaymentRequests.NotificationProjectionEngine.Scenarios/**'
       - '.github/workflows/backend-request-notify-1.yml'
   workflow_dispatch:
 
@@ -41,6 +49,9 @@ jobs:
 
       - name: Run notification domain and projection contract scenarios
         run: dotnet run --project backend/tests/PaymentRequests.NotificationProjection.Scenarios/PaymentRequests.NotificationProjection.Scenarios.csproj --configuration Release
+
+      - name: Run lifecycle event notification projection engine scenarios
+        run: dotnet run --project backend/tests/PaymentRequests.NotificationProjectionEngine.Scenarios/PaymentRequests.NotificationProjectionEngine.Scenarios.csproj --configuration Release
 
       - name: Run lifecycle event production regression scenarios
         run: dotnet run --project backend/tests/PaymentRequests.EventProduction.Scenarios/PaymentRequests.EventProduction.Scenarios.csproj --configuration Release

@@ -20,11 +20,12 @@ public sealed class PaymentRequestEventOutboxHostedWorker(
     IServiceScopeFactory scopeFactory,
     TimeProvider timeProvider,
     PaymentRequestEventDispatchWorkerOptions options,
-    PaymentRequestEventOutboxWorkerState state,
-    ILogger<PaymentRequestEventOutboxHostedWorker> logger)
+    ILogger<PaymentRequestEventOutboxHostedWorker> logger,
+    PaymentRequestEventOutboxWorkerState? observabilityState = null)
     : BackgroundService
 {
     private static int activeWorker;
+    private readonly PaymentRequestEventOutboxWorkerState state = observabilityState ?? new();
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {

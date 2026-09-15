@@ -1,0 +1,47 @@
+name: AFW-BE-NOTIFICATION-DELIVERY-1 Payment Request In-App Notification Mapping
+
+on:
+  push:
+    branches:
+      - feature/backend-notification-delivery-1
+    paths:
+      - 'backend/src/Notifications/**'
+      - 'backend/tests/Notifications.PaymentRequestDelivery.Scenarios/**'
+      - '.github/workflows/backend-notification-delivery-1.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'backend/src/Notifications/**'
+      - 'backend/tests/Notifications.PaymentRequestDelivery.Scenarios/**'
+      - '.github/workflows/backend-notification-delivery-1.yml'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Validate payment request In-App notification delivery mapping
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build Notifications Application
+        run: dotnet build backend/src/Notifications/Notifications.Application/Notifications.Application.csproj --configuration Release --nologo
+
+      - name: Run payment request event to In-App notification scenarios
+        run: dotnet run --project backend/tests/Notifications.PaymentRequestDelivery.Scenarios/Notifications.PaymentRequestDelivery.Scenarios.csproj --configuration Release
+
+      - name: Build Payment Requests Application
+        run: dotnet build backend/src/PaymentRequests/PaymentRequests.Application/PaymentRequests.Application.csproj --configuration Release --nologo
+
+      - name: Run durable payment request event outbox scenarios
+        run: dotnet run --project backend/tests/PaymentRequests.EventOutbox.Scenarios/PaymentRequests.EventOutbox.Scenarios.csproj --configuration Release
+
+      - name: Run payment request event worker scenarios
+        run: dotnet run --project backend/tests/PaymentRequests.EventWorker.Scenarios/PaymentRequests.EventWorker.Scenarios.csproj --configuration Release

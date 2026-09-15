@@ -15,6 +15,7 @@ on:
       - 'backend/tests/Notifications.PaymentRequestEvents.Scenarios/**'
       - 'backend/tests/Notifications.PaymentRequestEmission.Scenarios/**'
       - 'backend/tests/Notifications.Inbox.Http.Scenarios/**'
+      - 'backend/tests/Notifications.Inbox.Hardening.Scenarios/**'
       - '.github/workflows/backend-notification-1.yml'
   pull_request:
     branches:
@@ -30,6 +31,7 @@ on:
       - 'backend/tests/Notifications.PaymentRequestEvents.Scenarios/**'
       - 'backend/tests/Notifications.PaymentRequestEmission.Scenarios/**'
       - 'backend/tests/Notifications.Inbox.Http.Scenarios/**'
+      - 'backend/tests/Notifications.Inbox.Hardening.Scenarios/**'
       - '.github/workflows/backend-notification-1.yml'
   workflow_dispatch:
 
@@ -77,5 +79,8 @@ jobs:
       - name: Run payment request event emission integration scenarios
         run: dotnet run --project backend/tests/Notifications.PaymentRequestEmission.Scenarios/Notifications.PaymentRequestEmission.Scenarios.csproj --configuration Release
 
-      - name: Run protected in-app notification inbox HTTP scenarios
+      - name: Run protected paged in-app notification inbox HTTP scenarios
         run: dotnet run --project backend/tests/Notifications.Inbox.Http.Scenarios/Notifications.Inbox.Http.Scenarios.csproj --configuration Release
+
+      - name: Run notification inbox pagination retention and concurrency scenarios
+        run: dotnet run --project backend/tests/Notifications.Inbox.Hardening.Scenarios/Notifications.Inbox.Hardening.Scenarios.csproj --configuration Release

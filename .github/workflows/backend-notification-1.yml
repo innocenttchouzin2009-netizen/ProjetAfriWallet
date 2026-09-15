@@ -7,10 +7,14 @@ on:
     paths:
       - 'backend/src/Notifications/**'
       - 'backend/src/PaymentRequests/PaymentRequests.Application/**'
+      - 'backend/src/IdentityService/IdentityService.Api/Notifications/**'
       - 'backend/src/IdentityService/IdentityService.Api/PaymentRequests/**'
+      - 'backend/src/IdentityService/IdentityService.Api/Program.cs'
+      - 'backend/src/IdentityService/IdentityService.Api/appsettings.json'
       - 'backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj'
       - 'backend/tests/Notifications.PaymentRequestEvents.Scenarios/**'
       - 'backend/tests/Notifications.PaymentRequestEmission.Scenarios/**'
+      - 'backend/tests/Notifications.Inbox.Http.Scenarios/**'
       - '.github/workflows/backend-notification-1.yml'
   pull_request:
     branches:
@@ -18,10 +22,14 @@ on:
     paths:
       - 'backend/src/Notifications/**'
       - 'backend/src/PaymentRequests/PaymentRequests.Application/**'
+      - 'backend/src/IdentityService/IdentityService.Api/Notifications/**'
       - 'backend/src/IdentityService/IdentityService.Api/PaymentRequests/**'
+      - 'backend/src/IdentityService/IdentityService.Api/Program.cs'
+      - 'backend/src/IdentityService/IdentityService.Api/appsettings.json'
       - 'backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj'
       - 'backend/tests/Notifications.PaymentRequestEvents.Scenarios/**'
       - 'backend/tests/Notifications.PaymentRequestEmission.Scenarios/**'
+      - 'backend/tests/Notifications.Inbox.Http.Scenarios/**'
       - '.github/workflows/backend-notification-1.yml'
   workflow_dispatch:
 
@@ -45,6 +53,9 @@ jobs:
       - name: Build Notifications Application
         run: dotnet build backend/src/Notifications/Notifications.Application/Notifications.Application.csproj --configuration Release --nologo
 
+      - name: Build Notifications Persistence
+        run: dotnet build backend/src/Notifications/Notifications.Persistence/Notifications.Persistence.csproj --configuration Release --nologo
+
       - name: Run payment request event foundation scenarios
         run: dotnet run --project backend/tests/Notifications.PaymentRequestEvents.Scenarios/Notifications.PaymentRequestEvents.Scenarios.csproj --configuration Release
 
@@ -60,8 +71,11 @@ jobs:
       - name: Run payment request action hardening scenarios
         run: dotnet run --project backend/tests/PaymentRequests.ActionHardening.Scenarios/PaymentRequests.ActionHardening.Scenarios.csproj --configuration Release
 
-      - name: Build IdentityService host with event wiring
+      - name: Build IdentityService host with notification inbox wiring
         run: dotnet build backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj --configuration Release --nologo
 
       - name: Run payment request event emission integration scenarios
         run: dotnet run --project backend/tests/Notifications.PaymentRequestEmission.Scenarios/Notifications.PaymentRequestEmission.Scenarios.csproj --configuration Release
+
+      - name: Run protected in-app notification inbox HTTP scenarios
+        run: dotnet run --project backend/tests/Notifications.Inbox.Http.Scenarios/Notifications.Inbox.Http.Scenarios.csproj --configuration Release

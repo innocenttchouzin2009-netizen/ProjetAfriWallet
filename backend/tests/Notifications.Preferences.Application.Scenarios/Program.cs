@@ -15,7 +15,6 @@ static async Task AssertThrowsAsync<TException>(Func<Task> action, string messag
 }
 
 var userId = Guid.NewGuid();
-var now = new DateTimeOffset(2026, 9, 16, 18, 30, 0, TimeSpan.Zero);
 var repo = new InMemoryRepository();
 var policies = new FixedPolicyProvider();
 var service = new NotificationPreferenceApplicationService(repo, policies);
@@ -25,6 +24,8 @@ Assert(first.Count == 2, "Reading preferences must resolve both channel policies
 Assert(first.Single(x => x.Channel == NotificationChannel.InApp).IsEnabled, "In-app must use enabled default.");
 Assert(first.Single(x => x.Channel == NotificationChannel.Push).IsEnabled, "Push must use enabled default.");
 Assert(repo.AddCalls == 2, "Missing channel preferences must be initialized once.");
+
+var now = first.Max(x => x.UpdatedAtUtc).AddMinutes(1);
 
 var second = await service.GetAsync(userId);
 Assert(second.Count == 2 && repo.AddCalls == 2, "Repeated read must not duplicate initialized preferences.");

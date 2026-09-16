@@ -20,6 +20,8 @@
     <ProjectReference Include="../../PaymentRequests/PaymentRequests.Application/PaymentRequests.Application.csproj" />
     <ProjectReference Include="../../PaymentRequests/PaymentRequests.Infrastructure/PaymentRequests.Infrastructure.csproj" />
     <ProjectReference Include="../../PaymentRequests/PaymentRequests.Persistence/PaymentRequests.Persistence.csproj" />
+    <ProjectReference Include="../../PushNotifications/PushNotifications.Application/PushNotifications.Application.csproj" />
+    <ProjectReference Include="../../PushNotifications/PushNotifications.Persistence/PushNotifications.Persistence.csproj" />
     <ProjectReference Include="../../Transfer/Transfer.Application/Transfer.Application.csproj" />
     <ProjectReference Include="../../Transfer/Transfer.Infrastructure/Transfer.Infrastructure.csproj" />
     <ProjectReference Include="../../Wallet/Wallet.Application/Wallet.Application.csproj" />

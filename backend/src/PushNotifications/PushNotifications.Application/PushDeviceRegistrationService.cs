@@ -4,47 +4,42 @@ namespace AfriWallet.PushNotifications.Application;
 
 public sealed class PushDeviceRegistrationService(IPushDeviceRepository repository)
 {
-    public async Task<RegisterPushDeviceResult> RegisterAsync(
-        RegisterPushDeviceCommand command,
-        CancellationToken cancellationToken = default)
+    public async Task<RegisterPushDeviceResult> RegisterAsync(RegisterPushDeviceCommand command, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(command);
         cancellationToken.ThrowIfCancellationRequested();
-
-        if (command.UserId == Guid.Empty)
-            throw new ArgumentException("User id cannot be empty.", nameof(command));
-
+        if (command.UserId == Guid.Empty) throw new ArgumentException("User id cannot be empty.", nameof(command));
         var normalizedDeviceId = NormalizeDeviceId(command.DeviceId);
-        var existing = await repository.FindByUserAndDeviceAsync(
-            command.UserId,
-            normalizedDeviceId,
-            cancellationToken);
-
+        var existing = await repository.FindByUserAndDeviceAsync(command.UserId, normalizedDeviceId, cancellationToken);
         if (existing is null)
         {
-            var created = PushDeviceRegistration.Register(
-                command.UserId,
-                normalizedDeviceId,
-                command.Platform,
-                command.PushToken,
-                command.RegisteredAtUtc);
+            var created = PushDeviceRegistration.Register(command.UserId, normalizedDeviceId, command.Platform, command.PushToken, command.RegisteredAtUtc);
             await repository.AddAsync(created, cancellationToken);
             return new RegisterPushDeviceResult(RegisterPushDeviceStatus.Created, ToSnapshot(created));
         }
-
         existing.Refresh(command.Platform, command.PushToken, command.RegisteredAtUtc);
         await repository.UpdateAsync(existing, cancellationToken);
         return new RegisterPushDeviceResult(RegisterPushDeviceStatus.Refreshed, ToSnapshot(existing));
     }
 
-    public async Task<IReadOnlyList<PushDeviceSnapshot>> ListAsync(
-        Guid userId,
-        CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<PushDeviceSnapshot>> ListAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         if (userId == Guid.Empty) throw new ArgumentException("User id cannot be empty.", nameof(userId));
         cancellationToken.ThrowIfCancellationRequested();
         var devices = await repository.ListByUserAsync(userId, cancellationToken);
         return devices.Select(ToSnapshot).ToArray();
+    }
+
+    public async Task<PushDeviceSnapshot?> RevokeAsync(Guid userId, string deviceId, DateTimeOffset revokedAtUtc, CancellationToken cancellationToken = default)
+    {
+        if (userId == Guid.Empty) throw new ArgumentException("User id cannot be empty.", nameof(userId));
+        cancellationToken.ThrowIfCancellationRequested();
+        var normalizedDeviceId = NormalizeDeviceId(deviceId);
+        var existing = await repository.FindByUserAndDeviceAsync(userId, normalizedDeviceId, cancellationToken);
+        if (existing is null) return null;
+        existing.Revoke(revokedAtUtc);
+        await repository.UpdateAsync(existing, cancellationToken);
+        return ToSnapshot(existing);
     }
 
     private static string NormalizeDeviceId(string value)
@@ -55,13 +50,5 @@ public sealed class PushDeviceRegistrationService(IPushDeviceRepository reposito
         return normalized;
     }
 
-    private static PushDeviceSnapshot ToSnapshot(PushDeviceRegistration value) => new(
-        value.Id,
-        value.UserId,
-        value.DeviceId,
-        value.Platform,
-        value.Status,
-        value.RegisteredAtUtc,
-        value.UpdatedAtUtc,
-        value.RevokedAtUtc);
+    private static PushDeviceSnapshot ToSnapshot(PushDeviceRegistration value) => new(value.Id, value.UserId, value.DeviceId, value.Platform, value.Status, value.RegisteredAtUtc, value.UpdatedAtUtc, value.RevokedAtUtc);
 }

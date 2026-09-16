@@ -23,6 +23,7 @@ using IdentityService.Api.Ledger;
 using IdentityService.Api.Notifications;
 using IdentityService.Api.P2P;
 using IdentityService.Api.PaymentRequests;
+using IdentityService.Api.PushNotifications;
 using IdentityService.Api.Transfer;
 using IdentityService.Api.Wallet;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -63,6 +64,10 @@ var paymentRequestsConnectionString = builder.Configuration.GetConnectionString(
 var notificationsConnectionString = builder.Configuration.GetConnectionString("NotificationsDatabase") ??
     Environment.GetEnvironmentVariable("AFW_NOTIFICATIONS_DB_CONNECTION_STRING") ??
     "Data Source=notifications-inbox.db";
+
+var pushNotificationsConnectionString = builder.Configuration.GetConnectionString("PushNotificationsDatabase") ??
+    Environment.GetEnvironmentVariable("AFW_PUSH_NOTIFICATIONS_DB_CONNECTION_STRING") ??
+    "Data Source=push-devices.db";
 
 var configuredFxRates = FxConfiguration.LoadRates(builder.Configuration);
 
@@ -109,6 +114,7 @@ builder.Services.AddP2PCore();
 builder.Services.AddAuthoritativeP2PRecipientDirectory(recipientDirectoryConnectionString);
 builder.Services.AddPaymentRequests(paymentRequestsConnectionString);
 builder.Services.AddInAppNotifications(notificationsConnectionString);
+builder.Services.AddPushDeviceRegistration(pushNotificationsConnectionString);
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -212,5 +218,6 @@ app.MapPaymentRequestEndpoints();
 app.MapPaymentRequestInboxOutboxEndpoints();
 app.MapPaymentRequestEventOutboxOperationalEndpoints();
 app.MapNotificationEndpoints();
+app.MapPushDeviceEndpoints();
 
 app.Run();

@@ -64,6 +64,10 @@ var notificationsConnectionString = builder.Configuration.GetConnectionString("N
     Environment.GetEnvironmentVariable("AFW_NOTIFICATIONS_DB_CONNECTION_STRING") ??
     "Data Source=notifications-inbox.db";
 
+var pushTokenProtectionKeyBase64 = builder.Configuration["Notifications:PushTokenProtectionKeyBase64"] ??
+    Environment.GetEnvironmentVariable("AFW_PUSH_TOKEN_PROTECTION_KEY_BASE64") ??
+    throw new InvalidOperationException("Push token AES-GCM protection key is not configured.");
+
 var configuredFxRates = FxConfiguration.LoadRates(builder.Configuration);
 
 builder.Services.AddDbContext<AuthDbContext>(options =>
@@ -109,6 +113,7 @@ builder.Services.AddP2PCore();
 builder.Services.AddAuthoritativeP2PRecipientDirectory(recipientDirectoryConnectionString);
 builder.Services.AddPaymentRequests(paymentRequestsConnectionString);
 builder.Services.AddInAppNotifications(notificationsConnectionString);
+builder.Services.AddDevicePushRegistration(notificationsConnectionString, pushTokenProtectionKeyBase64);
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -212,5 +217,6 @@ app.MapPaymentRequestEndpoints();
 app.MapPaymentRequestInboxOutboxEndpoints();
 app.MapPaymentRequestEventOutboxOperationalEndpoints();
 app.MapNotificationEndpoints();
+app.MapDevicePushEndpoints();
 
 app.Run();

@@ -7,8 +7,10 @@ on:
     paths:
       - 'backend/src/Notifications/Notifications.Domain/**'
       - 'backend/src/Notifications/Notifications.Application/**'
+      - 'backend/src/Notifications/Notifications.Persistence/**'
       - 'backend/tests/Notifications.Preferences.Domain.Scenarios/**'
       - 'backend/tests/Notifications.Preferences.Application.Scenarios/**'
+      - 'backend/tests/Notifications.Preferences.Persistence.Scenarios/**'
       - '.github/workflows/backend-notification-preferences-1.yml'
   pull_request:
     branches:
@@ -16,8 +18,10 @@ on:
     paths:
       - 'backend/src/Notifications/Notifications.Domain/**'
       - 'backend/src/Notifications/Notifications.Application/**'
+      - 'backend/src/Notifications/Notifications.Persistence/**'
       - 'backend/tests/Notifications.Preferences.Domain.Scenarios/**'
       - 'backend/tests/Notifications.Preferences.Application.Scenarios/**'
+      - 'backend/tests/Notifications.Preferences.Persistence.Scenarios/**'
       - '.github/workflows/backend-notification-preferences-1.yml'
   workflow_dispatch:
 
@@ -46,3 +50,9 @@ jobs:
 
       - name: Run notification preference application orchestration scenarios
         run: dotnet run --project backend/tests/Notifications.Preferences.Application.Scenarios/Notifications.Preferences.Application.Scenarios.csproj --configuration Release
+
+      - name: Build Notifications Persistence
+        run: dotnet build backend/src/Notifications/Notifications.Persistence/Notifications.Persistence.csproj --configuration Release --nologo
+
+      - name: Run notification preference persistence scenarios
+        run: dotnet run --project backend/tests/Notifications.Preferences.Persistence.Scenarios/Notifications.Preferences.Persistence.Scenarios.csproj --configuration Release

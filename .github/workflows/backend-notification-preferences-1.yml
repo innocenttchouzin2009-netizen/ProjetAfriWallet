@@ -6,14 +6,18 @@ on:
       - feature/backend-notification-preferences-1
     paths:
       - 'backend/src/Notifications/Notifications.Domain/**'
+      - 'backend/src/Notifications/Notifications.Application/**'
       - 'backend/tests/Notifications.Preferences.Domain.Scenarios/**'
+      - 'backend/tests/Notifications.Preferences.Application.Scenarios/**'
       - '.github/workflows/backend-notification-preferences-1.yml'
   pull_request:
     branches:
       - main
     paths:
       - 'backend/src/Notifications/Notifications.Domain/**'
+      - 'backend/src/Notifications/Notifications.Application/**'
       - 'backend/tests/Notifications.Preferences.Domain.Scenarios/**'
+      - 'backend/tests/Notifications.Preferences.Application.Scenarios/**'
       - '.github/workflows/backend-notification-preferences-1.yml'
   workflow_dispatch:
 
@@ -36,3 +40,9 @@ jobs:
 
       - name: Run notification preference domain and channel policy scenarios
         run: dotnet run --project backend/tests/Notifications.Preferences.Domain.Scenarios/Notifications.Preferences.Domain.Scenarios.csproj --configuration Release
+
+      - name: Build Notifications Application
+        run: dotnet build backend/src/Notifications/Notifications.Application/Notifications.Application.csproj --configuration Release --nologo
+
+      - name: Run notification preference application orchestration scenarios
+        run: dotnet run --project backend/tests/Notifications.Preferences.Application.Scenarios/Notifications.Preferences.Application.Scenarios.csproj --configuration Release

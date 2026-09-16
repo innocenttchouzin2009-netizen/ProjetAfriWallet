@@ -13,6 +13,7 @@ on:
       - 'backend/tests/Notifications.Push.Persistence.Scenarios/**'
       - 'backend/tests/Notifications.Push.Http.Scenarios/**'
       - 'backend/tests/Notifications.Push.Delivery.Scenarios/**'
+      - 'backend/tests/Notifications.Push.EventDelivery.Scenarios/**'
       - '.github/workflows/backend-notification-push-1.yml'
   pull_request:
     branches:
@@ -26,6 +27,7 @@ on:
       - 'backend/tests/Notifications.Push.Persistence.Scenarios/**'
       - 'backend/tests/Notifications.Push.Http.Scenarios/**'
       - 'backend/tests/Notifications.Push.Delivery.Scenarios/**'
+      - 'backend/tests/Notifications.Push.EventDelivery.Scenarios/**'
       - '.github/workflows/backend-notification-push-1.yml'
   workflow_dispatch:
 
@@ -63,6 +65,9 @@ jobs:
 
       - name: Run push delivery provider adapter and orchestration scenarios
         run: dotnet run --project backend/tests/Notifications.Push.Delivery.Scenarios/Notifications.Push.Delivery.Scenarios.csproj --configuration Release
+
+      - name: Run notification event push retry and idempotency scenarios
+        run: dotnet run --project backend/tests/Notifications.Push.EventDelivery.Scenarios/Notifications.Push.EventDelivery.Scenarios.csproj --configuration Release
 
       - name: Build IdentityService host with Push Device wiring
         run: dotnet build backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj --configuration Release --nologo

@@ -12,6 +12,7 @@ on:
       - 'backend/tests/Notifications.Push.Foundation.Scenarios/**'
       - 'backend/tests/Notifications.Push.Persistence.Scenarios/**'
       - 'backend/tests/Notifications.Push.Http.Scenarios/**'
+      - 'backend/tests/Notifications.Push.Delivery.Scenarios/**'
       - '.github/workflows/backend-notification-push-1.yml'
   pull_request:
     branches:
@@ -24,6 +25,7 @@ on:
       - 'backend/tests/Notifications.Push.Foundation.Scenarios/**'
       - 'backend/tests/Notifications.Push.Persistence.Scenarios/**'
       - 'backend/tests/Notifications.Push.Http.Scenarios/**'
+      - 'backend/tests/Notifications.Push.Delivery.Scenarios/**'
       - '.github/workflows/backend-notification-push-1.yml'
   workflow_dispatch:
 
@@ -55,6 +57,12 @@ jobs:
 
       - name: Run push device persistence scenarios
         run: dotnet run --project backend/tests/Notifications.Push.Persistence.Scenarios/Notifications.Push.Persistence.Scenarios.csproj --configuration Release
+
+      - name: Build Push Provider Adapter
+        run: dotnet build backend/src/Notifications/Notifications.Push.Infrastructure/Notifications.Push.Infrastructure.csproj --configuration Release --nologo
+
+      - name: Run push delivery provider adapter and orchestration scenarios
+        run: dotnet run --project backend/tests/Notifications.Push.Delivery.Scenarios/Notifications.Push.Delivery.Scenarios.csproj --configuration Release
 
       - name: Build IdentityService host with Push Device wiring
         run: dotnet build backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj --configuration Release --nologo

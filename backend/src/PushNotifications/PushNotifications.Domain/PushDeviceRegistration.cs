@@ -8,16 +8,20 @@ public sealed class PushDeviceRegistration
         string deviceId,
         PushPlatform platform,
         string pushToken,
-        DateTimeOffset registeredAtUtc)
+        PushDeviceStatus status,
+        DateTimeOffset registeredAtUtc,
+        DateTimeOffset updatedAtUtc,
+        DateTimeOffset? revokedAtUtc)
     {
         Id = id;
         UserId = userId;
         DeviceId = deviceId;
         Platform = platform;
         PushToken = pushToken;
+        Status = status;
         RegisteredAtUtc = registeredAtUtc;
-        UpdatedAtUtc = registeredAtUtc;
-        Status = PushDeviceStatus.Active;
+        UpdatedAtUtc = updatedAtUtc;
+        RevokedAtUtc = revokedAtUtc;
     }
 
     public Guid Id { get; }
@@ -46,7 +50,52 @@ public sealed class PushDeviceRegistration
             NormalizeDeviceId(deviceId),
             platform,
             NormalizeToken(pushToken),
-            registeredAtUtc);
+            PushDeviceStatus.Active,
+            registeredAtUtc,
+            registeredAtUtc,
+            null);
+    }
+
+    public static PushDeviceRegistration Restore(
+        Guid id,
+        Guid userId,
+        string deviceId,
+        PushPlatform platform,
+        string pushToken,
+        PushDeviceStatus status,
+        DateTimeOffset registeredAtUtc,
+        DateTimeOffset updatedAtUtc,
+        DateTimeOffset? revokedAtUtc)
+    {
+        if (id == Guid.Empty) throw new ArgumentException("Registration id cannot be empty.", nameof(id));
+        if (userId == Guid.Empty) throw new ArgumentException("User id cannot be empty.", nameof(userId));
+        ValidatePlatform(platform);
+        if (!Enum.IsDefined(status)) throw new ArgumentOutOfRangeException(nameof(status));
+        EnsureUtc(registeredAtUtc, nameof(registeredAtUtc));
+        EnsureUtc(updatedAtUtc, nameof(updatedAtUtc));
+        if (updatedAtUtc < registeredAtUtc)
+            throw new ArgumentException("Updated timestamp cannot be earlier than registration timestamp.", nameof(updatedAtUtc));
+        if (revokedAtUtc is not null)
+        {
+            EnsureUtc(revokedAtUtc.Value, nameof(revokedAtUtc));
+            if (revokedAtUtc.Value < registeredAtUtc || revokedAtUtc.Value > updatedAtUtc)
+                throw new ArgumentException("Revocation timestamp must be within registration lifecycle.", nameof(revokedAtUtc));
+        }
+        if (status == PushDeviceStatus.Revoked && revokedAtUtc is null)
+            throw new ArgumentException("Revoked registrations require a revocation timestamp.", nameof(revokedAtUtc));
+        if (status == PushDeviceStatus.Active && revokedAtUtc is not null)
+            throw new ArgumentException("Active registrations cannot have a revocation timestamp.", nameof(revokedAtUtc));
+
+        return new PushDeviceRegistration(
+            id,
+            userId,
+            NormalizeDeviceId(deviceId),
+            platform,
+            NormalizeToken(pushToken),
+            status,
+            registeredAtUtc,
+            updatedAtUtc,
+            revokedAtUtc);
     }
 
     public void Refresh(PushPlatform platform, string pushToken, DateTimeOffset updatedAtUtc)

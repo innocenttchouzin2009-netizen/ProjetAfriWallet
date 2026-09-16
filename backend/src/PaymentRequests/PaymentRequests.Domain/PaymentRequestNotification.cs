@@ -108,6 +108,145 @@ public sealed class PaymentRequestNotification
         DateTimeOffset? expiresAtUtc = null,
         Guid? transferId = null)
     {
+        ValidateProjection(
+            sourceEventId,
+            paymentRequestId,
+            kind,
+            audience,
+            recipientOwnerId,
+            requesterWalletId,
+            currency,
+            amountMinor,
+            occurredAtUtc,
+            requestStatus,
+            expiresAtUtc,
+            transferId);
+
+        return new PaymentRequestNotification(
+            PaymentRequestNotificationId.New(),
+            sourceEventId,
+            paymentRequestId,
+            kind,
+            audience,
+            recipientOwnerId,
+            requesterWalletId,
+            currency,
+            amountMinor,
+            occurredAtUtc,
+            requestStatus,
+            expiresAtUtc,
+            transferId);
+    }
+
+    public static PaymentRequestNotification Restore(
+        PaymentRequestNotificationId id,
+        Guid sourceEventId,
+        PaymentRequestId paymentRequestId,
+        PaymentRequestNotificationKind kind,
+        PaymentRequestNotificationAudience audience,
+        Guid recipientOwnerId,
+        WalletId requesterWalletId,
+        Currency currency,
+        long amountMinor,
+        DateTimeOffset occurredAtUtc,
+        PaymentRequestStatus requestStatus,
+        DateTimeOffset? expiresAtUtc,
+        Guid? transferId,
+        PaymentRequestNotificationReadStatus readStatus,
+        DateTimeOffset? readAtUtc)
+    {
+        if (id.Value == Guid.Empty)
+        {
+            throw new ArgumentException("Payment request notification id cannot be empty.", nameof(id));
+        }
+
+        ValidateProjection(
+            sourceEventId,
+            paymentRequestId,
+            kind,
+            audience,
+            recipientOwnerId,
+            requesterWalletId,
+            currency,
+            amountMinor,
+            occurredAtUtc,
+            requestStatus,
+            expiresAtUtc,
+            transferId);
+
+        if (!Enum.IsDefined(readStatus))
+        {
+            throw new ArgumentOutOfRangeException(nameof(readStatus));
+        }
+
+        var notification = new PaymentRequestNotification(
+            id,
+            sourceEventId,
+            paymentRequestId,
+            kind,
+            audience,
+            recipientOwnerId,
+            requesterWalletId,
+            currency,
+            amountMinor,
+            occurredAtUtc,
+            requestStatus,
+            expiresAtUtc,
+            transferId);
+
+        if (readStatus == PaymentRequestNotificationReadStatus.Read)
+        {
+            if (readAtUtc is null)
+            {
+                throw new ArgumentException("Read notification requires a read timestamp.", nameof(readAtUtc));
+            }
+
+            notification.MarkRead(readAtUtc.Value);
+        }
+        else if (readAtUtc is not null)
+        {
+            throw new ArgumentException("Unread notification cannot contain a read timestamp.", nameof(readAtUtc));
+        }
+
+        return notification;
+    }
+
+    public void MarkRead(DateTimeOffset readAtUtc)
+    {
+        EnsureUtc(readAtUtc, nameof(readAtUtc));
+        if (readAtUtc < OccurredAtUtc)
+        {
+            throw new ArgumentException("Notification cannot be read before it occurred.", nameof(readAtUtc));
+        }
+
+        if (ReadStatus == PaymentRequestNotificationReadStatus.Read)
+        {
+            if (ReadAtUtc is not null && readAtUtc < ReadAtUtc.Value)
+            {
+                throw new ArgumentException("Notification read timestamp cannot move backwards.", nameof(readAtUtc));
+            }
+
+            return;
+        }
+
+        ReadStatus = PaymentRequestNotificationReadStatus.Read;
+        ReadAtUtc = readAtUtc;
+    }
+
+    private static void ValidateProjection(
+        Guid sourceEventId,
+        PaymentRequestId paymentRequestId,
+        PaymentRequestNotificationKind kind,
+        PaymentRequestNotificationAudience audience,
+        Guid recipientOwnerId,
+        WalletId requesterWalletId,
+        Currency currency,
+        long amountMinor,
+        DateTimeOffset occurredAtUtc,
+        PaymentRequestStatus requestStatus,
+        DateTimeOffset? expiresAtUtc,
+        Guid? transferId)
+    {
         ArgumentNullException.ThrowIfNull(currency);
 
         if (sourceEventId == Guid.Empty)
@@ -179,43 +318,6 @@ public sealed class PaymentRequestNotification
         {
             throw new ArgumentException("Only a paid notification may contain a transfer id.", nameof(transferId));
         }
-
-        return new PaymentRequestNotification(
-            PaymentRequestNotificationId.New(),
-            sourceEventId,
-            paymentRequestId,
-            kind,
-            audience,
-            recipientOwnerId,
-            requesterWalletId,
-            currency,
-            amountMinor,
-            occurredAtUtc,
-            requestStatus,
-            expiresAtUtc,
-            transferId);
-    }
-
-    public void MarkRead(DateTimeOffset readAtUtc)
-    {
-        EnsureUtc(readAtUtc, nameof(readAtUtc));
-        if (readAtUtc < OccurredAtUtc)
-        {
-            throw new ArgumentException("Notification cannot be read before it occurred.", nameof(readAtUtc));
-        }
-
-        if (ReadStatus == PaymentRequestNotificationReadStatus.Read)
-        {
-            if (ReadAtUtc is not null && readAtUtc < ReadAtUtc.Value)
-            {
-                throw new ArgumentException("Notification read timestamp cannot move backwards.", nameof(readAtUtc));
-            }
-
-            return;
-        }
-
-        ReadStatus = PaymentRequestNotificationReadStatus.Read;
-        ReadAtUtc = readAtUtc;
     }
 
     private static void EnsureUtc(DateTimeOffset value, string parameterName)

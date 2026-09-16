@@ -2,12 +2,20 @@ using AfriWallet.Notifications.Domain;
 
 namespace AfriWallet.Notifications.Application;
 
+public sealed record PushDeliveryTargetOutcome(
+    PushDeviceRegistrationId RegistrationId,
+    bool Accepted,
+    PushDeliveryFailureKind? FailureKind);
+
 public sealed record PushDeliveryBatchResult(
     Guid UserId,
     int Targets,
     int Delivered,
     int Failed,
-    int InvalidTokensDeactivated);
+    int InvalidTokensDeactivated)
+{
+    public IReadOnlyList<PushDeliveryTargetOutcome> Outcomes { get; init; } = [];
+}
 
 public sealed class PushDeliveryOrchestrationService(
     IPushDeviceRegistrationRepository repository,
@@ -17,7 +25,8 @@ public sealed class PushDeliveryOrchestrationService(
         Guid userId,
         PushNotificationMessage message,
         DateTimeOffset attemptedAtUtc,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        IReadOnlySet<Guid>? includedRegistrationIds = null)
     {
         if (userId == Guid.Empty) throw new ArgumentException("User id cannot be empty.", nameof(userId));
         ArgumentNullException.ThrowIfNull(message);
@@ -30,11 +39,13 @@ public sealed class PushDeliveryOrchestrationService(
         var delivered = 0;
         var failed = 0;
         var invalidTokensDeactivated = 0;
+        var outcomes = new List<PushDeliveryTargetOutcome>();
 
         foreach (var registration in registrations)
         {
             cancellationToken.ThrowIfCancellationRequested();
             if (!registration.IsActive) continue;
+            if (includedRegistrationIds is not null && !includedRegistrationIds.Contains(registration.Id.Value)) continue;
 
             var result = await deliveryPort.DeliverAsync(
                 new PushDeliveryTarget(
@@ -44,6 +55,8 @@ public sealed class PushDeliveryOrchestrationService(
                     registration.PushToken),
                 message,
                 cancellationToken);
+
+            outcomes.Add(new PushDeliveryTargetOutcome(registration.Id, result.Accepted, result.FailureKind));
 
             if (result.Accepted)
             {
@@ -61,9 +74,12 @@ public sealed class PushDeliveryOrchestrationService(
 
         return new PushDeliveryBatchResult(
             userId,
-            registrations.Count,
+            outcomes.Count,
             delivered,
             failed,
-            invalidTokensDeactivated);
+            invalidTokensDeactivated)
+        {
+            Outcomes = outcomes
+        };
     }
 }

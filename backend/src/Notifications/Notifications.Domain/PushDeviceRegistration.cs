@@ -24,7 +24,10 @@ public sealed class PushDeviceRegistration
         string installationId,
         PushPlatform platform,
         string pushToken,
-        DateTimeOffset createdAtUtc)
+        DateTimeOffset createdAtUtc,
+        DateTimeOffset updatedAtUtc,
+        bool isActive,
+        DateTimeOffset? deactivatedAtUtc)
     {
         Id = id;
         UserId = userId;
@@ -32,8 +35,9 @@ public sealed class PushDeviceRegistration
         Platform = platform;
         PushToken = pushToken;
         CreatedAtUtc = createdAtUtc;
-        UpdatedAtUtc = createdAtUtc;
-        IsActive = true;
+        UpdatedAtUtc = updatedAtUtc;
+        IsActive = isActive;
+        DeactivatedAtUtc = deactivatedAtUtc;
     }
 
     public PushDeviceRegistrationId Id { get; }
@@ -65,7 +69,52 @@ public sealed class PushDeviceRegistration
             normalizedInstallationId,
             platform,
             normalizedToken,
-            createdAtUtc);
+            createdAtUtc,
+            createdAtUtc,
+            true,
+            null);
+    }
+
+    public static PushDeviceRegistration Restore(
+        PushDeviceRegistrationId id,
+        Guid userId,
+        string installationId,
+        PushPlatform platform,
+        string pushToken,
+        DateTimeOffset createdAtUtc,
+        DateTimeOffset updatedAtUtc,
+        bool isActive,
+        DateTimeOffset? deactivatedAtUtc)
+    {
+        if (userId == Guid.Empty) throw new ArgumentException("User id cannot be empty.", nameof(userId));
+        var normalizedInstallationId = NormalizeInstallationId(installationId);
+        ValidatePlatform(platform);
+        var normalizedToken = ValidateToken(pushToken);
+        EnsureUtc(createdAtUtc, nameof(createdAtUtc));
+        EnsureUtc(updatedAtUtc, nameof(updatedAtUtc));
+        if (updatedAtUtc < createdAtUtc) throw new ArgumentException("Updated timestamp cannot be before creation time.", nameof(updatedAtUtc));
+
+        if (isActive)
+        {
+            if (deactivatedAtUtc is not null) throw new ArgumentException("Active registration cannot have a deactivation timestamp.", nameof(deactivatedAtUtc));
+        }
+        else
+        {
+            if (deactivatedAtUtc is null) throw new ArgumentException("Inactive registration requires a deactivation timestamp.", nameof(deactivatedAtUtc));
+            EnsureUtc(deactivatedAtUtc.Value, nameof(deactivatedAtUtc));
+            if (deactivatedAtUtc.Value != updatedAtUtc) throw new ArgumentException("Inactive registration deactivation timestamp must equal updated timestamp.", nameof(deactivatedAtUtc));
+        }
+
+        return new PushDeviceRegistration(
+            id,
+            userId,
+            normalizedInstallationId,
+            platform,
+            normalizedToken,
+            createdAtUtc,
+            updatedAtUtc,
+            isActive,
+            deactivatedAtUtc);
     }
 
     public void RotateToken(string pushToken, DateTimeOffset updatedAtUtc)

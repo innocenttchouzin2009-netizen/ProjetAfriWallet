@@ -84,7 +84,10 @@ await using (var verify = new PushDeviceRegistrationDbContext(options))
         await repository.AddAsync(duplicate);
         throw new InvalidOperationException("Expected durable InstallationId uniqueness violation.");
     }
-    catch (DbUpdateException) { }
+    catch (DbUpdateException)
+    {
+        verify.ChangeTracker.Clear();
+    }
 
     var second = PushDeviceRegistration.Create(
         userId,

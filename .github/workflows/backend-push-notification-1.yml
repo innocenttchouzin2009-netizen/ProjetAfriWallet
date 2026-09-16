@@ -6,16 +6,22 @@ on:
       - feature/backend-push-notification-1
     paths:
       - 'backend/src/Notifications/**'
+      - 'backend/src/IdentityService/IdentityService.Api/Notifications/**'
+      - 'backend/src/IdentityService/IdentityService.Api/Program.cs'
       - 'backend/tests/Notifications.PushDelivery.Scenarios/**'
       - 'backend/tests/Notifications.PushRegistration.Scenarios/**'
+      - 'backend/tests/Notifications.PushRegistration.Http.Scenarios/**'
       - '.github/workflows/backend-push-notification-1.yml'
   pull_request:
     branches:
       - main
     paths:
       - 'backend/src/Notifications/**'
+      - 'backend/src/IdentityService/IdentityService.Api/Notifications/**'
+      - 'backend/src/IdentityService/IdentityService.Api/Program.cs'
       - 'backend/tests/Notifications.PushDelivery.Scenarios/**'
       - 'backend/tests/Notifications.PushRegistration.Scenarios/**'
+      - 'backend/tests/Notifications.PushRegistration.Http.Scenarios/**'
       - '.github/workflows/backend-push-notification-1.yml'
   workflow_dispatch:
 
@@ -44,3 +50,9 @@ jobs:
 
       - name: Run device push registration persistence scenarios
         run: dotnet run --project backend/tests/Notifications.PushRegistration.Scenarios/Notifications.PushRegistration.Scenarios.csproj --configuration Release
+
+      - name: Build IdentityService host with device push registration wiring
+        run: dotnet build backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj --configuration Release --nologo
+
+      - name: Run protected device push registration HTTP scenarios
+        run: dotnet run --project backend/tests/Notifications.PushRegistration.Http.Scenarios/Notifications.PushRegistration.Http.Scenarios.csproj --configuration Release

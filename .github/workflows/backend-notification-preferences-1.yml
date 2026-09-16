@@ -8,9 +8,13 @@ on:
       - 'backend/src/Notifications/Notifications.Domain/**'
       - 'backend/src/Notifications/Notifications.Application/**'
       - 'backend/src/Notifications/Notifications.Persistence/**'
+      - 'backend/src/IdentityService/IdentityService.Api/Notifications/NotificationPreference*.cs'
+      - 'backend/src/IdentityService/IdentityService.Api/Program.cs'
+      - 'backend/src/IdentityService/IdentityService.Api/appsettings.json'
       - 'backend/tests/Notifications.Preferences.Domain.Scenarios/**'
       - 'backend/tests/Notifications.Preferences.Application.Scenarios/**'
       - 'backend/tests/Notifications.Preferences.Persistence.Scenarios/**'
+      - 'backend/tests/Notifications.Preferences.Http.Scenarios/**'
       - '.github/workflows/backend-notification-preferences-1.yml'
   pull_request:
     branches:
@@ -19,9 +23,13 @@ on:
       - 'backend/src/Notifications/Notifications.Domain/**'
       - 'backend/src/Notifications/Notifications.Application/**'
       - 'backend/src/Notifications/Notifications.Persistence/**'
+      - 'backend/src/IdentityService/IdentityService.Api/Notifications/NotificationPreference*.cs'
+      - 'backend/src/IdentityService/IdentityService.Api/Program.cs'
+      - 'backend/src/IdentityService/IdentityService.Api/appsettings.json'
       - 'backend/tests/Notifications.Preferences.Domain.Scenarios/**'
       - 'backend/tests/Notifications.Preferences.Application.Scenarios/**'
       - 'backend/tests/Notifications.Preferences.Persistence.Scenarios/**'
+      - 'backend/tests/Notifications.Preferences.Http.Scenarios/**'
       - '.github/workflows/backend-notification-preferences-1.yml'
   workflow_dispatch:
 
@@ -56,3 +64,9 @@ jobs:
 
       - name: Run notification preference persistence scenarios
         run: dotnet run --project backend/tests/Notifications.Preferences.Persistence.Scenarios/Notifications.Preferences.Persistence.Scenarios.csproj --configuration Release
+
+      - name: Build IdentityService host with notification preference wiring
+        run: dotnet build backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj --configuration Release --nologo
+
+      - name: Run protected notification preference HTTP scenarios
+        run: dotnet run --project backend/tests/Notifications.Preferences.Http.Scenarios/Notifications.Preferences.Http.Scenarios.csproj --configuration Release

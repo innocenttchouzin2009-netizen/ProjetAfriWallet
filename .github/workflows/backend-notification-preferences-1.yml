@@ -1,0 +1,38 @@
+name: AFW-BE-NOTIFICATION-PREFERENCES-1 Notification Preferences Foundation
+
+on:
+  push:
+    branches:
+      - feature/backend-notification-preferences-1
+    paths:
+      - 'backend/src/Notifications/Notifications.Domain/**'
+      - 'backend/tests/Notifications.Preferences.Domain.Scenarios/**'
+      - '.github/workflows/backend-notification-preferences-1.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'backend/src/Notifications/Notifications.Domain/**'
+      - 'backend/tests/Notifications.Preferences.Domain.Scenarios/**'
+      - '.github/workflows/backend-notification-preferences-1.yml'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Validate AFW-BE-NOTIFICATION-PREFERENCES-1
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build Notifications Domain
+        run: dotnet build backend/src/Notifications/Notifications.Domain/Notifications.Domain.csproj --configuration Release --nologo
+
+      - name: Run notification preference domain and channel policy scenarios
+        run: dotnet run --project backend/tests/Notifications.Preferences.Domain.Scenarios/Notifications.Preferences.Domain.Scenarios.csproj --configuration Release

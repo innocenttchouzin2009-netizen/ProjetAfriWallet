@@ -68,6 +68,10 @@ var pushDevicesConnectionString = builder.Configuration.GetConnectionString("Pus
     Environment.GetEnvironmentVariable("AFW_PUSH_DEVICES_DB_CONNECTION_STRING") ??
     "Data Source=push-devices.db";
 
+var notificationPreferencesConnectionString = builder.Configuration.GetConnectionString("NotificationPreferencesDatabase") ??
+    Environment.GetEnvironmentVariable("AFW_NOTIFICATION_PREFERENCES_DB_CONNECTION_STRING") ??
+    "Data Source=notification-preferences.db";
+
 var configuredFxRates = FxConfiguration.LoadRates(builder.Configuration);
 
 builder.Services.AddDbContext<AuthDbContext>(options =>
@@ -114,6 +118,7 @@ builder.Services.AddAuthoritativeP2PRecipientDirectory(recipientDirectoryConnect
 builder.Services.AddPaymentRequests(paymentRequestsConnectionString);
 builder.Services.AddInAppNotifications(notificationsConnectionString);
 builder.Services.AddPushDeviceRegistration(pushDevicesConnectionString);
+builder.Services.AddNotificationPreferences(notificationPreferencesConnectionString);
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -218,5 +223,6 @@ app.MapPaymentRequestInboxOutboxEndpoints();
 app.MapPaymentRequestEventOutboxOperationalEndpoints();
 app.MapNotificationEndpoints();
 app.MapPushDeviceEndpoints();
+app.MapNotificationPreferenceEndpoints();
 
 app.Run();

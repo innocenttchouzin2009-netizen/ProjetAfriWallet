@@ -7,6 +7,7 @@ on:
     paths:
       - 'backend/src/PushNotifications/**'
       - 'backend/tests/PushNotifications.DeviceRegistration.Scenarios/**'
+      - 'backend/tests/PushNotifications.Persistence.Scenarios/**'
       - '.github/workflows/backend-push-1.yml'
   pull_request:
     branches:
@@ -14,6 +15,7 @@ on:
     paths:
       - 'backend/src/PushNotifications/**'
       - 'backend/tests/PushNotifications.DeviceRegistration.Scenarios/**'
+      - 'backend/tests/PushNotifications.Persistence.Scenarios/**'
       - '.github/workflows/backend-push-1.yml'
   workflow_dispatch:
 
@@ -39,3 +41,9 @@ jobs:
 
       - name: Run push device registration scenarios
         run: dotnet run --project backend/tests/PushNotifications.DeviceRegistration.Scenarios/PushNotifications.DeviceRegistration.Scenarios.csproj --configuration Release
+
+      - name: Build Push Notifications Persistence
+        run: dotnet build backend/src/PushNotifications/PushNotifications.Persistence/PushNotifications.Persistence.csproj --configuration Release --nologo
+
+      - name: Run push device persistence scenarios
+        run: dotnet run --project backend/tests/PushNotifications.Persistence.Scenarios/PushNotifications.Persistence.Scenarios.csproj --configuration Release

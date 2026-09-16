@@ -10,8 +10,10 @@ on:
       - 'backend/src/PaymentRequests/PaymentRequests.Application/PaymentRequestNotificationProjectionEngine.cs'
       - 'backend/src/PaymentRequests/PaymentRequests.Application/PaymentRequestNotificationAudienceResolver.cs'
       - 'backend/src/PaymentRequests/PaymentRequests.Application/PaymentRequests.Application.csproj'
+      - 'backend/src/PaymentRequests/PaymentRequests.Notification.Persistence/**'
       - 'backend/tests/PaymentRequests.NotificationProjection.Scenarios/**'
       - 'backend/tests/PaymentRequests.NotificationProjectionEngine.Scenarios/**'
+      - 'backend/tests/PaymentRequests.NotificationPersistence.Scenarios/**'
       - '.github/workflows/backend-request-notify-1.yml'
   pull_request:
     branches:
@@ -22,8 +24,10 @@ on:
       - 'backend/src/PaymentRequests/PaymentRequests.Application/PaymentRequestNotificationProjectionEngine.cs'
       - 'backend/src/PaymentRequests/PaymentRequests.Application/PaymentRequestNotificationAudienceResolver.cs'
       - 'backend/src/PaymentRequests/PaymentRequests.Application/PaymentRequests.Application.csproj'
+      - 'backend/src/PaymentRequests/PaymentRequests.Notification.Persistence/**'
       - 'backend/tests/PaymentRequests.NotificationProjection.Scenarios/**'
       - 'backend/tests/PaymentRequests.NotificationProjectionEngine.Scenarios/**'
+      - 'backend/tests/PaymentRequests.NotificationPersistence.Scenarios/**'
       - '.github/workflows/backend-request-notify-1.yml'
   workflow_dispatch:
 
@@ -52,6 +56,12 @@ jobs:
 
       - name: Run lifecycle event notification projection engine scenarios
         run: dotnet run --project backend/tests/PaymentRequests.NotificationProjectionEngine.Scenarios/PaymentRequests.NotificationProjectionEngine.Scenarios.csproj --configuration Release
+
+      - name: Build durable notification projection persistence
+        run: dotnet build backend/src/PaymentRequests/PaymentRequests.Notification.Persistence/PaymentRequests.Notification.Persistence.csproj --configuration Release --nologo
+
+      - name: Run durable notification projection persistence scenarios
+        run: dotnet run --project backend/tests/PaymentRequests.NotificationPersistence.Scenarios/PaymentRequests.NotificationPersistence.Scenarios.csproj --configuration Release
 
       - name: Run lifecycle event production regression scenarios
         run: dotnet run --project backend/tests/PaymentRequests.EventProduction.Scenarios/PaymentRequests.EventProduction.Scenarios.csproj --configuration Release

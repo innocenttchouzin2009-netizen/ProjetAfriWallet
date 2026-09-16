@@ -1,0 +1,41 @@
+name: AFW-BE-NOTIFICATION-PUSH-1 Push Notification Foundation
+
+on:
+  push:
+    branches:
+      - feature/backend-notification-push-1
+    paths:
+      - 'backend/src/Notifications/**'
+      - 'backend/tests/Notifications.Push.Foundation.Scenarios/**'
+      - '.github/workflows/backend-notification-push-1.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'backend/src/Notifications/**'
+      - 'backend/tests/Notifications.Push.Foundation.Scenarios/**'
+      - '.github/workflows/backend-notification-push-1.yml'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Validate AFW-BE-NOTIFICATION-PUSH-1
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build Notifications Domain
+        run: dotnet build backend/src/Notifications/Notifications.Domain/Notifications.Domain.csproj --configuration Release --nologo
+
+      - name: Build Notifications Application
+        run: dotnet build backend/src/Notifications/Notifications.Application/Notifications.Application.csproj --configuration Release --nologo
+
+      - name: Run push device registration and delivery port scenarios
+        run: dotnet run --project backend/tests/Notifications.Push.Foundation.Scenarios/Notifications.Push.Foundation.Scenarios.csproj --configuration Release

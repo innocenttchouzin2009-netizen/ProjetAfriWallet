@@ -22,6 +22,7 @@ var reconciliationReviewConnectionString =
     "Data Source=reconciliation-review.db";
 
 builder.Services.AddReconciliationReviewPersistence(reconciliationReviewConnectionString);
+builder.Services.AddReviewResolutionModule();
 builder.Services.AddSingleton(new ReconciliationMatcher(TimeSpan.FromMinutes(10)));
 builder.Services.AddSingleton<ReconciliationReviewQueueService>();
 builder.Services.AddScoped<ReconciliationReviewApplicationService>();
@@ -94,6 +95,7 @@ app.MapGet("/api/v1/reconciliation/runs/{runId:guid}", async (
 });
 
 app.MapReconciliationReviewEndpoints();
+app.MapReviewResolutionEndpoints();
 app.MapOpenApi();
 app.Run();
 

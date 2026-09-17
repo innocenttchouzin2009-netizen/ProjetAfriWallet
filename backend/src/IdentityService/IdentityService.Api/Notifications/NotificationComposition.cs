@@ -7,6 +7,7 @@ using AfriWallet.PaymentRequests.Persistence;
 using AfriWallet.Wallet.Application;
 using AfriWallet.Wallet.Domain;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace IdentityService.Api.Notifications;
 
@@ -18,12 +19,48 @@ public static class NotificationComposition
             throw new ArgumentException("Notification database connection string is required.", nameof(connectionString));
 
         services.AddDbContext<NotificationInboxDbContext>(options => options.UseSqlite(connectionString));
+        services.AddDbContext<PushEventDeliveryDbContext>(options => options.UseSqlite(connectionString));
         services.AddScoped<IInAppNotificationRepository, EfInAppNotificationRepository>();
+        services.AddScoped<IPushEventDeliveryRepository, EfPushEventDeliveryRepository>();
         services.AddScoped<InAppNotificationInboxService>();
         services.AddScoped<NotificationRetentionService>();
         services.AddSingleton(NotificationRetentionOptions.Default);
+        services.AddSingleton(PushEventRetryPolicy.Default);
+        services.AddScoped<PushDeliveryOrchestrationService>();
+        services.AddScoped<NotificationEventPushDeliveryService>();
+        services.AddScoped<INotificationPushDispatchPort, RuntimeNotificationPushDispatchPort>();
+        services.AddScoped<NotificationDeliveryDispatchService>();
         services.AddScoped<IPaymentRequestEventTransport, InAppPaymentRequestEventTransport>();
         return services;
+    }
+}
+
+public sealed class RuntimeNotificationPushDispatchPort(IServiceProvider serviceProvider)
+    : INotificationPushDispatchPort
+{
+    public async Task<PushEventDeliveryResult> DispatchAsync(
+        AfriWallet.Notifications.Domain.InAppNotification notification,
+        DateTimeOffset attemptedAtUtc,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(notification);
+        cancellationToken.ThrowIfCancellationRequested();
+
+        // External provider delivery remains optional at runtime. When a concrete
+        // IPushDeliveryPort is configured, every attempt flows through the certified
+        // NotificationEventPushDeliveryService and its preference-aware router.
+        if (serviceProvider.GetService<IPushDeliveryPort>() is null)
+        {
+            return new PushEventDeliveryResult(
+                notification.EventId,
+                AttemptedTargets: 0,
+                Delivered: 0,
+                RetryScheduled: 0,
+                TerminalFailures: 0);
+        }
+
+        var deliveryService = serviceProvider.GetRequiredService<NotificationEventPushDeliveryService>();
+        return await deliveryService.DeliverAsync(notification, attemptedAtUtc, cancellationToken);
     }
 }
 
@@ -32,7 +69,7 @@ public sealed class InAppPaymentRequestEventTransport(
     IWalletRepository walletRepository,
     IAfWalIdentityDirectory afWalIdentityDirectory,
     IQrRecipientDirectory qrRecipientDirectory,
-    IInAppNotificationRepository notificationRepository)
+    NotificationDeliveryDispatchService dispatchService)
     : IPaymentRequestEventTransport
 {
     public async Task DispatchAsync(
@@ -82,9 +119,8 @@ public sealed class InAppPaymentRequestEventTransport(
 
             foreach (var userId in audience)
             {
-                await notificationRepository.AddAsync(
-                    AfriWallet.Notifications.Domain.InAppNotification.New(userId, notificationEvent),
-                    cancellationToken);
+                var notification = AfriWallet.Notifications.Domain.InAppNotification.New(userId, notificationEvent);
+                await dispatchService.DispatchAsync(notification, dispatch.OccurredAtUtc, cancellationToken);
             }
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -106,7 +142,7 @@ public sealed class InAppPaymentRequestEventTransport(
         {
             throw new PaymentRequestEventTransportException(
                 PaymentRequestEventTransportFailureKind.Transient,
-                "In-app notification delivery failed.",
+                "Notification delivery failed.",
                 exception);
         }
     }

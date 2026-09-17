@@ -18,6 +18,7 @@ public static class NotificationPreferenceComposition
         services.AddScoped<INotificationPreferenceRepository, EfNotificationPreferenceRepository>();
         services.AddSingleton<INotificationChannelPolicyProvider, DefaultNotificationChannelPolicyProvider>();
         services.AddScoped<NotificationPreferenceApplicationService>();
+        services.AddScoped<NotificationDeliveryRoutingService>();
         return services;
     }
 }

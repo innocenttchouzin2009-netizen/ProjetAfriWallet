@@ -219,6 +219,7 @@ app.MapFxEndpoints();
 app.MapTransferEndpoints();
 app.MapP2PEndpoints();
 app.MapPaymentRequestEndpoints();
+app.MapPaymentRequestReconciliationEndpoints();
 app.MapPaymentRequestInboxOutboxEndpoints();
 app.MapPaymentRequestEventOutboxOperationalEndpoints();
 app.MapNotificationEndpoints();

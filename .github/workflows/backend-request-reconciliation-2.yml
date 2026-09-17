@@ -1,0 +1,47 @@
+name: AFW-BE-REQUEST-RECONCILIATION-2
+
+on:
+  push:
+    branches:
+      - feature/backend-request-reconciliation-2
+    paths:
+      - 'backend/src/IdentityService/IdentityService.Api/PaymentRequests/PaymentRequestReconciliationEndpoints.cs'
+      - 'backend/src/IdentityService/IdentityService.Api/Program.cs'
+      - 'backend/src/PaymentRequests/**'
+      - 'backend/src/Transfer/**'
+      - 'backend/tests/PaymentRequests.Reconciliation.Http.Scenarios/**'
+      - '.github/workflows/backend-request-reconciliation-2.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'backend/src/IdentityService/IdentityService.Api/PaymentRequests/PaymentRequestReconciliationEndpoints.cs'
+      - 'backend/src/IdentityService/IdentityService.Api/Program.cs'
+      - 'backend/src/PaymentRequests/**'
+      - 'backend/src/Transfer/**'
+      - 'backend/tests/PaymentRequests.Reconciliation.Http.Scenarios/**'
+      - '.github/workflows/backend-request-reconciliation-2.yml'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Validate request reconciliation v2
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build Payment Requests Application
+        run: dotnet build backend/src/PaymentRequests/PaymentRequests.Application/PaymentRequests.Application.csproj --configuration Release --nologo
+
+      - name: Build IdentityService host with reconciliation trigger
+        run: dotnet build backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj --configuration Release --nologo
+
+      - name: Run protected reconciliation HTTP scenarios
+        run: dotnet run --project backend/tests/PaymentRequests.Reconciliation.Http.Scenarios/PaymentRequests.Reconciliation.Http.Scenarios.csproj --configuration Release

@@ -1,0 +1,41 @@
+name: AFW-BE-TIMELINE-1 Financial Timeline Foundation
+
+on:
+  push:
+    branches:
+      - feature/backend-timeline-1
+    paths:
+      - 'backend/src/Timeline/**'
+      - 'backend/tests/Timeline.Domain.Scenarios/**'
+      - '.github/workflows/backend-timeline-1.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'backend/src/Timeline/**'
+      - 'backend/tests/Timeline.Domain.Scenarios/**'
+      - '.github/workflows/backend-timeline-1.yml'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Validate AFW-BE-TIMELINE-1
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build Timeline Domain
+        run: dotnet build backend/src/Timeline/Timeline.Domain/Timeline.Domain.csproj --configuration Release --nologo
+
+      - name: Build Timeline Application contracts
+        run: dotnet build backend/src/Timeline/Timeline.Application/Timeline.Application.csproj --configuration Release --nologo
+
+      - name: Run financial timeline domain and read-model contract scenarios
+        run: dotnet run --project backend/tests/Timeline.Domain.Scenarios/Timeline.Domain.Scenarios.csproj --configuration Release

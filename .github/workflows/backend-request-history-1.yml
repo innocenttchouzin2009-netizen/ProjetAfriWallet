@@ -7,8 +7,12 @@ on:
     paths:
       - 'backend/src/PaymentRequests/PaymentRequests.Application/PaymentRequestHistory**'
       - 'backend/src/PaymentRequests/PaymentRequests.Persistence/EfPaymentRequestHistoryReader.cs'
+      - 'backend/src/IdentityService/IdentityService.Api/PaymentRequests/PaymentRequestHistory**'
+      - 'backend/src/IdentityService/IdentityService.Api/PaymentRequests/PaymentRequestsComposition.cs'
+      - 'backend/src/IdentityService/IdentityService.Api/Program.cs'
       - 'backend/tests/PaymentRequests.History.Query.Scenarios/**'
       - 'backend/tests/PaymentRequests.History.Persistence.Scenarios/**'
+      - 'backend/tests/PaymentRequests.History.Http.Scenarios/**'
       - '.github/workflows/backend-request-history-1.yml'
   pull_request:
     branches:
@@ -16,8 +20,12 @@ on:
     paths:
       - 'backend/src/PaymentRequests/PaymentRequests.Application/PaymentRequestHistory**'
       - 'backend/src/PaymentRequests/PaymentRequests.Persistence/EfPaymentRequestHistoryReader.cs'
+      - 'backend/src/IdentityService/IdentityService.Api/PaymentRequests/PaymentRequestHistory**'
+      - 'backend/src/IdentityService/IdentityService.Api/PaymentRequests/PaymentRequestsComposition.cs'
+      - 'backend/src/IdentityService/IdentityService.Api/Program.cs'
       - 'backend/tests/PaymentRequests.History.Query.Scenarios/**'
       - 'backend/tests/PaymentRequests.History.Persistence.Scenarios/**'
+      - 'backend/tests/PaymentRequests.History.Http.Scenarios/**'
       - '.github/workflows/backend-request-history-1.yml'
   workflow_dispatch:
 
@@ -46,3 +54,9 @@ jobs:
 
       - name: Run payment request history persistence scenarios
         run: dotnet run --project backend/tests/PaymentRequests.History.Persistence.Scenarios/PaymentRequests.History.Persistence.Scenarios.csproj --configuration Release
+
+      - name: Build IdentityService host with Payment Request History wiring
+        run: dotnet build backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj --configuration Release --nologo
+
+      - name: Run protected payment request history HTTP scenarios
+        run: dotnet run --project backend/tests/PaymentRequests.History.Http.Scenarios/PaymentRequests.History.Http.Scenarios.csproj --configuration Release

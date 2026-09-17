@@ -1,0 +1,38 @@
+name: AFW-BE-REQUEST-RECONCILIATION-3
+
+on:
+  push:
+    branches:
+      - feature/backend-request-reconciliation-3
+    paths:
+      - 'backend/src/FinancialPlatform/Reconciliation/**'
+      - 'backend/tests/Reconciliation.CandidateQuery.Scenarios/**'
+      - '.github/workflows/backend-request-reconciliation-3.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'backend/src/FinancialPlatform/Reconciliation/**'
+      - 'backend/tests/Reconciliation.CandidateQuery.Scenarios/**'
+      - '.github/workflows/backend-request-reconciliation-3.yml'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Validate automatic reconciliation candidate query foundation
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build Reconciliation Application
+        run: dotnet build backend/src/FinancialPlatform/Reconciliation/Reconciliation.Application/Reconciliation.Application.csproj --configuration Release --nologo
+
+      - name: Run automatic reconciliation candidate query scenarios
+        run: dotnet run --project backend/tests/Reconciliation.CandidateQuery.Scenarios/Reconciliation.CandidateQuery.Scenarios.csproj --configuration Release

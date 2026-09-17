@@ -50,7 +50,8 @@ public sealed record PushEventDeliveryResult(Guid EventId, int AttemptedTargets,
 public sealed class NotificationEventPushDeliveryService(
     PushDeliveryOrchestrationService deliveryService,
     IPushEventDeliveryRepository deliveryRepository,
-    PushEventRetryPolicy retryPolicy)
+    PushEventRetryPolicy retryPolicy,
+    NotificationDeliveryRoutingService routingService)
 {
     public async Task<PushEventDeliveryResult> DeliverAsync(
         InAppNotification notification,
@@ -61,6 +62,21 @@ public sealed class NotificationEventPushDeliveryService(
         if (attemptedAtUtc.Offset != TimeSpan.Zero)
             throw new ArgumentException("Attempt timestamp must be UTC.", nameof(attemptedAtUtc));
         cancellationToken.ThrowIfCancellationRequested();
+
+        var pushDecision = await routingService.EvaluateAsync(
+            notification.UserId,
+            NotificationChannel.Push,
+            cancellationToken);
+
+        if (!pushDecision.IsEnabled)
+        {
+            return new PushEventDeliveryResult(
+                notification.EventId,
+                AttemptedTargets: 0,
+                Delivered: 0,
+                RetryScheduled: 0,
+                TerminalFailures: 0);
+        }
 
         var existing = await deliveryRepository.ListByEventAsync(notification.EventId, cancellationToken);
         if (existing.Any(record => record.UserId != notification.UserId))

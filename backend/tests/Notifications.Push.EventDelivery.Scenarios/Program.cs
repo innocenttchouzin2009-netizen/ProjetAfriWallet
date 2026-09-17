@@ -8,6 +8,9 @@ static void Assert(bool condition, string message)
     if (!condition) throw new InvalidOperationException(message);
 }
 
+static NotificationDeliveryRoutingService CreateRouting(params NotificationPreference[] preferences) =>
+    new(new InMemoryPreferenceRepository(preferences), new TestChannelPolicyProvider());
+
 var now = new DateTimeOffset(2026, 9, 16, 10, 0, 0, TimeSpan.Zero);
 var userId = Guid.NewGuid();
 var firstDevice = PushDeviceRegistration.Create(userId, "installation-a", PushPlatform.Android, "token-a", now.AddMinutes(-5));
@@ -21,6 +24,7 @@ var deliveryPort = new ScriptedDeliveryPort(new Dictionary<Guid, Queue<PushDeliv
         PushDeliveryResult.Delivered("m2")])
 });
 var orchestration = new PushDeliveryOrchestrationService(deviceRepository, deliveryPort);
+var routing = CreateRouting();
 
 var dbPath = Path.Combine(Path.GetTempPath(), $"afw-push-event-{Guid.NewGuid():N}.db");
 try
@@ -31,7 +35,11 @@ try
     await using var db = new PushEventDeliveryDbContext(options);
     await db.Database.EnsureCreatedAsync();
     var durableRepository = new EfPushEventDeliveryRepository(db);
-    var service = new NotificationEventPushDeliveryService(orchestration, durableRepository, PushEventRetryPolicy.Default);
+    var service = new NotificationEventPushDeliveryService(
+        orchestration,
+        durableRepository,
+        PushEventRetryPolicy.Default,
+        routing);
 
     var evt = PaymentRequestEvent.New(Guid.NewGuid(), PaymentRequestEventKind.Created, now);
     var notification = InAppNotification.New(userId, evt);
@@ -70,7 +78,8 @@ try
     var permanentService = new NotificationEventPushDeliveryService(
         new PushDeliveryOrchestrationService(permanentRepo, permanentPort),
         durableRepository,
-        PushEventRetryPolicy.Default);
+        PushEventRetryPolicy.Default,
+        routing);
     var permanentEvent = PaymentRequestEvent.New(Guid.NewGuid(), PaymentRequestEventKind.Declined, now.AddMinutes(2));
     var permanentNotification = InAppNotification.New(userId, permanentEvent);
     var permanent = await permanentService.DeliverAsync(permanentNotification, now.AddMinutes(2));
@@ -78,7 +87,32 @@ try
     await permanentService.DeliverAsync(permanentNotification, now.AddHours(1));
     Assert(permanentPort.TotalCalls == 1, "Permanent failure must never be retried.");
 
-    Console.WriteLine("AFW-BE-NOTIFICATION-PUSH-1 event delivery retry/idempotency scenarios: PASS");
+    var disabledPushPreference = NotificationPreference.Restore(
+        Guid.NewGuid(),
+        userId,
+        NotificationChannel.Push,
+        isEnabled: false,
+        now.AddMinutes(-10),
+        now.AddMinutes(-10));
+    var disabledRouting = CreateRouting(disabledPushPreference);
+
+    var inAppDecision = await disabledRouting.EvaluateAsync(userId, NotificationChannel.InApp);
+    Assert(inAppDecision.IsEnabled, "Disabling Push must not disable mandatory In-App notifications.");
+
+    var disabledService = new NotificationEventPushDeliveryService(
+        new PushDeliveryOrchestrationService(new ThrowingDeviceRepository(), new ThrowingDeliveryPort()),
+        new ThrowingEventDeliveryRepository(),
+        PushEventRetryPolicy.Default,
+        disabledRouting);
+    var disabledEvent = PaymentRequestEvent.New(Guid.NewGuid(), PaymentRequestEventKind.Accepted, now.AddMinutes(3));
+    var disabledNotification = InAppNotification.New(userId, disabledEvent);
+    var disabled = await disabledService.DeliverAsync(disabledNotification, now.AddMinutes(3));
+
+    Assert(disabled.AttemptedTargets == 0, "Disabled Push must attempt zero devices.");
+    Assert(disabled.Delivered == 0 && disabled.RetryScheduled == 0 && disabled.TerminalFailures == 0,
+        "Disabled Push must produce no delivery, retry or failure state.");
+
+    Console.WriteLine("AFW-BE-NOTIFICATION-ROUTING-1 push preference enforcement scenarios: PASS");
 }
 finally
 {
@@ -121,4 +155,78 @@ sealed class ScriptedDeliveryPort(Dictionary<Guid, Queue<PushDeliveryResult>> sc
             throw new InvalidOperationException("No scripted push result for target.");
         return Task.FromResult(queue.Dequeue());
     }
+}
+
+sealed class InMemoryPreferenceRepository(IEnumerable<NotificationPreference> preferences) : INotificationPreferenceRepository
+{
+    private readonly Dictionary<(Guid UserId, NotificationChannel Channel), NotificationPreference> values =
+        preferences.ToDictionary(x => (x.UserId, x.Channel));
+
+    public Task<NotificationPreference?> GetAsync(Guid userId, NotificationChannel channel, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        values.TryGetValue((userId, channel), out var preference);
+        return Task.FromResult(preference);
+    }
+
+    public Task<IReadOnlyList<NotificationPreference>> ListByUserAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        return Task.FromResult<IReadOnlyList<NotificationPreference>>(values.Values.Where(x => x.UserId == userId).ToArray());
+    }
+
+    public Task AddAsync(NotificationPreference preference, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        values.Add((preference.UserId, preference.Channel), preference);
+        return Task.CompletedTask;
+    }
+
+    public Task UpdateAsync(NotificationPreference preference, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        values[(preference.UserId, preference.Channel)] = preference;
+        return Task.CompletedTask;
+    }
+}
+
+sealed class TestChannelPolicyProvider : INotificationChannelPolicyProvider
+{
+    private static readonly NotificationChannelPolicy InApp =
+        NotificationChannelPolicy.Create(NotificationChannel.InApp, defaultEnabled: true, userConfigurable: false);
+    private static readonly NotificationChannelPolicy Push =
+        NotificationChannelPolicy.Create(NotificationChannel.Push, defaultEnabled: true, userConfigurable: true);
+
+    public NotificationChannelPolicy Get(NotificationChannel channel) => channel switch
+    {
+        NotificationChannel.InApp => InApp,
+        NotificationChannel.Push => Push,
+        _ => throw new ArgumentOutOfRangeException(nameof(channel))
+    };
+
+    public IReadOnlyList<NotificationChannelPolicy> List() => [InApp, Push];
+}
+
+sealed class ThrowingDeviceRepository : IPushDeviceRegistrationRepository
+{
+    private static Exception Unexpected() => new InvalidOperationException("Push-disabled flow must not inspect devices.");
+    public Task<PushDeviceRegistration?> FindByInstallationIdAsync(string installationId, CancellationToken cancellationToken = default) => throw Unexpected();
+    public Task<IReadOnlyList<PushDeviceRegistration>> ListActiveByUserAsync(Guid userId, CancellationToken cancellationToken = default) => throw Unexpected();
+    public Task AddAsync(PushDeviceRegistration registration, CancellationToken cancellationToken = default) => throw Unexpected();
+    public Task UpdateAsync(PushDeviceRegistration registration, CancellationToken cancellationToken = default) => throw Unexpected();
+}
+
+sealed class ThrowingDeliveryPort : IPushDeliveryPort
+{
+    public Task<PushDeliveryResult> DeliverAsync(PushDeliveryTarget target, PushNotificationMessage message, CancellationToken cancellationToken = default) =>
+        throw new InvalidOperationException("Push-disabled flow must not call the provider.");
+}
+
+sealed class ThrowingEventDeliveryRepository : IPushEventDeliveryRepository
+{
+    public Task<IReadOnlyList<PushEventDeliveryRecord>> ListByEventAsync(Guid eventId, CancellationToken cancellationToken = default) =>
+        throw new InvalidOperationException("Push-disabled flow must not inspect retry delivery state.");
+
+    public Task UpsertAsync(PushEventDeliveryRecord record, CancellationToken cancellationToken = default) =>
+        throw new InvalidOperationException("Push-disabled flow must not persist delivery attempts.");
 }

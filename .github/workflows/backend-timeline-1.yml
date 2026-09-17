@@ -7,6 +7,7 @@ on:
     paths:
       - 'backend/src/Timeline/**'
       - 'backend/tests/Timeline.Domain.Scenarios/**'
+      - 'backend/tests/Timeline.Infrastructure.Scenarios/**'
       - '.github/workflows/backend-timeline-1.yml'
   pull_request:
     branches:
@@ -14,6 +15,7 @@ on:
     paths:
       - 'backend/src/Timeline/**'
       - 'backend/tests/Timeline.Domain.Scenarios/**'
+      - 'backend/tests/Timeline.Infrastructure.Scenarios/**'
       - '.github/workflows/backend-timeline-1.yml'
   workflow_dispatch:
 
@@ -39,3 +41,9 @@ jobs:
 
       - name: Run financial timeline domain and read-model contract scenarios
         run: dotnet run --project backend/tests/Timeline.Domain.Scenarios/Timeline.Domain.Scenarios.csproj --configuration Release
+
+      - name: Build Timeline Infrastructure
+        run: dotnet build backend/src/Timeline/Timeline.Infrastructure/Timeline.Infrastructure.csproj --configuration Release --nologo
+
+      - name: Run financial timeline source aggregation scenarios
+        run: dotnet run --project backend/tests/Timeline.Infrastructure.Scenarios/Timeline.Infrastructure.Scenarios.csproj --configuration Release

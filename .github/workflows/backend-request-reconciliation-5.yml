@@ -7,7 +7,11 @@ on:
     paths:
       - 'backend/src/FinancialPlatform/Reconciliation/Reconciliation.Domain/ReviewResolution/**'
       - 'backend/src/FinancialPlatform/Reconciliation/Reconciliation.Application/Review/Resolution/**'
+      - 'backend/src/FinancialPlatform/Reconciliation/Reconciliation.Infrastructure/ReviewResolution/**'
+      - 'backend/src/FinancialPlatform/Reconciliation/Reconciliation.Infrastructure/Repositories/ReconciliationReviewDbContext.cs'
+      - 'backend/src/FinancialPlatform/Reconciliation/Reconciliation.Infrastructure/Repositories/EfReviewResolutionStore.cs'
       - 'backend/tests/Reconciliation.ReviewResolution.Scenarios/**'
+      - 'backend/tests/Reconciliation.ReviewResolutionAdapters.Scenarios/**'
       - '.github/workflows/backend-request-reconciliation-5.yml'
   pull_request:
     branches:
@@ -15,7 +19,11 @@ on:
     paths:
       - 'backend/src/FinancialPlatform/Reconciliation/Reconciliation.Domain/ReviewResolution/**'
       - 'backend/src/FinancialPlatform/Reconciliation/Reconciliation.Application/Review/Resolution/**'
+      - 'backend/src/FinancialPlatform/Reconciliation/Reconciliation.Infrastructure/ReviewResolution/**'
+      - 'backend/src/FinancialPlatform/Reconciliation/Reconciliation.Infrastructure/Repositories/ReconciliationReviewDbContext.cs'
+      - 'backend/src/FinancialPlatform/Reconciliation/Reconciliation.Infrastructure/Repositories/EfReviewResolutionStore.cs'
       - 'backend/tests/Reconciliation.ReviewResolution.Scenarios/**'
+      - 'backend/tests/Reconciliation.ReviewResolutionAdapters.Scenarios/**'
       - '.github/workflows/backend-request-reconciliation-5.yml'
   workflow_dispatch:
 
@@ -41,3 +49,9 @@ jobs:
 
       - name: Run review resolution foundation scenarios
         run: dotnet run --project backend/tests/Reconciliation.ReviewResolution.Scenarios/Reconciliation.ReviewResolution.Scenarios.csproj --configuration Release
+
+      - name: Build Reconciliation Infrastructure
+        run: dotnet build backend/src/FinancialPlatform/Reconciliation/Reconciliation.Infrastructure/Reconciliation.Infrastructure.csproj --configuration Release --nologo
+
+      - name: Run concrete review resolution adapter and persistence scenarios
+        run: dotnet run --project backend/tests/Reconciliation.ReviewResolutionAdapters.Scenarios/Reconciliation.ReviewResolutionAdapters.Scenarios.csproj --configuration Release

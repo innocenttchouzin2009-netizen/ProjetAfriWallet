@@ -1,0 +1,47 @@
+name: AFW-BE-REQUEST-RECONCILIATION-4
+
+on:
+  push:
+    branches:
+      - feature/backend-request-reconciliation-4
+    paths:
+      - 'backend/src/FinancialPlatform/Reconciliation/Reconciliation.Infrastructure/**'
+      - 'backend/tests/Reconciliation.ReviewPersistence.Scenarios/**'
+      - '.github/workflows/backend-request-reconciliation-4.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'backend/src/FinancialPlatform/Reconciliation/Reconciliation.Infrastructure/**'
+      - 'backend/tests/Reconciliation.ReviewPersistence.Scenarios/**'
+      - '.github/workflows/backend-request-reconciliation-4.yml'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Validate durable reconciliation review persistence
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build Reconciliation Application
+        run: dotnet build backend/src/FinancialPlatform/Reconciliation/Reconciliation.Application/Reconciliation.Application.csproj --configuration Release --nologo
+
+      - name: Build Reconciliation Infrastructure
+        run: dotnet build backend/src/FinancialPlatform/Reconciliation/Reconciliation.Infrastructure/Reconciliation.Infrastructure.csproj --configuration Release --nologo
+
+      - name: Run existing reconciliation review queue scenarios
+        run: dotnet run --project backend/tests/Reconciliation.ReviewQueue.Scenarios/Reconciliation.ReviewQueue.Scenarios.csproj --configuration Release
+
+      - name: Run existing reconciliation review orchestration scenarios
+        run: dotnet run --project backend/tests/Reconciliation.ReviewOrchestration.Scenarios/Reconciliation.ReviewOrchestration.Scenarios.csproj --configuration Release
+
+      - name: Run durable review persistence scenarios
+        run: dotnet run --project backend/tests/Reconciliation.ReviewPersistence.Scenarios/Reconciliation.ReviewPersistence.Scenarios.csproj --configuration Release

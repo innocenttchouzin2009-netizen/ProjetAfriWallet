@@ -3,6 +3,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Reconciliation.Domain\Reconciliation.Domain.csproj" />
     <ProjectReference Include="..\Reconciliation.Application\Reconciliation.Application.csproj" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.10" />
   </ItemGroup>
 
   <PropertyGroup>

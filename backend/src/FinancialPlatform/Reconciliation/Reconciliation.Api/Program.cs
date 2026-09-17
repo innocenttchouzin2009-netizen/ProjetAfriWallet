@@ -15,10 +15,16 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSingleton<SandboxReconciliationDataSource>();
 builder.Services.AddSingleton<IReconciliationDataSource>(sp => sp.GetRequiredService<SandboxReconciliationDataSource>());
 builder.Services.AddSingleton<IReconciliationRepository, InMemoryReconciliationRepository>();
-builder.Services.AddSingleton<IReconciliationReviewRepository, InMemoryReconciliationReviewRepository>();
+
+var reconciliationReviewConnectionString =
+    builder.Configuration.GetConnectionString("ReconciliationReviewDatabase") ??
+    Environment.GetEnvironmentVariable("AFW_RECONCILIATION_REVIEW_DB_CONNECTION_STRING") ??
+    "Data Source=reconciliation-review.db";
+
+builder.Services.AddReconciliationReviewPersistence(reconciliationReviewConnectionString);
 builder.Services.AddSingleton(new ReconciliationMatcher(TimeSpan.FromMinutes(10)));
 builder.Services.AddSingleton<ReconciliationReviewQueueService>();
-builder.Services.AddSingleton<ReconciliationReviewApplicationService>();
+builder.Services.AddScoped<ReconciliationReviewApplicationService>();
 builder.Services.AddScoped<ReconciliationService>();
 builder.Services.AddOpenApi();
 
@@ -48,6 +54,13 @@ builder.Services
 builder.Services.AddAuthorization();
 
 var app = builder.Build();
+
+await using (var scope = app.Services.CreateAsyncScope())
+{
+    var reviewDb = scope.ServiceProvider.GetRequiredService<ReconciliationReviewDbContext>();
+    await reviewDb.Database.EnsureCreatedAsync();
+}
+
 app.UseAuthentication();
 app.UseAuthorization();
 

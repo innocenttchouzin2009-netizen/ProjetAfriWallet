@@ -1,0 +1,69 @@
+name: AFW-BE-REQUEST-RECONCILIATION-5
+
+on:
+  push:
+    branches:
+      - feature/backend-request-reconciliation-5
+    paths:
+      - 'backend/src/FinancialPlatform/Reconciliation/Reconciliation.Domain/ReviewResolution/**'
+      - 'backend/src/FinancialPlatform/Reconciliation/Reconciliation.Application/Review/Resolution/**'
+      - 'backend/src/FinancialPlatform/Reconciliation/Reconciliation.Infrastructure/ReviewResolution/**'
+      - 'backend/src/FinancialPlatform/Reconciliation/Reconciliation.Infrastructure/Repositories/ReconciliationReviewDbContext.cs'
+      - 'backend/src/FinancialPlatform/Reconciliation/Reconciliation.Infrastructure/Repositories/EfReviewResolutionStore.cs'
+      - 'backend/src/FinancialPlatform/Reconciliation/Reconciliation.Api/Program.cs'
+      - 'backend/src/FinancialPlatform/Reconciliation/Reconciliation.Api/Review/ReviewResolution*.cs'
+      - 'backend/tests/Reconciliation.ReviewResolution.Scenarios/**'
+      - 'backend/tests/Reconciliation.ReviewResolutionAdapters.Scenarios/**'
+      - 'backend/tests/Reconciliation.ReviewResolutionHttp.Scenarios/**'
+      - '.github/workflows/backend-request-reconciliation-5.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'backend/src/FinancialPlatform/Reconciliation/Reconciliation.Domain/ReviewResolution/**'
+      - 'backend/src/FinancialPlatform/Reconciliation/Reconciliation.Application/Review/Resolution/**'
+      - 'backend/src/FinancialPlatform/Reconciliation/Reconciliation.Infrastructure/ReviewResolution/**'
+      - 'backend/src/FinancialPlatform/Reconciliation/Reconciliation.Infrastructure/Repositories/ReconciliationReviewDbContext.cs'
+      - 'backend/src/FinancialPlatform/Reconciliation/Reconciliation.Infrastructure/Repositories/EfReviewResolutionStore.cs'
+      - 'backend/src/FinancialPlatform/Reconciliation/Reconciliation.Api/Program.cs'
+      - 'backend/src/FinancialPlatform/Reconciliation/Reconciliation.Api/Review/ReviewResolution*.cs'
+      - 'backend/tests/Reconciliation.ReviewResolution.Scenarios/**'
+      - 'backend/tests/Reconciliation.ReviewResolutionAdapters.Scenarios/**'
+      - 'backend/tests/Reconciliation.ReviewResolutionHttp.Scenarios/**'
+      - '.github/workflows/backend-request-reconciliation-5.yml'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Validate review resolution composition and protected HTTP API
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build Reconciliation Domain
+        run: dotnet build backend/src/FinancialPlatform/Reconciliation/Reconciliation.Domain/Reconciliation.Domain.csproj --configuration Release --nologo
+
+      - name: Build Reconciliation Application
+        run: dotnet build backend/src/FinancialPlatform/Reconciliation/Reconciliation.Application/Reconciliation.Application.csproj --configuration Release --nologo
+
+      - name: Run review resolution foundation scenarios
+        run: dotnet run --project backend/tests/Reconciliation.ReviewResolution.Scenarios/Reconciliation.ReviewResolution.Scenarios.csproj --configuration Release
+
+      - name: Build Reconciliation Infrastructure
+        run: dotnet build backend/src/FinancialPlatform/Reconciliation/Reconciliation.Infrastructure/Reconciliation.Infrastructure.csproj --configuration Release --nologo
+
+      - name: Run concrete review resolution adapter and persistence scenarios
+        run: dotnet run --project backend/tests/Reconciliation.ReviewResolutionAdapters.Scenarios/Reconciliation.ReviewResolutionAdapters.Scenarios.csproj --configuration Release
+
+      - name: Build Reconciliation API
+        run: dotnet build backend/src/FinancialPlatform/Reconciliation/Reconciliation.Api/Reconciliation.Api.csproj --configuration Release --nologo
+
+      - name: Run protected review resolution HTTP and idempotency scenarios
+        run: dotnet run --project backend/tests/Reconciliation.ReviewResolutionHttp.Scenarios/Reconciliation.ReviewResolutionHttp.Scenarios.csproj --configuration Release

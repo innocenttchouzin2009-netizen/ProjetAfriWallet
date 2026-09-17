@@ -9,6 +9,7 @@ on:
       - 'backend/tests/Reconciliation.CandidateQuery.Scenarios/**'
       - 'backend/tests/Reconciliation.CandidateMatching.Scenarios/**'
       - 'backend/tests/Reconciliation.ReviewQueue.Scenarios/**'
+      - 'backend/tests/Reconciliation.ReviewOrchestration.Scenarios/**'
       - '.github/workflows/backend-request-reconciliation-3.yml'
   pull_request:
     branches:
@@ -18,12 +19,13 @@ on:
       - 'backend/tests/Reconciliation.CandidateQuery.Scenarios/**'
       - 'backend/tests/Reconciliation.CandidateMatching.Scenarios/**'
       - 'backend/tests/Reconciliation.ReviewQueue.Scenarios/**'
+      - 'backend/tests/Reconciliation.ReviewOrchestration.Scenarios/**'
       - '.github/workflows/backend-request-reconciliation-3.yml'
   workflow_dispatch:
 
 jobs:
   validate:
-    name: Validate reconciliation review queue and decision model
+    name: Validate reconciliation review store and decision orchestration
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -38,6 +40,9 @@ jobs:
       - name: Build Reconciliation Application
         run: dotnet build backend/src/FinancialPlatform/Reconciliation/Reconciliation.Application/Reconciliation.Application.csproj --configuration Release --nologo
 
+      - name: Build Reconciliation Infrastructure
+        run: dotnet build backend/src/FinancialPlatform/Reconciliation/Reconciliation.Infrastructure/Reconciliation.Infrastructure.csproj --configuration Release --nologo
+
       - name: Run automatic reconciliation candidate query scenarios
         run: dotnet run --project backend/tests/Reconciliation.CandidateQuery.Scenarios/Reconciliation.CandidateQuery.Scenarios.csproj --configuration Release
 
@@ -46,3 +51,6 @@ jobs:
 
       - name: Run reconciliation review queue and decision scenarios
         run: dotnet run --project backend/tests/Reconciliation.ReviewQueue.Scenarios/Reconciliation.ReviewQueue.Scenarios.csproj --configuration Release
+
+      - name: Run reconciliation review store and orchestration scenarios
+        run: dotnet run --project backend/tests/Reconciliation.ReviewOrchestration.Scenarios/Reconciliation.ReviewOrchestration.Scenarios.csproj --configuration Release

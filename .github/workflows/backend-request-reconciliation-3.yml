@@ -8,6 +8,7 @@ on:
       - 'backend/src/FinancialPlatform/Reconciliation/**'
       - 'backend/tests/Reconciliation.CandidateQuery.Scenarios/**'
       - 'backend/tests/Reconciliation.CandidateMatching.Scenarios/**'
+      - 'backend/tests/Reconciliation.ReviewQueue.Scenarios/**'
       - '.github/workflows/backend-request-reconciliation-3.yml'
   pull_request:
     branches:
@@ -16,12 +17,13 @@ on:
       - 'backend/src/FinancialPlatform/Reconciliation/**'
       - 'backend/tests/Reconciliation.CandidateQuery.Scenarios/**'
       - 'backend/tests/Reconciliation.CandidateMatching.Scenarios/**'
+      - 'backend/tests/Reconciliation.ReviewQueue.Scenarios/**'
       - '.github/workflows/backend-request-reconciliation-3.yml'
   workflow_dispatch:
 
 jobs:
   validate:
-    name: Validate automatic reconciliation candidate matching
+    name: Validate reconciliation review queue and decision model
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -41,3 +43,6 @@ jobs:
 
       - name: Run automatic reconciliation candidate matching scenarios
         run: dotnet run --project backend/tests/Reconciliation.CandidateMatching.Scenarios/Reconciliation.CandidateMatching.Scenarios.csproj --configuration Release
+
+      - name: Run reconciliation review queue and decision scenarios
+        run: dotnet run --project backend/tests/Reconciliation.ReviewQueue.Scenarios/Reconciliation.ReviewQueue.Scenarios.csproj --configuration Release

@@ -51,9 +51,10 @@ await RunAsync("unknown recipient returns 404", async () =>
 
 PaymentRequestHttpResponse? createdResponse = null;
 var correlationId = Guid.NewGuid();
+var idempotentRequest = fixture.Request(correlationId);
 await RunAsync("owned requester creates pending request without transfer execution", async () =>
 {
-    var response = await ownerClient.PostAsJsonAsync("/api/v1/payment-requests/", fixture.Request(correlationId));
+    var response = await ownerClient.PostAsJsonAsync("/api/v1/payment-requests/", idempotentRequest);
     Assert(response.StatusCode == HttpStatusCode.Created, $"Expected 201, got {(int)response.StatusCode}.");
     createdResponse = await response.Content.ReadFromJsonAsync<PaymentRequestHttpResponse>();
     Assert(createdResponse is not null, "Created response is required.");
@@ -65,7 +66,7 @@ await RunAsync("owned requester creates pending request without transfer executi
 
 await RunAsync("same correlation is idempotent", async () =>
 {
-    var response = await ownerClient.PostAsJsonAsync("/api/v1/payment-requests/", fixture.Request(correlationId));
+    var response = await ownerClient.PostAsJsonAsync("/api/v1/payment-requests/", idempotentRequest);
     Assert(response.StatusCode == HttpStatusCode.OK, $"Expected 200, got {(int)response.StatusCode}.");
     var replay = await response.Content.ReadFromJsonAsync<PaymentRequestHttpResponse>();
     Assert(replay?.Id == createdResponse?.Id, "Idempotent replay must return the same request.");
@@ -117,8 +118,6 @@ static void Assert(bool condition, string message)
 
 sealed class PaymentRequestHttpFixture : IAsyncDisposable
 {
-    private static readonly DateTimeOffset StableExpirationUtc = new(2030, 1, 1, 0, 0, 0, TimeSpan.Zero);
-
     private PaymentRequestHttpFixture(WebApplication app, InMemoryRepository repository, FixedResolver resolver,
         Guid ownerId, Guid foreignOwnerId, Guid requesterWalletId, Guid foreignWalletId, Guid payerWalletId)
     {
@@ -142,7 +141,7 @@ sealed class PaymentRequestHttpFixture : IAsyncDisposable
     public Guid PayerWalletId { get; }
 
     public CreatePaymentRequestHttpRequest Request(Guid correlationId) =>
-        new(RequesterWalletId, "afwal-id", "payer.one", "XAF", 2_500, correlationId, StableExpirationUtc);
+        new(RequesterWalletId, "afwal-id", "payer.one", "XAF", 2_500, correlationId, DateTimeOffset.UtcNow.AddHours(1));
 
     public static async Task<PaymentRequestHttpFixture> CreateAsync()
     {

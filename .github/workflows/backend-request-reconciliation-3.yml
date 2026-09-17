@@ -10,6 +10,7 @@ on:
       - 'backend/tests/Reconciliation.CandidateMatching.Scenarios/**'
       - 'backend/tests/Reconciliation.ReviewQueue.Scenarios/**'
       - 'backend/tests/Reconciliation.ReviewOrchestration.Scenarios/**'
+      - 'backend/tests/Reconciliation.ReviewHttp.Scenarios/**'
       - '.github/workflows/backend-request-reconciliation-3.yml'
   pull_request:
     branches:
@@ -20,12 +21,13 @@ on:
       - 'backend/tests/Reconciliation.CandidateMatching.Scenarios/**'
       - 'backend/tests/Reconciliation.ReviewQueue.Scenarios/**'
       - 'backend/tests/Reconciliation.ReviewOrchestration.Scenarios/**'
+      - 'backend/tests/Reconciliation.ReviewHttp.Scenarios/**'
       - '.github/workflows/backend-request-reconciliation-3.yml'
   workflow_dispatch:
 
 jobs:
   validate:
-    name: Validate reconciliation review store and decision orchestration
+    name: Validate protected reconciliation review HTTP API
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -43,6 +45,9 @@ jobs:
       - name: Build Reconciliation Infrastructure
         run: dotnet build backend/src/FinancialPlatform/Reconciliation/Reconciliation.Infrastructure/Reconciliation.Infrastructure.csproj --configuration Release --nologo
 
+      - name: Build Reconciliation API
+        run: dotnet build backend/src/FinancialPlatform/Reconciliation/Reconciliation.Api/Reconciliation.Api.csproj --configuration Release --nologo
+
       - name: Run automatic reconciliation candidate query scenarios
         run: dotnet run --project backend/tests/Reconciliation.CandidateQuery.Scenarios/Reconciliation.CandidateQuery.Scenarios.csproj --configuration Release
 
@@ -54,3 +59,6 @@ jobs:
 
       - name: Run reconciliation review store and orchestration scenarios
         run: dotnet run --project backend/tests/Reconciliation.ReviewOrchestration.Scenarios/Reconciliation.ReviewOrchestration.Scenarios.csproj --configuration Release
+
+      - name: Run protected reconciliation review HTTP scenarios
+        run: dotnet run --project backend/tests/Reconciliation.ReviewHttp.Scenarios/Reconciliation.ReviewHttp.Scenarios.csproj --configuration Release

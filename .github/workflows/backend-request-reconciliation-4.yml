@@ -6,14 +6,18 @@ on:
       - feature/backend-request-reconciliation-4
     paths:
       - 'backend/src/FinancialPlatform/Reconciliation/Reconciliation.Infrastructure/**'
+      - 'backend/src/FinancialPlatform/Reconciliation/Reconciliation.Api/**'
       - 'backend/tests/Reconciliation.ReviewPersistence.Scenarios/**'
+      - 'backend/tests/Reconciliation.ReviewHttp.Scenarios/**'
       - '.github/workflows/backend-request-reconciliation-4.yml'
   pull_request:
     branches:
       - main
     paths:
       - 'backend/src/FinancialPlatform/Reconciliation/Reconciliation.Infrastructure/**'
+      - 'backend/src/FinancialPlatform/Reconciliation/Reconciliation.Api/**'
       - 'backend/tests/Reconciliation.ReviewPersistence.Scenarios/**'
+      - 'backend/tests/Reconciliation.ReviewHttp.Scenarios/**'
       - '.github/workflows/backend-request-reconciliation-4.yml'
   workflow_dispatch:
 
@@ -45,3 +49,9 @@ jobs:
 
       - name: Run durable review persistence scenarios
         run: dotnet run --project backend/tests/Reconciliation.ReviewPersistence.Scenarios/Reconciliation.ReviewPersistence.Scenarios.csproj --configuration Release
+
+      - name: Build Reconciliation API with durable review wiring
+        run: dotnet build backend/src/FinancialPlatform/Reconciliation/Reconciliation.Api/Reconciliation.Api.csproj --configuration Release --nologo
+
+      - name: Run protected review HTTP scenarios on SQLite
+        run: dotnet run --project backend/tests/Reconciliation.ReviewHttp.Scenarios/Reconciliation.ReviewHttp.Scenarios.csproj --configuration Release

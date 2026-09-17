@@ -221,6 +221,7 @@ app.MapP2PEndpoints();
 app.MapPaymentRequestEndpoints();
 app.MapPaymentRequestReconciliationEndpoints();
 app.MapPaymentRequestInboxOutboxEndpoints();
+app.MapPaymentRequestHistoryEndpoints();
 app.MapPaymentRequestEventOutboxOperationalEndpoints();
 app.MapNotificationEndpoints();
 app.MapPushDeviceEndpoints();

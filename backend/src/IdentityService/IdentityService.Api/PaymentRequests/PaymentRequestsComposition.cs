@@ -19,6 +19,7 @@ public static class PaymentRequestsComposition
         services.AddDbContext<PaymentRequestDbContext>(options => options.UseSqlite(connectionString));
         services.AddScoped<IPaymentRequestRepository, EfPaymentRequestRepository>();
         services.AddScoped<IPaymentRequestQueryRepository, EfPaymentRequestRepository>();
+        services.AddScoped<IPaymentRequestHistoryReader, EfPaymentRequestHistoryReader>();
         services.AddScoped<IPaymentRequestLifecycleMutationStore, EfPaymentRequestLifecycleMutationStore>();
         services.AddScoped<IPaymentRequestRecipientResolver, P2PRecipientResolver>();
         services.AddScoped<IPaymentRequestWalletOwnershipReader, WalletPaymentRequestOwnershipReader>();
@@ -34,6 +35,7 @@ public static class PaymentRequestsComposition
         services.AddScoped<PaymentRequestApplicationService>();
         services.AddScoped<PaymentRequestActionService>();
         services.AddScoped<AuthorizedPaymentRequestQueryService>();
+        services.AddScoped<PaymentRequestHistoryService>();
         services.AddScoped<PaymentRequestRecoveryService>();
         services.AddSingleton(TimeProvider.System);
         services.AddSingleton(PaymentRequestEventDispatchWorkerOptions.Default);

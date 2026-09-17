@@ -10,8 +10,11 @@ on:
       - 'backend/src/FinancialPlatform/Reconciliation/Reconciliation.Infrastructure/ReviewResolution/**'
       - 'backend/src/FinancialPlatform/Reconciliation/Reconciliation.Infrastructure/Repositories/ReconciliationReviewDbContext.cs'
       - 'backend/src/FinancialPlatform/Reconciliation/Reconciliation.Infrastructure/Repositories/EfReviewResolutionStore.cs'
+      - 'backend/src/FinancialPlatform/Reconciliation/Reconciliation.Api/Program.cs'
+      - 'backend/src/FinancialPlatform/Reconciliation/Reconciliation.Api/Review/ReviewResolution*.cs'
       - 'backend/tests/Reconciliation.ReviewResolution.Scenarios/**'
       - 'backend/tests/Reconciliation.ReviewResolutionAdapters.Scenarios/**'
+      - 'backend/tests/Reconciliation.ReviewResolutionHttp.Scenarios/**'
       - '.github/workflows/backend-request-reconciliation-5.yml'
   pull_request:
     branches:
@@ -22,14 +25,17 @@ on:
       - 'backend/src/FinancialPlatform/Reconciliation/Reconciliation.Infrastructure/ReviewResolution/**'
       - 'backend/src/FinancialPlatform/Reconciliation/Reconciliation.Infrastructure/Repositories/ReconciliationReviewDbContext.cs'
       - 'backend/src/FinancialPlatform/Reconciliation/Reconciliation.Infrastructure/Repositories/EfReviewResolutionStore.cs'
+      - 'backend/src/FinancialPlatform/Reconciliation/Reconciliation.Api/Program.cs'
+      - 'backend/src/FinancialPlatform/Reconciliation/Reconciliation.Api/Review/ReviewResolution*.cs'
       - 'backend/tests/Reconciliation.ReviewResolution.Scenarios/**'
       - 'backend/tests/Reconciliation.ReviewResolutionAdapters.Scenarios/**'
+      - 'backend/tests/Reconciliation.ReviewResolutionHttp.Scenarios/**'
       - '.github/workflows/backend-request-reconciliation-5.yml'
   workflow_dispatch:
 
 jobs:
   validate:
-    name: Validate review resolution foundation
+    name: Validate review resolution composition and protected HTTP API
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -55,3 +61,9 @@ jobs:
 
       - name: Run concrete review resolution adapter and persistence scenarios
         run: dotnet run --project backend/tests/Reconciliation.ReviewResolutionAdapters.Scenarios/Reconciliation.ReviewResolutionAdapters.Scenarios.csproj --configuration Release
+
+      - name: Build Reconciliation API
+        run: dotnet build backend/src/FinancialPlatform/Reconciliation/Reconciliation.Api/Reconciliation.Api.csproj --configuration Release --nologo
+
+      - name: Run protected review resolution HTTP and idempotency scenarios
+        run: dotnet run --project backend/tests/Reconciliation.ReviewResolutionHttp.Scenarios/Reconciliation.ReviewResolutionHttp.Scenarios.csproj --configuration Release

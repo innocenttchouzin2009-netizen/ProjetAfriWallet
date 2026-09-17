@@ -1,0 +1,43 @@
+name: AFW-BE-REQUEST-RECONCILIATION-5
+
+on:
+  push:
+    branches:
+      - feature/backend-request-reconciliation-5
+    paths:
+      - 'backend/src/FinancialPlatform/Reconciliation/Reconciliation.Domain/ReviewResolution/**'
+      - 'backend/src/FinancialPlatform/Reconciliation/Reconciliation.Application/Review/Resolution/**'
+      - 'backend/tests/Reconciliation.ReviewResolution.Scenarios/**'
+      - '.github/workflows/backend-request-reconciliation-5.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'backend/src/FinancialPlatform/Reconciliation/Reconciliation.Domain/ReviewResolution/**'
+      - 'backend/src/FinancialPlatform/Reconciliation/Reconciliation.Application/Review/Resolution/**'
+      - 'backend/tests/Reconciliation.ReviewResolution.Scenarios/**'
+      - '.github/workflows/backend-request-reconciliation-5.yml'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Validate review resolution foundation
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build Reconciliation Domain
+        run: dotnet build backend/src/FinancialPlatform/Reconciliation/Reconciliation.Domain/Reconciliation.Domain.csproj --configuration Release --nologo
+
+      - name: Build Reconciliation Application
+        run: dotnet build backend/src/FinancialPlatform/Reconciliation/Reconciliation.Application/Reconciliation.Application.csproj --configuration Release --nologo
+
+      - name: Run review resolution foundation scenarios
+        run: dotnet run --project backend/tests/Reconciliation.ReviewResolution.Scenarios/Reconciliation.ReviewResolution.Scenarios.csproj --configuration Release

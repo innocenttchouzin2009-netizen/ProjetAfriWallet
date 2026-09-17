@@ -8,6 +8,7 @@ on:
       - 'backend/src/Notifications/Notifications.Application/**'
       - 'backend/src/Notifications/Notifications.Domain/**'
       - 'backend/tests/Notifications.Routing.Scenarios/**'
+      - 'backend/tests/Notifications.Push.EventDelivery.Scenarios/**'
       - '.github/workflows/backend-notification-routing-1.yml'
   pull_request:
     branches:
@@ -16,6 +17,7 @@ on:
       - 'backend/src/Notifications/Notifications.Application/**'
       - 'backend/src/Notifications/Notifications.Domain/**'
       - 'backend/tests/Notifications.Routing.Scenarios/**'
+      - 'backend/tests/Notifications.Push.EventDelivery.Scenarios/**'
       - '.github/workflows/backend-notification-routing-1.yml'
   workflow_dispatch:
 
@@ -38,3 +40,6 @@ jobs:
 
       - name: Run preference-aware notification routing scenarios
         run: dotnet run --project backend/tests/Notifications.Routing.Scenarios/Notifications.Routing.Scenarios.csproj --configuration Release
+
+      - name: Run Push delivery preference enforcement scenarios
+        run: dotnet run --project backend/tests/Notifications.Push.EventDelivery.Scenarios/Notifications.Push.EventDelivery.Scenarios.csproj --configuration Release

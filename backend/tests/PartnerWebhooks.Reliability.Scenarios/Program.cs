@@ -27,15 +27,15 @@ var eventId = WebhookEventId.New();
 using var document = JsonDocument.Parse("{\"payment_request_id\":\"abc\"}");
 var webhookEvent = OutboundWebhookEvent.Create(
     eventId,
-    WebhookEventType.Create("payment_request.paid"),
+    WebhookEventType.From("payment_request.paid"),
     new DateTimeOffset(2026, 9, 18, 16, 0, 0, TimeSpan.Zero),
     document.RootElement);
 
 var delivery = new SubscriptionWebhookDelivery(
     subscriptionId,
-    PartnerId.Create("partner-one"),
-    WebhookEndpoint.Create("https://partner.example/webhooks"),
-    WebhookSigningSecretReference.Create("secret-ref"),
+    PartnerId.From("partner-one"),
+    WebhookEndpoint.From("https://partner.example/webhooks"),
+    WebhookSigningSecretReference.From("secret-ref"),
     webhookEvent);
 
 var startedAt = new DateTimeOffset(2026, 9, 18, 16, 1, 0, TimeSpan.Zero);

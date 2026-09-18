@@ -1,0 +1,30 @@
+name: AFW-BE-REQUEST-OUTBOX-RECOVERY-1 Dead-Letter Replay Policy Foundation
+on:
+  push:
+    branches:
+      - feature/backend-request-outbox-recovery-1
+    paths:
+      - 'backend/src/PaymentRequests/PaymentRequests.Application/**'
+      - 'backend/tests/PaymentRequests.EventDeadLetterRecovery.Scenarios/**'
+      - '.github/workflows/backend-request-outbox-recovery-1.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'backend/src/PaymentRequests/PaymentRequests.Application/**'
+      - 'backend/tests/PaymentRequests.EventDeadLetterRecovery.Scenarios/**'
+      - '.github/workflows/backend-request-outbox-recovery-1.yml'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Validate dead-letter recovery contracts and replay policy
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with: { dotnet-version: 10.0.x }
+      - name: Build Payment Requests Application
+        run: dotnet build backend/src/PaymentRequests/PaymentRequests.Application/PaymentRequests.Application.csproj --configuration Release --nologo
+      - name: Run dead-letter recovery policy scenarios
+        run: dotnet run --project backend/tests/PaymentRequests.EventDeadLetterRecovery.Scenarios/PaymentRequests.EventDeadLetterRecovery.Scenarios.csproj --configuration Release

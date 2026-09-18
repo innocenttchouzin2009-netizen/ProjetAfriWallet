@@ -1,5 +1,7 @@
 using AfriWallet.PaymentRequests.Application;
 using AfriWallet.PaymentRequests.Webhooks;
+using AfriWallet.PaymentRequests.WebhookSubscriptions.Persistence;
+using Microsoft.EntityFrameworkCore;
 
 namespace IdentityService.Api.PaymentRequests;
 
@@ -9,49 +11,46 @@ public static class PaymentRequestWebhookHttpComposition
 
     public static IServiceCollection AddPaymentRequestWebhookHttpDelivery(
         this IServiceCollection services,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        string subscriptionsConnectionString)
     {
         ArgumentNullException.ThrowIfNull(configuration);
+        if (string.IsNullOrWhiteSpace(subscriptionsConnectionString))
+            throw new ArgumentException("Webhook subscriptions connection string is required.", nameof(subscriptionsConnectionString));
 
         var enabled = configuration.GetValue<bool?>($"{Prefix}:Enabled") ?? false;
         if (!enabled)
             return services;
 
-        var endpointRaw = configuration[$"{Prefix}:Endpoint"];
-        if (!Uri.TryCreate(endpointRaw, UriKind.Absolute, out var endpoint) ||
-            (endpoint.Scheme != Uri.UriSchemeHttps && endpoint.Scheme != Uri.UriSchemeHttp))
-        {
-            throw new InvalidOperationException(
-                "Enabled payment request webhook delivery requires an absolute HTTP or HTTPS endpoint.");
-        }
+        var receiverKeyId = configuration[$"{Prefix}:ReferenceReceiverKeyId"];
+        var receiverSecret = configuration["AFW_PAYMENT_REQUEST_WEBHOOK_RECEIVER_SECRET"] ??
+                             Environment.GetEnvironmentVariable("AFW_PAYMENT_REQUEST_WEBHOOK_RECEIVER_SECRET") ??
+                             configuration["AFW_PAYMENT_REQUEST_WEBHOOK_SECRET"] ??
+                             Environment.GetEnvironmentVariable("AFW_PAYMENT_REQUEST_WEBHOOK_SECRET");
 
-        var keyId = configuration[$"{Prefix}:KeyId"];
-        var secret = configuration["AFW_PAYMENT_REQUEST_WEBHOOK_SECRET"] ??
-                     Environment.GetEnvironmentVariable("AFW_PAYMENT_REQUEST_WEBHOOK_SECRET");
+        if (string.IsNullOrWhiteSpace(receiverKeyId))
+            throw new InvalidOperationException("Enabled payment request webhook receiver requires ReferenceReceiverKeyId.");
+        if (string.IsNullOrWhiteSpace(receiverSecret))
+            throw new InvalidOperationException("Enabled payment request webhook receiver requires a receiver signing secret.");
 
-        if (string.IsNullOrWhiteSpace(keyId))
-            throw new InvalidOperationException("Enabled payment request webhook delivery requires a key id.");
-        if (string.IsNullOrWhiteSpace(secret))
-            throw new InvalidOperationException(
-                "Enabled payment request webhook delivery requires AFW_PAYMENT_REQUEST_WEBHOOK_SECRET.");
-
-        var nowUtc = DateTimeOffset.UtcNow;
-        var secretProvider = new RotatingPaymentRequestWebhookSecretProvider(
+        var receiverSecretProvider = new RotatingPaymentRequestWebhookSecretProvider(
             new PaymentRequestWebhookSecret(
-                keyId,
-                secret,
+                receiverKeyId,
+                receiverSecret,
                 DateTimeOffset.UnixEpoch));
 
-        services.AddSingleton<IPaymentRequestWebhookSecretProvider>(secretProvider);
-        services.AddSingleton<IPaymentRequestWebhookReplayGuard>(
-            new InMemoryPaymentRequestWebhookReplayGuard());
+        services.AddSingleton<IPaymentRequestWebhookSecretProvider>(receiverSecretProvider);
+        services.AddSingleton<IPaymentRequestWebhookReplayGuard>(new InMemoryPaymentRequestWebhookReplayGuard());
         services.AddSingleton(PaymentRequestWebhookSecurityOptions.Default);
-        services.AddSingleton(new PaymentRequestWebhookHttpDeliveryOptions(endpoint));
-        services.AddSingleton<PaymentRequestWebhookSigner>();
         services.AddSingleton<PaymentRequestWebhookVerifier>();
-        services.AddHttpClient<HttpPaymentRequestEventTransport>();
+
+        services.AddDbContext<PaymentRequestWebhookSubscriptionDbContext>(
+            options => options.UseSqlite(subscriptionsConnectionString));
+        services.AddScoped<IPaymentRequestWebhookSubscriptionRegistry, EfPaymentRequestWebhookSubscriptionRegistry>();
+        services.AddScoped<IPaymentRequestWebhookSigningSecretResolver, EnvironmentPaymentRequestWebhookSigningSecretResolver>();
+        services.AddHttpClient<RegistryBackedHttpPaymentRequestEventTransport>();
         services.AddScoped<IPaymentRequestEventTransport>(sp =>
-            sp.GetRequiredService<HttpPaymentRequestEventTransport>());
+            sp.GetRequiredService<RegistryBackedHttpPaymentRequestEventTransport>());
 
         return services;
     }

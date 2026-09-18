@@ -47,6 +47,7 @@ public sealed class EfWebhookSubscriptionRepository(WebhookManagementDbContext d
         try
         {
             await dbContext.SaveChangesAsync(cancellationToken);
+            dbContext.ChangeTracker.Clear();
         }
         catch (DbUpdateException exception)
         {
@@ -70,5 +71,6 @@ public sealed class EfWebhookSubscriptionRepository(WebhookManagementDbContext d
 
         WebhookSubscriptionEntityMapper.Apply(entity, subscription);
         await dbContext.SaveChangesAsync(cancellationToken);
+        dbContext.ChangeTracker.Clear();
     }
 }

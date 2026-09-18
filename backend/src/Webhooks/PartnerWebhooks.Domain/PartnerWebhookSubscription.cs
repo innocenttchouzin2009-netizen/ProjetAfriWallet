@@ -50,6 +50,44 @@ public sealed class PartnerWebhookSubscription
             createdAtUtc);
     }
 
+    public static PartnerWebhookSubscription Restore(
+        PartnerWebhookSubscriptionId id,
+        PartnerId partnerId,
+        WebhookEndpoint endpoint,
+        WebhookSigningSecretReference signingSecretReference,
+        IEnumerable<WebhookEventType> eventTypes,
+        PartnerWebhookSubscriptionStatus status,
+        DateTimeOffset createdAtUtc,
+        DateTimeOffset updatedAtUtc)
+    {
+        EnsureUtc(createdAtUtc, nameof(createdAtUtc));
+        EnsureUtc(updatedAtUtc, nameof(updatedAtUtc));
+
+        if (!Enum.IsDefined(status))
+        {
+            throw new ArgumentOutOfRangeException(nameof(status));
+        }
+
+        if (updatedAtUtc < createdAtUtc)
+        {
+            throw new ArgumentException("Webhook subscription updated time cannot precede creation time.", nameof(updatedAtUtc));
+        }
+
+        var subscription = new PartnerWebhookSubscription(
+            id,
+            partnerId,
+            endpoint,
+            signingSecretReference,
+            NormalizeEventTypes(eventTypes),
+            createdAtUtc)
+        {
+            Status = status,
+            UpdatedAtUtc = updatedAtUtc
+        };
+
+        return subscription;
+    }
+
     public void UpdateEndpoint(WebhookEndpoint endpoint, DateTimeOffset updatedAtUtc)
     {
         EnsureMutable(updatedAtUtc);

@@ -25,7 +25,13 @@ await using var provider = services.BuildServiceProvider();
 
 var scopeFactory = provider.GetRequiredService<IServiceScopeFactory>();
 var loggerFactory = provider.GetRequiredService<ILoggerFactory>();
-var workerOptions = new PaymentRequestEventDispatchWorkerOptions(10, TimeSpan.FromHours(1));
+var workerOptions = new PaymentRequestEventDispatchWorkerOptions(
+    Enabled: true,
+    BatchSize: 10,
+    PollInterval: TimeSpan.FromHours(1),
+    MaxAttempts: 5,
+    LeaseDuration: TimeSpan.FromMinutes(5),
+    BaseRetryDelay: TimeSpan.FromSeconds(30));
 var worker1 = new PaymentRequestEventOutboxHostedWorker(
     scopeFactory,
     TimeProvider.System,
@@ -57,7 +63,13 @@ var idleLoggerFactory = idleProvider.GetRequiredService<ILoggerFactory>();
 var idleWorker = new PaymentRequestEventOutboxHostedWorker(
     idleProvider.GetRequiredService<IServiceScopeFactory>(),
     TimeProvider.System,
-    new PaymentRequestEventDispatchWorkerOptions(10, TimeSpan.FromMilliseconds(20)),
+    new PaymentRequestEventDispatchWorkerOptions(
+        Enabled: true,
+        BatchSize: 10,
+        PollInterval: TimeSpan.FromMilliseconds(20),
+        MaxAttempts: 5,
+        LeaseDuration: TimeSpan.FromMinutes(5),
+        BaseRetryDelay: TimeSpan.FromSeconds(30)),
     idleLoggerFactory.CreateLogger<PaymentRequestEventOutboxHostedWorker>());
 await idleWorker.StartAsync(CancellationToken.None);
 await Task.Delay(60);

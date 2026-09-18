@@ -5,7 +5,8 @@ public enum PaymentRequestEventOutboxWorkerStatus
     Idle = 1,
     Running = 2,
     Blocked = 3,
-    Faulted = 4
+    Faulted = 4,
+    Disabled = 5
 }
 
 public sealed record PaymentRequestEventOutboxWorkerSnapshot(
@@ -42,6 +43,13 @@ public sealed class PaymentRequestEventOutboxWorkerState
             lock (gate) return snapshot;
         }
     }
+
+    public void MarkDisabled() => Update(current => current with
+    {
+        Status = PaymentRequestEventOutboxWorkerStatus.Disabled,
+        LastDeliveredCount = 0,
+        LastError = null
+    });
 
     public void MarkTransportUnavailable(string error) => Update(current => current with
     {

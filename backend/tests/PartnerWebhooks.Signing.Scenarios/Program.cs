@@ -70,7 +70,7 @@ var secondBody = serializer.Serialize(secondEvent);
 
 Assert(firstBody == secondBody, "Equivalent payloads with different object property order must serialize identically.");
 Assert(firstBody ==
-    """{"eventId":"11111111-2222-3333-4444-555555555555","type":"payment.succeeded","occurredAtUtc":"2026-09-18T12:30:00.0000000+00:00","payload":{"a":"first","customer":{"id":"cust-1","name":"Ada"},"items":[{"a":1,"b":2},true],"z":9}}""",
+    """{"eventId":"11111111-2222-3333-4444-555555555555","type":"payment.succeeded","occurredAtUtc":"2026-09-18T12:30:00.0000000Z","payload":{"a":"first","customer":{"id":"cust-1","name":"Ada"},"items":[{"a":1,"b":2},true],"z":9}}""",
     "Canonical event body does not match the locked wire representation.");
 
 var resolver = new RecordingSecretResolver("super-secret-key");

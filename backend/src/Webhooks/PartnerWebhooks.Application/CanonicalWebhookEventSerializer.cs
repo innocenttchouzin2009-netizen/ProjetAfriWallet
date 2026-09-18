@@ -21,7 +21,7 @@ public sealed class CanonicalWebhookEventSerializer : IWebhookEventSerializer
             writer.WriteStartObject();
             writer.WriteString("eventId", webhookEvent.EventId.Value.ToString("D"));
             writer.WriteString("type", webhookEvent.EventType.Value);
-            writer.WriteString("occurredAtUtc", webhookEvent.OccurredAtUtc.ToString("O"));
+            writer.WriteString("occurredAtUtc", webhookEvent.OccurredAtUtc.ToString("yyyy-MM-dd'T'HH:mm:ss.fffffff'Z'"));
             writer.WritePropertyName("payload");
             WriteCanonicalJson(writer, webhookEvent.Payload);
             writer.WriteEndObject();

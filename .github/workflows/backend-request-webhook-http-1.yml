@@ -42,6 +42,9 @@ jobs:
       - name: Build Payment Request Webhooks
         run: dotnet build backend/src/PaymentRequests/PaymentRequests.Webhooks/PaymentRequests.Webhooks.csproj --configuration Release --nologo
 
+      - name: Run Commit 7 webhook security scenarios
+        run: dotnet run --project backend/tests/PaymentRequests.WebhookSecurity.Scenarios/PaymentRequests.WebhookSecurity.Scenarios.csproj --configuration Release
+
       - name: Build IdentityService host composition
         run: dotnet build backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj --configuration Release --nologo
 

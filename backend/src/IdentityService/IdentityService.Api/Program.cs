@@ -103,6 +103,7 @@ builder.Services.AddInternalTransferModule(builder.Configuration);
 builder.Services.AddP2PCore();
 builder.Services.AddAuthoritativeP2PRecipientDirectory(recipientDirectoryConnectionString);
 builder.Services.AddPaymentRequests(paymentRequestsConnectionString);
+builder.Services.AddPaymentRequestWebhookDelivery(builder.Configuration);
 builder.Services.AddPaymentRequestOutboxHosting(builder.Configuration);
 
 builder.Services

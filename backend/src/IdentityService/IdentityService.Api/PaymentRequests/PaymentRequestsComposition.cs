@@ -1,5 +1,6 @@
 using AfriWallet.PaymentRequests.Application;
 using AfriWallet.PaymentRequests.Persistence;
+using AfriWallet.PaymentRequests.Webhooks.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -24,6 +25,49 @@ public static class PaymentRequestsComposition
         services.AddScoped<IPaymentRequestOutboxStore, EfPaymentRequestOutboxStore>();
         services.AddScoped<PaymentRequestApplicationService>();
         services.AddScoped<PaymentRequestActionService>();
+        return services;
+    }
+
+    public static IServiceCollection AddPaymentRequestWebhookDelivery(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        ArgumentNullException.ThrowIfNull(configuration);
+
+        var section = configuration.GetSection("PaymentRequests:Webhook");
+        var enabled = section.GetValue<bool?>("Enabled") ?? false;
+        if (!enabled)
+        {
+            return services;
+        }
+
+        var endpointValue = section["Endpoint"] ??
+            Environment.GetEnvironmentVariable("AFW_PAYMENT_REQUEST_WEBHOOK_ENDPOINT");
+        var signingSecret = section["SigningSecret"] ??
+            Environment.GetEnvironmentVariable("AFW_PAYMENT_REQUEST_WEBHOOK_SIGNING_SECRET");
+
+        if (!Uri.TryCreate(endpointValue, UriKind.Absolute, out var endpoint))
+        {
+            throw new InvalidOperationException("Payment request webhook endpoint is not configured as an absolute URI.");
+        }
+
+        if (string.IsNullOrWhiteSpace(signingSecret))
+        {
+            throw new InvalidOperationException("Payment request webhook signing secret is not configured.");
+        }
+
+        var options = new PaymentRequestWebhookTransportOptions(
+            endpoint,
+            section["SignatureHeaderName"] ?? "X-AfWal-Signature",
+            section["IdempotencyHeaderName"] ?? "Idempotency-Key",
+            section["EventTypeHeaderName"] ?? "X-AfWal-Event",
+            section["MessageIdHeaderName"] ?? "X-AfWal-Message-Id");
+        options.Validate();
+
+        services.AddSingleton(options);
+        services.AddSingleton<IPaymentRequestWebhookSigner>(
+            new HmacSha256PaymentRequestWebhookSigner(signingSecret));
+        services.AddHttpClient<IPaymentRequestOutboxTransport, HttpPaymentRequestOutboxTransport>();
         return services;
     }
 

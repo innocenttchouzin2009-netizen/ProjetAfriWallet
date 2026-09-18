@@ -8,6 +8,7 @@ on:
       - 'backend/src/Webhooks/**'
       - 'backend/tests/PartnerWebhooks.Domain.Scenarios/**'
       - 'backend/tests/PartnerWebhooks.Application.Scenarios/**'
+      - 'backend/tests/PartnerWebhooks.Persistence.Scenarios/**'
       - '.github/workflows/backend-webhook-1.yml'
   pull_request:
     branches:
@@ -16,6 +17,7 @@ on:
       - 'backend/src/Webhooks/**'
       - 'backend/tests/PartnerWebhooks.Domain.Scenarios/**'
       - 'backend/tests/PartnerWebhooks.Application.Scenarios/**'
+      - 'backend/tests/PartnerWebhooks.Persistence.Scenarios/**'
       - '.github/workflows/backend-webhook-1.yml'
   workflow_dispatch:
 
@@ -44,3 +46,9 @@ jobs:
 
       - name: Run partner webhook application scenarios
         run: dotnet run --project backend/tests/PartnerWebhooks.Application.Scenarios/PartnerWebhooks.Application.Scenarios.csproj --configuration Release
+
+      - name: Build Partner Webhooks Persistence
+        run: dotnet build backend/src/Webhooks/PartnerWebhooks.Persistence/PartnerWebhooks.Persistence.csproj --configuration Release --nologo
+
+      - name: Run partner webhook persistence scenarios
+        run: dotnet run --project backend/tests/PartnerWebhooks.Persistence.Scenarios/PartnerWebhooks.Persistence.Scenarios.csproj --configuration Release

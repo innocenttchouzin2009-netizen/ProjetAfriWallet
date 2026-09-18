@@ -116,6 +116,8 @@ public sealed class PaymentRequestWebhookSubscription
     {
         EnsureUtc(atUtc, nameof(atUtc));
         if (atUtc < UpdatedAtUtc) throw new ArgumentException("Subscription timestamp cannot move backwards.", nameof(atUtc));
+        if (Status == PaymentRequestWebhookSubscriptionStatus.Disabled)
+            throw new InvalidOperationException("Webhook subscription is already disabled.");
         Status = PaymentRequestWebhookSubscriptionStatus.Disabled;
         UpdatedAtUtc = atUtc;
     }
@@ -124,6 +126,8 @@ public sealed class PaymentRequestWebhookSubscription
     {
         EnsureUtc(atUtc, nameof(atUtc));
         if (atUtc < UpdatedAtUtc) throw new ArgumentException("Subscription timestamp cannot move backwards.", nameof(atUtc));
+        if (Status == PaymentRequestWebhookSubscriptionStatus.Active)
+            throw new InvalidOperationException("Webhook subscription is already active.");
         Status = PaymentRequestWebhookSubscriptionStatus.Active;
         UpdatedAtUtc = atUtc;
     }

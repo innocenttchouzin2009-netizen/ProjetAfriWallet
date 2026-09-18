@@ -11,4 +11,8 @@ public interface IReconciliationCorrectiveActionRepository
     Task AddAsync(
         ReconciliationCorrectiveAction action,
         CancellationToken cancellationToken = default);
+
+    Task UpdateAsync(
+        ReconciliationCorrectiveAction action,
+        CancellationToken cancellationToken = default);
 }

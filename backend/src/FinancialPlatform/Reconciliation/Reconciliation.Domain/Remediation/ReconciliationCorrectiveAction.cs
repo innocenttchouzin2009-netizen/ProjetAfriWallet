@@ -63,21 +63,7 @@ public sealed class ReconciliationCorrectiveAction
         string createdBy,
         DateTime createdAtUtc)
     {
-        if (resolutionId == Guid.Empty)
-            throw new ArgumentException("Resolution id is required.", nameof(resolutionId));
-        if (reviewId == Guid.Empty)
-            throw new ArgumentException("Review id is required.", nameof(reviewId));
-        if (string.IsNullOrWhiteSpace(partnerId))
-            throw new ArgumentException("Partner id is required.", nameof(partnerId));
-        if (string.IsNullOrWhiteSpace(internalRecordId) && string.IsNullOrWhiteSpace(externalRecordId))
-            throw new ArgumentException("At least one reconciliation record id is required.");
-        if (string.IsNullOrWhiteSpace(description))
-            throw new ArgumentException("Corrective action description is required.", nameof(description));
-        if (description.Trim().Length > 500)
-            throw new ArgumentOutOfRangeException(nameof(description), "Corrective action description cannot exceed 500 characters.");
-        if (string.IsNullOrWhiteSpace(createdBy))
-            throw new ArgumentException("Corrective action creator id is required.", nameof(createdBy));
-        EnsureUtc(createdAtUtc, nameof(createdAtUtc));
+        ValidateIdentity(resolutionId, reviewId, partnerId, internalRecordId, externalRecordId, description, createdBy, createdAtUtc);
 
         return new ReconciliationCorrectiveAction(
             Guid.NewGuid(),
@@ -90,6 +76,77 @@ public sealed class ReconciliationCorrectiveAction
             description.Trim(),
             createdBy.Trim(),
             createdAtUtc);
+    }
+
+    public static ReconciliationCorrectiveAction Restore(
+        Guid actionId,
+        Guid resolutionId,
+        Guid reviewId,
+        string partnerId,
+        string? internalRecordId,
+        string? externalRecordId,
+        string actionCode,
+        string description,
+        string createdBy,
+        DateTime createdAtUtc,
+        ReconciliationCorrectiveActionStatus status,
+        string? completedBy,
+        string? completionEvidenceReference,
+        DateTime? completedAtUtc,
+        string? cancelledBy,
+        string? cancellationReason,
+        DateTime? cancelledAtUtc)
+    {
+        if (actionId == Guid.Empty)
+            throw new ArgumentException("Corrective action id is required.", nameof(actionId));
+
+        ValidateIdentity(resolutionId, reviewId, partnerId, internalRecordId, externalRecordId, description, createdBy, createdAtUtc);
+
+        var action = new ReconciliationCorrectiveAction(
+            actionId,
+            resolutionId,
+            reviewId,
+            partnerId.Trim(),
+            Normalize(internalRecordId),
+            Normalize(externalRecordId),
+            NormalizeActionCode(actionCode),
+            description.Trim(),
+            createdBy.Trim(),
+            createdAtUtc);
+
+        switch (status)
+        {
+            case ReconciliationCorrectiveActionStatus.Pending:
+                if (completedBy is not null || completionEvidenceReference is not null || completedAtUtc is not null ||
+                    cancelledBy is not null || cancellationReason is not null || cancelledAtUtc is not null)
+                    throw new InvalidOperationException("Pending corrective action cannot contain terminal lifecycle evidence.");
+                break;
+
+            case ReconciliationCorrectiveActionStatus.Completed:
+                if (string.IsNullOrWhiteSpace(completedBy) ||
+                    string.IsNullOrWhiteSpace(completionEvidenceReference) ||
+                    completedAtUtc is null)
+                    throw new InvalidOperationException("Completed corrective action requires completion actor, evidence and timestamp.");
+                if (cancelledBy is not null || cancellationReason is not null || cancelledAtUtc is not null)
+                    throw new InvalidOperationException("Completed corrective action cannot contain cancellation evidence.");
+                action.Complete(completedBy, completionEvidenceReference, EnsureUtcValue(completedAtUtc.Value, nameof(completedAtUtc)));
+                break;
+
+            case ReconciliationCorrectiveActionStatus.Cancelled:
+                if (string.IsNullOrWhiteSpace(cancelledBy) ||
+                    string.IsNullOrWhiteSpace(cancellationReason) ||
+                    cancelledAtUtc is null)
+                    throw new InvalidOperationException("Cancelled corrective action requires cancellation actor, reason and timestamp.");
+                if (completedBy is not null || completionEvidenceReference is not null || completedAtUtc is not null)
+                    throw new InvalidOperationException("Cancelled corrective action cannot contain completion evidence.");
+                action.Cancel(cancelledBy, cancellationReason, EnsureUtcValue(cancelledAtUtc.Value, nameof(cancelledAtUtc)));
+                break;
+
+            default:
+                throw new ArgumentOutOfRangeException(nameof(status), status, "Unsupported corrective action status.");
+        }
+
+        return action;
     }
 
     public void Complete(string completedBy, string evidenceReference, DateTime completedAtUtc)
@@ -122,6 +179,33 @@ public sealed class ReconciliationCorrectiveAction
         CancelledAtUtc = cancelledAtUtc;
     }
 
+    private static void ValidateIdentity(
+        Guid resolutionId,
+        Guid reviewId,
+        string partnerId,
+        string? internalRecordId,
+        string? externalRecordId,
+        string description,
+        string createdBy,
+        DateTime createdAtUtc)
+    {
+        if (resolutionId == Guid.Empty)
+            throw new ArgumentException("Resolution id is required.", nameof(resolutionId));
+        if (reviewId == Guid.Empty)
+            throw new ArgumentException("Review id is required.", nameof(reviewId));
+        if (string.IsNullOrWhiteSpace(partnerId))
+            throw new ArgumentException("Partner id is required.", nameof(partnerId));
+        if (string.IsNullOrWhiteSpace(internalRecordId) && string.IsNullOrWhiteSpace(externalRecordId))
+            throw new ArgumentException("At least one reconciliation record id is required.");
+        if (string.IsNullOrWhiteSpace(description))
+            throw new ArgumentException("Corrective action description is required.", nameof(description));
+        if (description.Trim().Length > 500)
+            throw new ArgumentOutOfRangeException(nameof(description), "Corrective action description cannot exceed 500 characters.");
+        if (string.IsNullOrWhiteSpace(createdBy))
+            throw new ArgumentException("Corrective action creator id is required.", nameof(createdBy));
+        EnsureUtc(createdAtUtc, nameof(createdAtUtc));
+    }
+
     private void EnsurePending()
     {
         if (Status != ReconciliationCorrectiveActionStatus.Pending)
@@ -152,6 +236,12 @@ public sealed class ReconciliationCorrectiveAction
 
     private static string? Normalize(string? value) =>
         string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
+    private static DateTime EnsureUtcValue(DateTime value, string parameterName)
+    {
+        EnsureUtc(value, parameterName);
+        return value;
+    }
 
     private static void EnsureUtc(DateTime value, string parameterName)
     {

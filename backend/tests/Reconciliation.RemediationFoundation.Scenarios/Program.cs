@@ -220,6 +220,15 @@ sealed class InMemoryCorrectiveActionRepository : IReconciliationCorrectiveActio
         AddCalls++;
         return Task.CompletedTask;
     }
+
+    public Task UpdateAsync(
+        ReconciliationCorrectiveAction action,
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        byResolutionId[action.ResolutionId] = action;
+        return Task.CompletedTask;
+    }
 }
 
 sealed class InMemoryResolutionRepository(params ReconciliationResolution[] values) : IReconciliationResolutionRepository

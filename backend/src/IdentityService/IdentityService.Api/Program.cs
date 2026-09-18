@@ -60,6 +60,10 @@ var paymentRequestsConnectionString = builder.Configuration.GetConnectionString(
     Environment.GetEnvironmentVariable("AFW_PAYMENT_REQUESTS_DB_CONNECTION_STRING") ??
     "Data Source=payment-requests.db";
 
+var webhookSubscriptionsConnectionString = builder.Configuration.GetConnectionString("PaymentRequestWebhookSubscriptionsDatabase") ??
+    Environment.GetEnvironmentVariable("AFW_PAYMENT_REQUEST_WEBHOOK_SUBSCRIPTIONS_DB_CONNECTION_STRING") ??
+    "Data Source=payment-request-webhook-subscriptions.db";
+
 var notificationsConnectionString = builder.Configuration.GetConnectionString("NotificationsDatabase") ??
     Environment.GetEnvironmentVariable("AFW_NOTIFICATIONS_DB_CONNECTION_STRING") ??
     "Data Source=notifications-inbox.db";
@@ -116,6 +120,7 @@ builder.Services.AddInternalTransferModule(builder.Configuration);
 builder.Services.AddP2PCore();
 builder.Services.AddAuthoritativeP2PRecipientDirectory(recipientDirectoryConnectionString);
 builder.Services.AddPaymentRequests(paymentRequestsConnectionString, builder.Configuration);
+builder.Services.AddPaymentRequestWebhookSubscriptionReconfiguration(webhookSubscriptionsConnectionString);
 builder.Services.AddInAppNotifications(notificationsConnectionString);
 builder.Services.AddPushDeviceRegistration(pushDevicesConnectionString);
 builder.Services.AddNotificationPreferences(notificationPreferencesConnectionString);
@@ -222,6 +227,7 @@ app.MapPaymentRequestEndpoints();
 app.MapPaymentRequestReconciliationEndpoints();
 app.MapPaymentRequestInboxOutboxEndpoints();
 app.MapPaymentRequestEventOutboxOperationalEndpoints();
+app.MapPaymentRequestWebhookSubscriptionReconfigurationEndpoints();
 app.MapNotificationEndpoints();
 app.MapPushDeviceEndpoints();
 app.MapNotificationPreferenceEndpoints();

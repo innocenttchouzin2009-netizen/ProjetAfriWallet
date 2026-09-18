@@ -174,7 +174,7 @@ public sealed class ReliableSubscriptionWebhookDeliveryService(
                 ? WebhookDeliveryAttemptOutcome.TransientFailure
                 : WebhookDeliveryAttemptOutcome.PermanentFailure;
 
-            var nextRetryAtUtc = kind == WebhookDeliveryFailureKind.Transient
+            DateTimeOffset? nextRetryAtUtc = kind == WebhookDeliveryFailureKind.Transient
                 ? completedAtUtc.Add(backoffPolicy.GetDelay(attemptNumber))
                 : null;
 

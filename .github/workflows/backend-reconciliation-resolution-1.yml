@@ -8,8 +8,12 @@ on:
       - 'backend/src/FinancialPlatform/Reconciliation/Reconciliation.Domain/Resolutions/**'
       - 'backend/src/FinancialPlatform/Reconciliation/Reconciliation.Application/Resolution/**'
       - 'backend/src/FinancialPlatform/Reconciliation/Reconciliation.Infrastructure/Resolutions/**'
+      - 'backend/src/FinancialPlatform/Reconciliation/Reconciliation.Api/Resolution/**'
+      - 'backend/src/FinancialPlatform/Reconciliation/Reconciliation.Api/Program.cs'
+      - 'backend/src/FinancialPlatform/Reconciliation/Reconciliation.Api/appsettings.json'
       - 'backend/tests/Reconciliation.ResolutionFoundation.Scenarios/**'
       - 'backend/tests/Reconciliation.ResolutionPersistence.Scenarios/**'
+      - 'backend/tests/Reconciliation.Resolution.Http.Scenarios/**'
       - '.github/workflows/backend-reconciliation-resolution-1.yml'
   pull_request:
     branches:
@@ -18,8 +22,12 @@ on:
       - 'backend/src/FinancialPlatform/Reconciliation/Reconciliation.Domain/Resolutions/**'
       - 'backend/src/FinancialPlatform/Reconciliation/Reconciliation.Application/Resolution/**'
       - 'backend/src/FinancialPlatform/Reconciliation/Reconciliation.Infrastructure/Resolutions/**'
+      - 'backend/src/FinancialPlatform/Reconciliation/Reconciliation.Api/Resolution/**'
+      - 'backend/src/FinancialPlatform/Reconciliation/Reconciliation.Api/Program.cs'
+      - 'backend/src/FinancialPlatform/Reconciliation/Reconciliation.Api/appsettings.json'
       - 'backend/tests/Reconciliation.ResolutionFoundation.Scenarios/**'
       - 'backend/tests/Reconciliation.ResolutionPersistence.Scenarios/**'
+      - 'backend/tests/Reconciliation.Resolution.Http.Scenarios/**'
       - '.github/workflows/backend-reconciliation-resolution-1.yml'
   workflow_dispatch:
 
@@ -51,6 +59,12 @@ jobs:
 
       - name: Run durable reconciliation resolution persistence and audit scenarios
         run: dotnet run --project backend/tests/Reconciliation.ResolutionPersistence.Scenarios/Reconciliation.ResolutionPersistence.Scenarios.csproj --configuration Release
+
+      - name: Build Reconciliation API with resolution wiring
+        run: dotnet build backend/src/FinancialPlatform/Reconciliation/Reconciliation.Api/Reconciliation.Api.csproj --configuration Release --nologo
+
+      - name: Run protected reconciliation resolution HTTP scenarios
+        run: dotnet run --project backend/tests/Reconciliation.Resolution.Http.Scenarios/Reconciliation.Resolution.Http.Scenarios.csproj --configuration Release
 
       - name: Run existing reconciliation review queue scenarios
         run: dotnet run --project backend/tests/Reconciliation.ReviewQueue.Scenarios/Reconciliation.ReviewQueue.Scenarios.csproj --configuration Release

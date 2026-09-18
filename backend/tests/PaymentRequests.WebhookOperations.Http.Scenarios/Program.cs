@@ -147,6 +147,8 @@ sealed class OperationsFixture : IAsyncDisposable
         builder.Services.AddAuthorization();
         builder.Services.AddSingleton<IPaymentRequestWebhookSubscriptionRegistry>(registry);
         builder.Services.AddSingleton<IPaymentRequestWebhookSubscriptionAuditStore>(audit);
+        builder.Services.AddSingleton<IPaymentRequestWebhookDeliveryAttemptStore>(
+            new InMemoryDeliveryAttemptStore());
         builder.Services.AddSingleton<IPaymentRequestWebhookSigningSecretResolver>(
             new FixedSecretResolver(rawSecret));
         builder.Services.AddSingleton<IPaymentRequestWebhookConnectivityProbe>(
@@ -266,5 +268,63 @@ sealed class HeaderAuthHandler(
         var identity = new ClaimsIdentity(claims, Scheme.Name);
         return Task.FromResult(AuthenticateResult.Success(
             new AuthenticationTicket(new ClaimsPrincipal(identity), Scheme.Name)));
+    }
+}
+
+
+sealed class InMemoryDeliveryAttemptStore : IPaymentRequestWebhookDeliveryAttemptStore
+{
+    private readonly List<PaymentRequestWebhookDeliveryAttempt> values = [];
+
+    public Task AppendAsync(
+        PaymentRequestWebhookDeliveryAttempt attempt,
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        values.Add(attempt);
+        return Task.CompletedTask;
+    }
+
+    public Task<IReadOnlyList<PaymentRequestWebhookDeliveryAttempt>> ListAsync(
+        Guid subscriptionId,
+        int limit = 100,
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        return Task.FromResult<IReadOnlyList<PaymentRequestWebhookDeliveryAttempt>>(
+            values.Where(x => x.SubscriptionId == subscriptionId)
+                .OrderByDescending(x => x.CompletedAtUtc)
+                .Take(limit)
+                .ToArray());
+    }
+
+    public Task<PaymentRequestWebhookDeliveryReliabilityMetrics> GetMetricsAsync(
+        Guid subscriptionId,
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var attempts = values.Where(x => x.SubscriptionId == subscriptionId).ToArray();
+        if (attempts.Length == 0)
+            return Task.FromResult(PaymentRequestWebhookDeliveryReliabilityMetrics.Empty(subscriptionId));
+
+        var successful = attempts.Count(x => x.Outcome == PaymentRequestWebhookDeliveryAttemptOutcome.Success);
+        var transient = attempts.Count(x => x.Outcome == PaymentRequestWebhookDeliveryAttemptOutcome.TransientFailure);
+        var permanent = attempts.Count(x => x.Outcome == PaymentRequestWebhookDeliveryAttemptOutcome.PermanentFailure);
+        var failures = transient + permanent;
+        var lastSuccess = attempts
+            .Where(x => x.Outcome == PaymentRequestWebhookDeliveryAttemptOutcome.Success)
+            .OrderByDescending(x => x.CompletedAtUtc)
+            .FirstOrDefault();
+
+        return Task.FromResult(new PaymentRequestWebhookDeliveryReliabilityMetrics(
+            subscriptionId,
+            attempts.Length,
+            successful,
+            transient,
+            permanent,
+            (decimal)failures / attempts.Length,
+            attempts.Max(x => x.CompletedAtUtc),
+            lastSuccess?.CompletedAtUtc,
+            attempts.Average(x => (double)x.LatencyMilliseconds)));
     }
 }

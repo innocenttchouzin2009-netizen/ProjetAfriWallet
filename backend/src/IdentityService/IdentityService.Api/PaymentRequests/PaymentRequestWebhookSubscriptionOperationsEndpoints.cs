@@ -144,6 +144,7 @@ public static class PaymentRequestWebhookSubscriptionOperationsEndpoints
         ClaimsPrincipal principal,
         IPaymentRequestWebhookSubscriptionRegistry registry,
         IPaymentRequestWebhookSubscriptionAuditStore auditStore,
+        IPaymentRequestWebhookDeliveryAttemptStore attemptStore,
         HttpContext httpContext,
         CancellationToken cancellationToken)
     {
@@ -152,6 +153,7 @@ public static class PaymentRequestWebhookSubscriptionOperationsEndpoints
         if (subscription is null) return NotFound(httpContext);
 
         var audit = await auditStore.ListAsync(subscription.Id, cancellationToken);
+        var metrics = await attemptStore.GetMetricsAsync(subscription.Id, cancellationToken);
         var lastProbe = audit.FirstOrDefault(x =>
             x.Operation == PaymentRequestWebhookSubscriptionAuditOperation.ConnectivityTested);
 
@@ -167,6 +169,14 @@ public static class PaymentRequestWebhookSubscriptionOperationsEndpoints
             lastProbe?.OccurredAtUtc,
             lastProbe?.Succeeded,
             lastProbe?.HttpStatusCode,
+            metrics.AttemptCount,
+            metrics.SuccessfulAttemptCount,
+            metrics.TransientFailureCount,
+            metrics.PermanentFailureCount,
+            metrics.FailureRate,
+            metrics.LastAttemptAtUtc,
+            metrics.LastSuccessfulDeliveryAtUtc,
+            metrics.AverageLatencyMilliseconds,
             health));
     }
 

@@ -7,6 +7,7 @@ public sealed class PaymentRequestWebhookSubscriptionDbContext(
 {
     public DbSet<PaymentRequestWebhookSubscriptionEntity> Subscriptions => Set<PaymentRequestWebhookSubscriptionEntity>();
     public DbSet<PaymentRequestWebhookSubscriptionAuditEntity> AuditEntries => Set<PaymentRequestWebhookSubscriptionAuditEntity>();
+    public DbSet<PaymentRequestWebhookDeliveryAttemptEntity> DeliveryAttempts => Set<PaymentRequestWebhookDeliveryAttemptEntity>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -38,6 +39,18 @@ public sealed class PaymentRequestWebhookSubscriptionDbContext(
         audit.Property(x => x.Detail).HasMaxLength(512);
         audit.Property(x => x.OccurredAtUtc).HasMaxLength(64).IsRequired();
         audit.HasIndex(x => new { x.SubscriptionId, x.OccurredAtUtc });
+
+        var deliveryAttempt = modelBuilder.Entity<PaymentRequestWebhookDeliveryAttemptEntity>();
+        deliveryAttempt.ToTable("PaymentRequestWebhookDeliveryAttempts");
+        deliveryAttempt.HasKey(x => x.Id);
+        deliveryAttempt.Property(x => x.SubscriptionId).IsRequired();
+        deliveryAttempt.Property(x => x.EventId).IsRequired();
+        deliveryAttempt.Property(x => x.Outcome).IsRequired();
+        deliveryAttempt.Property(x => x.LatencyMilliseconds).IsRequired();
+        deliveryAttempt.Property(x => x.StartedAtUtc).HasMaxLength(64).IsRequired();
+        deliveryAttempt.Property(x => x.CompletedAtUtc).HasMaxLength(64).IsRequired();
+        deliveryAttempt.HasIndex(x => new { x.SubscriptionId, x.CompletedAtUtc });
+        deliveryAttempt.HasIndex(x => x.EventId);
     }
 }
 
@@ -70,4 +83,17 @@ public sealed class PaymentRequestWebhookSubscriptionAuditEntity
     public int? HttpStatusCode { get; set; }
     public string? Detail { get; set; }
     public string OccurredAtUtc { get; set; } = string.Empty;
+}
+
+
+public sealed class PaymentRequestWebhookDeliveryAttemptEntity
+{
+    public Guid Id { get; set; }
+    public Guid SubscriptionId { get; set; }
+    public Guid EventId { get; set; }
+    public int Outcome { get; set; }
+    public int? HttpStatusCode { get; set; }
+    public long LatencyMilliseconds { get; set; }
+    public string StartedAtUtc { get; set; } = string.Empty;
+    public string CompletedAtUtc { get; set; } = string.Empty;
 }

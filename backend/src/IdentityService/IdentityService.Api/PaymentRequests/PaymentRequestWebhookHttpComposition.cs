@@ -22,6 +22,7 @@ public static class PaymentRequestWebhookHttpComposition
             options => options.UseSqlite(subscriptionsConnectionString));
         services.AddScoped<IPaymentRequestWebhookSubscriptionRegistry, EfPaymentRequestWebhookSubscriptionRegistry>();
         services.AddScoped<IPaymentRequestWebhookSubscriptionAuditStore, EfPaymentRequestWebhookSubscriptionAuditStore>();
+        services.AddScoped<IPaymentRequestWebhookDeliveryAttemptStore, EfPaymentRequestWebhookDeliveryAttemptStore>();
         services.AddScoped<IPaymentRequestWebhookSigningSecretResolver, EnvironmentPaymentRequestWebhookSigningSecretResolver>();
         services.AddHttpClient<HttpPaymentRequestWebhookConnectivityProbe>();
         services.AddScoped<IPaymentRequestWebhookConnectivityProbe>(sp =>

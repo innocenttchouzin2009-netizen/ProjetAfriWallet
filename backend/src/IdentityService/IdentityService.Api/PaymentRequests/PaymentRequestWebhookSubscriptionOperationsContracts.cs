@@ -35,4 +35,12 @@ public sealed record PaymentRequestWebhookDeliveryHealthResponse(
     DateTimeOffset? LastConnectivityTestAtUtc,
     bool? LastConnectivitySucceeded,
     int? LastConnectivityHttpStatusCode,
+    int DeliveryAttemptCount,
+    int SuccessfulDeliveryCount,
+    int TransientFailureCount,
+    int PermanentFailureCount,
+    decimal FailureRate,
+    DateTimeOffset? LastDeliveryAttemptAtUtc,
+    DateTimeOffset? LastSuccessfulDeliveryAtUtc,
+    double? AverageDeliveryLatencyMilliseconds,
     string Health);

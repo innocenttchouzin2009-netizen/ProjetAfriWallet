@@ -9,6 +9,7 @@ public sealed class RegistryBackedHttpPaymentRequestEventTransport(
     HttpClient httpClient,
     IPaymentRequestWebhookSubscriptionRegistry registry,
     IPaymentRequestWebhookSigningSecretResolver secretResolver,
+    IPaymentRequestWebhookDeliveryAttemptStore attemptStore,
     TimeProvider timeProvider)
     : IPaymentRequestEventTransport
 {
@@ -75,6 +76,11 @@ public sealed class RegistryBackedHttpPaymentRequestEventTransport(
         var digest = PaymentRequestWebhookCryptography.ComputeSignature(
             body, eventId, timestamp, destination.KeyId, secret);
 
+        var startedAtUtc = timeProvider.GetUtcNow();
+        var startedTimestamp = timeProvider.GetTimestamp();
+        var outcome = PaymentRequestWebhookDeliveryAttemptOutcome.TransientFailure;
+        int? httpStatusCode = null;
+
         try
         {
             using var request = new HttpRequestMessage(HttpMethod.Post, destination.Endpoint);
@@ -90,18 +96,30 @@ public sealed class RegistryBackedHttpPaymentRequestEventTransport(
             request.Headers.TryAddWithoutValidation("X-AfWal-Integration-Id", destination.IntegrationId);
 
             using var response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
-            var statusCode = (int)response.StatusCode;
-            if (statusCode is >= 200 and <= 299) return;
-            if (statusCode is >= 400 and <= 499)
+            httpStatusCode = (int)response.StatusCode;
+
+            if (httpStatusCode is >= 200 and <= 299)
+            {
+                outcome = PaymentRequestWebhookDeliveryAttemptOutcome.Success;
+                return;
+            }
+
+            if (httpStatusCode is >= 400 and <= 499)
+            {
+                outcome = PaymentRequestWebhookDeliveryAttemptOutcome.PermanentFailure;
                 throw new PaymentRequestEventTransportException(
                     PaymentRequestEventTransportFailureKind.Permanent,
-                    $"Webhook receiver rejected event with HTTP {statusCode}.");
+                    $"Webhook receiver rejected event with HTTP {httpStatusCode}.");
+            }
+
+            outcome = PaymentRequestWebhookDeliveryAttemptOutcome.TransientFailure;
             throw new PaymentRequestEventTransportException(
                 PaymentRequestEventTransportFailureKind.Transient,
-                $"Webhook receiver failed with HTTP {statusCode}.");
+                $"Webhook receiver failed with HTTP {httpStatusCode}.");
         }
         catch (TaskCanceledException exception)
         {
+            outcome = PaymentRequestWebhookDeliveryAttemptOutcome.TransientFailure;
             throw new PaymentRequestEventTransportException(
                 PaymentRequestEventTransportFailureKind.Transient,
                 "Webhook HTTP delivery timed out.",
@@ -109,6 +127,7 @@ public sealed class RegistryBackedHttpPaymentRequestEventTransport(
         }
         catch (HttpRequestException exception)
         {
+            outcome = PaymentRequestWebhookDeliveryAttemptOutcome.TransientFailure;
             throw new PaymentRequestEventTransportException(
                 PaymentRequestEventTransportFailureKind.Transient,
                 "Webhook HTTP delivery failed before a receiver response was obtained.",
@@ -116,7 +135,38 @@ public sealed class RegistryBackedHttpPaymentRequestEventTransport(
         }
         finally
         {
-            CryptographicOperations.ZeroMemory(digest);
+            try
+            {
+                var completedAtUtc = timeProvider.GetUtcNow();
+                var latency = timeProvider.GetElapsedTime(startedTimestamp);
+                var latencyMilliseconds = Math.Max(0L, (long)Math.Ceiling(latency.TotalMilliseconds));
+
+                await attemptStore.AppendAsync(
+                    PaymentRequestWebhookDeliveryAttempt.Create(
+                        destination.Id,
+                        eventId,
+                        outcome,
+                        httpStatusCode,
+                        latencyMilliseconds,
+                        startedAtUtc,
+                        completedAtUtc),
+                    CancellationToken.None);
+            }
+            catch (PaymentRequestEventTransportException)
+            {
+                throw;
+            }
+            catch (Exception exception)
+            {
+                throw new PaymentRequestEventTransportException(
+                    PaymentRequestEventTransportFailureKind.Transient,
+                    "Webhook delivery attempt could not be recorded.",
+                    exception);
+            }
+            finally
+            {
+                CryptographicOperations.ZeroMemory(digest);
+            }
         }
     }
 }

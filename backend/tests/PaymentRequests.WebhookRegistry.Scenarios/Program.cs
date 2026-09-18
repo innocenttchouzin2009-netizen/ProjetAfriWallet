@@ -72,6 +72,7 @@ try
         new HttpClient(handler),
         registry,
         new EnvironmentPaymentRequestWebhookSigningSecretResolver(),
+        new EfPaymentRequestWebhookDeliveryAttemptStore(db),
         new FixedTimeProvider(now.AddMinutes(1)));
 
     var dispatch = new PaymentRequestEventDispatch(

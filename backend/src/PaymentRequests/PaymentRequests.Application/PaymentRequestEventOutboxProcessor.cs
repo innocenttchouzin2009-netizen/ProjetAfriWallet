@@ -5,13 +5,18 @@ public sealed class PaymentRequestEventOutboxProcessor
     private readonly IPaymentRequestEventOutboxStore outboxStore;
     private readonly IPaymentRequestEventDeliveryPort deliveryPort;
     private readonly IPaymentRequestEventAttemptLedger attemptLedger;
+    private readonly IPaymentRequestEventAttemptFinalizer attemptFinalizer;
     private readonly PaymentRequestEventDeliveryOptions options;
 
     public PaymentRequestEventOutboxProcessor(
         IPaymentRequestEventOutboxStore outboxStore,
         IPaymentRequestEventDeliveryPort deliveryPort,
         PaymentRequestEventDeliveryOptions? options = null)
-        : this(outboxStore, deliveryPort, new InMemoryPaymentRequestEventAttemptLedger(), options)
+        : this(
+            outboxStore,
+            deliveryPort,
+            new InMemoryPaymentRequestEventAttemptLedger(),
+            options)
     {
     }
 
@@ -20,10 +25,26 @@ public sealed class PaymentRequestEventOutboxProcessor
         IPaymentRequestEventDeliveryPort deliveryPort,
         IPaymentRequestEventAttemptLedger attemptLedger,
         PaymentRequestEventDeliveryOptions? options = null)
+        : this(
+            outboxStore,
+            deliveryPort,
+            attemptLedger,
+            new SequentialPaymentRequestEventAttemptFinalizer(attemptLedger, outboxStore),
+            options)
+    {
+    }
+
+    public PaymentRequestEventOutboxProcessor(
+        IPaymentRequestEventOutboxStore outboxStore,
+        IPaymentRequestEventDeliveryPort deliveryPort,
+        IPaymentRequestEventAttemptLedger attemptLedger,
+        IPaymentRequestEventAttemptFinalizer attemptFinalizer,
+        PaymentRequestEventDeliveryOptions? options = null)
     {
         this.outboxStore = outboxStore ?? throw new ArgumentNullException(nameof(outboxStore));
         this.deliveryPort = deliveryPort ?? throw new ArgumentNullException(nameof(deliveryPort));
         this.attemptLedger = attemptLedger ?? throw new ArgumentNullException(nameof(attemptLedger));
+        this.attemptFinalizer = attemptFinalizer ?? throw new ArgumentNullException(nameof(attemptFinalizer));
         this.options = options ?? PaymentRequestEventDeliveryOptions.Default;
     }
 
@@ -57,13 +78,6 @@ public sealed class PaymentRequestEventOutboxProcessor
             try
             {
                 await deliveryPort.DeliverAsync(item.Event, cancellationToken);
-                await attemptLedger.CompleteAttemptAsync(
-                    attemptId,
-                    PaymentRequestEventAttemptOutcome.Delivered,
-                    nowUtc,
-                    cancellationToken: cancellationToken);
-                await outboxStore.MarkDeliveredAsync(item.Event.EventId, nowUtc, cancellationToken);
-                delivered++;
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
@@ -78,11 +92,20 @@ public sealed class PaymentRequestEventOutboxProcessor
             {
                 var permanent = exception.FailureKind == PaymentRequestEventDeliveryFailureKind.Permanent;
                 await MarkFailureAsync(item, attemptId, nowUtc, exception.Message, permanent, cancellationToken);
+                continue;
             }
             catch (Exception exception)
             {
                 await MarkFailureAsync(item, attemptId, nowUtc, exception.Message, permanent: false, cancellationToken);
+                continue;
             }
+
+            await attemptFinalizer.FinalizeDeliveredAsync(
+                attemptId,
+                item.Event.EventId,
+                nowUtc,
+                cancellationToken);
+            delivered++;
         }
 
         return delivered;
@@ -101,17 +124,8 @@ public sealed class PaymentRequestEventOutboxProcessor
             ? null
             : nowUtc.Add(ComputeRetryDelay(item.AttemptCount));
 
-        await attemptLedger.CompleteAttemptAsync(
+        await attemptFinalizer.FinalizeFailedAsync(
             attemptId,
-            deadLetter
-                ? PaymentRequestEventAttemptOutcome.DeadLetter
-                : PaymentRequestEventAttemptOutcome.RetryScheduled,
-            nowUtc,
-            error,
-            nextAttempt,
-            cancellationToken);
-
-        await outboxStore.MarkFailedAsync(
             item.Event.EventId,
             nowUtc,
             error,

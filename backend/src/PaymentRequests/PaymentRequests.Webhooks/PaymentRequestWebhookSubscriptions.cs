@@ -112,6 +112,18 @@ public sealed class PaymentRequestWebhookSubscription
         UpdatedAtUtc = atUtc;
     }
 
+    public void RotateCredentials(string keyId, string secretReference, DateTimeOffset atUtc)
+    {
+        ValidateKeyId(keyId);
+        ValidateSecretReference(secretReference);
+        EnsureUtc(atUtc, nameof(atUtc));
+        if (atUtc < UpdatedAtUtc) throw new ArgumentException("Subscription timestamp cannot move backwards.", nameof(atUtc));
+
+        KeyId = keyId;
+        SecretReference = secretReference;
+        UpdatedAtUtc = atUtc;
+    }
+
     public void Disable(DateTimeOffset atUtc)
     {
         EnsureUtc(atUtc, nameof(atUtc));
@@ -209,5 +221,88 @@ public sealed class EnvironmentPaymentRequestWebhookSigningSecretResolver
         if (string.IsNullOrWhiteSpace(secret) || secret.Length < 32)
             throw new InvalidOperationException("Webhook signing secret is unavailable or invalid.");
         return Task.FromResult(secret);
+    }
+}
+
+
+public enum PaymentRequestWebhookSubscriptionAuditOperation
+{
+    CredentialsRotated = 1,
+    Enabled = 2,
+    Disabled = 3,
+    ConnectivityTested = 4
+}
+
+public sealed record PaymentRequestWebhookSubscriptionAuditEntry(
+    Guid Id,
+    Guid SubscriptionId,
+    string IntegrationId,
+    Guid? MerchantId,
+    string ActorSubject,
+    PaymentRequestWebhookSubscriptionAuditOperation Operation,
+    string KeyId,
+    string SecretReference,
+    bool Succeeded,
+    int? HttpStatusCode,
+    string? Detail,
+    DateTimeOffset OccurredAtUtc);
+
+public interface IPaymentRequestWebhookSubscriptionAuditStore
+{
+    Task AppendAsync(PaymentRequestWebhookSubscriptionAuditEntry entry, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<PaymentRequestWebhookSubscriptionAuditEntry>> ListAsync(
+        Guid subscriptionId,
+        CancellationToken cancellationToken = default);
+}
+
+public sealed record PaymentRequestWebhookConnectivityProbeResult(
+    bool Succeeded,
+    int? HttpStatusCode,
+    string Detail,
+    DateTimeOffset ObservedAtUtc);
+
+public interface IPaymentRequestWebhookConnectivityProbe
+{
+    Task<PaymentRequestWebhookConnectivityProbeResult> ProbeAsync(
+        Uri endpoint,
+        CancellationToken cancellationToken = default);
+}
+
+public sealed class HttpPaymentRequestWebhookConnectivityProbe(
+    HttpClient httpClient,
+    TimeProvider timeProvider) : IPaymentRequestWebhookConnectivityProbe
+{
+    public async Task<PaymentRequestWebhookConnectivityProbeResult> ProbeAsync(
+        Uri endpoint,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(endpoint);
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var observedAt = timeProvider.GetUtcNow();
+        try
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Head, endpoint);
+            using var response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+            var status = (int)response.StatusCode;
+            var succeeded = status is >= 200 and <= 499;
+            return new PaymentRequestWebhookConnectivityProbeResult(
+                succeeded,
+                status,
+                succeeded ? "Endpoint responded." : "Endpoint returned a server error.",
+                observedAt);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (TaskCanceledException)
+        {
+            return new PaymentRequestWebhookConnectivityProbeResult(false, null, "Connectivity probe timed out.", observedAt);
+        }
+        catch (HttpRequestException)
+        {
+            return new PaymentRequestWebhookConnectivityProbeResult(false, null, "Connectivity probe could not obtain an HTTP response.", observedAt);
+        }
     }
 }

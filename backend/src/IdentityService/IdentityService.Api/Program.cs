@@ -233,6 +233,7 @@ app.MapPaymentRequestInboxOutboxEndpoints();
 app.MapPaymentRequestEventOutboxOperationalEndpoints();
 app.MapReferencePaymentRequestWebhookReceiver();
 app.MapPaymentRequestWebhookSubscriptionManagementEndpoints();
+app.MapPaymentRequestWebhookSubscriptionOperationsEndpoints();
 app.MapNotificationEndpoints();
 app.MapPushDeviceEndpoints();
 app.MapNotificationPreferenceEndpoints();

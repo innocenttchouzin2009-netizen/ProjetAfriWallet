@@ -21,7 +21,11 @@ public static class PaymentRequestWebhookHttpComposition
         services.AddDbContext<PaymentRequestWebhookSubscriptionDbContext>(
             options => options.UseSqlite(subscriptionsConnectionString));
         services.AddScoped<IPaymentRequestWebhookSubscriptionRegistry, EfPaymentRequestWebhookSubscriptionRegistry>();
+        services.AddScoped<IPaymentRequestWebhookSubscriptionAuditStore, EfPaymentRequestWebhookSubscriptionAuditStore>();
         services.AddScoped<IPaymentRequestWebhookSigningSecretResolver, EnvironmentPaymentRequestWebhookSigningSecretResolver>();
+        services.AddHttpClient<HttpPaymentRequestWebhookConnectivityProbe>();
+        services.AddScoped<IPaymentRequestWebhookConnectivityProbe>(sp =>
+            sp.GetRequiredService<HttpPaymentRequestWebhookConnectivityProbe>());
 
         var enabled = configuration.GetValue<bool?>($"{Prefix}:Enabled") ?? false;
         if (!enabled)

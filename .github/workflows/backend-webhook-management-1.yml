@@ -8,6 +8,7 @@ on:
       - 'backend/src/WebhookManagement/**'
       - 'backend/tests/WebhookManagement.Domain.Scenarios/**'
       - 'backend/tests/WebhookManagement.Application.Scenarios/**'
+      - 'backend/tests/WebhookManagement.Persistence.Scenarios/**'
       - '.github/workflows/backend-webhook-management-1.yml'
   pull_request:
     branches:
@@ -16,6 +17,7 @@ on:
       - 'backend/src/WebhookManagement/**'
       - 'backend/tests/WebhookManagement.Domain.Scenarios/**'
       - 'backend/tests/WebhookManagement.Application.Scenarios/**'
+      - 'backend/tests/WebhookManagement.Persistence.Scenarios/**'
       - '.github/workflows/backend-webhook-management-1.yml'
   workflow_dispatch:
 
@@ -44,3 +46,9 @@ jobs:
 
       - name: Run webhook management application scenarios
         run: dotnet run --project backend/tests/WebhookManagement.Application.Scenarios/WebhookManagement.Application.Scenarios.csproj --configuration Release
+
+      - name: Build Webhook Management Persistence
+        run: dotnet build backend/src/WebhookManagement/WebhookManagement.Persistence/WebhookManagement.Persistence.csproj --configuration Release --nologo
+
+      - name: Run webhook management persistence scenarios
+        run: dotnet run --project backend/tests/WebhookManagement.Persistence.Scenarios/WebhookManagement.Persistence.Scenarios.csproj --configuration Release

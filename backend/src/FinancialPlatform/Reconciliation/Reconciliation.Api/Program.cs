@@ -2,13 +2,16 @@ using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Reconciliation.Api.Review;
+using Reconciliation.Api.Resolution;
 using Reconciliation.Application.Interfaces;
 using Reconciliation.Application.Matching;
 using Reconciliation.Application.Review;
+using Reconciliation.Application.Resolution;
 using Reconciliation.Application.Services;
 using Reconciliation.Contracts.Requests;
 using Reconciliation.Infrastructure.DataSources;
 using Reconciliation.Infrastructure.Repositories;
+using Reconciliation.Infrastructure.Resolutions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,10 +24,17 @@ var reconciliationReviewConnectionString =
     Environment.GetEnvironmentVariable("AFW_RECONCILIATION_REVIEW_DB_CONNECTION_STRING") ??
     "Data Source=reconciliation-review.db";
 
+var reconciliationResolutionConnectionString =
+    builder.Configuration.GetConnectionString("ReconciliationResolutionDatabase") ??
+    Environment.GetEnvironmentVariable("AFW_RECONCILIATION_RESOLUTION_DB_CONNECTION_STRING") ??
+    "Data Source=reconciliation-resolution.db";
+
 builder.Services.AddReconciliationReviewPersistence(reconciliationReviewConnectionString);
+builder.Services.AddReconciliationResolutionPersistence(reconciliationResolutionConnectionString);
 builder.Services.AddSingleton(new ReconciliationMatcher(TimeSpan.FromMinutes(10)));
 builder.Services.AddSingleton<ReconciliationReviewQueueService>();
 builder.Services.AddScoped<ReconciliationReviewApplicationService>();
+builder.Services.AddScoped<ReconciliationResolutionApplicationService>();
 builder.Services.AddScoped<ReconciliationService>();
 builder.Services.AddOpenApi();
 
@@ -59,6 +69,9 @@ await using (var scope = app.Services.CreateAsyncScope())
 {
     var reviewDb = scope.ServiceProvider.GetRequiredService<ReconciliationReviewDbContext>();
     await reviewDb.Database.EnsureCreatedAsync();
+
+    var resolutionDb = scope.ServiceProvider.GetRequiredService<ReconciliationResolutionDbContext>();
+    await resolutionDb.Database.EnsureCreatedAsync();
 }
 
 app.UseAuthentication();
@@ -94,6 +107,7 @@ app.MapGet("/api/v1/reconciliation/runs/{runId:guid}", async (
 });
 
 app.MapReconciliationReviewEndpoints();
+app.MapReconciliationResolutionEndpoints();
 app.MapOpenApi();
 app.Run();
 

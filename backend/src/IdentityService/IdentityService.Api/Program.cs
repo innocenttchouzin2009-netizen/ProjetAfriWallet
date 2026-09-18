@@ -25,6 +25,7 @@ using IdentityService.Api.P2P;
 using IdentityService.Api.PaymentRequests;
 using IdentityService.Api.Transfer;
 using IdentityService.Api.Wallet;
+using IdentityService.Api.Webhooks;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -71,6 +72,10 @@ var pushDevicesConnectionString = builder.Configuration.GetConnectionString("Pus
 var notificationPreferencesConnectionString = builder.Configuration.GetConnectionString("NotificationPreferencesDatabase") ??
     Environment.GetEnvironmentVariable("AFW_NOTIFICATION_PREFERENCES_DB_CONNECTION_STRING") ??
     "Data Source=notification-preferences.db";
+
+var webhookManagementConnectionString = builder.Configuration.GetConnectionString("WebhookManagementDatabase") ??
+    Environment.GetEnvironmentVariable("AFW_WEBHOOK_MANAGEMENT_DB_CONNECTION_STRING") ??
+    "Data Source=webhook-management.db";
 
 var configuredFxRates = FxConfiguration.LoadRates(builder.Configuration);
 
@@ -119,6 +124,7 @@ builder.Services.AddPaymentRequests(paymentRequestsConnectionString, builder.Con
 builder.Services.AddInAppNotifications(notificationsConnectionString);
 builder.Services.AddPushDeviceRegistration(pushDevicesConnectionString);
 builder.Services.AddNotificationPreferences(notificationPreferencesConnectionString);
+builder.Services.AddWebhookManagement(webhookManagementConnectionString);
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -225,5 +231,6 @@ app.MapPaymentRequestEventOutboxOperationalEndpoints();
 app.MapNotificationEndpoints();
 app.MapPushDeviceEndpoints();
 app.MapNotificationPreferenceEndpoints();
+app.MapWebhookManagementEndpoints();
 
 app.Run();

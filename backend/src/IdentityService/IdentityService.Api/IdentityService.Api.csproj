@@ -25,6 +25,8 @@
     <ProjectReference Include="../../Transfer/Transfer.Infrastructure/Transfer.Infrastructure.csproj" />
     <ProjectReference Include="../../Wallet/Wallet.Application/Wallet.Application.csproj" />
     <ProjectReference Include="../../Wallet/Wallet.Persistence/Wallet.Persistence.csproj" />
+    <ProjectReference Include="../../WebhookManagement/WebhookManagement.Application/WebhookManagement.Application.csproj" />
+    <ProjectReference Include="../../WebhookManagement/WebhookManagement.Persistence/WebhookManagement.Persistence.csproj" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.11" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.11" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.11">

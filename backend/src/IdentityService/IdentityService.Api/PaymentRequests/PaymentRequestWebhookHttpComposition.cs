@@ -18,6 +18,11 @@ public static class PaymentRequestWebhookHttpComposition
         if (string.IsNullOrWhiteSpace(subscriptionsConnectionString))
             throw new ArgumentException("Webhook subscriptions connection string is required.", nameof(subscriptionsConnectionString));
 
+        services.AddDbContext<PaymentRequestWebhookSubscriptionDbContext>(
+            options => options.UseSqlite(subscriptionsConnectionString));
+        services.AddScoped<IPaymentRequestWebhookSubscriptionRegistry, EfPaymentRequestWebhookSubscriptionRegistry>();
+        services.AddScoped<IPaymentRequestWebhookSigningSecretResolver, EnvironmentPaymentRequestWebhookSigningSecretResolver>();
+
         var enabled = configuration.GetValue<bool?>($"{Prefix}:Enabled") ?? false;
         if (!enabled)
             return services;
@@ -44,10 +49,6 @@ public static class PaymentRequestWebhookHttpComposition
         services.AddSingleton(PaymentRequestWebhookSecurityOptions.Default);
         services.AddSingleton<PaymentRequestWebhookVerifier>();
 
-        services.AddDbContext<PaymentRequestWebhookSubscriptionDbContext>(
-            options => options.UseSqlite(subscriptionsConnectionString));
-        services.AddScoped<IPaymentRequestWebhookSubscriptionRegistry, EfPaymentRequestWebhookSubscriptionRegistry>();
-        services.AddScoped<IPaymentRequestWebhookSigningSecretResolver, EnvironmentPaymentRequestWebhookSigningSecretResolver>();
         services.AddHttpClient<RegistryBackedHttpPaymentRequestEventTransport>();
         services.AddScoped<IPaymentRequestEventTransport>(sp =>
             sp.GetRequiredService<RegistryBackedHttpPaymentRequestEventTransport>());

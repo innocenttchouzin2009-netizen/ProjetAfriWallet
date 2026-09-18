@@ -1,0 +1,49 @@
+name: AFW-BE-RECONCILIATION-RESOLUTION-1
+
+on:
+  push:
+    branches:
+      - feature/backend-reconciliation-resolution-1
+    paths:
+      - 'backend/src/FinancialPlatform/Reconciliation/Reconciliation.Domain/Resolutions/**'
+      - 'backend/src/FinancialPlatform/Reconciliation/Reconciliation.Application/Resolution/**'
+      - 'backend/tests/Reconciliation.ResolutionFoundation.Scenarios/**'
+      - '.github/workflows/backend-reconciliation-resolution-1.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'backend/src/FinancialPlatform/Reconciliation/Reconciliation.Domain/Resolutions/**'
+      - 'backend/src/FinancialPlatform/Reconciliation/Reconciliation.Application/Resolution/**'
+      - 'backend/tests/Reconciliation.ResolutionFoundation.Scenarios/**'
+      - '.github/workflows/backend-reconciliation-resolution-1.yml'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Validate reconciliation resolution foundation
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build Reconciliation Domain
+        run: dotnet build backend/src/FinancialPlatform/Reconciliation/Reconciliation.Domain/Reconciliation.Domain.csproj --configuration Release --nologo
+
+      - name: Build Reconciliation Application
+        run: dotnet build backend/src/FinancialPlatform/Reconciliation/Reconciliation.Application/Reconciliation.Application.csproj --configuration Release --nologo
+
+      - name: Run reconciliation resolution foundation scenarios
+        run: dotnet run --project backend/tests/Reconciliation.ResolutionFoundation.Scenarios/Reconciliation.ResolutionFoundation.Scenarios.csproj --configuration Release
+
+      - name: Run existing reconciliation review queue scenarios
+        run: dotnet run --project backend/tests/Reconciliation.ReviewQueue.Scenarios/Reconciliation.ReviewQueue.Scenarios.csproj --configuration Release
+
+      - name: Run existing reconciliation review orchestration scenarios
+        run: dotnet run --project backend/tests/Reconciliation.ReviewOrchestration.Scenarios/Reconciliation.ReviewOrchestration.Scenarios.csproj --configuration Release

@@ -32,6 +32,7 @@ public static class PaymentRequestsComposition
         services.AddScoped<IPaymentRequestOwnedRecipientReferenceReader, AuthoritativeRecipientReferenceReader>();
         services.AddScoped<IPaymentRequestReconciliationPort, TransferCorrelationPaymentRequestReconciliationPort>();
         services.AddScoped<IPaymentRequestEventOutboxStore, EfPaymentRequestEventOutboxStore>();
+        services.AddScoped<IPaymentRequestEventAttemptLedger, EfPaymentRequestEventAttemptLedger>();
         services.AddScoped<IPaymentRequestEventOutboxDiagnostics, EfPaymentRequestEventOutboxDiagnostics>();
         services.AddScoped<IPaymentRequestEventDeliveryPort, ProviderNeutralPaymentRequestEventDeliveryAdapter>();
         services.AddScoped<PaymentRequestEventOutboxProcessor>();

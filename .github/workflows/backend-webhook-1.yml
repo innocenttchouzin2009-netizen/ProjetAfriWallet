@@ -7,6 +7,7 @@ on:
     paths:
       - 'backend/src/Webhooks/**'
       - 'backend/tests/PartnerWebhooks.Domain.Scenarios/**'
+      - 'backend/tests/PartnerWebhooks.Application.Scenarios/**'
       - '.github/workflows/backend-webhook-1.yml'
   pull_request:
     branches:
@@ -14,6 +15,7 @@ on:
     paths:
       - 'backend/src/Webhooks/**'
       - 'backend/tests/PartnerWebhooks.Domain.Scenarios/**'
+      - 'backend/tests/PartnerWebhooks.Application.Scenarios/**'
       - '.github/workflows/backend-webhook-1.yml'
   workflow_dispatch:
 
@@ -36,3 +38,9 @@ jobs:
 
       - name: Run partner webhook domain scenarios
         run: dotnet run --project backend/tests/PartnerWebhooks.Domain.Scenarios/PartnerWebhooks.Domain.Scenarios.csproj --configuration Release
+
+      - name: Build Partner Webhooks Application
+        run: dotnet build backend/src/Webhooks/PartnerWebhooks.Application/PartnerWebhooks.Application.csproj --configuration Release --nologo
+
+      - name: Run partner webhook application scenarios
+        run: dotnet run --project backend/tests/PartnerWebhooks.Application.Scenarios/PartnerWebhooks.Application.Scenarios.csproj --configuration Release

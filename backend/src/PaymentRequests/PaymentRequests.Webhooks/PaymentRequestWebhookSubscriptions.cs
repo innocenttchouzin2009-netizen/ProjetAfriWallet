@@ -230,7 +230,8 @@ public enum PaymentRequestWebhookSubscriptionAuditOperation
     CredentialsRotated = 1,
     Enabled = 2,
     Disabled = 3,
-    ConnectivityTested = 4
+    ConnectivityTested = 4,
+    ReliabilityAutoDisabled = 5
 }
 
 public sealed record PaymentRequestWebhookSubscriptionAuditEntry(

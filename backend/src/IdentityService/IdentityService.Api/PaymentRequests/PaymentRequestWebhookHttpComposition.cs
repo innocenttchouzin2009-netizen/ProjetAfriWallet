@@ -24,6 +24,14 @@ public static class PaymentRequestWebhookHttpComposition
         services.AddScoped<IPaymentRequestWebhookSubscriptionAuditStore, EfPaymentRequestWebhookSubscriptionAuditStore>();
         services.AddScoped<IPaymentRequestWebhookDeliveryAttemptStore, EfPaymentRequestWebhookDeliveryAttemptStore>();
         services.AddScoped<IPaymentRequestWebhookSigningSecretResolver, EnvironmentPaymentRequestWebhookSigningSecretResolver>();
+
+        var reliabilityOptions = new PaymentRequestWebhookReliabilityProtectionOptions(
+            configuration.GetValue<int?>($"{Prefix}:ReliabilityProtection:MinimumAttempts") ?? 5,
+            configuration.GetValue<decimal?>($"{Prefix}:ReliabilityProtection:FailureRateThreshold") ?? 0.80m,
+            configuration.GetValue<int?>($"{Prefix}:ReliabilityProtection:ConsecutiveFailureThreshold") ?? 5,
+            configuration.GetValue<int?>($"{Prefix}:ReliabilityProtection:PermanentFailureThreshold") ?? 3);
+        services.AddSingleton(reliabilityOptions);
+        services.AddScoped<IPaymentRequestWebhookReliabilityProtector, PaymentRequestWebhookReliabilityProtector>();
         services.AddHttpClient<HttpPaymentRequestWebhookConnectivityProbe>();
         services.AddScoped<IPaymentRequestWebhookConnectivityProbe>(sp =>
             sp.GetRequiredService<HttpPaymentRequestWebhookConnectivityProbe>());

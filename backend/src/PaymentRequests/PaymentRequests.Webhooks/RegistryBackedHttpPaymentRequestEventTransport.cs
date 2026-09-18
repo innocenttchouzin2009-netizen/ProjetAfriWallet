@@ -10,9 +10,25 @@ public sealed class RegistryBackedHttpPaymentRequestEventTransport(
     IPaymentRequestWebhookSubscriptionRegistry registry,
     IPaymentRequestWebhookSigningSecretResolver secretResolver,
     IPaymentRequestWebhookDeliveryAttemptStore attemptStore,
+    IPaymentRequestWebhookReliabilityProtector reliabilityProtector,
     TimeProvider timeProvider)
     : IPaymentRequestEventTransport
 {
+    public RegistryBackedHttpPaymentRequestEventTransport(
+        HttpClient httpClient,
+        IPaymentRequestWebhookSubscriptionRegistry registry,
+        IPaymentRequestWebhookSigningSecretResolver secretResolver,
+        IPaymentRequestWebhookDeliveryAttemptStore attemptStore,
+        TimeProvider timeProvider)
+        : this(
+            httpClient,
+            registry,
+            secretResolver,
+            attemptStore,
+            NoOpPaymentRequestWebhookReliabilityProtector.Instance,
+            timeProvider)
+    {
+    }
     public async Task DispatchAsync(PaymentRequestEventDispatch dispatch, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(dispatch);
@@ -151,6 +167,21 @@ public sealed class RegistryBackedHttpPaymentRequestEventTransport(
                         startedAtUtc,
                         completedAtUtc),
                     CancellationToken.None);
+
+                // Reliability protection is deliberately post-attempt and must never
+                // change the delivery outcome or create a second retry path beside Outbox.
+                try
+                {
+                    await reliabilityProtector.EvaluateAndProtectAsync(
+                        destination.Id,
+                        CancellationToken.None);
+                }
+                catch (Exception)
+                {
+                    // A protection-evaluation failure is retried naturally on the next
+                    // real delivery attempt. It must not make a successful webhook
+                    // delivery look failed and cause a duplicate Outbox delivery.
+                }
             }
             catch (PaymentRequestEventTransportException)
             {

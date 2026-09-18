@@ -4,12 +4,14 @@ on:
   push:
     branches:
       - feature/backend-webhook-1
+      - feature/backend-webhook-routing-1
     paths:
       - 'backend/src/Webhooks/**'
       - 'backend/tests/PartnerWebhooks.Domain.Scenarios/**'
       - 'backend/tests/PartnerWebhooks.Application.Scenarios/**'
       - 'backend/tests/PartnerWebhooks.Persistence.Scenarios/**'
       - 'backend/tests/PartnerWebhooks.Signing.Scenarios/**'
+      - 'backend/tests/PartnerWebhooks.Routing.Scenarios/**'
       - '.github/workflows/backend-webhook-1.yml'
   pull_request:
     branches:
@@ -20,6 +22,7 @@ on:
       - 'backend/tests/PartnerWebhooks.Application.Scenarios/**'
       - 'backend/tests/PartnerWebhooks.Persistence.Scenarios/**'
       - 'backend/tests/PartnerWebhooks.Signing.Scenarios/**'
+      - 'backend/tests/PartnerWebhooks.Routing.Scenarios/**'
       - '.github/workflows/backend-webhook-1.yml'
   workflow_dispatch:
 
@@ -57,3 +60,6 @@ jobs:
 
       - name: Run canonical webhook envelope and signing scenarios
         run: dotnet run --project backend/tests/PartnerWebhooks.Signing.Scenarios/PartnerWebhooks.Signing.Scenarios.csproj --configuration Release
+
+      - name: Run subscription-aware webhook routing scenarios
+        run: dotnet run --project backend/tests/PartnerWebhooks.Routing.Scenarios/PartnerWebhooks.Routing.Scenarios.csproj --configuration Release

@@ -9,6 +9,7 @@ on:
       - 'backend/src/IdentityService/IdentityService.Api/PaymentRequests/**'
       - 'backend/src/IdentityService/IdentityService.Api/Program.cs'
       - 'backend/tests/PaymentRequests.EventOutbox.Scenarios/**'
+      - 'backend/tests/PaymentRequests.EventOutbox.Configuration.Scenarios/**'
       - 'backend/tests/PaymentRequests.EventWorker.Scenarios/**'
       - 'backend/tests/PaymentRequests.EventOutbox.Operational.Scenarios/**'
       - 'backend/tests/PaymentRequests.EventProduction.Scenarios/**'
@@ -22,6 +23,7 @@ on:
       - 'backend/src/IdentityService/IdentityService.Api/PaymentRequests/**'
       - 'backend/src/IdentityService/IdentityService.Api/Program.cs'
       - 'backend/tests/PaymentRequests.EventOutbox.Scenarios/**'
+      - 'backend/tests/PaymentRequests.EventOutbox.Configuration.Scenarios/**'
       - 'backend/tests/PaymentRequests.EventWorker.Scenarios/**'
       - 'backend/tests/PaymentRequests.EventOutbox.Operational.Scenarios/**'
       - 'backend/tests/PaymentRequests.EventProduction.Scenarios/**'
@@ -60,6 +62,9 @@ jobs:
 
       - name: Run durable payment request outbox scenarios
         run: dotnet run --project backend/tests/PaymentRequests.EventOutbox.Scenarios/PaymentRequests.EventOutbox.Scenarios.csproj --configuration Release
+
+      - name: Run outbox dispatcher configuration scenarios
+        run: dotnet run --project backend/tests/PaymentRequests.EventOutbox.Configuration.Scenarios/PaymentRequests.EventOutbox.Configuration.Scenarios.csproj --configuration Release
 
       - name: Run hosted outbox worker scenarios
         run: dotnet run --project backend/tests/PaymentRequests.EventWorker.Scenarios/PaymentRequests.EventWorker.Scenarios.csproj --configuration Release

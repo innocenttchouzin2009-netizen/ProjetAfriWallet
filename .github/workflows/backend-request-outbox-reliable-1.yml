@@ -16,6 +16,7 @@ on:
       - 'backend/tests/PaymentRequests.EventProduction.Scenarios/**'
       - 'backend/tests/PaymentRequests.EventProduction.Persistence.Scenarios/**'
       - '.github/workflows/backend-request-outbox-reliable-1.yml'
+      - '.github/workflows/backend-request-outbox-reintegration-1.yml'
   pull_request:
     branches:
       - main

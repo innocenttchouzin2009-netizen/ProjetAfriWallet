@@ -6,24 +6,30 @@ on:
     paths:
       - 'backend/src/PaymentRequests/PaymentRequests.Application/**'
       - 'backend/src/PaymentRequests/PaymentRequests.Persistence/**'
+      - 'backend/src/IdentityService/IdentityService.Api/PaymentRequests/**'
+      - 'backend/src/IdentityService/IdentityService.Api/Program.cs'
       - 'backend/tests/PaymentRequests.EventDeadLetterRecovery.Scenarios/**'
       - 'backend/tests/PaymentRequests.EventDeadLetterRecovery.Application.Scenarios/**'
       - 'backend/tests/PaymentRequests.EventDeadLetterRecovery.Persistence.Scenarios/**'
+      - 'backend/tests/PaymentRequests.EventDeadLetterRecovery.Http.Scenarios/**'
       - '.github/workflows/backend-request-outbox-recovery-1.yml'
   pull_request:
     branches: [main]
     paths:
       - 'backend/src/PaymentRequests/PaymentRequests.Application/**'
       - 'backend/src/PaymentRequests/PaymentRequests.Persistence/**'
+      - 'backend/src/IdentityService/IdentityService.Api/PaymentRequests/**'
+      - 'backend/src/IdentityService/IdentityService.Api/Program.cs'
       - 'backend/tests/PaymentRequests.EventDeadLetterRecovery.Scenarios/**'
       - 'backend/tests/PaymentRequests.EventDeadLetterRecovery.Application.Scenarios/**'
       - 'backend/tests/PaymentRequests.EventDeadLetterRecovery.Persistence.Scenarios/**'
+      - 'backend/tests/PaymentRequests.EventDeadLetterRecovery.Http.Scenarios/**'
       - '.github/workflows/backend-request-outbox-recovery-1.yml'
   workflow_dispatch:
 
 jobs:
   validate:
-    name: Validate dead-letter recovery policy, orchestration and persistence
+    name: Validate dead-letter recovery policy, orchestration, persistence and HTTP
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -45,3 +51,9 @@ jobs:
 
       - name: Run dead-letter recovery persistence scenarios
         run: dotnet run --project backend/tests/PaymentRequests.EventDeadLetterRecovery.Persistence.Scenarios/PaymentRequests.EventDeadLetterRecovery.Persistence.Scenarios.csproj --configuration Release
+
+      - name: Build IdentityService host with dead-letter recovery wiring
+        run: dotnet build backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj --configuration Release --nologo
+
+      - name: Run protected dead-letter recovery HTTP scenarios
+        run: dotnet run --project backend/tests/PaymentRequests.EventDeadLetterRecovery.Http.Scenarios/PaymentRequests.EventDeadLetterRecovery.Http.Scenarios.csproj --configuration Release

@@ -54,6 +54,57 @@ public sealed class ReconciliationResolution
         string rationale,
         string evidenceReference,
         string resolvedBy,
+        DateTime resolvedAtUtc) =>
+        CreateCore(
+            Guid.NewGuid(),
+            reviewId,
+            partnerId,
+            internalRecordId,
+            externalRecordId,
+            disposition,
+            rationale,
+            evidenceReference,
+            resolvedBy,
+            resolvedAtUtc);
+
+    public static ReconciliationResolution Restore(
+        Guid resolutionId,
+        Guid reviewId,
+        string partnerId,
+        string? internalRecordId,
+        string? externalRecordId,
+        ReconciliationResolutionDisposition disposition,
+        string rationale,
+        string evidenceReference,
+        string resolvedBy,
+        DateTime resolvedAtUtc)
+    {
+        if (resolutionId == Guid.Empty)
+            throw new ArgumentException("Resolution id is required.", nameof(resolutionId));
+
+        return CreateCore(
+            resolutionId,
+            reviewId,
+            partnerId,
+            internalRecordId,
+            externalRecordId,
+            disposition,
+            rationale,
+            evidenceReference,
+            resolvedBy,
+            resolvedAtUtc);
+    }
+
+    private static ReconciliationResolution CreateCore(
+        Guid resolutionId,
+        Guid reviewId,
+        string partnerId,
+        string? internalRecordId,
+        string? externalRecordId,
+        ReconciliationResolutionDisposition disposition,
+        string rationale,
+        string evidenceReference,
+        string resolvedBy,
         DateTime resolvedAtUtc)
     {
         if (reviewId == Guid.Empty)
@@ -74,7 +125,7 @@ public sealed class ReconciliationResolution
             throw new ArgumentException("Resolution timestamp must be UTC.", nameof(resolvedAtUtc));
 
         return new ReconciliationResolution(
-            Guid.NewGuid(),
+            resolutionId,
             reviewId,
             partnerId.Trim(),
             Normalize(internalRecordId),

@@ -32,5 +32,5 @@ jobs:
         run: dotnet build backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj --configuration Release --nologo
       - name: Run existing durable outbox regression scenarios
         run: dotnet run --project backend/tests/PaymentRequests.EventOutbox.Scenarios/PaymentRequests.EventOutbox.Scenarios.csproj --configuration Release
-      - name: Run Attempt Ledger invariant scenarios
+      - name: Run atomic attempt finalization and rollback scenarios
         run: dotnet run --project backend/tests/PaymentRequests.EventAttemptLedger.Scenarios/PaymentRequests.EventAttemptLedger.Scenarios.csproj --configuration Release

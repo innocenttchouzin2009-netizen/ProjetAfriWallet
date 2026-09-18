@@ -9,6 +9,7 @@ on:
       - 'backend/tests/PartnerWebhooks.Domain.Scenarios/**'
       - 'backend/tests/PartnerWebhooks.Application.Scenarios/**'
       - 'backend/tests/PartnerWebhooks.Persistence.Scenarios/**'
+      - 'backend/tests/PartnerWebhooks.Signing.Scenarios/**'
       - '.github/workflows/backend-webhook-1.yml'
   pull_request:
     branches:
@@ -18,6 +19,7 @@ on:
       - 'backend/tests/PartnerWebhooks.Domain.Scenarios/**'
       - 'backend/tests/PartnerWebhooks.Application.Scenarios/**'
       - 'backend/tests/PartnerWebhooks.Persistence.Scenarios/**'
+      - 'backend/tests/PartnerWebhooks.Signing.Scenarios/**'
       - '.github/workflows/backend-webhook-1.yml'
   workflow_dispatch:
 
@@ -52,3 +54,6 @@ jobs:
 
       - name: Run partner webhook persistence scenarios
         run: dotnet run --project backend/tests/PartnerWebhooks.Persistence.Scenarios/PartnerWebhooks.Persistence.Scenarios.csproj --configuration Release
+
+      - name: Run canonical webhook envelope and signing scenarios
+        run: dotnet run --project backend/tests/PartnerWebhooks.Signing.Scenarios/PartnerWebhooks.Signing.Scenarios.csproj --configuration Release

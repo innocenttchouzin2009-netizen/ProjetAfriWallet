@@ -7,6 +7,7 @@ using AfriWallet.Fx.Infrastructure;
 using AfriWallet.Ledger.Application;
 using AfriWallet.Ledger.Persistence;
 using AfriWallet.P2P.Directory.Persistence;
+using AfriWallet.PaymentRequests.Webhooks;
 using AfriWallet.Wallet.Application;
 using AfriWallet.Wallet.Persistence;
 using IdentityService.Api.Auth.Abstractions;
@@ -59,6 +60,11 @@ var recipientDirectoryConnectionString = builder.Configuration.GetConnectionStri
 var paymentRequestsConnectionString = builder.Configuration.GetConnectionString("PaymentRequestsDatabase") ??
     Environment.GetEnvironmentVariable("AFW_PAYMENT_REQUESTS_DB_CONNECTION_STRING") ??
     "Data Source=payment-requests.db";
+
+var paymentRequestWebhookSubscriptionsConnectionString =
+    builder.Configuration.GetConnectionString("PaymentRequestWebhookSubscriptionsDatabase") ??
+    Environment.GetEnvironmentVariable("AFW_PAYMENT_REQUEST_WEBHOOK_SUBSCRIPTIONS_DB_CONNECTION_STRING") ??
+    "Data Source=payment-request-webhook-subscriptions.db";
 
 var notificationsConnectionString = builder.Configuration.GetConnectionString("NotificationsDatabase") ??
     Environment.GetEnvironmentVariable("AFW_NOTIFICATIONS_DB_CONNECTION_STRING") ??
@@ -117,6 +123,9 @@ builder.Services.AddP2PCore();
 builder.Services.AddAuthoritativeP2PRecipientDirectory(recipientDirectoryConnectionString);
 builder.Services.AddPaymentRequests(paymentRequestsConnectionString, builder.Configuration);
 builder.Services.AddInAppNotifications(notificationsConnectionString);
+builder.Services.AddPaymentRequestWebhookHttpDelivery(
+    builder.Configuration,
+    paymentRequestWebhookSubscriptionsConnectionString);
 builder.Services.AddPushDeviceRegistration(pushDevicesConnectionString);
 builder.Services.AddNotificationPreferences(notificationPreferencesConnectionString);
 
@@ -222,6 +231,9 @@ app.MapPaymentRequestEndpoints();
 app.MapPaymentRequestReconciliationEndpoints();
 app.MapPaymentRequestInboxOutboxEndpoints();
 app.MapPaymentRequestEventOutboxOperationalEndpoints();
+app.MapReferencePaymentRequestWebhookReceiver();
+app.MapPaymentRequestWebhookSubscriptionManagementEndpoints();
+app.MapPaymentRequestWebhookSubscriptionOperationsEndpoints();
 app.MapNotificationEndpoints();
 app.MapPushDeviceEndpoints();
 app.MapNotificationPreferenceEndpoints();

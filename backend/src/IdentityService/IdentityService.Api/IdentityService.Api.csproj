@@ -20,6 +20,8 @@
     <ProjectReference Include="../../PaymentRequests/PaymentRequests.Application/PaymentRequests.Application.csproj" />
     <ProjectReference Include="../../PaymentRequests/PaymentRequests.Infrastructure/PaymentRequests.Infrastructure.csproj" />
     <ProjectReference Include="../../PaymentRequests/PaymentRequests.Persistence/PaymentRequests.Persistence.csproj" />
+    <ProjectReference Include="../../PaymentRequests/PaymentRequests.Webhooks/PaymentRequests.Webhooks.csproj" />
+    <ProjectReference Include="../../PaymentRequests/PaymentRequests.WebhookSubscriptions.Persistence/PaymentRequests.WebhookSubscriptions.Persistence.csproj" />
     <ProjectReference Include="../../Transfer/Transfer.Application/Transfer.Application.csproj" />
     <ProjectReference Include="../../Transfer/Transfer.Infrastructure/Transfer.Infrastructure.csproj" />
     <ProjectReference Include="../../Wallet/Wallet.Application/Wallet.Application.csproj" />

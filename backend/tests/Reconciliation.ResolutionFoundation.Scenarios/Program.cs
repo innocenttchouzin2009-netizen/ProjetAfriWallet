@@ -136,8 +136,27 @@ Assert(rejected.Resolution?.ExternalRecordId == "external-4", "Single external r
 await AssertThrowsAsync<ArgumentException>(
     () => service.ResolveAsync(command with { EvidenceReference = " " }),
     "Resolution requires corrective evidence.");
+var chronologyId = Guid.NewGuid();
+reviewRepository.Add(new ReconciliationReviewItem(
+    chronologyId,
+    "partner-three",
+    "internal-5",
+    "external-5",
+    ReconciliationMatchType.Partial,
+    75,
+    10,
+    TimeSpan.FromSeconds(5),
+    decidedAt.AddMinutes(-5),
+    ReconciliationReviewStatus.Approved,
+    "reviewer-4",
+    "chronology review",
+    decidedAt));
 await AssertThrowsAsync<ArgumentException>(
-    () => service.ResolveAsync(command with { ResolvedAtUtc = decidedAt.AddMinutes(-1) }),
+    () => service.ResolveAsync(command with
+    {
+        ReviewId = chronologyId,
+        ResolvedAtUtc = decidedAt.AddMinutes(-1)
+    }),
     "Resolution cannot predate review decision.");
 
 using var cts = new CancellationTokenSource();

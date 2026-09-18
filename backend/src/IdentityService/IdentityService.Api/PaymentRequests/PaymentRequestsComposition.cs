@@ -2,6 +2,7 @@ using AfriWallet.PaymentRequests.Application;
 using AfriWallet.PaymentRequests.Infrastructure;
 using AfriWallet.PaymentRequests.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 
 namespace IdentityService.Api.PaymentRequests;
 
@@ -9,12 +10,16 @@ public static class PaymentRequestsComposition
 {
     public static IServiceCollection AddPaymentRequests(
         this IServiceCollection services,
-        string connectionString)
+        string connectionString,
+        IConfiguration? configuration = null)
     {
         if (string.IsNullOrWhiteSpace(connectionString))
         {
             throw new ArgumentException("Payment requests connection string is required.", nameof(connectionString));
         }
+
+        var workerOptions = PaymentRequestEventDispatchWorkerOptions.FromConfiguration(configuration);
+        var deliveryOptions = workerOptions.ToDeliveryOptions();
 
         services.AddDbContext<PaymentRequestDbContext>(options => options.UseSqlite(connectionString));
         services.AddScoped<IPaymentRequestRepository, EfPaymentRequestRepository>();
@@ -36,7 +41,8 @@ public static class PaymentRequestsComposition
         services.AddScoped<AuthorizedPaymentRequestQueryService>();
         services.AddScoped<PaymentRequestRecoveryService>();
         services.AddSingleton(TimeProvider.System);
-        services.AddSingleton(PaymentRequestEventDispatchWorkerOptions.Default);
+        services.AddSingleton(workerOptions);
+        services.AddSingleton(deliveryOptions);
         services.AddSingleton<PaymentRequestEventOutboxWorkerState>();
         services.AddHostedService<PaymentRequestEventOutboxHostedWorker>();
         return services;

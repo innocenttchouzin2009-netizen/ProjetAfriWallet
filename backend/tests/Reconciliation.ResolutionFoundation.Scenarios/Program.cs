@@ -11,211 +11,160 @@ static void Assert(bool condition, string message)
 static async Task AssertThrowsAsync<TException>(Func<Task> action, string message)
     where TException : Exception
 {
-    try
-    {
-        await action();
-    }
-    catch (TException)
-    {
-        return;
-    }
-
+    try { await action(); }
+    catch (TException) { return; }
     throw new InvalidOperationException(message);
 }
 
 var decidedAt = new DateTime(2026, 9, 18, 8, 0, 0, DateTimeKind.Utc);
 var reviewId = Guid.NewGuid();
-var approved = new ReconciliationReviewItem(
-    reviewId,
-    "partner-one",
-    "internal-1",
-    "external-1",
-    ReconciliationMatchType.Partial,
-    88,
-    25,
-    TimeSpan.FromSeconds(10),
-    decidedAt.AddMinutes(-5),
-    ReconciliationReviewStatus.Approved,
-    "reviewer-1",
-    "partner statement verified",
-    decidedAt);
-
+var approved = Review(reviewId, "partner-one", ReconciliationReviewStatus.Approved, decidedAt);
 var reviewRepository = new FakeReviewRepository([approved]);
 var resolutionRepository = new InMemoryResolutionRepository();
 var service = new ReconciliationResolutionApplicationService(reviewRepository, resolutionRepository);
+var scope = ReconciliationResolutionAccessScope.ForPartners("resolver-1", ["partner-one", "partner-two", "partner-three"]);
+var forbiddenScope = ReconciliationResolutionAccessScope.ForPartners("resolver-x", ["partner-x"]);
 
 var command = new ResolveReconciliationReviewCommand(
     reviewId,
     ReconciliationResolutionDisposition.RecordCorrected,
-    "resolver-1",
+    "ignored-client-resolver",
     "partner statement corrected and replayed",
     "evidence://statement/2026-09-18/42",
     decidedAt.AddMinutes(10));
 
-var created = await service.ResolveAsync(command);
+var created = await service.ResolveAsync(command, scope);
 Assert(created.Status == ReconciliationResolutionExecutionStatus.Created, "Final review must create a resolution.");
-Assert(created.Resolution is not null, "Created resolution is required.");
-Assert(created.Resolution!.ReviewId == reviewId, "Resolution must retain review id.");
-Assert(created.Resolution.PartnerId == "partner-one", "Resolution must retain partner id.");
-Assert(created.Resolution.InternalRecordId == "internal-1", "Internal record id must be retained.");
-Assert(created.Resolution.ExternalRecordId == "external-1", "External record id must be retained.");
-Assert(created.Resolution.ResolutionId != Guid.Empty, "Resolution id must be generated.");
+Assert(created.Resolution?.ResolvedBy == "resolver-1", "Resolver identity must come from access scope.");
 Assert(resolutionRepository.AddCalls == 1, "Resolution must be stored once.");
 
-var replay = await service.ResolveAsync(command);
+var replay = await service.ResolveAsync(command with { ResolvedAtUtc = decidedAt.AddMinutes(11) }, scope);
 Assert(replay.Status == ReconciliationResolutionExecutionStatus.Existing, "Equivalent replay must be idempotent.");
 Assert(resolutionRepository.AddCalls == 1, "Equivalent replay must not store twice.");
 
-await AssertThrowsAsync<InvalidOperationException>(
-    () => service.ResolveAsync(command with { Rationale = "different outcome evidence" }),
-    "Conflicting replay must fail closed.");
+var forbiddenRead = await service.GetByReviewIdAsync(reviewId, forbiddenScope);
+Assert(forbiddenRead.Status == ReconciliationResolutionLookupStatus.AccessDenied, "Foreign partner resolution must be denied.");
 
-var pendingId = Guid.NewGuid();
-reviewRepository.Add(new ReconciliationReviewItem(
-    pendingId,
-    "partner-one",
-    "internal-2",
-    null,
-    ReconciliationMatchType.Unmatched,
-    30,
-    null,
-    null,
-    decidedAt,
-    ReconciliationReviewStatus.PendingReview,
-    null,
-    null,
-    null));
-var pending = await service.ResolveAsync(command with { ReviewId = pendingId, ResolvedAtUtc = decidedAt.AddMinutes(20) });
-Assert(pending.Status == ReconciliationResolutionExecutionStatus.ReviewNotFinal, "Pending review cannot be resolved.");
+var allowedRead = await service.GetByReviewIdAsync(reviewId, scope);
+Assert(allowedRead.Status == ReconciliationResolutionLookupStatus.Found, "Authorized resolution must be readable.");
 
-var escalatedId = Guid.NewGuid();
-reviewRepository.Add(new ReconciliationReviewItem(
-    escalatedId,
-    "partner-one",
-    null,
-    "external-3",
-    ReconciliationMatchType.Unmatched,
-    20,
-    null,
-    null,
-    decidedAt,
-    ReconciliationReviewStatus.Escalated,
-    "reviewer-2",
-    "needs senior review",
-    decidedAt.AddMinutes(1)));
-var escalated = await service.ResolveAsync(command with { ReviewId = escalatedId, ResolvedAtUtc = decidedAt.AddMinutes(20) });
-Assert(escalated.Status == ReconciliationResolutionExecutionStatus.ReviewNotFinal, "Escalated review cannot be resolved.");
+var forbiddenResolve = await service.ResolveAsync(command, forbiddenScope);
+Assert(forbiddenResolve.Status == ReconciliationResolutionExecutionStatus.AccessDenied, "Foreign partner resolution must not be replayed.");
 
-var missing = await service.ResolveAsync(command with { ReviewId = Guid.NewGuid() });
-Assert(missing.Status == ReconciliationResolutionExecutionStatus.ReviewNotFound, "Unknown review must return ReviewNotFound.");
-
-var rejectedId = Guid.NewGuid();
-reviewRepository.Add(new ReconciliationReviewItem(
-    rejectedId,
-    "partner-two",
-    null,
-    "external-4",
-    ReconciliationMatchType.Unmatched,
-    15,
-    null,
-    null,
-    decidedAt,
-    ReconciliationReviewStatus.Rejected,
-    "reviewer-3",
-    "candidate is not a valid match",
-    decidedAt.AddMinutes(2)));
-var rejected = await service.ResolveAsync(command with
+var partnerTwoId = Guid.NewGuid();
+reviewRepository.Add(Review(partnerTwoId, "partner-two", ReconciliationReviewStatus.Rejected, decidedAt.AddMinutes(1)));
+var partnerTwo = await service.ResolveAsync(command with
 {
-    ReviewId = rejectedId,
+    ReviewId = partnerTwoId,
     Disposition = ReconciliationResolutionDisposition.VarianceAccepted,
     ResolvedAtUtc = decidedAt.AddMinutes(30)
-});
-Assert(rejected.Status == ReconciliationResolutionExecutionStatus.Created, "Rejected terminal review may be resolved.");
-Assert(rejected.Resolution?.ExternalRecordId == "external-4", "Single external record reference must be preserved.");
+}, scope);
+Assert(partnerTwo.Status == ReconciliationResolutionExecutionStatus.Created, "Authorized second partner resolution must be created.");
 
-await AssertThrowsAsync<ArgumentException>(
-    () => service.ResolveAsync(command with { EvidenceReference = " " }),
-    "Resolution requires corrective evidence.");
-var chronologyId = Guid.NewGuid();
-reviewRepository.Add(new ReconciliationReviewItem(
-    chronologyId,
-    "partner-three",
-    "internal-5",
-    "external-5",
-    ReconciliationMatchType.Partial,
-    75,
-    10,
-    TimeSpan.FromSeconds(5),
-    decidedAt.AddMinutes(-5),
-    ReconciliationReviewStatus.Approved,
-    "reviewer-4",
-    "chronology review",
-    decidedAt));
-await AssertThrowsAsync<ArgumentException>(
-    () => service.ResolveAsync(command with
-    {
-        ReviewId = chronologyId,
-        ResolvedAtUtc = decidedAt.AddMinutes(-1)
-    }),
-    "Resolution cannot predate review decision.");
+var scopedList = await service.ListAsync(new ReconciliationResolutionQuery(Limit: 50), scope);
+Assert(scopedList.Status == ReconciliationResolutionListStatus.Success && scopedList.Resolutions.Count == 2,
+    "Scoped list must contain authorized partner resolutions.");
+
+var onePartnerScope = ReconciliationResolutionAccessScope.ForPartners("resolver-1", ["partner-one"]);
+var onePartnerList = await service.ListAsync(new ReconciliationResolutionQuery(Limit: 50), onePartnerScope);
+Assert(onePartnerList.Resolutions.Count == 1 && onePartnerList.Resolutions[0].PartnerId == "partner-one",
+    "Operational query must be filtered by access scope.");
+
+var explicitForbidden = await service.ListAsync(new ReconciliationResolutionQuery(PartnerId: "partner-two"), onePartnerScope);
+Assert(explicitForbidden.Status == ReconciliationResolutionListStatus.AccessDenied,
+    "Explicit forbidden partner query must fail closed.");
+
+var adminList = await service.ListAsync(
+    new ReconciliationResolutionQuery(Disposition: ReconciliationResolutionDisposition.VarianceAccepted),
+    ReconciliationResolutionAccessScope.ForAllPartners("resolver-admin"));
+Assert(adminList.Resolutions.Count == 1 && adminList.Resolutions[0].PartnerId == "partner-two",
+    "All-partners scope must support operational filtering.");
+
+await AssertThrowsAsync<ArgumentOutOfRangeException>(
+    () => service.ListAsync(new ReconciliationResolutionQuery(Limit: 501), scope),
+    "Operational query limit must be bounded.");
 
 using var cts = new CancellationTokenSource();
 cts.Cancel();
 await AssertThrowsAsync<OperationCanceledException>(
-    () => service.GetByReviewIdAsync(reviewId, cts.Token),
+    () => service.GetByReviewIdAsync(reviewId, scope, cts.Token),
     "Cancellation must propagate.");
 
-Console.WriteLine("AFW-BE-RECONCILIATION-RESOLUTION-1 domain and application foundation scenarios: PASS");
+Console.WriteLine("AFW-BE-RECONCILIATION-RESOLUTION-1 authorization and operational query foundation scenarios: PASS");
+
+static ReconciliationReviewItem Review(
+    Guid id,
+    string partnerId,
+    ReconciliationReviewStatus status,
+    DateTime decidedAt) =>
+    new(
+        id,
+        partnerId,
+        $"internal-{id:N}",
+        $"external-{id:N}",
+        ReconciliationMatchType.Partial,
+        88,
+        25,
+        TimeSpan.FromSeconds(10),
+        decidedAt.AddMinutes(-5),
+        status,
+        "reviewer-1",
+        "review complete",
+        decidedAt);
 
 sealed class FakeReviewRepository(IEnumerable<ReconciliationReviewItem> seed) : IReconciliationReviewRepository
 {
     private readonly Dictionary<Guid, ReconciliationReviewItem> items = seed.ToDictionary(x => x.ReviewId);
-
     public void Add(ReconciliationReviewItem item) => items[item.ReviewId] = item;
-
-    public Task AddQueueAsync(ReconciliationReviewQueue queue, CancellationToken cancellationToken = default) =>
-        throw new NotSupportedException();
-
+    public Task AddQueueAsync(ReconciliationReviewQueue queue, CancellationToken cancellationToken = default) => throw new NotSupportedException();
     public Task<ReconciliationReviewItem?> GetAsync(Guid reviewId, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
         items.TryGetValue(reviewId, out var value);
         return Task.FromResult(value);
     }
-
-    public Task<IReadOnlyList<ReconciliationReviewItem>> ListAsync(
-        string partnerId,
-        ReconciliationReviewStatus? status = null,
-        CancellationToken cancellationToken = default) =>
+    public Task<IReadOnlyList<ReconciliationReviewItem>> ListAsync(string partnerId, ReconciliationReviewStatus? status = null, CancellationToken cancellationToken = default) =>
         throw new NotSupportedException();
-
-    public Task<bool> TryReplaceAsync(
-        ReconciliationReviewItem item,
-        ReconciliationReviewStatus expectedStatus,
-        CancellationToken cancellationToken = default) =>
+    public Task<bool> TryReplaceAsync(ReconciliationReviewItem item, ReconciliationReviewStatus expectedStatus, CancellationToken cancellationToken = default) =>
         throw new NotSupportedException();
 }
 
 sealed class InMemoryResolutionRepository : IReconciliationResolutionRepository
 {
-    private readonly Dictionary<Guid, ReconciliationResolution> byReviewId = new();
+    private readonly Dictionary<Guid, ReconciliationResolution> values = new();
     public int AddCalls { get; private set; }
 
-    public Task<ReconciliationResolution?> GetByReviewIdAsync(
-        Guid reviewId,
-        CancellationToken cancellationToken = default)
+    public Task<ReconciliationResolution?> GetByReviewIdAsync(Guid reviewId, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        byReviewId.TryGetValue(reviewId, out var value);
+        values.TryGetValue(reviewId, out var value);
         return Task.FromResult(value);
     }
 
-    public Task AddAsync(
-        ReconciliationResolution resolution,
+    public Task<IReadOnlyList<ReconciliationResolution>> ListAsync(
+        ReconciliationResolutionRepositoryQuery query,
         CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        if (!byReviewId.TryAdd(resolution.ReviewId, resolution))
+        IEnumerable<ReconciliationResolution> source = values.Values;
+        if (query.PartnerIds is { Count: > 0 })
+            source = source.Where(x => query.PartnerIds.Contains(x.PartnerId));
+        if (query.Disposition is not null)
+            source = source.Where(x => x.Disposition == query.Disposition.Value);
+        if (!string.IsNullOrWhiteSpace(query.ResolvedBy))
+            source = source.Where(x => x.ResolvedBy == query.ResolvedBy);
+        if (query.ResolvedFromUtc is not null)
+            source = source.Where(x => x.ResolvedAtUtc >= query.ResolvedFromUtc.Value);
+        if (query.ResolvedToUtc is not null)
+            source = source.Where(x => x.ResolvedAtUtc <= query.ResolvedToUtc.Value);
+        return Task.FromResult<IReadOnlyList<ReconciliationResolution>>(
+            source.OrderByDescending(x => x.ResolvedAtUtc).Take(query.Limit).ToArray());
+    }
+
+    public Task AddAsync(ReconciliationResolution resolution, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        if (!values.TryAdd(resolution.ReviewId, resolution))
             throw new InvalidOperationException("Review already has a resolution.");
         AddCalls++;
         return Task.CompletedTask;

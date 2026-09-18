@@ -20,6 +20,45 @@ public sealed class EfReconciliationResolutionRepository(ReconciliationResolutio
         return entity is null ? null : ToDomain(entity);
     }
 
+    public async Task<IReadOnlyList<ReconciliationResolution>> ListAsync(
+        ReconciliationResolutionRepositoryQuery query,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(query);
+        cancellationToken.ThrowIfCancellationRequested();
+
+        IQueryable<ReconciliationResolutionEntity> source = dbContext.Resolutions.AsNoTracking();
+
+        if (query.PartnerIds is { Count: > 0 })
+        {
+            var partners = query.PartnerIds.ToArray();
+            source = source.Where(x => partners.Contains(x.PartnerId));
+        }
+
+        if (query.Disposition is not null)
+        {
+            var disposition = (int)query.Disposition.Value;
+            source = source.Where(x => x.Disposition == disposition);
+        }
+
+        if (!string.IsNullOrWhiteSpace(query.ResolvedBy))
+            source = source.Where(x => x.ResolvedBy == query.ResolvedBy);
+
+        if (query.ResolvedFromUtc is not null)
+            source = source.Where(x => x.ResolvedAtUtc >= query.ResolvedFromUtc.Value);
+
+        if (query.ResolvedToUtc is not null)
+            source = source.Where(x => x.ResolvedAtUtc <= query.ResolvedToUtc.Value);
+
+        var items = await source
+            .OrderByDescending(x => x.ResolvedAtUtc)
+            .ThenBy(x => x.ResolutionId)
+            .Take(query.Limit)
+            .ToArrayAsync(cancellationToken);
+
+        return items.Select(ToDomain).ToArray();
+    }
+
     public async Task AddAsync(
         ReconciliationResolution resolution,
         CancellationToken cancellationToken = default)

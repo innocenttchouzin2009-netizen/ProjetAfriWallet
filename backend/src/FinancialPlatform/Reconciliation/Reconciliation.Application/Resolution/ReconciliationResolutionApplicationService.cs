@@ -9,15 +9,20 @@ public sealed class ReconciliationResolutionApplicationService(
 {
     public async Task<ReconciliationResolutionExecutionResult> ResolveAsync(
         ResolveReconciliationReviewCommand command,
+        ReconciliationResolutionAccessScope accessScope,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(command);
+        ArgumentNullException.ThrowIfNull(accessScope);
         cancellationToken.ThrowIfCancellationRequested();
         ValidateCommand(command);
 
         var existing = await resolutionRepository.GetByReviewIdAsync(command.ReviewId, cancellationToken);
         if (existing is not null)
         {
+            if (!accessScope.AllowsPartner(existing.PartnerId))
+                return ReconciliationResolutionExecutionResult.AccessDenied();
+
             EnsureEquivalent(existing, command);
             return ReconciliationResolutionExecutionResult.Existing(existing);
         }
@@ -25,6 +30,9 @@ public sealed class ReconciliationResolutionApplicationService(
         var review = await reviewRepository.GetAsync(command.ReviewId, cancellationToken);
         if (review is null)
             return ReconciliationResolutionExecutionResult.ReviewNotFound();
+
+        if (!accessScope.AllowsPartner(review.PartnerId))
+            return ReconciliationResolutionExecutionResult.AccessDenied();
 
         if (review.Status is not (ReconciliationReviewStatus.Approved or ReconciliationReviewStatus.Rejected))
             return ReconciliationResolutionExecutionResult.ReviewNotFinal();
@@ -43,20 +51,72 @@ public sealed class ReconciliationResolutionApplicationService(
             command.Disposition,
             command.Rationale,
             command.EvidenceReference,
-            command.ResolvedBy,
+            accessScope.ActorId,
             command.ResolvedAtUtc);
 
         await resolutionRepository.AddAsync(resolution, cancellationToken);
         return ReconciliationResolutionExecutionResult.Created(resolution);
     }
 
-    public Task<ReconciliationResolution?> GetByReviewIdAsync(
+    public async Task<ReconciliationResolutionLookupResult> GetByReviewIdAsync(
         Guid reviewId,
+        ReconciliationResolutionAccessScope accessScope,
         CancellationToken cancellationToken = default)
     {
         if (reviewId == Guid.Empty)
             throw new ArgumentException("Review id is required.", nameof(reviewId));
-        return resolutionRepository.GetByReviewIdAsync(reviewId, cancellationToken);
+        ArgumentNullException.ThrowIfNull(accessScope);
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var resolution = await resolutionRepository.GetByReviewIdAsync(reviewId, cancellationToken);
+        if (resolution is null)
+            return ReconciliationResolutionLookupResult.NotFound();
+
+        return accessScope.AllowsPartner(resolution.PartnerId)
+            ? ReconciliationResolutionLookupResult.Found(resolution)
+            : ReconciliationResolutionLookupResult.AccessDenied();
+    }
+
+    public async Task<ReconciliationResolutionListResult> ListAsync(
+        ReconciliationResolutionQuery query,
+        ReconciliationResolutionAccessScope accessScope,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(query);
+        ArgumentNullException.ThrowIfNull(accessScope);
+        cancellationToken.ThrowIfCancellationRequested();
+        ValidateQuery(query);
+
+        var requestedPartner = Normalize(query.PartnerId);
+        if (requestedPartner is not null && !accessScope.AllowsPartner(requestedPartner))
+            return ReconciliationResolutionListResult.AccessDenied();
+
+        IReadOnlyCollection<string>? partnerIds = null;
+        if (!accessScope.CanAccessAllPartners)
+        {
+            partnerIds = requestedPartner is null
+                ? accessScope.PartnerIds.ToArray()
+                : new[] { requestedPartner };
+        }
+        else if (requestedPartner is not null)
+        {
+            partnerIds = new[] { requestedPartner };
+        }
+
+        if (partnerIds is { Count: 0 })
+            return ReconciliationResolutionListResult.Success(Array.Empty<ReconciliationResolution>());
+
+        var resolutions = await resolutionRepository.ListAsync(
+            new ReconciliationResolutionRepositoryQuery(
+                partnerIds,
+                query.Disposition,
+                Normalize(query.ResolvedBy),
+                query.ResolvedFromUtc,
+                query.ResolvedToUtc,
+                query.Limit),
+            cancellationToken);
+
+        return ReconciliationResolutionListResult.Success(resolutions);
     }
 
     private static void ValidateCommand(ResolveReconciliationReviewCommand command)
@@ -65,8 +125,6 @@ public sealed class ReconciliationResolutionApplicationService(
             throw new ArgumentException("Review id is required.", nameof(command));
         if (!Enum.IsDefined(command.Disposition))
             throw new ArgumentOutOfRangeException(nameof(command));
-        if (string.IsNullOrWhiteSpace(command.ResolvedBy))
-            throw new ArgumentException("Resolver id is required.", nameof(command));
         if (string.IsNullOrWhiteSpace(command.Rationale))
             throw new ArgumentException("Resolution rationale is required.", nameof(command));
         if (string.IsNullOrWhiteSpace(command.EvidenceReference))
@@ -75,17 +133,34 @@ public sealed class ReconciliationResolutionApplicationService(
             throw new ArgumentException("Resolution timestamp must be UTC.", nameof(command));
     }
 
+    private static void ValidateQuery(ReconciliationResolutionQuery query)
+    {
+        if (query.Limit is < 1 or > 500)
+            throw new ArgumentOutOfRangeException(nameof(query), "Resolution query limit must be between 1 and 500.");
+        if (query.Disposition is not null && !Enum.IsDefined(query.Disposition.Value))
+            throw new ArgumentOutOfRangeException(nameof(query), "Unknown reconciliation resolution disposition.");
+        if (query.ResolvedFromUtc is not null && query.ResolvedFromUtc.Value.Kind != DateTimeKind.Utc)
+            throw new ArgumentException("ResolvedFromUtc must be UTC.", nameof(query));
+        if (query.ResolvedToUtc is not null && query.ResolvedToUtc.Value.Kind != DateTimeKind.Utc)
+            throw new ArgumentException("ResolvedToUtc must be UTC.", nameof(query));
+        if (query.ResolvedFromUtc is not null &&
+            query.ResolvedToUtc is not null &&
+            query.ResolvedFromUtc > query.ResolvedToUtc)
+            throw new ArgumentException("Resolution query start cannot be after end.", nameof(query));
+    }
+
     private static void EnsureEquivalent(
         ReconciliationResolution existing,
         ResolveReconciliationReviewCommand command)
     {
         if (existing.Disposition != command.Disposition ||
-            !string.Equals(existing.ResolvedBy, command.ResolvedBy.Trim(), StringComparison.Ordinal) ||
             !string.Equals(existing.Rationale, command.Rationale.Trim(), StringComparison.Ordinal) ||
-            !string.Equals(existing.EvidenceReference, command.EvidenceReference.Trim(), StringComparison.Ordinal) ||
-            existing.ResolvedAtUtc != command.ResolvedAtUtc)
+            !string.Equals(existing.EvidenceReference, command.EvidenceReference.Trim(), StringComparison.Ordinal))
         {
             throw new InvalidOperationException("Review already has a different reconciliation resolution.");
         }
     }
+
+    private static string? Normalize(string? value) =>
+        string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 }

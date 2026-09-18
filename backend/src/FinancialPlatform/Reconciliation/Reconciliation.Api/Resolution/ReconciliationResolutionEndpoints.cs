@@ -8,10 +8,14 @@ public static class ReconciliationResolutionEndpoints
 {
     public static IEndpointRouteBuilder MapReconciliationResolutionEndpoints(this IEndpointRouteBuilder endpoints)
     {
-        var group = endpoints.MapGroup("/api/v1/reconciliation/reviews").RequireAuthorization();
-        group.MapPost("/{reviewId:guid}/resolution", CreateAsync);
-        group.MapGet("/{reviewId:guid}/resolution", GetAsync);
-        group.MapGet("/{reviewId:guid}/resolution/audit", GetAuditAsync);
+        var reviewGroup = endpoints.MapGroup("/api/v1/reconciliation/reviews").RequireAuthorization();
+        reviewGroup.MapPost("/{reviewId:guid}/resolution", CreateAsync);
+        reviewGroup.MapGet("/{reviewId:guid}/resolution", GetAsync);
+        reviewGroup.MapGet("/{reviewId:guid}/resolution/audit", GetAuditAsync);
+
+        endpoints.MapGet("/api/v1/reconciliation/resolutions", ListAsync)
+            .RequireAuthorization();
+
         return endpoints;
     }
 
@@ -22,8 +26,7 @@ public static class ReconciliationResolutionEndpoints
         ReconciliationResolutionApplicationService service,
         CancellationToken cancellationToken)
     {
-        var resolverId = principal.FindFirst("sub")?.Value;
-        if (string.IsNullOrWhiteSpace(resolverId))
+        if (!ReconciliationResolutionAccessScopeFactory.TryCreate(principal, out var accessScope) || accessScope is null)
             return Results.Unauthorized();
 
         if (!Enum.TryParse<ReconciliationResolutionDisposition>(request.Disposition, true, out var disposition) ||
@@ -36,25 +39,15 @@ public static class ReconciliationResolutionEndpoints
 
         try
         {
-            var existing = await service.GetByReviewIdAsync(reviewId, cancellationToken);
-            if (existing is not null)
-            {
-                if (IsEquivalent(existing, disposition, resolverId, request))
-                    return Results.Ok(ReconciliationResolutionResponse.From(existing));
-
-                return Results.Conflict(new ReconciliationResolutionError(
-                    "RECONCILIATION_RESOLUTION_CONFLICT",
-                    "Review already has a different reconciliation resolution."));
-            }
-
             var result = await service.ResolveAsync(
                 new ResolveReconciliationReviewCommand(
                     reviewId,
                     disposition,
-                    resolverId,
+                    accessScope.ActorId,
                     request.Rationale,
                     request.EvidenceReference,
                     DateTime.UtcNow),
+                accessScope,
                 cancellationToken);
 
             return result.Status switch
@@ -73,6 +66,12 @@ public static class ReconciliationResolutionEndpoints
                     Results.Conflict(new ReconciliationResolutionError(
                         "RECONCILIATION_RESOLUTION_REVIEW_NOT_FINAL",
                         "Reconciliation review must be approved or rejected before resolution.")),
+                ReconciliationResolutionExecutionStatus.AccessDenied =>
+                    Results.Json(
+                        new ReconciliationResolutionError(
+                            "RECONCILIATION_RESOLUTION_FORBIDDEN",
+                            "Authenticated actor is not authorized for this reconciliation partner."),
+                        statusCode: StatusCodes.Status403Forbidden),
                 _ => Results.Conflict(new ReconciliationResolutionError(
                     "RECONCILIATION_RESOLUTION_CONFLICT",
                     "Reconciliation resolution could not be created."))
@@ -94,15 +93,28 @@ public static class ReconciliationResolutionEndpoints
 
     private static async Task<IResult> GetAsync(
         Guid reviewId,
+        ClaimsPrincipal principal,
         ReconciliationResolutionApplicationService service,
         CancellationToken cancellationToken)
     {
+        if (!ReconciliationResolutionAccessScopeFactory.TryCreate(principal, out var accessScope) || accessScope is null)
+            return Results.Unauthorized();
+
         try
         {
-            var resolution = await service.GetByReviewIdAsync(reviewId, cancellationToken);
-            return resolution is null
-                ? Results.NotFound()
-                : Results.Ok(ReconciliationResolutionResponse.From(resolution));
+            var result = await service.GetByReviewIdAsync(reviewId, accessScope, cancellationToken);
+            return result.Status switch
+            {
+                ReconciliationResolutionLookupStatus.Found when result.Resolution is not null =>
+                    Results.Ok(ReconciliationResolutionResponse.From(result.Resolution)),
+                ReconciliationResolutionLookupStatus.NotFound => Results.NotFound(),
+                ReconciliationResolutionLookupStatus.AccessDenied => Results.Json(
+                    new ReconciliationResolutionError(
+                        "RECONCILIATION_RESOLUTION_FORBIDDEN",
+                        "Authenticated actor is not authorized for this reconciliation partner."),
+                    statusCode: StatusCodes.Status403Forbidden),
+                _ => Results.NotFound()
+            };
         }
         catch (ArgumentException ex)
         {
@@ -114,15 +126,27 @@ public static class ReconciliationResolutionEndpoints
 
     private static async Task<IResult> GetAuditAsync(
         Guid reviewId,
+        ClaimsPrincipal principal,
         ReconciliationResolutionApplicationService service,
         IReconciliationResolutionAuditReader auditReader,
         CancellationToken cancellationToken)
     {
+        if (!ReconciliationResolutionAccessScopeFactory.TryCreate(principal, out var accessScope) || accessScope is null)
+            return Results.Unauthorized();
+
         try
         {
-            var resolution = await service.GetByReviewIdAsync(reviewId, cancellationToken);
-            if (resolution is null)
+            var lookup = await service.GetByReviewIdAsync(reviewId, accessScope, cancellationToken);
+            if (lookup.Status == ReconciliationResolutionLookupStatus.NotFound)
                 return Results.NotFound();
+            if (lookup.Status == ReconciliationResolutionLookupStatus.AccessDenied)
+            {
+                return Results.Json(
+                    new ReconciliationResolutionError(
+                        "RECONCILIATION_RESOLUTION_FORBIDDEN",
+                        "Authenticated actor is not authorized for this reconciliation partner."),
+                    statusCode: StatusCodes.Status403Forbidden);
+            }
 
             var audit = await auditReader.ListByReviewIdAsync(reviewId, cancellationToken);
             return Results.Ok(audit.Select(ReconciliationResolutionAuditResponse.From).ToArray());
@@ -135,13 +159,72 @@ public static class ReconciliationResolutionEndpoints
         }
     }
 
-    private static bool IsEquivalent(
-        ReconciliationResolution existing,
-        ReconciliationResolutionDisposition disposition,
-        string resolverId,
-        CreateReconciliationResolutionRequest request) =>
-        existing.Disposition == disposition &&
-        string.Equals(existing.ResolvedBy, resolverId.Trim(), StringComparison.Ordinal) &&
-        string.Equals(existing.Rationale, request.Rationale?.Trim(), StringComparison.Ordinal) &&
-        string.Equals(existing.EvidenceReference, request.EvidenceReference?.Trim(), StringComparison.Ordinal);
+    private static async Task<IResult> ListAsync(
+        string? partnerId,
+        string? disposition,
+        string? resolvedBy,
+        DateTime? resolvedFromUtc,
+        DateTime? resolvedToUtc,
+        int? limit,
+        ClaimsPrincipal principal,
+        ReconciliationResolutionApplicationService service,
+        CancellationToken cancellationToken)
+    {
+        if (!ReconciliationResolutionAccessScopeFactory.TryCreate(principal, out var accessScope) || accessScope is null)
+            return Results.Unauthorized();
+
+        ReconciliationResolutionDisposition? parsedDisposition = null;
+        if (!string.IsNullOrWhiteSpace(disposition))
+        {
+            if (!Enum.TryParse<ReconciliationResolutionDisposition>(disposition, true, out var value) ||
+                !Enum.IsDefined(value))
+            {
+                return Results.BadRequest(new ReconciliationResolutionError(
+                    "RECONCILIATION_RESOLUTION_VALIDATION",
+                    "Unknown reconciliation resolution disposition."));
+            }
+            parsedDisposition = value;
+        }
+
+        try
+        {
+            var result = await service.ListAsync(
+                new ReconciliationResolutionQuery(
+                    partnerId,
+                    parsedDisposition,
+                    resolvedBy,
+                    NormalizeUtc(resolvedFromUtc),
+                    NormalizeUtc(resolvedToUtc),
+                    limit ?? 100),
+                accessScope,
+                cancellationToken);
+
+            return result.Status == ReconciliationResolutionListStatus.AccessDenied
+                ? Results.Json(
+                    new ReconciliationResolutionError(
+                        "RECONCILIATION_RESOLUTION_FORBIDDEN",
+                        "Authenticated actor is not authorized for the requested reconciliation partner."),
+                    statusCode: StatusCodes.Status403Forbidden)
+                : Results.Ok(result.Resolutions.Select(ReconciliationResolutionResponse.From).ToArray());
+        }
+        catch (ArgumentException ex)
+        {
+            return Results.BadRequest(new ReconciliationResolutionError(
+                "RECONCILIATION_RESOLUTION_VALIDATION",
+                ex.Message));
+        }
+    }
+
+    private static DateTime? NormalizeUtc(DateTime? value)
+    {
+        if (value is null)
+            return null;
+
+        return value.Value.Kind switch
+        {
+            DateTimeKind.Utc => value,
+            DateTimeKind.Unspecified => DateTime.SpecifyKind(value.Value, DateTimeKind.Utc),
+            _ => value.Value.ToUniversalTime()
+        };
+    }
 }

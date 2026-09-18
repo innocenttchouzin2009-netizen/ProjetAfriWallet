@@ -8,6 +8,10 @@ public interface IReconciliationResolutionRepository
         Guid reviewId,
         CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyList<ReconciliationResolution>> ListAsync(
+        ReconciliationResolutionRepositoryQuery query,
+        CancellationToken cancellationToken = default);
+
     Task AddAsync(
         ReconciliationResolution resolution,
         CancellationToken cancellationToken = default);

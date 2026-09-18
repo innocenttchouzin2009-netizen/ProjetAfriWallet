@@ -12,6 +12,7 @@ on:
       - 'backend/tests/PartnerWebhooks.Persistence.Scenarios/**'
       - 'backend/tests/PartnerWebhooks.Signing.Scenarios/**'
       - 'backend/tests/PartnerWebhooks.Routing.Scenarios/**'
+      - 'backend/tests/PartnerWebhooks.HttpDelivery.Scenarios/**'
       - '.github/workflows/backend-webhook-1.yml'
   pull_request:
     branches:
@@ -23,6 +24,7 @@ on:
       - 'backend/tests/PartnerWebhooks.Persistence.Scenarios/**'
       - 'backend/tests/PartnerWebhooks.Signing.Scenarios/**'
       - 'backend/tests/PartnerWebhooks.Routing.Scenarios/**'
+      - 'backend/tests/PartnerWebhooks.HttpDelivery.Scenarios/**'
       - '.github/workflows/backend-webhook-1.yml'
   workflow_dispatch:
 
@@ -63,3 +65,9 @@ jobs:
 
       - name: Run subscription-aware webhook routing scenarios
         run: dotnet run --project backend/tests/PartnerWebhooks.Routing.Scenarios/PartnerWebhooks.Routing.Scenarios.csproj --configuration Release
+
+      - name: Build Partner Webhooks Infrastructure
+        run: dotnet build backend/src/Webhooks/PartnerWebhooks.Infrastructure/PartnerWebhooks.Infrastructure.csproj --configuration Release --nologo
+
+      - name: Run signed HTTP delivery per subscription scenarios
+        run: dotnet run --project backend/tests/PartnerWebhooks.HttpDelivery.Scenarios/PartnerWebhooks.HttpDelivery.Scenarios.csproj --configuration Release

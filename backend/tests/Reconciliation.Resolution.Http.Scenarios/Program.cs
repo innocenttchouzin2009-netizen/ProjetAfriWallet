@@ -19,8 +19,10 @@ using Reconciliation.Domain.Resolutions;
 await using var fixture = await ResolutionHttpFixture.CreateAsync();
 var anonymous = fixture.App.GetTestClient();
 var partnerOneClient = CreateClient(fixture.App, "resolver-one", ["partner-one"]);
+var partnerOneAuditor = CreateClient(fixture.App, "auditor-one", ["partner-one"], canAudit: true);
 var partnerTwoClient = CreateClient(fixture.App, "resolver-two", ["partner-two"]);
-var adminClient = CreateClient(fixture.App, "resolver-admin", [], allPartners: true);
+var forgedGlobalClient = CreateClient(fixture.App, "forged-global", ["partner-one"], allPartners: true);
+var adminClient = CreateClient(fixture.App, "resolver-admin", [], allPartners: true, administrator: true);
 
 await RunAsync("resolution creation requires authentication", async () =>
 {
@@ -40,6 +42,25 @@ await RunAsync("authorized partner resolver creates resolution", async () =>
     Assert(body?.ResolvedBy == "resolver-one", "Resolver identity must come from authenticated scope.");
 });
 
+await RunAsync("ordinary resolver cannot read audit", async () =>
+{
+    var response = await partnerOneClient.GetAsync(
+        $"/api/v1/reconciliation/reviews/{fixture.PartnerOneReviewId}/resolution/audit");
+    Assert(response.StatusCode == HttpStatusCode.Forbidden, "Resolver without audit permission must return 403.");
+    var error = await response.Content.ReadFromJsonAsync<ReconciliationResolutionError>();
+    Assert(error?.Code == "RECONCILIATION_RESOLUTION_AUDIT_FORBIDDEN", "Dedicated audit denial code is required.");
+});
+
+await RunAsync("authorized partner auditor reads own audit trail", async () =>
+{
+    var response = await partnerOneAuditor.GetAsync(
+        $"/api/v1/reconciliation/reviews/{fixture.PartnerOneReviewId}/resolution/audit");
+    Assert(response.StatusCode == HttpStatusCode.OK, "Authorized auditor must receive 200.");
+    var items = await response.Content.ReadFromJsonAsync<ReconciliationResolutionAuditResponse[]>();
+    Assert(items is { Length: 1 }, "Resolution must expose exactly one append-only creation audit entry.");
+    Assert(items[0].ResolvedBy == "resolver-one", "Audit must preserve original resolver identity.");
+});
+
 await RunAsync("foreign partner resolver is forbidden", async () =>
 {
     var create = await partnerTwoClient.PostAsJsonAsync(
@@ -50,10 +71,6 @@ await RunAsync("foreign partner resolver is forbidden", async () =>
     var read = await partnerTwoClient.GetAsync(
         $"/api/v1/reconciliation/reviews/{fixture.PartnerOneReviewId}/resolution");
     Assert(read.StatusCode == HttpStatusCode.Forbidden, "Foreign partner read must return 403.");
-
-    var audit = await partnerTwoClient.GetAsync(
-        $"/api/v1/reconciliation/reviews/{fixture.PartnerOneReviewId}/resolution/audit");
-    Assert(audit.StatusCode == HttpStatusCode.Forbidden, "Foreign partner audit must return 403.");
 });
 
 await RunAsync("second scoped partner creates own resolution", async () =>
@@ -79,7 +96,16 @@ await RunAsync("explicit forbidden partner query returns 403", async () =>
     Assert(response.StatusCode == HttpStatusCode.Forbidden, "Explicit forbidden partner query must return 403.");
 });
 
-await RunAsync("all-partners scope can query across partners", async () =>
+await RunAsync("all-partners claim without administrator privilege fails closed", async () =>
+{
+    var response = await forgedGlobalClient.GetAsync("/api/v1/reconciliation/resolutions?limit=10");
+    Assert(response.StatusCode == HttpStatusCode.OK, "Forged global claim remains partner-scoped, not globally rejected.");
+    var items = await response.Content.ReadFromJsonAsync<ReconciliationResolutionResponse[]>();
+    Assert(items is { Length: 1 } && items[0].PartnerId == "partner-one",
+        "All-partners claim must not widen scope without explicit administrator privilege.");
+});
+
+await RunAsync("administrator can query across partners and read audit", async () =>
 {
     var response = await adminClient.GetAsync("/api/v1/reconciliation/resolutions?limit=10");
     Assert(response.StatusCode == HttpStatusCode.OK, "Admin operational list must return 200.");
@@ -90,6 +116,10 @@ await RunAsync("all-partners scope can query across partners", async () =>
     var filtered = await variance.Content.ReadFromJsonAsync<ReconciliationResolutionResponse[]>();
     Assert(variance.StatusCode == HttpStatusCode.OK && filtered is { Length: 1 } && filtered[0].PartnerId == "partner-two",
         "Disposition query must filter operational list.");
+
+    var audit = await adminClient.GetAsync(
+        $"/api/v1/reconciliation/reviews/{fixture.PartnerTwoReviewId}/resolution/audit");
+    Assert(audit.StatusCode == HttpStatusCode.OK, "Administrator must be able to read cross-partner audit.");
 });
 
 await RunAsync("identical replay remains idempotent", async () =>
@@ -109,9 +139,15 @@ await RunAsync("unknown review remains 404 for authorized actor", async () =>
     Assert(response.StatusCode == HttpStatusCode.NotFound, "Unknown review must return 404.");
 });
 
-Console.WriteLine("AFW-BE-RECONCILIATION-RESOLUTION-1 authorization hardening and operational query HTTP scenarios: PASS");
+Console.WriteLine("AFW-BE-RECONCILIATION-RESOLUTION-1 final administrative and audit HTTP scenarios: PASS");
 
-static HttpClient CreateClient(WebApplication app, string userId, string[] partners, bool allPartners = false)
+static HttpClient CreateClient(
+    WebApplication app,
+    string userId,
+    string[] partners,
+    bool allPartners = false,
+    bool administrator = false,
+    bool canAudit = false)
 {
     var client = app.GetTestClient();
     client.DefaultRequestHeaders.Add("X-Test-User", userId);
@@ -119,6 +155,10 @@ static HttpClient CreateClient(WebApplication app, string userId, string[] partn
         client.DefaultRequestHeaders.Add("X-Test-Partner", partner);
     if (allPartners)
         client.DefaultRequestHeaders.Add("X-Test-All-Partners", "true");
+    if (administrator)
+        client.DefaultRequestHeaders.Add("X-Test-Administrator", "true");
+    if (canAudit)
+        client.DefaultRequestHeaders.Add("X-Test-Audit", "true");
     return client;
 }
 
@@ -293,6 +333,18 @@ sealed class HeaderTestAuthHandler(
             string.Equals(all.ToString(), "true", StringComparison.OrdinalIgnoreCase))
         {
             claims.Add(new Claim(ReconciliationResolutionAccessScopeFactory.AllPartnersClaim, "true"));
+        }
+
+        if (Request.Headers.TryGetValue("X-Test-Administrator", out var admin) &&
+            string.Equals(admin.ToString(), "true", StringComparison.OrdinalIgnoreCase))
+        {
+            claims.Add(new Claim(ReconciliationResolutionAccessScopeFactory.AdministratorClaim, "true"));
+        }
+
+        if (Request.Headers.TryGetValue("X-Test-Audit", out var audit) &&
+            string.Equals(audit.ToString(), "true", StringComparison.OrdinalIgnoreCase))
+        {
+            claims.Add(new Claim(ReconciliationResolutionAccessScopeFactory.AuditClaim, "true"));
         }
 
         var identity = new ClaimsIdentity(claims, Scheme.Name);

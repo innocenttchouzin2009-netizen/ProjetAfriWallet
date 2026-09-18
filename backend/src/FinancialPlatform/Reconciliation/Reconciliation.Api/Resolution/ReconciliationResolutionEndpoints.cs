@@ -134,6 +134,15 @@ public static class ReconciliationResolutionEndpoints
         if (!ReconciliationResolutionAccessScopeFactory.TryCreate(principal, out var accessScope) || accessScope is null)
             return Results.Unauthorized();
 
+        if (!accessScope.CanReadAudit)
+        {
+            return Results.Json(
+                new ReconciliationResolutionError(
+                    "RECONCILIATION_RESOLUTION_AUDIT_FORBIDDEN",
+                    "Authenticated actor is not authorized to read reconciliation resolution audit data."),
+                statusCode: StatusCodes.Status403Forbidden);
+        }
+
         try
         {
             var lookup = await service.GetByReviewIdAsync(reviewId, accessScope, cancellationToken);

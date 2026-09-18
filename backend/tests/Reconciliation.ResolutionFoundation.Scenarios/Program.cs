@@ -23,7 +23,14 @@ var reviewRepository = new FakeReviewRepository([approved]);
 var resolutionRepository = new InMemoryResolutionRepository();
 var service = new ReconciliationResolutionApplicationService(reviewRepository, resolutionRepository);
 var scope = ReconciliationResolutionAccessScope.ForPartners("resolver-1", ["partner-one", "partner-two", "partner-three"]);
+var auditScope = ReconciliationResolutionAccessScope.ForPartners("auditor-1", ["partner-one"], canReadAudit: true);
 var forbiddenScope = ReconciliationResolutionAccessScope.ForPartners("resolver-x", ["partner-x"]);
+var adminScope = ReconciliationResolutionAccessScope.ForAllPartners("resolver-admin");
+
+Assert(!scope.IsAdministrator && !scope.CanReadAudit, "Ordinary resolver scope must not gain administrative or audit permissions.");
+Assert(auditScope.CanReadAudit && !auditScope.IsAdministrator, "Audit permission must be separable from administrator scope.");
+Assert(adminScope.IsAdministrator && adminScope.CanAccessAllPartners && adminScope.CanReadAudit,
+    "Administrator scope must explicitly carry global and audit privileges.");
 
 var command = new ResolveReconciliationReviewCommand(
     reviewId,
@@ -76,9 +83,9 @@ Assert(explicitForbidden.Status == ReconciliationResolutionListStatus.AccessDeni
 
 var adminList = await service.ListAsync(
     new ReconciliationResolutionQuery(Disposition: ReconciliationResolutionDisposition.VarianceAccepted),
-    ReconciliationResolutionAccessScope.ForAllPartners("resolver-admin"));
+    adminScope);
 Assert(adminList.Resolutions.Count == 1 && adminList.Resolutions[0].PartnerId == "partner-two",
-    "All-partners scope must support operational filtering.");
+    "Administrator scope must support cross-partner operational filtering.");
 
 await AssertThrowsAsync<ArgumentOutOfRangeException>(
     () => service.ListAsync(new ReconciliationResolutionQuery(Limit: 501), scope),
@@ -90,7 +97,7 @@ await AssertThrowsAsync<OperationCanceledException>(
     () => service.GetByReviewIdAsync(reviewId, scope, cts.Token),
     "Cancellation must propagate.");
 
-Console.WriteLine("AFW-BE-RECONCILIATION-RESOLUTION-1 authorization and operational query foundation scenarios: PASS");
+Console.WriteLine("AFW-BE-RECONCILIATION-RESOLUTION-1 final administrative control foundation scenarios: PASS");
 
 static ReconciliationReviewItem Review(
     Guid id,

@@ -222,6 +222,7 @@ app.MapPaymentRequestEndpoints();
 app.MapPaymentRequestReconciliationEndpoints();
 app.MapPaymentRequestInboxOutboxEndpoints();
 app.MapPaymentRequestEventOutboxOperationalEndpoints();
+app.MapPaymentRequestDeadLetterRecoveryEndpoints();
 app.MapNotificationEndpoints();
 app.MapPushDeviceEndpoints();
 app.MapNotificationPreferenceEndpoints();

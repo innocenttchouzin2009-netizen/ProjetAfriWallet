@@ -20,6 +20,7 @@ public static class PaymentRequestsComposition
 
         var workerOptions = PaymentRequestEventDispatchWorkerOptions.FromConfiguration(configuration);
         var deliveryOptions = workerOptions.ToDeliveryOptions();
+        var recoveryHttpOptions = PaymentRequestDeadLetterRecoveryHttpOptions.FromConfiguration(configuration);
 
         services.AddDbContext<PaymentRequestDbContext>(options => options.UseSqlite(connectionString));
         services.AddScoped<IPaymentRequestRepository, EfPaymentRequestRepository>();
@@ -35,9 +36,11 @@ public static class PaymentRequestsComposition
         services.AddScoped<IPaymentRequestEventAttemptLedger, EfPaymentRequestEventAttemptLedger>();
         services.AddScoped<IPaymentRequestEventAttemptFinalizer, EfPaymentRequestEventAttemptFinalizer>();
         services.AddScoped<IPaymentRequestEventOutboxDiagnostics, EfPaymentRequestEventOutboxDiagnostics>();
+        services.AddScoped<IPaymentRequestEventDeadLetterRecoveryStore, EfPaymentRequestEventDeadLetterRecoveryStore>();
         services.AddScoped<IPaymentRequestEventDeliveryPort, ProviderNeutralPaymentRequestEventDeliveryAdapter>();
         services.AddScoped<PaymentRequestEventOutboxProcessor>();
         services.AddScoped<PaymentRequestEventOutboxOperationalHealthService>();
+        services.AddScoped<PaymentRequestEventDeadLetterRecoveryService>();
         services.AddScoped<PaymentRequestApplicationService>();
         services.AddScoped<PaymentRequestActionService>();
         services.AddScoped<AuthorizedPaymentRequestQueryService>();
@@ -45,6 +48,9 @@ public static class PaymentRequestsComposition
         services.AddSingleton(TimeProvider.System);
         services.AddSingleton(workerOptions);
         services.AddSingleton(deliveryOptions);
+        services.AddSingleton(PaymentRequestEventDeadLetterReplayOptions.Default);
+        services.AddSingleton<PaymentRequestEventDeadLetterReplayPolicy>();
+        services.AddSingleton(recoveryHttpOptions);
         services.AddSingleton<PaymentRequestEventOutboxWorkerState>();
         services.AddHostedService<PaymentRequestEventOutboxHostedWorker>();
         return services;

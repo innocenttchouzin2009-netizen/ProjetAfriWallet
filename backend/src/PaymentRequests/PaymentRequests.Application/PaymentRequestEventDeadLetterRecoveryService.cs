@@ -1,5 +1,12 @@
 namespace AfriWallet.PaymentRequests.Application;
 
+public sealed record PaymentRequestEventDeadLetterRecoveryCommand(
+    Guid EventId,
+    string RequestedBy,
+    string Reason,
+    DateTimeOffset RequestedAtUtc,
+    DateTimeOffset AvailableAtUtc);
+
 public enum PaymentRequestEventDeadLetterRecoveryExecutionCode
 {
     Requeued = 1,
@@ -41,6 +48,44 @@ public sealed class PaymentRequestEventDeadLetterRecoveryService(
     PaymentRequestEventDeadLetterReplayPolicy replayPolicy)
 {
     public async Task<PaymentRequestEventDeadLetterRecoveryExecutionResult> RecoverAsync(
+        PaymentRequestEventDeadLetterRecoveryCommand command,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(command);
+        cancellationToken.ThrowIfCancellationRequested();
+
+        if (command.EventId == Guid.Empty)
+        {
+            throw new ArgumentException("Event id cannot be empty.", nameof(command));
+        }
+
+        var item = await recoveryStore.GetAsync(command.EventId, cancellationToken);
+        if (item is null)
+        {
+            return PaymentRequestEventDeadLetterRecoveryExecutionResult.EventNotFound();
+        }
+
+        var attempts = await attemptLedger.ListByEventAsync(command.EventId, cancellationToken);
+        var deadLetterCount = attempts.Count(x =>
+            x.EventId == command.EventId &&
+            x.CompletedAtUtc is not null &&
+            x.Outcome == PaymentRequestEventAttemptOutcome.DeadLetter);
+        var priorReplayCount = Math.Max(0, deadLetterCount - 1);
+
+        return await RecoverCoreAsync(
+            new PaymentRequestEventDeadLetterReplayRequest(
+                command.EventId,
+                command.RequestedBy,
+                command.Reason,
+                command.RequestedAtUtc,
+                command.AvailableAtUtc,
+                priorReplayCount),
+            item,
+            attempts,
+            cancellationToken);
+    }
+
+    public async Task<PaymentRequestEventDeadLetterRecoveryExecutionResult> RecoverAsync(
         PaymentRequestEventDeadLetterReplayRequest request,
         CancellationToken cancellationToken = default)
     {
@@ -59,6 +104,15 @@ public sealed class PaymentRequestEventDeadLetterRecoveryService(
         }
 
         var attempts = await attemptLedger.ListByEventAsync(request.EventId, cancellationToken);
+        return await RecoverCoreAsync(request, item, attempts, cancellationToken);
+    }
+
+    private async Task<PaymentRequestEventDeadLetterRecoveryExecutionResult> RecoverCoreAsync(
+        PaymentRequestEventDeadLetterReplayRequest request,
+        PaymentRequestEventOutboxItem item,
+        IReadOnlyList<PaymentRequestEventAttempt> attempts,
+        CancellationToken cancellationToken)
+    {
         var decision = replayPolicy.Evaluate(request, item, attempts);
 
         if (!decision.Approved || decision.Plan is null)
@@ -68,11 +122,7 @@ public sealed class PaymentRequestEventDeadLetterRecoveryService(
 
         var requeued = await recoveryStore.TryRequeueAsync(decision.Plan, cancellationToken);
         return requeued
-            ? new(
-                PaymentRequestEventDeadLetterRecoveryExecutionCode.Requeued,
-                decision)
-            : new(
-                PaymentRequestEventDeadLetterRecoveryExecutionCode.RequeueConflict,
-                decision);
+            ? new(PaymentRequestEventDeadLetterRecoveryExecutionCode.Requeued, decision)
+            : new(PaymentRequestEventDeadLetterRecoveryExecutionCode.RequeueConflict, decision);
     }
 }

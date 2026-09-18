@@ -1,0 +1,40 @@
+name: AFW-BE-REQUEST-OUTBOX-REINTEGRATION-1 Functional Validation
+
+on:
+  push:
+    branches:
+      - validation/request-outbox-reintegration-1-e2d59b5f
+
+jobs:
+  validate:
+    name: Validate exact functional head
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact functional head
+        uses: actions/checkout@v4
+        with:
+          ref: e2d59b5f53b55fa75e0f42969a3ec11ed9f79684
+
+      - name: Verify exact SHA
+        run: test "$(git rev-parse HEAD)" = "e2d59b5f53b55fa75e0f42969a3ec11ed9f79684"
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build IdentityService host
+        run: dotnet build backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj --configuration Release --nologo
+
+      - name: Run durable outbox scenarios
+        run: dotnet run --project backend/tests/PaymentRequests.EventOutbox.Scenarios/PaymentRequests.EventOutbox.Scenarios.csproj --configuration Release
+
+      - name: Run operational outbox scenarios
+        run: dotnet run --project backend/tests/PaymentRequests.EventOutbox.Operational.Scenarios/PaymentRequests.EventOutbox.Operational.Scenarios.csproj --configuration Release
+
+      - name: Run hosted worker scenarios
+        run: dotnet run --project backend/tests/PaymentRequests.EventWorker.Scenarios/PaymentRequests.EventWorker.Scenarios.csproj --configuration Release
+
+      - name: Run dispatcher configuration scenarios
+        run: dotnet run --project backend/tests/PaymentRequests.EventOutbox.Configuration.Scenarios/PaymentRequests.EventOutbox.Configuration.Scenarios.csproj --configuration Release

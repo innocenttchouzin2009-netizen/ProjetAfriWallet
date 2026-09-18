@@ -1,4 +1,4 @@
-name: AFW-BE-REQUEST Commit 4 Webhook Subscription Reconfiguration
+name: AFW-BE-REQUEST Commit 5 Webhook Subscription Activation Lifecycle
 
 on:
   push:
@@ -7,10 +7,11 @@ on:
     paths:
       - 'backend/src/PaymentRequests/PaymentRequests.Webhooks/**'
       - 'backend/src/PaymentRequests/PaymentRequests.WebhookSubscriptions.Persistence/**'
-      - 'backend/src/IdentityService/IdentityService.Api/PaymentRequests/PaymentRequestWebhookSubscriptionReconfiguration*'
+      - 'backend/src/IdentityService/IdentityService.Api/PaymentRequests/PaymentRequestWebhookSubscription*'
       - 'backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj'
       - 'backend/src/IdentityService/IdentityService.Api/Program.cs'
       - 'backend/tests/PaymentRequests.WebhookReconfiguration.Http.Scenarios/**'
+      - 'backend/tests/PaymentRequests.WebhookActivation.Http.Scenarios/**'
       - '.github/workflows/backend-request-webhook-management-2.yml'
   pull_request:
     branches:
@@ -18,16 +19,17 @@ on:
     paths:
       - 'backend/src/PaymentRequests/PaymentRequests.Webhooks/**'
       - 'backend/src/PaymentRequests/PaymentRequests.WebhookSubscriptions.Persistence/**'
-      - 'backend/src/IdentityService/IdentityService.Api/PaymentRequests/PaymentRequestWebhookSubscriptionReconfiguration*'
+      - 'backend/src/IdentityService/IdentityService.Api/PaymentRequests/PaymentRequestWebhookSubscription*'
       - 'backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj'
       - 'backend/src/IdentityService/IdentityService.Api/Program.cs'
       - 'backend/tests/PaymentRequests.WebhookReconfiguration.Http.Scenarios/**'
+      - 'backend/tests/PaymentRequests.WebhookActivation.Http.Scenarios/**'
       - '.github/workflows/backend-request-webhook-management-2.yml'
   workflow_dispatch:
 
 jobs:
   validate:
-    name: Validate webhook subscription reconfiguration
+    name: Validate webhook subscription activation lifecycle
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -45,3 +47,5 @@ jobs:
         run: dotnet build backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj --configuration Release --nologo
       - name: Run protected webhook reconfiguration scenarios
         run: dotnet run --project backend/tests/PaymentRequests.WebhookReconfiguration.Http.Scenarios/PaymentRequests.WebhookReconfiguration.Http.Scenarios.csproj --configuration Release
+      - name: Run protected webhook activation lifecycle scenarios
+        run: dotnet run --project backend/tests/PaymentRequests.WebhookActivation.Http.Scenarios/PaymentRequests.WebhookActivation.Http.Scenarios.csproj --configuration Release

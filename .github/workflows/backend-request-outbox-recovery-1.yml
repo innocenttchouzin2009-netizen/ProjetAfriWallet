@@ -7,6 +7,7 @@ on:
       - 'backend/src/PaymentRequests/PaymentRequests.Application/**'
       - 'backend/src/PaymentRequests/PaymentRequests.Persistence/**'
       - 'backend/tests/PaymentRequests.EventDeadLetterRecovery.Scenarios/**'
+      - 'backend/tests/PaymentRequests.EventDeadLetterRecovery.Application.Scenarios/**'
       - 'backend/tests/PaymentRequests.EventDeadLetterRecovery.Persistence.Scenarios/**'
       - '.github/workflows/backend-request-outbox-recovery-1.yml'
   pull_request:
@@ -15,13 +16,14 @@ on:
       - 'backend/src/PaymentRequests/PaymentRequests.Application/**'
       - 'backend/src/PaymentRequests/PaymentRequests.Persistence/**'
       - 'backend/tests/PaymentRequests.EventDeadLetterRecovery.Scenarios/**'
+      - 'backend/tests/PaymentRequests.EventDeadLetterRecovery.Application.Scenarios/**'
       - 'backend/tests/PaymentRequests.EventDeadLetterRecovery.Persistence.Scenarios/**'
       - '.github/workflows/backend-request-outbox-recovery-1.yml'
   workflow_dispatch:
 
 jobs:
   validate:
-    name: Validate dead-letter recovery policy and persistence
+    name: Validate dead-letter recovery policy, orchestration and persistence
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -34,6 +36,9 @@ jobs:
 
       - name: Run dead-letter recovery policy scenarios
         run: dotnet run --project backend/tests/PaymentRequests.EventDeadLetterRecovery.Scenarios/PaymentRequests.EventDeadLetterRecovery.Scenarios.csproj --configuration Release
+
+      - name: Run dead-letter recovery application orchestration scenarios
+        run: dotnet run --project backend/tests/PaymentRequests.EventDeadLetterRecovery.Application.Scenarios/PaymentRequests.EventDeadLetterRecovery.Application.Scenarios.csproj --configuration Release
 
       - name: Build Payment Requests Persistence
         run: dotnet build backend/src/PaymentRequests/PaymentRequests.Persistence/PaymentRequests.Persistence.csproj --configuration Release --nologo

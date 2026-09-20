@@ -8,6 +8,7 @@ on:
       - 'backend/src/Notifications/**'
       - 'backend/tests/Notifications.PaymentRequestDelivery.Scenarios/**'
       - 'backend/tests/Notifications.Persistence.Scenarios/**'
+      - 'backend/tests/Notifications.Delivery.Scenarios/**'
       - '.github/workflows/backend-notification-delivery-1.yml'
   pull_request:
     branches:
@@ -16,6 +17,7 @@ on:
       - 'backend/src/Notifications/**'
       - 'backend/tests/Notifications.PaymentRequestDelivery.Scenarios/**'
       - 'backend/tests/Notifications.Persistence.Scenarios/**'
+      - 'backend/tests/Notifications.Delivery.Scenarios/**'
       - '.github/workflows/backend-notification-delivery-1.yml'
   workflow_dispatch:
 
@@ -44,6 +46,9 @@ jobs:
 
       - name: Run persistent In-App delivery scenarios
         run: dotnet run --project backend/tests/Notifications.Persistence.Scenarios/Notifications.Persistence.Scenarios.csproj --configuration Release
+
+      - name: Run notification delivery persistence and dispatch boundary scenarios
+        run: dotnet run --project backend/tests/Notifications.Delivery.Scenarios/Notifications.Delivery.Scenarios.csproj --configuration Release
 
       - name: Build Payment Requests Application
         run: dotnet build backend/src/PaymentRequests/PaymentRequests.Application/PaymentRequests.Application.csproj --configuration Release --nologo

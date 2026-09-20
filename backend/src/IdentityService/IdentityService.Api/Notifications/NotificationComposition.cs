@@ -7,12 +7,13 @@ using AfriWallet.PaymentRequests.Persistence;
 using AfriWallet.Wallet.Application;
 using AfriWallet.Wallet.Domain;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 
 namespace IdentityService.Api.Notifications;
 
 public static class NotificationComposition
 {
-    public static IServiceCollection AddInAppNotifications(this IServiceCollection services, string connectionString)
+    public static IServiceCollection AddInAppNotifications(this IServiceCollection services, string connectionString, IConfiguration? configuration = null)
     {
         if (string.IsNullOrWhiteSpace(connectionString))
             throw new ArgumentException("Notification database connection string is required.", nameof(connectionString));
@@ -26,6 +27,8 @@ public static class NotificationComposition
         services.AddScoped<NotificationRuntimeDeliveryService>();
         services.AddSingleton(NotificationDeliveryRecoveryOptions.Default);
         services.AddScoped<NotificationDeliveryRecoveryService>();
+        services.AddSingleton(NotificationDeliveryRecoveryWorkerOptions.FromConfiguration(configuration));
+        services.AddHostedService<NotificationDeliveryRecoveryHostedWorker>();
         services.AddScoped<InAppNotificationInboxService>();
         services.AddScoped<NotificationRetentionService>();
         services.AddSingleton(NotificationRetentionOptions.Default);

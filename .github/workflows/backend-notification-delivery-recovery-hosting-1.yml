@@ -1,0 +1,35 @@
+name: AFW-BE-NOTIFICATION-DELIVERY-RECOVERY-HOSTING-1 Hosted Recovery Worker
+
+on:
+  push:
+    branches:
+      - feature/backend-notification-delivery-recovery-hosting-1
+    paths:
+      - 'backend/src/IdentityService/IdentityService.Api/Notifications/**'
+      - 'backend/src/IdentityService/IdentityService.Api/Program.cs'
+      - 'backend/tests/Notifications.DeliveryRecovery.Hosting.Scenarios/**'
+      - '.github/workflows/backend-notification-delivery-recovery-hosting-1.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'backend/src/IdentityService/IdentityService.Api/Notifications/**'
+      - 'backend/src/IdentityService/IdentityService.Api/Program.cs'
+      - 'backend/tests/Notifications.DeliveryRecovery.Hosting.Scenarios/**'
+      - '.github/workflows/backend-notification-delivery-recovery-hosting-1.yml'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Validate AFW-BE-NOTIFICATION-DELIVERY-RECOVERY-HOSTING-1
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Build IdentityService notification hosting
+        run: dotnet build backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj --configuration Release --nologo
+      - name: Run hosted recovery worker scenarios
+        run: dotnet run --project backend/tests/Notifications.DeliveryRecovery.Hosting.Scenarios/Notifications.DeliveryRecovery.Hosting.Scenarios.csproj --configuration Release

@@ -1,0 +1,39 @@
+name: AFW-BE-NOTIFICATION-DELIVERY-RECOVERY-1 Recovery Engine
+
+on:
+  push:
+    branches:
+      - feature/backend-notification-delivery-recovery-1
+    paths:
+      - 'backend/src/Notifications/**'
+      - 'backend/src/IdentityService/IdentityService.Api/Notifications/**'
+      - 'backend/tests/Notifications.DeliveryRecovery.Scenarios/**'
+      - '.github/workflows/backend-notification-delivery-recovery-1.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'backend/src/Notifications/**'
+      - 'backend/src/IdentityService/IdentityService.Api/Notifications/**'
+      - 'backend/tests/Notifications.DeliveryRecovery.Scenarios/**'
+      - '.github/workflows/backend-notification-delivery-recovery-1.yml'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Validate AFW-BE-NOTIFICATION-DELIVERY-RECOVERY-1
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Build Notifications Application
+        run: dotnet build backend/src/Notifications/Notifications.Application/Notifications.Application.csproj --configuration Release --nologo
+      - name: Build Notifications Persistence
+        run: dotnet build backend/src/Notifications/Notifications.Persistence/Notifications.Persistence.csproj --configuration Release --nologo
+      - name: Run notification delivery recovery scenarios
+        run: dotnet run --project backend/tests/Notifications.DeliveryRecovery.Scenarios/Notifications.DeliveryRecovery.Scenarios.csproj --configuration Release
+      - name: Build IdentityService notification composition
+        run: dotnet build backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj --configuration Release --nologo

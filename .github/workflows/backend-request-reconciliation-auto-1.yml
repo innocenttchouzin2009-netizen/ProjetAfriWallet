@@ -1,0 +1,34 @@
+name: AFW-BE Reconciliation Automatic Resolution Foundation
+
+on:
+  push:
+    branches:
+      - feature/backend-request-reconciliation-auto-1
+    paths:
+      - 'backend/src/FinancialPlatform/Reconciliation/Reconciliation.Application/AutomaticResolution/**'
+      - 'backend/tests/Reconciliation.AutomaticResolution.Scenarios/**'
+      - '.github/workflows/backend-request-reconciliation-auto-1.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'backend/src/FinancialPlatform/Reconciliation/Reconciliation.Application/AutomaticResolution/**'
+      - 'backend/tests/Reconciliation.AutomaticResolution.Scenarios/**'
+      - '.github/workflows/backend-request-reconciliation-auto-1.yml'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Build Reconciliation Application
+        run: dotnet build backend/src/FinancialPlatform/Reconciliation/Reconciliation.Application/Reconciliation.Application.csproj --configuration Release --nologo
+      - name: Run automatic resolution scenarios
+        run: dotnet run --project backend/tests/Reconciliation.AutomaticResolution.Scenarios/Reconciliation.AutomaticResolution.Scenarios.csproj --configuration Release

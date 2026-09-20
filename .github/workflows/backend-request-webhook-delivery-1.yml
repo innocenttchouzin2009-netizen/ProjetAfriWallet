@@ -7,6 +7,7 @@ on:
     paths:
       - 'backend/src/PaymentRequests/PaymentRequests.Application/**'
       - 'backend/tests/PaymentRequests.WebhookDelivery.Scenarios/**'
+      - 'backend/tests/PaymentRequests.WebhookPlanning.Scenarios/**'
       - '.github/workflows/backend-request-webhook-delivery-1.yml'
   pull_request:
     branches:
@@ -14,6 +15,7 @@ on:
     paths:
       - 'backend/src/PaymentRequests/PaymentRequests.Application/**'
       - 'backend/tests/PaymentRequests.WebhookDelivery.Scenarios/**'
+      - 'backend/tests/PaymentRequests.WebhookPlanning.Scenarios/**'
       - '.github/workflows/backend-request-webhook-delivery-1.yml'
   workflow_dispatch:
 
@@ -36,3 +38,6 @@ jobs:
 
       - name: Run webhook delivery foundation scenarios
         run: dotnet run --project backend/tests/PaymentRequests.WebhookDelivery.Scenarios/PaymentRequests.WebhookDelivery.Scenarios.csproj --configuration Release
+
+      - name: Run webhook destination resolution and fan-out planning scenarios
+        run: dotnet run --project backend/tests/PaymentRequests.WebhookPlanning.Scenarios/PaymentRequests.WebhookPlanning.Scenarios.csproj --configuration Release

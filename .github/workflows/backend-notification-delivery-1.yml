@@ -47,7 +47,7 @@ jobs:
       - name: Run persistent In-App delivery scenarios
         run: dotnet run --project backend/tests/Notifications.Persistence.Scenarios/Notifications.Persistence.Scenarios.csproj --configuration Release
 
-      - name: Run notification delivery persistence and dispatch boundary scenarios
+      - name: Run channel-aware durable notification delivery scenarios
         run: dotnet run --project backend/tests/Notifications.Delivery.Scenarios/Notifications.Delivery.Scenarios.csproj --configuration Release
 
       - name: Build Payment Requests Application

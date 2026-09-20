@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 namespace AfriWallet.Notifications.Persistence;
 
 public sealed class EfInAppNotificationStore(NotificationDbContext dbContext)
-    : INotificationDeliveryPort, IInAppNotificationReader
+    : IInAppNotificationReader
 {
     public async Task DeliverAsync(
         InAppNotification notification,

@@ -17,8 +17,13 @@ public static class NotificationPersistenceServiceCollectionExtensions
 
         services.AddDbContext<NotificationDbContext>(options => options.UseSqlite(connectionString));
         services.AddScoped<EfInAppNotificationStore>();
-        services.AddScoped<INotificationDeliveryPort>(sp => sp.GetRequiredService<EfInAppNotificationStore>());
         services.AddScoped<IInAppNotificationReader>(sp => sp.GetRequiredService<EfInAppNotificationStore>());
+
+        services.AddScoped<INotificationDeliveryRepository, EfNotificationDeliveryRepository>();
+        services.AddScoped<INotificationDispatchPort, InAppNotificationDispatchPort>();
+        services.AddScoped<INotificationDeliveryPort, PersistentNotificationDeliveryService>();
+        services.AddSingleton(TimeProvider.System);
+
         return services;
     }
 }

@@ -4,7 +4,8 @@ namespace AfriWallet.Notifications.Application;
 
 public enum NotificationChannel
 {
-    InApp = 1
+    InApp = 1,
+    Push = 2
 }
 
 public sealed record InAppNotification(

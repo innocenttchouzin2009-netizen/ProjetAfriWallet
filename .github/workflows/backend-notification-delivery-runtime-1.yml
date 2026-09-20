@@ -1,0 +1,38 @@
+name: AFW-BE-NOTIFICATION-DELIVERY-1 Runtime Channel Routing
+
+on:
+  push:
+    branches:
+      - feature/backend-notification-delivery-runtime-1
+    paths:
+      - 'backend/src/Notifications/**'
+      - 'backend/src/IdentityService/IdentityService.Api/Notifications/**'
+      - 'backend/tests/Notifications.RuntimeDelivery.Scenarios/**'
+      - '.github/workflows/backend-notification-delivery-runtime-1.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'backend/src/Notifications/**'
+      - 'backend/src/IdentityService/IdentityService.Api/Notifications/**'
+      - 'backend/tests/Notifications.RuntimeDelivery.Scenarios/**'
+      - '.github/workflows/backend-notification-delivery-runtime-1.yml'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Build Notifications Application
+        run: dotnet build backend/src/Notifications/Notifications.Application/Notifications.Application.csproj --configuration Release --nologo
+      - name: Build Notifications Persistence
+        run: dotnet build backend/src/Notifications/Notifications.Persistence/Notifications.Persistence.csproj --configuration Release --nologo
+      - name: Run runtime preference-aware delivery scenarios
+        run: dotnet run --project backend/tests/Notifications.RuntimeDelivery.Scenarios/Notifications.RuntimeDelivery.Scenarios.csproj --configuration Release
+      - name: Build IdentityService notification composition
+        run: dotnet build backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj --configuration Release --nologo

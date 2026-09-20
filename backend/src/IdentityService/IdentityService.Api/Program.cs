@@ -116,7 +116,7 @@ builder.Services.AddInternalTransferModule(builder.Configuration);
 builder.Services.AddP2PCore();
 builder.Services.AddAuthoritativeP2PRecipientDirectory(recipientDirectoryConnectionString);
 builder.Services.AddPaymentRequests(paymentRequestsConnectionString, builder.Configuration);
-builder.Services.AddInAppNotifications(notificationsConnectionString);
+builder.Services.AddInAppNotifications(notificationsConnectionString, builder.Configuration);
 builder.Services.AddPushDeviceRegistration(pushDevicesConnectionString);
 builder.Services.AddNotificationPreferences(notificationPreferencesConnectionString);
 

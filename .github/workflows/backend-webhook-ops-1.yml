@@ -1,0 +1,38 @@
+name: AFW-BE-WEBHOOK-OPS-1 Webhook Delivery Operations
+
+on:
+  push:
+    branches:
+      - feature/backend-webhook-ops-1
+    paths:
+      - 'backend/src/Webhooks/WebhookOperations.Domain/**'
+      - 'backend/tests/WebhookOperations.Domain.Scenarios/**'
+      - '.github/workflows/backend-webhook-ops-1.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'backend/src/Webhooks/WebhookOperations.Domain/**'
+      - 'backend/tests/WebhookOperations.Domain.Scenarios/**'
+      - '.github/workflows/backend-webhook-ops-1.yml'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Validate AFW-BE-WEBHOOK-OPS-1
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build Webhook Operations Domain
+        run: dotnet build backend/src/Webhooks/WebhookOperations.Domain/WebhookOperations.Domain.csproj --configuration Release --nologo
+
+      - name: Run webhook endpoint registry scenarios
+        run: dotnet run --project backend/tests/WebhookOperations.Domain.Scenarios/WebhookOperations.Domain.Scenarios.csproj --configuration Release

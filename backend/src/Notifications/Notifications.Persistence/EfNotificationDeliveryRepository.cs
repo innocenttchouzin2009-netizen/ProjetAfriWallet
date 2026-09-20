@@ -78,13 +78,13 @@ public sealed class EfNotificationDeliveryRepository(NotificationDeliveryDbConte
         if (leaseUntilUtc <= nowUtc) throw new ArgumentException("Recovery lease must expire after now.", nameof(leaseUntilUtc));
         if (limit is < 1 or > 1000) throw new ArgumentOutOfRangeException(nameof(limit));
 
-        var now = Format(nowUtc);
-        var leaseUntil = Format(leaseUntilUtc);
+        var nowTicks = nowUtc.UtcTicks;
+        var leaseUntilTicks = leaseUntilUtc.UtcTicks;
         var candidates = await dbContext.Deliveries
             .AsNoTracking()
             .Where(x =>
                 x.Status == (int)NotificationDeliveryStatus.Pending &&
-                (x.RecoveryLeaseUntilUtc == null || string.Compare(x.RecoveryLeaseUntilUtc, now) <= 0))
+                (x.RecoveryLeaseUntilUtcTicks == null || x.RecoveryLeaseUntilUtcTicks <= nowTicks))
             .OrderBy(x => x.CreatedAtUtc)
             .ThenBy(x => x.DeliveryId)
             .Take(limit)
@@ -99,9 +99,9 @@ public sealed class EfNotificationDeliveryRepository(NotificationDeliveryDbConte
                 .Where(x =>
                     x.DeliveryId == candidate.DeliveryId &&
                     x.Status == (int)NotificationDeliveryStatus.Pending &&
-                    (x.RecoveryLeaseUntilUtc == null || string.Compare(x.RecoveryLeaseUntilUtc, now) <= 0))
+                    (x.RecoveryLeaseUntilUtcTicks == null || x.RecoveryLeaseUntilUtcTicks <= nowTicks))
                 .ExecuteUpdateAsync(
-                    setters => setters.SetProperty(x => x.RecoveryLeaseUntilUtc, leaseUntil),
+                    setters => setters.SetProperty(x => x.RecoveryLeaseUntilUtcTicks, leaseUntilTicks),
                     cancellationToken);
 
             if (updated == 1)
@@ -122,7 +122,7 @@ public sealed class EfNotificationDeliveryRepository(NotificationDeliveryDbConte
                 x.DeliveryId == deliveryId &&
                 x.Status == (int)NotificationDeliveryStatus.Pending)
             .ExecuteUpdateAsync(
-                setters => setters.SetProperty(x => x.RecoveryLeaseUntilUtc, (string?)null),
+                setters => setters.SetProperty(x => x.RecoveryLeaseUntilUtcTicks, (long?)null),
                 cancellationToken);
     }
 
@@ -143,7 +143,7 @@ public sealed class EfNotificationDeliveryRepository(NotificationDeliveryDbConte
 
         entity.Status = (int)NotificationDeliveryStatus.Dispatched;
         entity.DispatchedAtUtc = Format(dispatchedAtUtc);
-        entity.RecoveryLeaseUntilUtc = null;
+        entity.RecoveryLeaseUntilUtcTicks = null;
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 

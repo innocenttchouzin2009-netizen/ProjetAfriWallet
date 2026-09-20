@@ -9,6 +9,6 @@
     <ProjectReference Include="../../src/IdentityService/IdentityService.Api/IdentityService.Api.csproj" />
     <ProjectReference Include="../../src/Notifications/Notifications.Application/Notifications.Application.csproj" />
     <ProjectReference Include="../../src/Notifications/Notifications.Domain/Notifications.Domain.csproj" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.11" />
   </ItemGroup>
 </Project>

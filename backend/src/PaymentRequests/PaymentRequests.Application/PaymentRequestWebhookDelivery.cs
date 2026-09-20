@@ -6,7 +6,8 @@ public static class PaymentRequestWebhookHeaders
     public const string EventType = "X-AfWal-Event-Type";
     public const string Timestamp = "X-AfWal-Timestamp";
     public const string Signature = "X-AfWal-Signature";
-    public const string SignatureAlgorithm = "X-AfWal-Signature-Algorithm";\n    public const string SignatureKeyId = "X-AfWal-Signature-Key-Id";
+    public const string SignatureAlgorithm = "X-AfWal-Signature-Algorithm";
+    public const string SignatureKeyId = "X-AfWal-Signature-Key-Id";
 }
 
 public sealed record PaymentRequestWebhookSignatureInput(

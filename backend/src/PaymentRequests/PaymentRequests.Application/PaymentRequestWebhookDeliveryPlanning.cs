@@ -51,7 +51,8 @@ public sealed record PaymentRequestWebhookRetryPolicy(
 public sealed record PaymentRequestWebhookDestination(
     Guid DestinationId,
     Uri Endpoint,
-    PaymentRequestWebhookRetryPolicy RetryPolicy,\n    string SigningConfigurationId);
+    PaymentRequestWebhookRetryPolicy RetryPolicy,
+    string SigningConfigurationId);
 
 public interface IPaymentRequestWebhookDestinationRegistry
 {
@@ -65,7 +66,8 @@ public sealed record PaymentRequestWebhookDeliveryPlanItem(
     Guid DestinationId,
     Uri Endpoint,
     int MaxAttempts,
-    IReadOnlyList<TimeSpan> RetryDelays,\n    string SigningConfigurationId);
+    IReadOnlyList<TimeSpan> RetryDelays,
+    string SigningConfigurationId);
 
 public sealed record PaymentRequestWebhookDeliveryPlan(
     Guid EventId,
@@ -189,7 +191,12 @@ public sealed class PaymentRequestWebhookDeliveryPlanner(
             throw new InvalidOperationException("Destination registry returned an empty destination id.");
         }
 
-        if (string.IsNullOrWhiteSpace(destination.SigningConfigurationId))\n        {\n            throw new InvalidOperationException(\"Destination registry returned an empty signing configuration id.\");\n        }\n\n        if (!destination.Endpoint.IsAbsoluteUri ||
+        if (string.IsNullOrWhiteSpace(destination.SigningConfigurationId))
+        {
+            throw new InvalidOperationException("Destination registry returned an empty signing configuration id.");
+        }
+
+        if (!destination.Endpoint.IsAbsoluteUri ||
             (destination.Endpoint.Scheme != Uri.UriSchemeHttps &&
              destination.Endpoint.Scheme != Uri.UriSchemeHttp))
         {

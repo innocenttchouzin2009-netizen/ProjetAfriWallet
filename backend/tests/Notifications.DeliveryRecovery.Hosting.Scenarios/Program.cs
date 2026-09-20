@@ -101,7 +101,7 @@ Assert(failingRepository.ClaimCalls >= 2,
 
 Console.WriteLine("AFW-BE-NOTIFICATION-DELIVERY-RECOVERY-HOSTING-1 scenarios: PASS");
 
-sealed class CountingRepository : INotificationDeliveryRepository
+class CountingRepository : INotificationDeliveryRepository
 {
     public int ClaimCalls { get; protected set; }
 

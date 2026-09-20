@@ -57,10 +57,11 @@ try
     {
         var repository = new EfNotificationDeliveryRepository(db);
         var dispatcher = new RecordingDispatchPort(NotificationChannel.InApp);
-        var service = new PersistentNotificationDeliveryService(
+        var fanout = new NotificationDeliveryFanoutService(
             repository,
             [dispatcher],
             new FixedTimeProvider(dispatchAt));
+        var service = new PersistentNotificationDeliveryService(fanout);
 
         await service.DeliverAsync(inAppNotification);
         await service.DeliverAsync(inAppNotification);
@@ -87,11 +88,7 @@ try
             () => repository.GetOrAddAsync(conflicting),
             "Same EventId + Channel with different content must fail closed.");
 
-        var push = NotificationDelivery.From(inAppNotification with
-        {
-            NotificationId = Guid.NewGuid(),
-            Channel = NotificationChannel.Push
-        });
+        var push = NotificationDelivery.From(inAppNotification, NotificationChannel.Push);
 
         var persistedPush = await repository.GetOrAddAsync(push);
         Assert(persistedPush.Channel == NotificationChannel.Push,
@@ -100,29 +97,87 @@ try
             "Composite idempotency key must be EventId + Channel.");
     }
 
+    var fanoutEventId = Guid.NewGuid();
+    var fanoutNotification = inAppNotification with
+    {
+        NotificationId = fanoutEventId,
+        SourceEventId = fanoutEventId
+    };
+
     await using (var db = new NotificationDbContext(options))
     {
         var repository = new EfNotificationDeliveryRepository(db);
+        var inAppDispatcher = new RecordingDispatchPort(NotificationChannel.InApp);
         var pushDispatcher = new RecordingDispatchPort(NotificationChannel.Push);
-        var service = new PersistentNotificationDeliveryService(
+        var fanout = new NotificationDeliveryFanoutService(
             repository,
-            [pushDispatcher],
+            [inAppDispatcher, pushDispatcher],
             new FixedTimeProvider(dispatchAt.AddMinutes(1)));
 
-        var pushEventId = Guid.NewGuid();
-        var pushNotification = inAppNotification with
-        {
-            NotificationId = pushEventId,
-            SourceEventId = pushEventId,
-            Channel = NotificationChannel.Push
-        };
+        await fanout.DispatchAsync(
+            fanoutNotification,
+            new[] { NotificationChannel.InApp, NotificationChannel.Push });
 
-        await service.DeliverAsync(pushNotification);
-        Assert(pushDispatcher.Calls == 1, "Push channel must use the Push dispatch boundary.");
+        await fanout.DispatchAsync(
+            fanoutNotification,
+            new[] { NotificationChannel.InApp, NotificationChannel.Push });
 
-        var stored = await repository.GetAsync(pushEventId, NotificationChannel.Push);
-        Assert(stored?.Status == NotificationDeliveryStatus.Dispatched,
-            "Push delivery must use the same persistent lifecycle.");
+        Assert(inAppDispatcher.Calls == 1, "In-App fan-out must dispatch exactly once.");
+        Assert(pushDispatcher.Calls == 1, "Push fan-out must dispatch exactly once.");
+
+        var storedInApp = await repository.GetAsync(fanoutEventId, NotificationChannel.InApp);
+        var storedPush = await repository.GetAsync(fanoutEventId, NotificationChannel.Push);
+        Assert(storedInApp?.Status == NotificationDeliveryStatus.Dispatched,
+            "In-App fan-out delivery must be persisted and dispatched.");
+        Assert(storedPush?.Status == NotificationDeliveryStatus.Dispatched,
+            "Push fan-out delivery must be persisted and dispatched.");
+    }
+
+    var failClosedEventId = Guid.NewGuid();
+    var failClosedNotification = inAppNotification with
+    {
+        NotificationId = failClosedEventId,
+        SourceEventId = failClosedEventId
+    };
+
+    await using (var db = new NotificationDbContext(options))
+    {
+        var repository = new EfNotificationDeliveryRepository(db);
+        var inAppDispatcher = new RecordingDispatchPort(NotificationChannel.InApp);
+        var fanout = new NotificationDeliveryFanoutService(
+            repository,
+            [inAppDispatcher],
+            new FixedTimeProvider(dispatchAt.AddMinutes(2)));
+
+        await AssertThrowsAsync<InvalidOperationException>(
+            () => fanout.DispatchAsync(
+                failClosedNotification,
+                new[] { NotificationChannel.InApp, NotificationChannel.Push }),
+            "Missing Push dispatcher must fail closed before any delivery is persisted.");
+
+        Assert(inAppDispatcher.Calls == 0,
+            "Fail-closed validation must happen before In-App dispatch.");
+        Assert(await repository.GetAsync(failClosedEventId, NotificationChannel.InApp) is null,
+            "Missing dispatcher must not leave a partial In-App delivery.");
+        Assert(await repository.GetAsync(failClosedEventId, NotificationChannel.Push) is null,
+            "Missing dispatcher must not persist a Push delivery.");
+    }
+
+    await using (var db = new NotificationDbContext(options))
+    {
+        var repository = new EfNotificationDeliveryRepository(db);
+        var duplicateA = new RecordingDispatchPort(NotificationChannel.InApp);
+        var duplicateB = new RecordingDispatchPort(NotificationChannel.InApp);
+        var fanout = new NotificationDeliveryFanoutService(
+            repository,
+            [duplicateA, duplicateB],
+            new FixedTimeProvider(dispatchAt.AddMinutes(3)));
+
+        await AssertThrowsAsync<InvalidOperationException>(
+            () => fanout.DispatchAsync(
+                failClosedNotification,
+                new[] { NotificationChannel.InApp }),
+            "Duplicate dispatchers for one channel must fail closed.");
     }
 
     using (var cts = new CancellationTokenSource())
@@ -135,7 +190,7 @@ try
             "Delivery repository must propagate cancellation.");
     }
 
-    Console.WriteLine("AFW-BE-NOTIFICATION-DELIVERY-1 delivery persistence and dispatch boundary scenarios: PASS");
+    Console.WriteLine("AFW-BE-NOTIFICATION-DELIVERY-1 channel-aware durable delivery scenarios: PASS");
 }
 finally
 {

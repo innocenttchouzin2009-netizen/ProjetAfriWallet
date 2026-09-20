@@ -21,6 +21,7 @@ public static class NotificationPersistenceServiceCollectionExtensions
 
         services.AddScoped<INotificationDeliveryRepository, EfNotificationDeliveryRepository>();
         services.AddScoped<INotificationDispatchPort, InAppNotificationDispatchPort>();
+        services.AddScoped<NotificationDeliveryFanoutService>();
         services.AddScoped<INotificationDeliveryPort, PersistentNotificationDeliveryService>();
         services.AddSingleton(TimeProvider.System);
 

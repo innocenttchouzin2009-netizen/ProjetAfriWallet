@@ -21,7 +21,12 @@ public sealed record NotificationDelivery(
     NotificationDeliveryStatus Status,
     DateTimeOffset? DispatchedAtUtc)
 {
-    public static NotificationDelivery From(InAppNotification notification)
+    public static NotificationDelivery From(InAppNotification notification) =>
+        From(notification, notification.Channel);
+
+    public static NotificationDelivery From(
+        InAppNotification notification,
+        NotificationChannel channel)
     {
         ArgumentNullException.ThrowIfNull(notification);
 
@@ -33,6 +38,8 @@ public sealed record NotificationDelivery(
             throw new ArgumentException("Payment request id cannot be empty.", nameof(notification));
         if (notification.CreatedAtUtc.Offset != TimeSpan.Zero)
             throw new ArgumentException("Notification timestamp must be UTC.", nameof(notification));
+        if (!Enum.IsDefined(channel))
+            throw new ArgumentOutOfRangeException(nameof(channel));
         if (notification.AmountMinor <= 0 ||
             string.IsNullOrWhiteSpace(notification.EventType) ||
             string.IsNullOrWhiteSpace(notification.CurrencyCode) ||
@@ -43,7 +50,7 @@ public sealed record NotificationDelivery(
         return new NotificationDelivery(
             Guid.NewGuid(),
             notification.SourceEventId,
-            notification.Channel,
+            channel,
             notification.RecipientUserId,
             notification.PaymentRequestId,
             notification.EventType,
@@ -83,31 +90,80 @@ public interface INotificationDispatchPort
         CancellationToken cancellationToken = default);
 }
 
-public sealed class PersistentNotificationDeliveryService(
+public sealed class NotificationDeliveryFanoutService(
     INotificationDeliveryRepository repository,
     IEnumerable<INotificationDispatchPort> dispatchPorts,
     TimeProvider timeProvider)
+{
+    public async Task DispatchAsync(
+        InAppNotification notification,
+        IReadOnlyCollection<NotificationChannel> channels,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(notification);
+        ArgumentNullException.ThrowIfNull(channels);
+
+        if (channels.Count == 0)
+            throw new ArgumentException("At least one notification channel is required.", nameof(channels));
+
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var requestedChannels = channels.ToArray();
+        if (requestedChannels.Any(channel => !Enum.IsDefined(channel)))
+            throw new ArgumentOutOfRangeException(nameof(channels), "All notification channels must be defined.");
+
+        if (requestedChannels.Distinct().Count() != requestedChannels.Length)
+            throw new ArgumentException("Notification channels must be unique.", nameof(channels));
+
+        var dispatcherMap = dispatchPorts
+            .GroupBy(dispatcher => dispatcher.Channel)
+            .ToDictionary(group => group.Key, group => group.ToArray());
+
+        foreach (var channel in requestedChannels)
+        {
+            if (!dispatcherMap.TryGetValue(channel, out var matches) || matches.Length == 0)
+                throw new InvalidOperationException(
+                    $"No notification dispatcher is configured for channel '{channel}'.");
+
+            if (matches.Length != 1)
+                throw new InvalidOperationException(
+                    $"Multiple notification dispatchers are configured for channel '{channel}'.");
+        }
+
+        foreach (var channel in requestedChannels)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var candidate = NotificationDelivery.From(notification, channel);
+            var delivery = await repository.GetOrAddAsync(candidate, cancellationToken);
+
+            if (delivery.Status == NotificationDeliveryStatus.Dispatched)
+                continue;
+
+            await dispatcherMap[channel][0].DispatchAsync(delivery, cancellationToken);
+
+            var dispatchedAtUtc = timeProvider.GetUtcNow();
+            if (dispatchedAtUtc.Offset != TimeSpan.Zero)
+                throw new InvalidOperationException("TimeProvider must return UTC timestamps.");
+
+            await repository.MarkDispatchedAsync(delivery.DeliveryId, dispatchedAtUtc, cancellationToken);
+        }
+    }
+}
+
+public sealed class PersistentNotificationDeliveryService(
+    NotificationDeliveryFanoutService fanoutService)
     : INotificationDeliveryPort
 {
-    public async Task DeliverAsync(
+    public Task DeliverAsync(
         InAppNotification notification,
         CancellationToken cancellationToken = default)
     {
-        cancellationToken.ThrowIfCancellationRequested();
+        ArgumentNullException.ThrowIfNull(notification);
 
-        var candidate = NotificationDelivery.From(notification);
-        var delivery = await repository.GetOrAddAsync(candidate, cancellationToken);
-
-        if (delivery.Status == NotificationDeliveryStatus.Dispatched)
-            return;
-
-        var dispatcher = dispatchPorts.SingleOrDefault(x => x.Channel == delivery.Channel)
-            ?? throw new InvalidOperationException(
-                $"No notification dispatcher is configured for channel '{delivery.Channel}'.");
-
-        await dispatcher.DispatchAsync(delivery, cancellationToken);
-
-        var dispatchedAtUtc = timeProvider.GetUtcNow();
-        await repository.MarkDispatchedAsync(delivery.DeliveryId, dispatchedAtUtc, cancellationToken);
+        return fanoutService.DispatchAsync(
+            notification,
+            new[] { notification.Channel },
+            cancellationToken);
     }
 }

@@ -18,7 +18,8 @@ public sealed record PaymentRequestWebhookSignatureInput(
 
 public sealed record PaymentRequestWebhookSignature(
     string Algorithm,
-    string Value);
+    string Value,
+    string? KeyId = null);
 
 public interface IPaymentRequestWebhookSigner
 {
@@ -165,6 +166,11 @@ public sealed class PaymentRequestWebhookDeliveryService(
             [PaymentRequestWebhookHeaders.SignatureAlgorithm] = signature.Algorithm,
             [PaymentRequestWebhookHeaders.Signature] = signature.Value
         };
+
+        if (!string.IsNullOrWhiteSpace(signature.KeyId))
+        {
+            headers[PaymentRequestWebhookHeaders.SignatureKeyId] = signature.KeyId;
+        }
 
         var result = await transport.SendAsync(
             new PaymentRequestWebhookSignedRequest(

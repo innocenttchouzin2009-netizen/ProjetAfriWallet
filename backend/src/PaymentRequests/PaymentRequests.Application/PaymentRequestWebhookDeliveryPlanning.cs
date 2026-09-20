@@ -143,7 +143,8 @@ public sealed class PaymentRequestWebhookDeliveryPlanner(
                 destination.DestinationId,
                 destination.Endpoint,
                 destination.RetryPolicy.MaxAttempts,
-                retryDelays));
+                retryDelays,
+                destination.SigningConfigurationId));
         }
 
         return PaymentRequestWebhookDeliveryPlanningResult.Planned(

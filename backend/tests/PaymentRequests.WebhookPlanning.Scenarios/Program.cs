@@ -101,7 +101,8 @@ var duplicateRegistry = new RecordingDestinationRegistry([
     new PaymentRequestWebhookDestination(
         duplicateId,
         new Uri("https://hooks.two.test/request-events"),
-        new PaymentRequestWebhookRetryPolicy(2, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5)))
+        new PaymentRequestWebhookRetryPolicy(2, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5)),
+        "signing-dup")
 ]);
 await AssertThrowsAsync<InvalidOperationException>(
     () => new PaymentRequestWebhookDeliveryPlanner(repository, duplicateRegistry).PlanAsync(eventEnvelope),
@@ -111,7 +112,8 @@ var invalidEndpointRegistry = new RecordingDestinationRegistry([
     new PaymentRequestWebhookDestination(
         Guid.NewGuid(),
         new Uri("ftp://not-allowed.test/request-events"),
-        new PaymentRequestWebhookRetryPolicy(2, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(10)))
+        new PaymentRequestWebhookRetryPolicy(2, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(10)),
+        "signing-invalid-endpoint")
 ]);
 await AssertThrowsAsync<InvalidOperationException>(
     () => new PaymentRequestWebhookDeliveryPlanner(repository, invalidEndpointRegistry).PlanAsync(eventEnvelope),
@@ -121,7 +123,8 @@ var invalidRetryRegistry = new RecordingDestinationRegistry([
     new PaymentRequestWebhookDestination(
         Guid.NewGuid(),
         new Uri("https://hooks.test/request-events"),
-        new PaymentRequestWebhookRetryPolicy(0, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(10)))
+        new PaymentRequestWebhookRetryPolicy(0, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(10)),
+        "signing-invalid-retry")
 ]);
 await AssertThrowsAsync<ArgumentOutOfRangeException>(
     () => new PaymentRequestWebhookDeliveryPlanner(repository, invalidRetryRegistry).PlanAsync(eventEnvelope),

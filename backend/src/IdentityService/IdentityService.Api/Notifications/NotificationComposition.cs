@@ -18,21 +18,26 @@ public static class NotificationComposition
             throw new ArgumentException("Notification database connection string is required.", nameof(connectionString));
 
         services.AddDbContext<NotificationInboxDbContext>(options => options.UseSqlite(connectionString));
+        services.AddDbContext<NotificationDeliveryDbContext>(options => options.UseSqlite(connectionString));
         services.AddScoped<IInAppNotificationRepository, EfInAppNotificationRepository>();
+        services.AddScoped<INotificationDeliveryRepository, EfNotificationDeliveryRepository>();
+        services.AddScoped<INotificationChannelDispatchPort, InAppNotificationChannelDispatchPort>();
+        services.AddScoped<INotificationChannelDispatchPort, PushNotificationChannelDispatchPort>();
+        services.AddScoped<NotificationRuntimeDeliveryService>();
         services.AddScoped<InAppNotificationInboxService>();
         services.AddScoped<NotificationRetentionService>();
         services.AddSingleton(NotificationRetentionOptions.Default);
-        services.AddScoped<IPaymentRequestEventTransport, InAppPaymentRequestEventTransport>();
+        services.AddScoped<IPaymentRequestEventTransport, NotificationPaymentRequestEventTransport>();
         return services;
     }
 }
 
-public sealed class InAppPaymentRequestEventTransport(
+public sealed class NotificationPaymentRequestEventTransport(
     PaymentRequestDbContext paymentRequestDbContext,
     IWalletRepository walletRepository,
     IAfWalIdentityDirectory afWalIdentityDirectory,
     IQrRecipientDirectory qrRecipientDirectory,
-    IInAppNotificationRepository notificationRepository)
+    NotificationRuntimeDeliveryService runtimeDeliveryService)
     : IPaymentRequestEventTransport
 {
     public async Task DispatchAsync(
@@ -82,7 +87,7 @@ public sealed class InAppPaymentRequestEventTransport(
 
             foreach (var userId in audience)
             {
-                await notificationRepository.AddAsync(
+                await runtimeDeliveryService.DeliverAsync(
                     AfriWallet.Notifications.Domain.InAppNotification.New(userId, notificationEvent),
                     cancellationToken);
             }

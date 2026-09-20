@@ -28,7 +28,7 @@ try
     builder.Services.AddAuthorization();
     builder.Services.AddInAppNotifications(connectionString);
 
-    Assert(builder.Services.Any(x => x.ServiceType == typeof(IPaymentRequestEventTransport) && x.ImplementationType == typeof(InAppPaymentRequestEventTransport)),
+    Assert(builder.Services.Any(x => x.ServiceType == typeof(IPaymentRequestEventTransport) && x.ImplementationType == typeof(NotificationPaymentRequestEventTransport)),
         "Composition must wire the durable payment request event transport to the in-app inbox.");
     Assert(builder.Services.Any(x => x.ServiceType == typeof(NotificationRetentionService)),
         "Composition must wire notification retention service.");

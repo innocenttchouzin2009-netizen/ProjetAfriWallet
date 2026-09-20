@@ -1,4 +1,5 @@
 using AfriWallet.Notifications.Application;
+using AfriWallet.Notifications.Domain;
 using AfriWallet.Notifications.Persistence;
 using AfriWallet.P2P.Infrastructure;
 using AfriWallet.PaymentRequests.Application;
@@ -53,16 +54,31 @@ await using var notificationDb = new NotificationInboxDbContext(notificationOpti
 await notificationDb.Database.EnsureCreatedAsync();
 var repository = new EfInAppNotificationRepository(notificationDb);
 
+await using var deliveryConnection = new SqliteConnection("Data Source=:memory:");
+await deliveryConnection.OpenAsync();
+var deliveryOptions = new DbContextOptionsBuilder<NotificationDeliveryDbContext>()
+    .UseSqlite(deliveryConnection)
+    .Options;
+await using var deliveryDb = new NotificationDeliveryDbContext(deliveryOptions);
+await deliveryDb.Database.EnsureCreatedAsync();
+
+var runtimeDelivery = new NotificationRuntimeDeliveryService(
+    new EfNotificationDeliveryRepository(deliveryDb),
+    new EmptyPreferenceRepository(),
+    new InAppOnlyPolicyProvider(),
+    [new InAppNotificationChannelDispatchPort(repository)],
+    new FixedTimeProvider(occurredAt.AddHours(1)));
+
 var wallets = new InMemoryWalletRepository([
     Wallet.Create(WalletId.From(requesterWalletId), requesterUserId, Currency.Create("EUR"), null, occurredAt),
     Wallet.Create(WalletId.From(payerWalletId), payerUserId, Currency.Create("EUR"), null, occurredAt)
 ]);
-var transport = new InAppPaymentRequestEventTransport(
+var transport = new NotificationPaymentRequestEventTransport(
     requestDb,
     wallets,
     new FixedAfWalDirectory(payerUserId),
     new FixedQrDirectory(null),
-    repository);
+    runtimeDelivery);
 
 var createdEventId = Guid.NewGuid();
 await transport.DispatchAsync(new PaymentRequestEventDispatch(
@@ -125,6 +141,45 @@ catch (PaymentRequestEventTransportException exception)
 }
 
 Console.WriteLine("AFW-BE-NOTIFICATION-1 durable payment request event transport scenarios: PASS");
+
+sealed class EmptyPreferenceRepository : INotificationPreferenceRepository
+{
+    public Task<NotificationPreference?> GetAsync(Guid userId, NotificationChannel channel, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        return Task.FromResult<NotificationPreference?>(null);
+    }
+
+    public Task<IReadOnlyList<NotificationPreference>> ListByUserAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        return Task.FromResult<IReadOnlyList<NotificationPreference>>([]);
+    }
+
+    public Task AddAsync(NotificationPreference preference, CancellationToken cancellationToken = default) =>
+        Task.CompletedTask;
+
+    public Task UpdateAsync(NotificationPreference preference, CancellationToken cancellationToken = default) =>
+        Task.CompletedTask;
+}
+
+sealed class InAppOnlyPolicyProvider : INotificationChannelPolicyProvider
+{
+    private static readonly NotificationChannelPolicy InApp =
+        NotificationChannelPolicy.Create(NotificationChannel.InApp, true, false);
+
+    public NotificationChannelPolicy Get(NotificationChannel channel) =>
+        channel == NotificationChannel.InApp
+            ? InApp
+            : throw new KeyNotFoundException();
+
+    public IReadOnlyList<NotificationChannelPolicy> List() => [InApp];
+}
+
+sealed class FixedTimeProvider(DateTimeOffset now) : TimeProvider
+{
+    public override DateTimeOffset GetUtcNow() => now;
+}
 
 sealed class FixedAfWalDirectory(Guid? ownerId) : IAfWalIdentityDirectory
 {

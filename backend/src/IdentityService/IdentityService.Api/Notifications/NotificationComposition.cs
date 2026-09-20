@@ -26,6 +26,8 @@ public static class NotificationComposition
         services.AddScoped<NotificationRuntimeDeliveryService>();
         services.AddSingleton(NotificationDeliveryRecoveryOptions.Default);
         services.AddScoped<NotificationDeliveryRecoveryService>();
+        services.AddSingleton(NotificationDeliveryRecoveryWorkerOptions.Default);
+        services.AddHostedService<NotificationDeliveryRecoveryHostedWorker>();
         services.AddScoped<InAppNotificationInboxService>();
         services.AddScoped<NotificationRetentionService>();
         services.AddSingleton(NotificationRetentionOptions.Default);

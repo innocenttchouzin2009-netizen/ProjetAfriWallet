@@ -36,7 +36,6 @@ var service = new NotificationRuntimeDeliveryService(
 
 var createdEvent = PaymentRequestEvent.New(
     Guid.NewGuid(),
-    Guid.NewGuid(),
     PaymentRequestEventKind.Created,
     now);
 var notification = InAppNotification.New(userId, createdEvent);
@@ -57,7 +56,7 @@ var pushPreference = NotificationPreference.New(userId, pushPolicy, now);
 pushPreference.SetEnabled(false, pushPolicy, now.AddSeconds(1));
 await preferenceRepository.AddAsync(pushPreference);
 
-var secondEvent = PaymentRequestEvent.New(Guid.NewGuid(), Guid.NewGuid(), PaymentRequestEventKind.Accepted, now.AddMinutes(2));
+var secondEvent = PaymentRequestEvent.New(Guid.NewGuid(), PaymentRequestEventKind.Accepted, now.AddMinutes(2));
 var second = InAppNotification.New(userId, secondEvent);
 await service.DeliverAsync(second);
 Assert(inApp.Calls == 2, "In-App must remain enabled.");
@@ -68,7 +67,7 @@ Assert(await deliveryRepository.GetAsync(second.EventId, NotificationChannel.Pus
 var forcedOffInApp = NotificationPreference.Restore(
     Guid.NewGuid(), userId, NotificationChannel.InApp, false, now, now);
 await preferenceRepository.UpsertAsync(forcedOffInApp);
-var thirdEvent = PaymentRequestEvent.New(Guid.NewGuid(), Guid.NewGuid(), PaymentRequestEventKind.Declined, now.AddMinutes(3));
+var thirdEvent = PaymentRequestEvent.New(Guid.NewGuid(), PaymentRequestEventKind.Declined, now.AddMinutes(3));
 await service.DeliverAsync(InAppNotification.New(userId, thirdEvent));
 Assert(inApp.Calls == 3, "Non-configurable In-App policy must remain authoritative.");
 
@@ -78,7 +77,7 @@ var noPushService = new NotificationRuntimeDeliveryService(
     policies,
     [new RecordingDispatcher(NotificationChannel.InApp)],
     time);
-var missingDispatcherEvent = PaymentRequestEvent.New(Guid.NewGuid(), Guid.NewGuid(), PaymentRequestEventKind.Cancelled, now.AddMinutes(4));
+var missingDispatcherEvent = PaymentRequestEvent.New(Guid.NewGuid(), PaymentRequestEventKind.Cancelled, now.AddMinutes(4));
 try
 {
     await noPushService.DeliverAsync(InAppNotification.New(Guid.NewGuid(), missingDispatcherEvent));
@@ -95,7 +94,8 @@ sealed class RecordingDispatcher(NotificationChannel channel) : INotificationCha
     public Task DispatchAsync(NotificationDelivery delivery, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        Assert(delivery.Channel == Channel, "Dispatcher channel mismatch.");
+        if (delivery.Channel != Channel)
+            throw new InvalidOperationException("Dispatcher channel mismatch.");
         Calls++;
         return Task.CompletedTask;
     }

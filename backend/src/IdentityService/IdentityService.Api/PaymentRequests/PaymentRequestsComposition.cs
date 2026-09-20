@@ -26,6 +26,8 @@ public static class PaymentRequestsComposition
 
         var workerOptions =
             PaymentRequestEventDispatchWorkerOptions.FromConfiguration(configuration);
+        var recoveryWorkerOptions =
+            PaymentRequestEventRecoveryWorkerOptions.FromConfiguration(configuration);
         var deliveryOptions = workerOptions.ToDeliveryOptions();
 
         services.AddDbContext<PaymentRequestDbContext>(
@@ -40,6 +42,7 @@ public static class PaymentRequestsComposition
         services.AddScoped<IPaymentRequestOwnedRecipientReferenceReader, AuthoritativeRecipientReferenceReader>();
         services.AddScoped<IPaymentRequestReconciliationPort, TransferCorrelationPaymentRequestReconciliationPort>();
         services.AddScoped<IPaymentRequestEventOutboxStore, EfPaymentRequestEventOutboxStore>();
+        services.AddScoped<IPaymentRequestEventRecoveryStore, EfPaymentRequestEventRecoveryStore>();
         services.AddScoped<IPaymentRequestEventAttemptLedger, EfPaymentRequestEventAttemptLedger>();
         services.AddScoped<IPaymentRequestEventAttemptFinalizer, EfPaymentRequestEventAttemptFinalizer>();
         services.AddScoped<IPaymentRequestEventOutboxDiagnostics, EfPaymentRequestEventOutboxDiagnostics>();
@@ -52,11 +55,13 @@ public static class PaymentRequestsComposition
         services.AddScoped<PaymentRequestRecoveryService>();
         services.AddSingleton(TimeProvider.System);
         services.AddSingleton(workerOptions);
+        services.AddSingleton(recoveryWorkerOptions);
         services.AddSingleton(deliveryOptions);
         services.AddSingleton<PaymentRequestEventOutboxWorkerState>();
 
         AddWebhookTransportIfConfigured(services, configuration);
 
+        services.AddHostedService<PaymentRequestEventOutboxRecoveryHostedWorker>();
         services.AddHostedService<PaymentRequestEventOutboxHostedWorker>();
         return services;
     }

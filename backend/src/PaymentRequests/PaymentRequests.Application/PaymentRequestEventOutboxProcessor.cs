@@ -62,7 +62,6 @@ public sealed class PaymentRequestEventOutboxProcessor
         ValidateOptions();
         cancellationToken.ThrowIfCancellationRequested();
 
-        await outboxStore.RecoverExpiredClaimsAsync(nowUtc, cancellationToken);
         var claimed = await outboxStore.ClaimBatchAsync(maxCount, nowUtc, options.LeaseDuration, cancellationToken);
         var delivered = 0;
 

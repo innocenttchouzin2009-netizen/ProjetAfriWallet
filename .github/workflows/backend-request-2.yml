@@ -1,4 +1,5 @@
 name: AFW-BE-REQUEST-2 Delivery Reliability & Webhook Subscription Foundation
+# Commit 1 certification: authoritative webhook destination registry and delivery policy.
 
 on:
   push:

@@ -22,6 +22,8 @@ public sealed class NotificationDeliveryDbContext(
         delivery.Property(x => x.TransferId);
         delivery.Property(x => x.Status).IsRequired();
         delivery.Property(x => x.DispatchedAtUtc).HasMaxLength(64);
+        delivery.Property(x => x.RecoveryLeaseUntilUtcTicks);
+        delivery.HasIndex(x => new { x.Status, x.RecoveryLeaseUntilUtcTicks, x.CreatedAtUtc });
     }
 }
 
@@ -37,4 +39,5 @@ public sealed class NotificationDeliveryEntity
     public Guid? TransferId { get; set; }
     public int Status { get; set; }
     public string? DispatchedAtUtc { get; set; }
+    public long? RecoveryLeaseUntilUtcTicks { get; set; }
 }

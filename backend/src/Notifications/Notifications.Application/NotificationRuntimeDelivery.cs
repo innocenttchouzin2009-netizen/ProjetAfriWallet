@@ -51,6 +51,16 @@ public interface INotificationDeliveryRepository
         NotificationDelivery delivery,
         CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyList<NotificationDelivery>> ClaimRecoverableAsync(
+        DateTimeOffset nowUtc,
+        DateTimeOffset leaseUntilUtc,
+        int limit,
+        CancellationToken cancellationToken = default);
+
+    Task ReleaseRecoveryClaimAsync(
+        Guid deliveryId,
+        CancellationToken cancellationToken = default);
+
     Task MarkDispatchedAsync(
         Guid deliveryId,
         DateTimeOffset dispatchedAtUtc,
@@ -64,6 +74,102 @@ public interface INotificationChannelDispatchPort
     Task DispatchAsync(
         NotificationDelivery delivery,
         CancellationToken cancellationToken = default);
+}
+
+public sealed record NotificationDeliveryRecoveryOptions(TimeSpan LeaseDuration, int BatchSize)
+{
+    public static NotificationDeliveryRecoveryOptions Default { get; } =
+        new(TimeSpan.FromMinutes(2), 100);
+
+    public NotificationDeliveryRecoveryOptions Validate()
+    {
+        if (LeaseDuration <= TimeSpan.Zero)
+            throw new ArgumentOutOfRangeException(nameof(LeaseDuration));
+        if (BatchSize is < 1 or > 1000)
+            throw new ArgumentOutOfRangeException(nameof(BatchSize));
+        return this;
+    }
+}
+
+public sealed record NotificationDeliveryRecoveryResult(
+    int Claimed,
+    int Dispatched,
+    int Failed);
+
+public sealed class NotificationDeliveryRecoveryService(
+    INotificationDeliveryRepository deliveryRepository,
+    IEnumerable<INotificationChannelDispatchPort> dispatchPorts,
+    TimeProvider timeProvider,
+    NotificationDeliveryRecoveryOptions options)
+{
+    public async Task<NotificationDeliveryRecoveryResult> RecoverAsync(
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var validated = options.Validate();
+        var nowUtc = timeProvider.GetUtcNow();
+        if (nowUtc.Offset != TimeSpan.Zero)
+            throw new InvalidOperationException("TimeProvider must return UTC timestamps.");
+
+        var leaseUntilUtc = nowUtc.Add(validated.LeaseDuration);
+        var claimed = await deliveryRepository.ClaimRecoverableAsync(
+            nowUtc,
+            leaseUntilUtc,
+            validated.BatchSize,
+            cancellationToken);
+
+        var dispatcherMap = dispatchPorts
+            .GroupBy(x => x.Channel)
+            .ToDictionary(x => x.Key, x => x.ToArray());
+
+        var dispatched = 0;
+        var failed = 0;
+
+        foreach (var delivery in claimed)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (!dispatcherMap.TryGetValue(delivery.Channel, out var matches) || matches.Length != 1)
+            {
+                await deliveryRepository.ReleaseRecoveryClaimAsync(
+                    delivery.DeliveryId,
+                    CancellationToken.None);
+                failed++;
+                continue;
+            }
+
+            try
+            {
+                await matches[0].DispatchAsync(delivery, cancellationToken);
+
+                var dispatchedAtUtc = timeProvider.GetUtcNow();
+                if (dispatchedAtUtc.Offset != TimeSpan.Zero)
+                    throw new InvalidOperationException("TimeProvider must return UTC timestamps.");
+
+                await deliveryRepository.MarkDispatchedAsync(
+                    delivery.DeliveryId,
+                    dispatchedAtUtc,
+                    cancellationToken);
+                dispatched++;
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                await deliveryRepository.ReleaseRecoveryClaimAsync(
+                    delivery.DeliveryId,
+                    CancellationToken.None);
+                throw;
+            }
+            catch
+            {
+                await deliveryRepository.ReleaseRecoveryClaimAsync(
+                    delivery.DeliveryId,
+                    CancellationToken.None);
+                failed++;
+            }
+        }
+
+        return new NotificationDeliveryRecoveryResult(claimed.Count, dispatched, failed);
+    }
 }
 
 public sealed class NotificationRuntimeDeliveryService(

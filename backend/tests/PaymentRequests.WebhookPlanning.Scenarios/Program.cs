@@ -45,11 +45,11 @@ var eventEnvelope = new PaymentRequestEventEnvelope(
 var destinationOne = new PaymentRequestWebhookDestination(
     Guid.NewGuid(),
     new Uri("https://hooks.partner-one.test/request-events"),
-    new PaymentRequestWebhookRetryPolicy(4, TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(40)));
+    new PaymentRequestWebhookRetryPolicy(4, TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(40)),\n    "signing-one");
 var destinationTwo = new PaymentRequestWebhookDestination(
     Guid.NewGuid(),
     new Uri("https://hooks.partner-two.test/request-events"),
-    new PaymentRequestWebhookRetryPolicy(3, TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(2)));
+    new PaymentRequestWebhookRetryPolicy(3, TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(2)),\n    "signing-two");
 
 var repository = new FixedPaymentRequestRepository(request);
 var registry = new RecordingDestinationRegistry([destinationOne, destinationTwo]);
@@ -66,7 +66,7 @@ Assert(registry.LastEventType == eventEnvelope.EventType, "Event type must be fo
 var first = result.Plan.Destinations.Single(item => item.DestinationId == destinationOne.DestinationId);
 Assert(first.Endpoint == destinationOne.Endpoint, "Destination endpoint must come from registry.");
 Assert(first.Endpoint.Host == "hooks.partner-one.test", "Business event payload URL must never become delivery endpoint.");
-Assert(first.MaxAttempts == 4, "Retry max attempts must come from destination policy.");
+Assert(first.MaxAttempts == 4, "Retry max attempts must come from destination policy.");\nAssert(first.SigningConfigurationId == "signing-one", "Signing configuration must come from registry.");
 Assert(first.RetryDelays.SequenceEqual([
     TimeSpan.FromSeconds(10),
     TimeSpan.FromSeconds(20),
@@ -97,7 +97,7 @@ var duplicateRegistry = new RecordingDestinationRegistry([
     new PaymentRequestWebhookDestination(
         duplicateId,
         new Uri("https://hooks.one.test/request-events"),
-        new PaymentRequestWebhookRetryPolicy(2, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5))),
+        new PaymentRequestWebhookRetryPolicy(2, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5)),\n        "signing-dup"),
     new PaymentRequestWebhookDestination(
         duplicateId,
         new Uri("https://hooks.two.test/request-events"),

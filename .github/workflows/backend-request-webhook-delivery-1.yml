@@ -1,4 +1,4 @@
-# AFW-BE-REQUEST webhook delivery certification: Commit 2 destination resolution and fan-out planning
+# AFW-BE-REQUEST webhook delivery certification: Commit 4 registry-backed routing and per-destination retry
 name: AFW-BE-REQUEST Webhook Delivery Foundation
 
 on:
@@ -6,17 +6,21 @@ on:
     branches:
       - feature/backend-request-webhook-delivery-1
     paths:
-      - 'backend/src/PaymentRequests/PaymentRequests.Application/**'\n      - 'backend/src/PaymentRequests/PaymentRequests.Webhooks/**'
+      - 'backend/src/PaymentRequests/PaymentRequests.Application/**'
+      - 'backend/src/PaymentRequests/PaymentRequests.Webhooks/**'
       - 'backend/tests/PaymentRequests.WebhookDelivery.Scenarios/**'
-      - 'backend/tests/PaymentRequests.WebhookPlanning.Scenarios/**'\n      - 'backend/tests/PaymentRequests.WebhookExecution.Scenarios/**'
+      - 'backend/tests/PaymentRequests.WebhookPlanning.Scenarios/**'
+      - 'backend/tests/PaymentRequests.WebhookExecution.Scenarios/**'
       - '.github/workflows/backend-request-webhook-delivery-1.yml'
   pull_request:
     branches:
       - main
     paths:
       - 'backend/src/PaymentRequests/PaymentRequests.Application/**'
+      - 'backend/src/PaymentRequests/PaymentRequests.Webhooks/**'
       - 'backend/tests/PaymentRequests.WebhookDelivery.Scenarios/**'
       - 'backend/tests/PaymentRequests.WebhookPlanning.Scenarios/**'
+      - 'backend/tests/PaymentRequests.WebhookExecution.Scenarios/**'
       - '.github/workflows/backend-request-webhook-delivery-1.yml'
   workflow_dispatch:
 
@@ -42,3 +46,9 @@ jobs:
 
       - name: Run webhook destination resolution and fan-out planning scenarios
         run: dotnet run --project backend/tests/PaymentRequests.WebhookPlanning.Scenarios/PaymentRequests.WebhookPlanning.Scenarios.csproj --configuration Release
+
+      - name: Build Payment Requests Webhooks
+        run: dotnet build backend/src/PaymentRequests/PaymentRequests.Webhooks/PaymentRequests.Webhooks.csproj --configuration Release --nologo
+
+      - name: Run registry-backed delivery execution scenarios
+        run: dotnet run --project backend/tests/PaymentRequests.WebhookExecution.Scenarios/PaymentRequests.WebhookExecution.Scenarios.csproj --configuration Release

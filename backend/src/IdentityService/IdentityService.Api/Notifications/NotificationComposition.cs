@@ -24,6 +24,8 @@ public static class NotificationComposition
         services.AddScoped<INotificationChannelDispatchPort, InAppNotificationChannelDispatchPort>();
         services.AddScoped<INotificationChannelDispatchPort, PushNotificationChannelDispatchPort>();
         services.AddScoped<NotificationRuntimeDeliveryService>();
+        services.AddSingleton(NotificationDeliveryRecoveryOptions.Default);
+        services.AddScoped<NotificationDeliveryRecoveryService>();
         services.AddScoped<InAppNotificationInboxService>();
         services.AddScoped<NotificationRetentionService>();
         services.AddSingleton(NotificationRetentionOptions.Default);

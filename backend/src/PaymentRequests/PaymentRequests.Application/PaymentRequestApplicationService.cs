@@ -4,7 +4,8 @@ namespace AfriWallet.PaymentRequests.Application;
 
 public sealed class PaymentRequestApplicationService(
     IPaymentRequestRepository repository,
-    IPaymentRequestRecipientResolver recipientResolver)
+    IPaymentRequestRecipientResolver recipientResolver,
+    IPaymentRequestLifecycleMutationStore? lifecycleMutationStore = null)
 {
     public async Task<CreatePaymentRequestResult> CreateAsync(
         CreatePaymentRequestCommand command,
@@ -51,7 +52,19 @@ public sealed class PaymentRequestApplicationService(
             command.CreatedAtUtc,
             command.ExpiresAtUtc);
 
-        await repository.AddAsync(request, cancellationToken);
+        if (lifecycleMutationStore is null)
+        {
+            await repository.AddAsync(request, cancellationToken);
+        }
+        else
+        {
+            var lifecycleEvent = PaymentRequestLifecycleEventFactory.Create(
+                request,
+                PaymentRequestLifecycleEventKind.Created,
+                request.CreatedAtUtc);
+            await lifecycleMutationStore.AddAsync(request, lifecycleEvent, cancellationToken);
+        }
+
         return CreatePaymentRequestResult.Created(request);
     }
 

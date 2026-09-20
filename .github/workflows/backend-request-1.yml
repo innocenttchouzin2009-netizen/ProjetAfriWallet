@@ -13,10 +13,6 @@ on:
       - 'backend/tests/PaymentRequests.Domain.Scenarios/**'
       - 'backend/tests/PaymentRequests.Application.Scenarios/**'
       - 'backend/tests/PaymentRequests.Persistence.Scenarios/**'
-      - 'backend/tests/PaymentRequests.Outbox.Scenarios/**'
-      - 'backend/tests/PaymentRequests.Outbox.Dispatcher.Scenarios/**'
-      - 'backend/tests/PaymentRequests.Outbox.Hosting.Scenarios/**'
-      - 'backend/tests/PaymentRequests.Webhooks.Scenarios/**'
       - 'backend/tests/PaymentRequests.Http.Scenarios/**'
       - 'backend/tests/PaymentRequests.Actions.Scenarios/**'
       - 'backend/tests/PaymentRequests.Actions.Http.Scenarios/**'
@@ -33,10 +29,6 @@ on:
       - 'backend/tests/PaymentRequests.Domain.Scenarios/**'
       - 'backend/tests/PaymentRequests.Application.Scenarios/**'
       - 'backend/tests/PaymentRequests.Persistence.Scenarios/**'
-      - 'backend/tests/PaymentRequests.Outbox.Scenarios/**'
-      - 'backend/tests/PaymentRequests.Outbox.Dispatcher.Scenarios/**'
-      - 'backend/tests/PaymentRequests.Outbox.Hosting.Scenarios/**'
-      - 'backend/tests/PaymentRequests.Webhooks.Scenarios/**'
       - 'backend/tests/PaymentRequests.Http.Scenarios/**'
       - 'backend/tests/PaymentRequests.Actions.Scenarios/**'
       - 'backend/tests/PaymentRequests.Actions.Http.Scenarios/**'
@@ -77,21 +69,6 @@ jobs:
 
       - name: Run payment request persistence scenarios
         run: dotnet run --project backend/tests/PaymentRequests.Persistence.Scenarios/PaymentRequests.Persistence.Scenarios.csproj --configuration Release
-
-      - name: Run transactional payment request outbox scenarios
-        run: dotnet run --project backend/tests/PaymentRequests.Outbox.Scenarios/PaymentRequests.Outbox.Scenarios.csproj --configuration Release
-
-      - name: Run payment request outbox dispatcher scenarios
-        run: dotnet run --project backend/tests/PaymentRequests.Outbox.Dispatcher.Scenarios/PaymentRequests.Outbox.Dispatcher.Scenarios.csproj --configuration Release
-
-      - name: Run payment request outbox hosting and operational control scenarios
-        run: dotnet run --project backend/tests/PaymentRequests.Outbox.Hosting.Scenarios/PaymentRequests.Outbox.Hosting.Scenarios.csproj --configuration Release
-
-      - name: Build Payment Request Webhook Infrastructure
-        run: dotnet build backend/src/PaymentRequests/PaymentRequests.Webhooks.Infrastructure/PaymentRequests.Webhooks.Infrastructure.csproj --configuration Release --nologo
-
-      - name: Run concrete HMAC signer and HTTP transport scenarios
-        run: dotnet run --project backend/tests/PaymentRequests.Webhooks.Scenarios/PaymentRequests.Webhooks.Scenarios.csproj --configuration Release
 
       - name: Build IdentityService host with Payment Requests wiring
         run: dotnet build backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj --configuration Release --nologo

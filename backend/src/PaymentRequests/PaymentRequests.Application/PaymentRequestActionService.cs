@@ -1,4 +1,5 @@
 using AfriWallet.PaymentRequests.Domain;
+using AfriWallet.Wallet.Domain;
 
 namespace AfriWallet.PaymentRequests.Application;
 
@@ -6,7 +7,8 @@ public sealed class PaymentRequestActionService(
     IPaymentRequestRepository repository,
     IPaymentRequestRecipientResolver recipientResolver,
     IPaymentRequestWalletOwnershipReader walletOwnershipReader,
-    IPaymentRequestPaymentPort paymentPort)
+    IPaymentRequestPaymentPort paymentPort,
+    IPaymentRequestLifecycleMutationStore? lifecycleMutationStore = null)
 {
     public async Task<PaymentRequestActionResult> DeclineAsync(
         PaymentRequestId id,
@@ -36,7 +38,7 @@ public sealed class PaymentRequestActionService(
         }
 
         request.Decline(actionAtUtc);
-        await repository.UpdateAsync(request, cancellationToken);
+        await PersistUpdateAsync(request, PaymentRequestLifecycleEventKind.Declined, cancellationToken);
         return PaymentRequestActionResult.Succeeded(request);
     }
 
@@ -59,7 +61,7 @@ public sealed class PaymentRequestActionService(
         }
 
         request.Cancel(actionAtUtc);
-        await repository.UpdateAsync(request, cancellationToken);
+        await PersistUpdateAsync(request, PaymentRequestLifecycleEventKind.Cancelled, cancellationToken);
         return PaymentRequestActionResult.Succeeded(request);
     }
 
@@ -76,37 +78,49 @@ public sealed class PaymentRequestActionService(
             return PaymentRequestActionResult.NotFound();
         }
 
-        var payerWalletId = await recipientResolver.ResolveAsync(
-            request.PayerReference,
-            request.Currency,
-            cancellationToken);
-        if (payerWalletId is null)
+        if (request.Status == PaymentRequestStatus.Paid)
         {
-            return PaymentRequestActionResult.RecipientNotFound();
+            var paidPayerWalletId = RequireAcceptedPayerWallet(request);
+            return await walletOwnershipReader.IsOwnedByAsync(paidPayerWalletId, actorUserId, cancellationToken)
+                ? PaymentRequestActionResult.Succeeded(request)
+                : PaymentRequestActionResult.ActorNotAllowed();
         }
 
-        if (!await walletOwnershipReader.IsOwnedByAsync(payerWalletId.Value, actorUserId, cancellationToken))
+        WalletId payerWalletId;
+        if (request.Status == PaymentRequestStatus.Accepted)
+        {
+            payerWalletId = RequireAcceptedPayerWallet(request);
+        }
+        else if (request.Status == PaymentRequestStatus.Pending)
+        {
+            var resolvedPayerWalletId = await recipientResolver.ResolveAsync(
+                request.PayerReference,
+                request.Currency,
+                cancellationToken);
+            if (resolvedPayerWalletId is null)
+            {
+                return PaymentRequestActionResult.RecipientNotFound();
+            }
+
+            payerWalletId = resolvedPayerWalletId.Value;
+        }
+        else
+        {
+            throw new InvalidOperationException($"Payment request in status {request.Status} cannot be accepted and paid.");
+        }
+
+        if (!await walletOwnershipReader.IsOwnedByAsync(payerWalletId, actorUserId, cancellationToken))
         {
             return PaymentRequestActionResult.ActorNotAllowed();
         }
 
-        if (request.Status == PaymentRequestStatus.Paid)
-        {
-            return PaymentRequestActionResult.Succeeded(request);
-        }
-
         if (request.Status == PaymentRequestStatus.Pending)
         {
-            request.Accept(payerWalletId.Value, actionAtUtc);
-            await repository.UpdateAsync(request, cancellationToken);
+            request.Accept(payerWalletId, actionAtUtc);
+            await PersistUpdateAsync(request, PaymentRequestLifecycleEventKind.Accepted, cancellationToken);
         }
-        else if (request.Status == PaymentRequestStatus.Accepted)
+        else
         {
-            if (request.AcceptedPayerWalletId is null || request.AcceptedPayerWalletId.Value != payerWalletId.Value)
-            {
-                throw new InvalidOperationException("Accepted payer wallet does not match the resolved payer.");
-            }
-
             if (actionAtUtc < request.UpdatedAtUtc)
             {
                 throw new ArgumentException("Action timestamp cannot move backwards.", nameof(actionAtUtc));
@@ -117,22 +131,16 @@ public sealed class PaymentRequestActionService(
                 throw new InvalidOperationException("Payment request has expired.");
             }
         }
-        else
-        {
-            throw new InvalidOperationException($"Payment request in status {request.Status} cannot be accepted and paid.");
-        }
 
-        // The payment correlation is deterministically bound to the request id so a retry
-        // cannot create a second ledger journal through the certified transfer engine.
         var payment = await paymentPort.ExecuteAsync(
-            payerWalletId.Value.Value,
+            payerWalletId.Value,
             request.RequesterWalletId.Value,
             request.AmountMinor,
             request.Id.Value,
             actionAtUtc,
             cancellationToken);
 
-        if (payment.SourceWalletId != payerWalletId.Value.Value ||
+        if (payment.SourceWalletId != payerWalletId.Value ||
             payment.TargetWalletId != request.RequesterWalletId.Value ||
             payment.AmountMinor != request.AmountMinor ||
             payment.CorrelationId != request.Id.Value)
@@ -141,8 +149,33 @@ public sealed class PaymentRequestActionService(
         }
 
         request.MarkPaid(payment.TransferId, payment.CreatedAtUtc);
-        await repository.UpdateAsync(request, cancellationToken);
+        await PersistUpdateAsync(request, PaymentRequestLifecycleEventKind.Paid, cancellationToken);
         return PaymentRequestActionResult.Succeeded(request);
+    }
+
+    private async Task PersistUpdateAsync(
+        PaymentRequest request,
+        PaymentRequestLifecycleEventKind kind,
+        CancellationToken cancellationToken)
+    {
+        if (lifecycleMutationStore is null)
+        {
+            await repository.UpdateAsync(request, cancellationToken);
+            return;
+        }
+
+        var lifecycleEvent = PaymentRequestLifecycleEventFactory.Create(request, kind, request.UpdatedAtUtc);
+        await lifecycleMutationStore.UpdateAsync(request, lifecycleEvent, cancellationToken);
+    }
+
+    private static WalletId RequireAcceptedPayerWallet(PaymentRequest request)
+    {
+        if (request.AcceptedPayerWalletId is null || request.AcceptedPayerWalletId.Value.Value == Guid.Empty)
+        {
+            throw new InvalidOperationException("Accepted payment request is missing its payer wallet binding.");
+        }
+
+        return request.AcceptedPayerWalletId.Value;
     }
 
     private static void ValidateActor(Guid actorUserId, DateTimeOffset actionAtUtc)

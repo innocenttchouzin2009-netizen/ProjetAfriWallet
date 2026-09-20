@@ -1,0 +1,76 @@
+name: AFW-BE-REQUEST-OUTBOX-1 Transactional Payment Request Outbox & Reliable Delivery
+
+on:
+  push:
+    branches:
+      - feature/backend-request-outbox-reliable-1
+    paths:
+      - 'backend/src/PaymentRequests/**'
+      - 'backend/src/IdentityService/IdentityService.Api/PaymentRequests/**'
+      - 'backend/src/IdentityService/IdentityService.Api/Program.cs'
+      - 'backend/src/IdentityService/IdentityService.Api/appsettings.json'
+      - 'backend/tests/PaymentRequests.EventOutbox.Scenarios/**'
+      - 'backend/tests/PaymentRequests.EventOutbox.Configuration.Scenarios/**'
+      - 'backend/tests/PaymentRequests.EventWorker.Scenarios/**'
+      - 'backend/tests/PaymentRequests.EventOutbox.Operational.Scenarios/**'
+      - 'backend/tests/PaymentRequests.EventProduction.Scenarios/**'
+      - 'backend/tests/PaymentRequests.EventProduction.Persistence.Scenarios/**'
+      - '.github/workflows/backend-request-outbox-reliable-1.yml'
+      - '.github/workflows/backend-request-outbox-reintegration-1.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'backend/src/PaymentRequests/**'
+      - 'backend/src/IdentityService/IdentityService.Api/PaymentRequests/**'
+      - 'backend/src/IdentityService/IdentityService.Api/Program.cs'
+      - 'backend/src/IdentityService/IdentityService.Api/appsettings.json'
+      - 'backend/tests/PaymentRequests.EventOutbox.Scenarios/**'
+      - 'backend/tests/PaymentRequests.EventOutbox.Configuration.Scenarios/**'
+      - 'backend/tests/PaymentRequests.EventWorker.Scenarios/**'
+      - 'backend/tests/PaymentRequests.EventOutbox.Operational.Scenarios/**'
+      - 'backend/tests/PaymentRequests.EventProduction.Scenarios/**'
+      - 'backend/tests/PaymentRequests.EventProduction.Persistence.Scenarios/**'
+      - '.github/workflows/backend-request-outbox-reliable-1.yml'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Validate transactional outbox and reliable delivery
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build Payment Requests Application
+        run: dotnet build backend/src/PaymentRequests/PaymentRequests.Application/PaymentRequests.Application.csproj --configuration Release --nologo
+
+      - name: Build Payment Requests Persistence
+        run: dotnet build backend/src/PaymentRequests/PaymentRequests.Persistence/PaymentRequests.Persistence.csproj --configuration Release --nologo
+
+      - name: Build IdentityService host with outbox wiring
+        run: dotnet build backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj --configuration Release --nologo
+
+      - name: Run lifecycle event contract scenarios
+        run: dotnet run --project backend/tests/PaymentRequests.EventProduction.Scenarios/PaymentRequests.EventProduction.Scenarios.csproj --configuration Release
+
+      - name: Run atomic lifecycle persistence scenarios
+        run: dotnet run --project backend/tests/PaymentRequests.EventProduction.Persistence.Scenarios/PaymentRequests.EventProduction.Persistence.Scenarios.csproj --configuration Release
+
+      - name: Run durable payment request outbox scenarios
+        run: dotnet run --project backend/tests/PaymentRequests.EventOutbox.Scenarios/PaymentRequests.EventOutbox.Scenarios.csproj --configuration Release
+
+      - name: Run dispatcher configuration scenarios
+        run: dotnet run --project backend/tests/PaymentRequests.EventOutbox.Configuration.Scenarios/PaymentRequests.EventOutbox.Configuration.Scenarios.csproj --configuration Release
+
+      - name: Run hosted outbox worker scenarios
+        run: dotnet run --project backend/tests/PaymentRequests.EventWorker.Scenarios/PaymentRequests.EventWorker.Scenarios.csproj --configuration Release
+
+      - name: Run operational outbox readiness scenarios
+        run: dotnet run --project backend/tests/PaymentRequests.EventOutbox.Operational.Scenarios/PaymentRequests.EventOutbox.Operational.Scenarios.csproj --configuration Release

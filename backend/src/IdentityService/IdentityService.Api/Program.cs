@@ -20,6 +20,7 @@ using IdentityService.Api.Auth.Security;
 using IdentityService.Api.Balance;
 using IdentityService.Api.Fx;
 using IdentityService.Api.Ledger;
+using IdentityService.Api.Notifications;
 using IdentityService.Api.P2P;
 using IdentityService.Api.PaymentRequests;
 using IdentityService.Api.Transfer;
@@ -58,6 +59,18 @@ var recipientDirectoryConnectionString = builder.Configuration.GetConnectionStri
 var paymentRequestsConnectionString = builder.Configuration.GetConnectionString("PaymentRequestsDatabase") ??
     Environment.GetEnvironmentVariable("AFW_PAYMENT_REQUESTS_DB_CONNECTION_STRING") ??
     "Data Source=payment-requests.db";
+
+var notificationsConnectionString = builder.Configuration.GetConnectionString("NotificationsDatabase") ??
+    Environment.GetEnvironmentVariable("AFW_NOTIFICATIONS_DB_CONNECTION_STRING") ??
+    "Data Source=notifications-inbox.db";
+
+var pushDevicesConnectionString = builder.Configuration.GetConnectionString("PushDevicesDatabase") ??
+    Environment.GetEnvironmentVariable("AFW_PUSH_DEVICES_DB_CONNECTION_STRING") ??
+    "Data Source=push-devices.db";
+
+var notificationPreferencesConnectionString = builder.Configuration.GetConnectionString("NotificationPreferencesDatabase") ??
+    Environment.GetEnvironmentVariable("AFW_NOTIFICATION_PREFERENCES_DB_CONNECTION_STRING") ??
+    "Data Source=notification-preferences.db";
 
 var configuredFxRates = FxConfiguration.LoadRates(builder.Configuration);
 
@@ -102,9 +115,10 @@ builder.Services.AddSingleton<FxQuoteApplicationService>();
 builder.Services.AddInternalTransferModule(builder.Configuration);
 builder.Services.AddP2PCore();
 builder.Services.AddAuthoritativeP2PRecipientDirectory(recipientDirectoryConnectionString);
-builder.Services.AddPaymentRequests(paymentRequestsConnectionString);
-builder.Services.AddPaymentRequestWebhookDelivery(builder.Configuration);
-builder.Services.AddPaymentRequestOutboxHosting(builder.Configuration);
+builder.Services.AddPaymentRequests(paymentRequestsConnectionString, builder.Configuration);
+builder.Services.AddInAppNotifications(notificationsConnectionString);
+builder.Services.AddPushDeviceRegistration(pushDevicesConnectionString);
+builder.Services.AddNotificationPreferences(notificationPreferencesConnectionString);
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -205,5 +219,11 @@ app.MapFxEndpoints();
 app.MapTransferEndpoints();
 app.MapP2PEndpoints();
 app.MapPaymentRequestEndpoints();
+app.MapPaymentRequestReconciliationEndpoints();
+app.MapPaymentRequestInboxOutboxEndpoints();
+app.MapPaymentRequestEventOutboxOperationalEndpoints();
+app.MapNotificationEndpoints();
+app.MapPushDeviceEndpoints();
+app.MapNotificationPreferenceEndpoints();
 
 app.Run();

@@ -6,9 +6,9 @@ on:
     branches:
       - feature/backend-request-webhook-delivery-1
     paths:
-      - 'backend/src/PaymentRequests/PaymentRequests.Application/**'
+      - 'backend/src/PaymentRequests/PaymentRequests.Application/**'\n      - 'backend/src/PaymentRequests/PaymentRequests.Webhooks/**'
       - 'backend/tests/PaymentRequests.WebhookDelivery.Scenarios/**'
-      - 'backend/tests/PaymentRequests.WebhookPlanning.Scenarios/**'
+      - 'backend/tests/PaymentRequests.WebhookPlanning.Scenarios/**'\n      - 'backend/tests/PaymentRequests.WebhookExecution.Scenarios/**'
       - '.github/workflows/backend-request-webhook-delivery-1.yml'
   pull_request:
     branches:

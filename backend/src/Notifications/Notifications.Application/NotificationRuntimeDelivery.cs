@@ -44,6 +44,7 @@ public interface INotificationDeliveryRepository
     Task<NotificationDelivery?> GetAsync(
         Guid eventId,
         NotificationChannel channel,
+        Guid recipientUserId,
         CancellationToken cancellationToken = default);
 
     Task<NotificationDelivery> GetOrAddAsync(

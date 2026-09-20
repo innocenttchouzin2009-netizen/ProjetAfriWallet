@@ -11,14 +11,20 @@ public sealed class EfNotificationDeliveryRepository(NotificationDeliveryDbConte
     public async Task<NotificationDelivery?> GetAsync(
         Guid eventId,
         NotificationChannel channel,
+        Guid recipientUserId,
         CancellationToken cancellationToken = default)
     {
         if (eventId == Guid.Empty) throw new ArgumentException("Event id cannot be empty.", nameof(eventId));
         if (!Enum.IsDefined(channel)) throw new ArgumentOutOfRangeException(nameof(channel));
+        if (recipientUserId == Guid.Empty) throw new ArgumentException("Recipient user id cannot be empty.", nameof(recipientUserId));
 
         var entity = await dbContext.Deliveries
             .AsNoTracking()
-            .SingleOrDefaultAsync(x => x.EventId == eventId && x.Channel == (int)channel, cancellationToken);
+            .SingleOrDefaultAsync(
+                x => x.EventId == eventId &&
+                     x.Channel == (int)channel &&
+                     x.RecipientUserId == recipientUserId,
+                cancellationToken);
 
         return entity is null ? null : Restore(entity);
     }
@@ -30,7 +36,11 @@ public sealed class EfNotificationDeliveryRepository(NotificationDeliveryDbConte
         ArgumentNullException.ThrowIfNull(delivery);
         cancellationToken.ThrowIfCancellationRequested();
 
-        var existing = await GetAsync(delivery.EventId, delivery.Channel, cancellationToken);
+        var existing = await GetAsync(
+            delivery.EventId,
+            delivery.Channel,
+            delivery.RecipientUserId,
+            cancellationToken);
         if (existing is not null)
         {
             EnsureEquivalent(existing, delivery);
@@ -46,7 +56,11 @@ public sealed class EfNotificationDeliveryRepository(NotificationDeliveryDbConte
         catch (DbUpdateException)
         {
             dbContext.ChangeTracker.Clear();
-            var raced = await GetAsync(delivery.EventId, delivery.Channel, cancellationToken);
+            var raced = await GetAsync(
+                delivery.EventId,
+                delivery.Channel,
+                delivery.RecipientUserId,
+                cancellationToken);
             if (raced is null) throw;
             EnsureEquivalent(raced, delivery);
             return raced;
@@ -101,14 +115,13 @@ public sealed class EfNotificationDeliveryRepository(NotificationDeliveryDbConte
 
     private static void EnsureEquivalent(NotificationDelivery existing, NotificationDelivery candidate)
     {
-        if (existing.RecipientUserId != candidate.RecipientUserId ||
-            existing.PaymentRequestId != candidate.PaymentRequestId ||
+        if (existing.PaymentRequestId != candidate.PaymentRequestId ||
             existing.EventKind != candidate.EventKind ||
             existing.CreatedAtUtc != candidate.CreatedAtUtc ||
             existing.TransferId != candidate.TransferId)
         {
             throw new InvalidOperationException(
-                "Event id and channel are already associated with a different notification delivery.");
+                "Event id, channel and recipient are already associated with a different notification delivery.");
         }
     }
 

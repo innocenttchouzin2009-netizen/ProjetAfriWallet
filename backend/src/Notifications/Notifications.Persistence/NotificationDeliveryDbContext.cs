@@ -14,8 +14,8 @@ public sealed class NotificationDeliveryDbContext(
         delivery.HasKey(x => x.DeliveryId);
         delivery.Property(x => x.EventId).IsRequired();
         delivery.Property(x => x.Channel).IsRequired();
-        delivery.HasIndex(x => new { x.EventId, x.Channel }).IsUnique();
         delivery.Property(x => x.RecipientUserId).IsRequired();
+        delivery.HasIndex(x => new { x.EventId, x.Channel, x.RecipientUserId }).IsUnique();
         delivery.Property(x => x.PaymentRequestId).IsRequired();
         delivery.Property(x => x.EventKind).IsRequired();
         delivery.Property(x => x.CreatedAtUtc).HasMaxLength(64).IsRequired();

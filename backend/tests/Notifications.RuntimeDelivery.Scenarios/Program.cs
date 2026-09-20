@@ -43,13 +43,19 @@ var notification = InAppNotification.New(userId, createdEvent);
 await service.DeliverAsync(notification);
 Assert(inApp.Calls == 1, "In-App must dispatch by default.");
 Assert(push.Calls == 1, "Push must dispatch by default.");
-Assert(await deliveryRepository.GetAsync(notification.EventId, NotificationChannel.InApp) is { Status: NotificationDeliveryStatus.Dispatched },
+Assert(await deliveryRepository.GetAsync(notification.EventId, NotificationChannel.InApp, userId) is { Status: NotificationDeliveryStatus.Dispatched },
     "In-App delivery must be durable and dispatched.");
-Assert(await deliveryRepository.GetAsync(notification.EventId, NotificationChannel.Push) is { Status: NotificationDeliveryStatus.Dispatched },
+Assert(await deliveryRepository.GetAsync(notification.EventId, NotificationChannel.Push, userId) is { Status: NotificationDeliveryStatus.Dispatched },
     "Push delivery must be durable and dispatched.");
 
 await service.DeliverAsync(notification);
-Assert(inApp.Calls == 1 && push.Calls == 1, "Replay must not redispatch EventId + Channel identities.");
+Assert(inApp.Calls == 1 && push.Calls == 1, "Replay must not redispatch EventId + Channel + Recipient identities.");
+
+var secondUserId = Guid.NewGuid();
+await service.DeliverAsync(InAppNotification.New(secondUserId, createdEvent));
+Assert(inApp.Calls == 2 && push.Calls == 2, "Same event must dispatch independently to a second recipient.");
+Assert(await deliveryRepository.GetAsync(notification.EventId, NotificationChannel.InApp, secondUserId) is { Status: NotificationDeliveryStatus.Dispatched },
+    "Second recipient In-App delivery must have its own durable identity.");
 
 var pushPolicy = policies.Get(NotificationChannel.Push);
 var pushPreference = NotificationPreference.New(userId, pushPolicy, now);
@@ -59,9 +65,9 @@ await preferenceRepository.AddAsync(pushPreference);
 var secondEvent = PaymentRequestEvent.New(Guid.NewGuid(), PaymentRequestEventKind.Accepted, now.AddMinutes(2));
 var second = InAppNotification.New(userId, secondEvent);
 await service.DeliverAsync(second);
-Assert(inApp.Calls == 2, "In-App must remain enabled.");
-Assert(push.Calls == 1, "Disabled Push preference must suppress Push dispatch.");
-Assert(await deliveryRepository.GetAsync(second.EventId, NotificationChannel.Push) is null,
+Assert(inApp.Calls == 3, "In-App must remain enabled.");
+Assert(push.Calls == 2, "Disabled Push preference must suppress Push dispatch.");
+Assert(await deliveryRepository.GetAsync(second.EventId, NotificationChannel.Push, userId) is null,
     "Disabled channels must not create delivery identities.");
 
 var forcedOffInApp = NotificationPreference.Restore(
@@ -69,7 +75,7 @@ var forcedOffInApp = NotificationPreference.Restore(
 await preferenceRepository.UpsertAsync(forcedOffInApp);
 var thirdEvent = PaymentRequestEvent.New(Guid.NewGuid(), PaymentRequestEventKind.Declined, now.AddMinutes(3));
 await service.DeliverAsync(InAppNotification.New(userId, thirdEvent));
-Assert(inApp.Calls == 3, "Non-configurable In-App policy must remain authoritative.");
+Assert(inApp.Calls == 4, "Non-configurable In-App policy must remain authoritative.");
 
 var noPushService = new NotificationRuntimeDeliveryService(
     deliveryRepository,

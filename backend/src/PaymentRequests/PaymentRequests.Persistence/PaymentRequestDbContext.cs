@@ -6,6 +6,7 @@ public sealed class PaymentRequestDbContext(DbContextOptions<PaymentRequestDbCon
 {
     public DbSet<PaymentRequestEntity> PaymentRequests => Set<PaymentRequestEntity>();
     public DbSet<PaymentRequestEventOutboxEntity> PaymentRequestEventOutbox => Set<PaymentRequestEventOutboxEntity>();
+    public DbSet<PaymentRequestEventAttemptEntity> PaymentRequestEventAttempts => Set<PaymentRequestEventAttemptEntity>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -45,5 +46,15 @@ public sealed class PaymentRequestDbContext(DbContextOptions<PaymentRequestDbCon
         outbox.HasIndex(x => new { x.Status, x.AvailableAtUtc, x.EnqueuedAtUtc });
         outbox.HasIndex(x => x.PaymentRequestId);
         outbox.HasIndex(x => x.LeaseToken);
+
+        var attempt = modelBuilder.Entity<PaymentRequestEventAttemptEntity>();
+        attempt.ToTable("PaymentRequestEventAttempts");
+        attempt.HasKey(x => x.AttemptId);
+        attempt.Property(x => x.EventId).IsRequired();
+        attempt.Property(x => x.AttemptNumber).IsRequired();
+        attempt.Property(x => x.StartedAtUtc).IsRequired();
+        attempt.Property(x => x.Error).HasMaxLength(2048);
+        attempt.HasIndex(x => new { x.EventId, x.AttemptNumber }).IsUnique();
+        attempt.HasIndex(x => x.EventId);
     }
 }

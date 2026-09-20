@@ -1,11 +1,52 @@
 namespace AfriWallet.PaymentRequests.Application;
 
-public sealed class PaymentRequestEventOutboxProcessor(
-    IPaymentRequestEventOutboxStore outboxStore,
-    IPaymentRequestEventDeliveryPort deliveryPort,
-    PaymentRequestEventDeliveryOptions? options = null)
+public sealed class PaymentRequestEventOutboxProcessor
 {
-    private readonly PaymentRequestEventDeliveryOptions options = options ?? PaymentRequestEventDeliveryOptions.Default;
+    private readonly IPaymentRequestEventOutboxStore outboxStore;
+    private readonly IPaymentRequestEventDeliveryPort deliveryPort;
+    private readonly IPaymentRequestEventAttemptLedger attemptLedger;
+    private readonly IPaymentRequestEventAttemptFinalizer attemptFinalizer;
+    private readonly PaymentRequestEventDeliveryOptions options;
+
+    public PaymentRequestEventOutboxProcessor(
+        IPaymentRequestEventOutboxStore outboxStore,
+        IPaymentRequestEventDeliveryPort deliveryPort,
+        PaymentRequestEventDeliveryOptions? options = null)
+        : this(
+            outboxStore,
+            deliveryPort,
+            new InMemoryPaymentRequestEventAttemptLedger(),
+            options)
+    {
+    }
+
+    public PaymentRequestEventOutboxProcessor(
+        IPaymentRequestEventOutboxStore outboxStore,
+        IPaymentRequestEventDeliveryPort deliveryPort,
+        IPaymentRequestEventAttemptLedger attemptLedger,
+        PaymentRequestEventDeliveryOptions? options = null)
+        : this(
+            outboxStore,
+            deliveryPort,
+            attemptLedger,
+            new SequentialPaymentRequestEventAttemptFinalizer(attemptLedger, outboxStore),
+            options)
+    {
+    }
+
+    public PaymentRequestEventOutboxProcessor(
+        IPaymentRequestEventOutboxStore outboxStore,
+        IPaymentRequestEventDeliveryPort deliveryPort,
+        IPaymentRequestEventAttemptLedger attemptLedger,
+        IPaymentRequestEventAttemptFinalizer attemptFinalizer,
+        PaymentRequestEventDeliveryOptions? options = null)
+    {
+        this.outboxStore = outboxStore ?? throw new ArgumentNullException(nameof(outboxStore));
+        this.deliveryPort = deliveryPort ?? throw new ArgumentNullException(nameof(deliveryPort));
+        this.attemptLedger = attemptLedger ?? throw new ArgumentNullException(nameof(attemptLedger));
+        this.attemptFinalizer = attemptFinalizer ?? throw new ArgumentNullException(nameof(attemptFinalizer));
+        this.options = options ?? PaymentRequestEventDeliveryOptions.Default;
+    }
 
     public async Task<int> ProcessBatchAsync(
         int maxCount,
@@ -28,25 +69,43 @@ public sealed class PaymentRequestEventOutboxProcessor(
         foreach (var item in claimed)
         {
             cancellationToken.ThrowIfCancellationRequested();
+            var attemptId = await attemptLedger.BeginAttemptAsync(
+                item.Event.EventId,
+                item.AttemptCount,
+                nowUtc,
+                cancellationToken);
+
             try
             {
                 await deliveryPort.DeliverAsync(item.Event, cancellationToken);
-                await outboxStore.MarkDeliveredAsync(item.Event.EventId, nowUtc, cancellationToken);
-                delivered++;
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
+                await attemptLedger.CompleteAttemptAsync(
+                    attemptId,
+                    PaymentRequestEventAttemptOutcome.Cancelled,
+                    nowUtc,
+                    cancellationToken: CancellationToken.None);
                 throw;
             }
             catch (PaymentRequestEventDeliveryException exception)
             {
                 var permanent = exception.FailureKind == PaymentRequestEventDeliveryFailureKind.Permanent;
-                await MarkFailureAsync(item, nowUtc, exception.Message, permanent, cancellationToken);
+                await MarkFailureAsync(item, attemptId, nowUtc, exception.Message, permanent, cancellationToken);
+                continue;
             }
             catch (Exception exception)
             {
-                await MarkFailureAsync(item, nowUtc, exception.Message, permanent: false, cancellationToken);
+                await MarkFailureAsync(item, attemptId, nowUtc, exception.Message, permanent: false, cancellationToken);
+                continue;
             }
+
+            await attemptFinalizer.FinalizeDeliveredAsync(
+                attemptId,
+                item.Event.EventId,
+                nowUtc,
+                cancellationToken);
+            delivered++;
         }
 
         return delivered;
@@ -54,6 +113,7 @@ public sealed class PaymentRequestEventOutboxProcessor(
 
     private async Task MarkFailureAsync(
         PaymentRequestEventOutboxItem item,
+        Guid attemptId,
         DateTimeOffset nowUtc,
         string error,
         bool permanent,
@@ -64,7 +124,8 @@ public sealed class PaymentRequestEventOutboxProcessor(
             ? null
             : nowUtc.Add(ComputeRetryDelay(item.AttemptCount));
 
-        await outboxStore.MarkFailedAsync(
+        await attemptFinalizer.FinalizeFailedAsync(
+            attemptId,
             item.Event.EventId,
             nowUtc,
             error,

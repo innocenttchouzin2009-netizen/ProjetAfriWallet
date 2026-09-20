@@ -32,4 +32,27 @@ internal static class PaymentRequestWebhookCryptography
             CryptographicOperations.ZeroMemory(canonical);
         }
     }
+
+    public static bool TryDecodeSignature(string? signature, out byte[] decoded)
+    {
+        decoded = Array.Empty<byte>();
+        if (string.IsNullOrWhiteSpace(signature) ||
+            !signature.StartsWith(SignaturePrefix, StringComparison.Ordinal))
+            return false;
+
+        var hex = signature[SignaturePrefix.Length..];
+        if (hex.Length != 64)
+            return false;
+
+        try
+        {
+            decoded = Convert.FromHexString(hex);
+            return decoded.Length == 32;
+        }
+        catch (FormatException)
+        {
+            decoded = Array.Empty<byte>();
+            return false;
+        }
+    }
 }

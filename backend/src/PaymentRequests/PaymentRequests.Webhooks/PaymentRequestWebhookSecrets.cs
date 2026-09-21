@@ -18,17 +18,41 @@ public sealed record PaymentRequestWebhookSecret(
 public interface IPaymentRequestWebhookSecretProvider
 {
     PaymentRequestWebhookSecret GetSigningSecret(DateTimeOffset nowUtc);
+
+    PaymentRequestWebhookSecret? GetVerificationSecret(
+        string keyId,
+        DateTimeOffset signedAtUtc,
+        DateTimeOffset nowUtc);
 }
 
 public sealed class RotatingPaymentRequestWebhookSecretProvider : IPaymentRequestWebhookSecretProvider
 {
     private readonly PaymentRequestWebhookSecret current;
+    private readonly IReadOnlyDictionary<string, PaymentRequestWebhookSecret> verificationKeys;
 
-    public RotatingPaymentRequestWebhookSecretProvider(PaymentRequestWebhookSecret current)
+    public RotatingPaymentRequestWebhookSecretProvider(
+        PaymentRequestWebhookSecret current,
+        IEnumerable<PaymentRequestWebhookSecret>? previous = null)
     {
         ArgumentNullException.ThrowIfNull(current);
         ValidateSecret(current);
+
+        var values = new List<PaymentRequestWebhookSecret> { current };
+        if (previous is not null)
+        {
+            foreach (var secret in previous)
+            {
+                ArgumentNullException.ThrowIfNull(secret);
+                ValidateSecret(secret);
+                values.Add(secret);
+            }
+        }
+
+        if (values.Select(x => x.KeyId).Distinct(StringComparer.Ordinal).Count() != values.Count)
+            throw new ArgumentException("Webhook key ids must be unique.");
+
         this.current = current;
+        verificationKeys = values.ToDictionary(x => x.KeyId, StringComparer.Ordinal);
     }
 
     public PaymentRequestWebhookSecret GetSigningSecret(DateTimeOffset nowUtc)
@@ -38,6 +62,23 @@ public sealed class RotatingPaymentRequestWebhookSecretProvider : IPaymentReques
             throw new InvalidOperationException("Current webhook signing key is not active.");
 
         return current;
+    }
+
+    public PaymentRequestWebhookSecret? GetVerificationSecret(
+        string keyId,
+        DateTimeOffset signedAtUtc,
+        DateTimeOffset nowUtc)
+    {
+        EnsureUtc(signedAtUtc, nameof(signedAtUtc));
+        EnsureUtc(nowUtc, nameof(nowUtc));
+        if (!IsValidKeyId(keyId))
+            return null;
+
+        return verificationKeys.TryGetValue(keyId, out var secret) &&
+               secret.IsActiveAt(signedAtUtc) &&
+               secret.IsActiveAt(nowUtc)
+            ? secret
+            : null;
     }
 
     internal static bool IsValidKeyId(string? keyId) =>

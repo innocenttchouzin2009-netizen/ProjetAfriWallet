@@ -35,6 +35,20 @@ public sealed class EfPaymentRequestWebhookSubscriptionRegistry(
             .ToArray();
     }
 
+    public async Task<IReadOnlyList<PaymentRequestWebhookSubscription>> ListForIntegrationAsync(
+        string integrationId,
+        CancellationToken cancellationToken = default)
+    {
+        var normalized = PaymentRequestWebhookSubscription.NormalizeIntegrationId(integrationId);
+        var entities = await dbContext.Subscriptions.AsNoTracking()
+            .Where(x => x.IntegrationId == normalized)
+            .OrderBy(x => x.MerchantId)
+            .ThenBy(x => x.Id)
+            .ToListAsync(cancellationToken);
+
+        return entities.Select(Map).ToArray();
+    }
+
     public async Task AddAsync(
         PaymentRequestWebhookSubscription subscription,
         CancellationToken cancellationToken = default)

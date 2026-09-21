@@ -40,11 +40,11 @@ public sealed class PaymentRequestWebhookSubscription
     public Guid Id { get; }
     public string IntegrationId { get; }
     public Guid? MerchantId { get; }
-    public Uri Endpoint { get; }
+    public Uri Endpoint { get; private set; }
     public PaymentRequestWebhookSubscriptionStatus Status { get; private set; }
-    public string KeyId { get; }
-    public string SecretReference { get; }
-    public IReadOnlyList<string> EventTypes { get; }
+    public string KeyId { get; private set; }
+    public string SecretReference { get; private set; }
+    public IReadOnlyList<string> EventTypes { get; private set; }
     public DateTimeOffset CreatedAtUtc { get; }
     public DateTimeOffset UpdatedAtUtc { get; private set; }
 
@@ -91,6 +91,27 @@ public sealed class PaymentRequestWebhookSubscription
     public bool SubscribesTo(string eventType) =>
         EventTypes.Contains(NormalizeEventType(eventType), StringComparer.Ordinal);
 
+    public void Reconfigure(
+        Uri endpoint,
+        string keyId,
+        string secretReference,
+        IEnumerable<string> eventTypes,
+        DateTimeOffset atUtc)
+    {
+        ValidateEndpoint(endpoint);
+        ValidateKeyId(keyId);
+        ValidateSecretReference(secretReference);
+        var normalizedEvents = NormalizeEventTypes(eventTypes);
+        EnsureUtc(atUtc, nameof(atUtc));
+        if (atUtc < UpdatedAtUtc) throw new ArgumentException("Subscription timestamp cannot move backwards.", nameof(atUtc));
+
+        Endpoint = endpoint;
+        KeyId = keyId;
+        SecretReference = secretReference;
+        EventTypes = normalizedEvents;
+        UpdatedAtUtc = atUtc;
+    }
+
     public void Disable(DateTimeOffset atUtc)
     {
         EnsureUtc(atUtc, nameof(atUtc));
@@ -128,7 +149,7 @@ public sealed class PaymentRequestWebhookSubscription
         return normalized;
     }
 
-    private static string NormalizeIntegrationId(string value)
+    public static string NormalizeIntegrationId(string value)
     {
         if (string.IsNullOrWhiteSpace(value)) throw new ArgumentException("Integration id is required.", nameof(value));
         var normalized = value.Trim();
@@ -168,6 +189,7 @@ public interface IPaymentRequestWebhookSubscriptionRegistry
 {
     Task<PaymentRequestWebhookSubscription?> GetAsync(Guid subscriptionId, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<PaymentRequestWebhookSubscription>> ListActiveForEventAsync(string eventType, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<PaymentRequestWebhookSubscription>> ListForIntegrationAsync(string integrationId, CancellationToken cancellationToken = default);
     Task AddAsync(PaymentRequestWebhookSubscription subscription, CancellationToken cancellationToken = default);
     Task UpdateAsync(PaymentRequestWebhookSubscription subscription, CancellationToken cancellationToken = default);
 }

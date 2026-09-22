@@ -51,6 +51,7 @@ public sealed class MerchantSettlementEntity
     public int ReasonCode { get; set; }
     public string? CorrelationId { get; set; }
     public string? ProviderReference { get; set; }
+    public Guid? CoreSettlementInstructionId { get; set; }
     public DateTimeOffset CreatedAtUtc { get; set; }
     public DateTimeOffset UpdatedAtUtc { get; set; }
     public DateTimeOffset? CompletedAtUtc { get; set; }

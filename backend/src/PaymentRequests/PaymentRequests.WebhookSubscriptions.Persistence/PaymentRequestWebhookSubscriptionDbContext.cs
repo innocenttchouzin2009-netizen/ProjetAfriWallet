@@ -6,6 +6,8 @@ public sealed class PaymentRequestWebhookSubscriptionDbContext(
     DbContextOptions<PaymentRequestWebhookSubscriptionDbContext> options) : DbContext(options)
 {
     public DbSet<PaymentRequestWebhookSubscriptionEntity> Subscriptions => Set<PaymentRequestWebhookSubscriptionEntity>();
+    public DbSet<PaymentRequestWebhookSubscriptionAuditEntity> AuditEntries => Set<PaymentRequestWebhookSubscriptionAuditEntity>();
+    public DbSet<PaymentRequestWebhookDeliveryAttemptEntity> DeliveryAttempts => Set<PaymentRequestWebhookDeliveryAttemptEntity>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -23,6 +25,32 @@ public sealed class PaymentRequestWebhookSubscriptionDbContext(
         entity.HasIndex(x => new { x.IntegrationId, x.EndpointUrl }).IsUnique();
         entity.HasIndex(x => x.MerchantId);
         entity.HasIndex(x => x.Status);
+
+        var audit = modelBuilder.Entity<PaymentRequestWebhookSubscriptionAuditEntity>();
+        audit.ToTable("PaymentRequestWebhookSubscriptionAudit");
+        audit.HasKey(x => x.Id);
+        audit.Property(x => x.SubscriptionId).IsRequired();
+        audit.Property(x => x.IntegrationId).HasMaxLength(128).IsRequired();
+        audit.Property(x => x.ActorSubject).HasMaxLength(128).IsRequired();
+        audit.Property(x => x.Operation).IsRequired();
+        audit.Property(x => x.KeyId).HasMaxLength(64).IsRequired();
+        audit.Property(x => x.SecretReference).HasMaxLength(128).IsRequired();
+        audit.Property(x => x.Succeeded).IsRequired();
+        audit.Property(x => x.Detail).HasMaxLength(512);
+        audit.Property(x => x.OccurredAtUtc).HasMaxLength(64).IsRequired();
+        audit.HasIndex(x => new { x.SubscriptionId, x.OccurredAtUtc });
+
+        var deliveryAttempt = modelBuilder.Entity<PaymentRequestWebhookDeliveryAttemptEntity>();
+        deliveryAttempt.ToTable("PaymentRequestWebhookDeliveryAttempts");
+        deliveryAttempt.HasKey(x => x.Id);
+        deliveryAttempt.Property(x => x.SubscriptionId).IsRequired();
+        deliveryAttempt.Property(x => x.EventId).IsRequired();
+        deliveryAttempt.Property(x => x.Outcome).IsRequired();
+        deliveryAttempt.Property(x => x.LatencyMilliseconds).IsRequired();
+        deliveryAttempt.Property(x => x.StartedAtUtc).HasMaxLength(64).IsRequired();
+        deliveryAttempt.Property(x => x.CompletedAtUtc).HasMaxLength(64).IsRequired();
+        deliveryAttempt.HasIndex(x => new { x.SubscriptionId, x.CompletedAtUtc });
+        deliveryAttempt.HasIndex(x => x.EventId);
     }
 }
 
@@ -38,4 +66,33 @@ public sealed class PaymentRequestWebhookSubscriptionEntity
     public string EventTypesJson { get; set; } = "[]";
     public string CreatedAtUtc { get; set; } = string.Empty;
     public string UpdatedAtUtc { get; set; } = string.Empty;
+}
+
+
+public sealed class PaymentRequestWebhookSubscriptionAuditEntity
+{
+    public Guid Id { get; set; }
+    public Guid SubscriptionId { get; set; }
+    public string IntegrationId { get; set; } = string.Empty;
+    public Guid? MerchantId { get; set; }
+    public string ActorSubject { get; set; } = string.Empty;
+    public int Operation { get; set; }
+    public string KeyId { get; set; } = string.Empty;
+    public string SecretReference { get; set; } = string.Empty;
+    public bool Succeeded { get; set; }
+    public int? HttpStatusCode { get; set; }
+    public string? Detail { get; set; }
+    public string OccurredAtUtc { get; set; } = string.Empty;
+}
+
+public sealed class PaymentRequestWebhookDeliveryAttemptEntity
+{
+    public Guid Id { get; set; }
+    public Guid SubscriptionId { get; set; }
+    public Guid EventId { get; set; }
+    public int Outcome { get; set; }
+    public int? HttpStatusCode { get; set; }
+    public long LatencyMilliseconds { get; set; }
+    public string StartedAtUtc { get; set; } = string.Empty;
+    public string CompletedAtUtc { get; set; } = string.Empty;
 }

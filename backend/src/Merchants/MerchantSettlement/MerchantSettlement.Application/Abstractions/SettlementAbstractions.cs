@@ -45,11 +45,13 @@ public sealed record MerchantSettlementProviderRequest(
     long AmountMinor,
     string Currency,
     string IdempotencyKey,
-    string CorrelationId);
+    string CorrelationId,
+    Guid? CoreSettlementInstructionId);
 
 public sealed record MerchantSettlementProviderResult(
     MerchantSettlementProviderStatus Status,
     string? ProviderReference,
+    Guid? CoreSettlementInstructionId,
     string Message);
 
 public sealed record MerchantSettlementAccountRoute(

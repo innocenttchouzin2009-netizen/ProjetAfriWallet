@@ -1,0 +1,56 @@
+name: AFW-BE-MERCHANT-SETTLEMENT-1 Durable Capture-to-Settlement Orchestration
+
+on:
+  push:
+    branches:
+      - feature/backend-merchant-settlement-1
+    paths:
+      - 'backend/src/Merchants/MerchantSettlement/**'
+      - 'backend/tests/MerchantSettlementOrchestration.Scenarios/**'
+      - 'backend/tests/MerchantSettlementDurability.Scenarios/**'
+      - '.github/workflows/backend-merchant-settlement-1.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'backend/src/Merchants/MerchantSettlement/**'
+      - 'backend/tests/MerchantSettlementOrchestration.Scenarios/**'
+      - 'backend/tests/MerchantSettlementDurability.Scenarios/**'
+      - '.github/workflows/backend-merchant-settlement-1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate durable capture-to-settlement orchestration
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build Merchant Settlement domain
+        run: dotnet build backend/src/Merchants/MerchantSettlement/MerchantSettlement.Domain/MerchantSettlement.Domain.csproj --configuration Release --nologo
+
+      - name: Build Merchant Settlement application
+        run: dotnet build backend/src/Merchants/MerchantSettlement/MerchantSettlement.Application/MerchantSettlement.Application.csproj --configuration Release --nologo
+
+      - name: Build Merchant Settlement infrastructure
+        run: dotnet build backend/src/Merchants/MerchantSettlement/MerchantSettlement.Infrastructure/MerchantSettlement.Infrastructure.csproj --configuration Release --nologo
+
+      - name: Build Merchant Settlement API
+        run: dotnet build backend/src/Merchants/MerchantSettlement/MerchantSettlement.Api/MerchantSettlement.Api.csproj --configuration Release --nologo
+
+      - name: Run existing merchant settlement regression scenarios
+        run: dotnet run --project backend/tests/MerchantSettlementOrchestration.Scenarios/MerchantSettlementOrchestration.Scenarios.csproj --configuration Release
+
+      - name: Run durable capture-to-settlement scenarios
+        run: dotnet run --project backend/tests/MerchantSettlementDurability.Scenarios/MerchantSettlementDurability.Scenarios.csproj --configuration Release
+
+      - name: Verify diff whitespace
+        run: git diff --check HEAD^ HEAD

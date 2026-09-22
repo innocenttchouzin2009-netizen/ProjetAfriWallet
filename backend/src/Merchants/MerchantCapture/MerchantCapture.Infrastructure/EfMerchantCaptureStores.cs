@@ -20,5 +20,9 @@ public sealed class EfMerchantCaptureRepository(MerchantCaptureDbContext db):IMe
 public sealed class EfMerchantCaptureAuditStore(MerchantCaptureDbContext db):IMerchantCaptureAuditStore
 {
     public async Task AppendAsync(MerchantCaptureAuditEvent e,CancellationToken ct=default){db.Audit.Add(new MerchantCaptureAuditEntity{EventId=e.EventId,ExecutionId=e.ExecutionId,DecisionId=e.DecisionId,PaymentIntentId=e.PaymentIntentId,MerchantId=e.MerchantId,EventType=e.EventType,Actor=e.Actor,OccurredAtUtc=e.OccurredAtUtc,MetadataJson=JsonSerializer.Serialize(e.Metadata)});await db.SaveChangesAsync(ct);}
-    public async Task<IReadOnlyCollection<MerchantCaptureAuditEvent>> ListAsync(Guid id,CancellationToken ct=default)=>(await db.Audit.AsNoTracking().Where(x=>x.ExecutionId==id).OrderBy(x=>x.OccurredAtUtc).ToListAsync(ct)).Select(x=>new MerchantCaptureAuditEvent(x.EventId,x.ExecutionId,x.DecisionId,x.PaymentIntentId,x.MerchantId,x.EventType,x.Actor,x.OccurredAtUtc,JsonSerializer.Deserialize<Dictionary<string,string>>(x.MetadataJson)??new())).ToArray();
+    public async Task<IReadOnlyCollection<MerchantCaptureAuditEvent>> ListAsync(Guid id,CancellationToken ct=default)
+    {
+        var rows=await db.Audit.AsNoTracking().Where(x=>x.ExecutionId==id).ToListAsync(ct);
+        return rows.OrderBy(x=>x.OccurredAtUtc).ThenBy(x=>x.EventId).Select(x=>new MerchantCaptureAuditEvent(x.EventId,x.ExecutionId,x.DecisionId,x.PaymentIntentId,x.MerchantId,x.EventType,x.Actor,x.OccurredAtUtc,JsonSerializer.Deserialize<Dictionary<string,string>>(x.MetadataJson)??new())).ToArray();
+    }
 }

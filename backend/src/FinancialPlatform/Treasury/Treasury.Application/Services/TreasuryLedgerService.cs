@@ -48,15 +48,15 @@ public sealed class TreasuryLedgerService
         {
             var debit = existing.Entries.SingleOrDefault(x => x.DebitMinor > 0);
             var credit = existing.Entries.SingleOrDefault(x => x.CreditMinor > 0);
-            var currency = currencyCode.Trim().ToUpperInvariant();
+            var requestedCurrency = currencyCode.Trim().ToUpperInvariant();
 
             if (!string.Equals(existing.Reference, reference.Trim(), StringComparison.Ordinal) ||
                 debit?.AccountId != debitAccountId ||
                 credit?.AccountId != creditAccountId ||
                 debit?.DebitMinor != amountMinor ||
                 credit?.CreditMinor != amountMinor ||
-                !string.Equals(debit?.CurrencyCode, currency, StringComparison.OrdinalIgnoreCase) ||
-                !string.Equals(credit?.CurrencyCode, currency, StringComparison.OrdinalIgnoreCase))
+                !string.Equals(debit?.CurrencyCode, requestedCurrency, StringComparison.OrdinalIgnoreCase) ||
+                !string.Equals(credit?.CurrencyCode, requestedCurrency, StringComparison.OrdinalIgnoreCase))
             {
                 throw new InvalidOperationException("Treasury correlation ID was already used for a different transaction.");
             }

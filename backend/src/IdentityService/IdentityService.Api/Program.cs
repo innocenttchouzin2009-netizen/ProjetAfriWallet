@@ -7,6 +7,8 @@ using AfriWallet.Fx.Infrastructure;
 using AfriWallet.Ledger.Application;
 using AfriWallet.Ledger.Persistence;
 using AfriWallet.P2P.Directory.Persistence;
+using AfriWallet.PaymentRequests.Webhooks;
+using AfriWallet.PaymentRequests.WebhookSubscriptions.Persistence;
 using AfriWallet.Wallet.Application;
 using AfriWallet.Wallet.Persistence;
 using IdentityService.Api.Auth.Abstractions;
@@ -59,6 +61,10 @@ var recipientDirectoryConnectionString = builder.Configuration.GetConnectionStri
 var paymentRequestsConnectionString = builder.Configuration.GetConnectionString("PaymentRequestsDatabase") ??
     Environment.GetEnvironmentVariable("AFW_PAYMENT_REQUESTS_DB_CONNECTION_STRING") ??
     "Data Source=payment-requests.db";
+
+var paymentRequestWebhookSubscriptionsConnectionString = builder.Configuration.GetConnectionString("PaymentRequestWebhookSubscriptionsDatabase") ??
+    Environment.GetEnvironmentVariable("AFW_PAYMENT_REQUEST_WEBHOOK_SUBSCRIPTIONS_DB_CONNECTION_STRING") ??
+    "Data Source=payment-request-webhook-subscriptions.db";
 
 var notificationsConnectionString = builder.Configuration.GetConnectionString("NotificationsDatabase") ??
     Environment.GetEnvironmentVariable("AFW_NOTIFICATIONS_DB_CONNECTION_STRING") ??
@@ -116,6 +122,13 @@ builder.Services.AddInternalTransferModule(builder.Configuration);
 builder.Services.AddP2PCore();
 builder.Services.AddAuthoritativeP2PRecipientDirectory(recipientDirectoryConnectionString);
 builder.Services.AddPaymentRequests(paymentRequestsConnectionString, builder.Configuration);
+builder.Services.AddDbContext<PaymentRequestWebhookSubscriptionDbContext>(options => options.UseSqlite(paymentRequestWebhookSubscriptionsConnectionString));
+builder.Services.AddScoped<IPaymentRequestWebhookSubscriptionRegistry, EfPaymentRequestWebhookSubscriptionRegistry>();
+builder.Services.AddScoped<IPaymentRequestWebhookSubscriptionAuditStore, EfPaymentRequestWebhookSubscriptionAuditStore>();
+builder.Services.AddScoped<IPaymentRequestWebhookDeliveryAttemptStore, EfPaymentRequestWebhookDeliveryAttemptStore>();
+builder.Services.AddScoped<IPaymentRequestWebhookSigningSecretResolver, EnvironmentPaymentRequestWebhookSigningSecretResolver>();
+builder.Services.AddHttpClient<HttpPaymentRequestWebhookConnectivityProbe>();
+builder.Services.AddScoped<IPaymentRequestWebhookConnectivityProbe>(sp => sp.GetRequiredService<HttpPaymentRequestWebhookConnectivityProbe>());
 builder.Services.AddInAppNotifications(notificationsConnectionString, builder.Configuration);
 builder.Services.AddPushDeviceRegistration(pushDevicesConnectionString);
 builder.Services.AddNotificationPreferences(notificationPreferencesConnectionString);
@@ -224,6 +237,7 @@ app.MapPaymentRequestInboxOutboxEndpoints();
 app.MapPaymentRequestHistoryEndpoints();
 app.MapPaymentRequestEventOutboxOperationalEndpoints();
 app.MapPaymentRequestWebhookSubscriptionManagementEndpoints();
+app.MapPaymentRequestWebhookSubscriptionOperationsEndpoints();
 app.MapNotificationEndpoints();
 app.MapPushDeviceEndpoints();
 app.MapNotificationPreferenceEndpoints();

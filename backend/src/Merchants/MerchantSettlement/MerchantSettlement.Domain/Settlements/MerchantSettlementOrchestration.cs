@@ -47,6 +47,7 @@ public sealed class MerchantSettlementOrchestration
         MerchantSettlementReasonCode reasonCode,
         string? correlationId,
         string? providerReference,
+        Guid? coreSettlementInstructionId,
         DateTimeOffset createdAtUtc,
         DateTimeOffset updatedAtUtc,
         DateTimeOffset? completedAtUtc,
@@ -66,6 +67,7 @@ public sealed class MerchantSettlementOrchestration
         ReasonCode = reasonCode;
         CorrelationId = correlationId;
         ProviderReference = providerReference;
+        CoreSettlementInstructionId = coreSettlementInstructionId;
         CreatedAtUtc = createdAtUtc;
         UpdatedAtUtc = updatedAtUtc;
         CompletedAtUtc = completedAtUtc;
@@ -85,6 +87,7 @@ public sealed class MerchantSettlementOrchestration
     public MerchantSettlementReasonCode ReasonCode { get; private set; }
     public string? CorrelationId { get; private set; }
     public string? ProviderReference { get; private set; }
+    public Guid? CoreSettlementInstructionId { get; private set; }
     public int AttemptCount => _attempts.Count;
     public DateTimeOffset CreatedAtUtc { get; }
     public DateTimeOffset UpdatedAtUtc { get; private set; }
@@ -105,6 +108,7 @@ public sealed class MerchantSettlementOrchestration
         MerchantSettlementReasonCode reasonCode,
         string? correlationId,
         string? providerReference,
+        Guid? coreSettlementInstructionId,
         DateTimeOffset createdAtUtc,
         DateTimeOffset updatedAtUtc,
         DateTimeOffset? completedAtUtc,
@@ -112,7 +116,7 @@ public sealed class MerchantSettlementOrchestration
         IEnumerable<MerchantSettlementCompensation> compensations) =>
         new(
             id, decisionId, intentId, merchantId, route, amount, currency, key, status, reasonCode,
-            correlationId, providerReference, createdAtUtc, updatedAtUtc, completedAtUtc, attempts, compensations);
+            correlationId, providerReference, coreSettlementInstructionId, createdAtUtc, updatedAtUtc, completedAtUtc, attempts, compensations);
 
     public void MarkDispatchPending(string correlation, DateTimeOffset now)
     {
@@ -144,6 +148,17 @@ public sealed class MerchantSettlementOrchestration
         ProviderReference = reference ?? ProviderReference;
         Status = MerchantSettlementStatus.Acknowledged;
         ReasonCode = MerchantSettlementReasonCode.ProviderAcknowledged;
+        UpdatedAtUtc = now;
+    }
+
+    public void BindCoreSettlementInstruction(Guid instructionId, DateTimeOffset now)
+    {
+        EnsureMutable();
+        if (instructionId == Guid.Empty)
+            throw new ArgumentException("Core settlement instruction id is required.", nameof(instructionId));
+        if (CoreSettlementInstructionId is not null && CoreSettlementInstructionId.Value != instructionId)
+            throw new InvalidOperationException("Core settlement instruction id is immutable once bound.");
+        CoreSettlementInstructionId = instructionId;
         UpdatedAtUtc = now;
     }
 

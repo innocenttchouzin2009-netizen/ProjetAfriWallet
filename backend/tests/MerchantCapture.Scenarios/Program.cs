@@ -30,7 +30,10 @@ try
         Check("provider called once",provider.Calls==1,ref passed);
         var events=await new EfMerchantCaptureAuditStore(db).ListAsync(first.ExecutionId);
         Check("audit created/completed",events.Count==2,ref passed);
-        Check("audit capture true only after completion",events.Last().Metadata["captureExecutionPerformed"]=="true",ref passed);
+        var createdAudit=events.Single(x=>x.EventType=="capture.created");
+        var completedAudit=events.Single(x=>x.EventType=="capture.completed");
+        Check("audit capture false at creation",createdAudit.Metadata["captureExecutionPerformed"]=="false",ref passed);
+        Check("audit capture true after completion",completedAudit.Metadata["captureExecutionPerformed"]=="true",ref passed);
         Check("audit settlement remains false",events.All(x=>x.Metadata["settlementPerformed"]=="false"),ref passed);
         Check("audit ledger mutation remains false",events.All(x=>x.Metadata["ledgerMutationPerformed"]=="false"),ref passed);
     }

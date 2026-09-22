@@ -29,6 +29,21 @@ public sealed class RegistryBackedHttpPaymentRequestEventTransport(
             timeProvider)
     {
     }
+
+    public RegistryBackedHttpPaymentRequestEventTransport(
+        HttpClient httpClient,
+        IPaymentRequestWebhookSubscriptionRegistry registry,
+        IPaymentRequestWebhookSigningSecretResolver secretResolver,
+        TimeProvider timeProvider)
+        : this(
+            httpClient,
+            registry,
+            secretResolver,
+            NoOpPaymentRequestWebhookDeliveryAttemptStore.Instance,
+            NoOpPaymentRequestWebhookReliabilityProtector.Instance,
+            timeProvider)
+    {
+    }
     public async Task DispatchAsync(PaymentRequestEventDispatch dispatch, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(dispatch);
@@ -199,5 +214,40 @@ public sealed class RegistryBackedHttpPaymentRequestEventTransport(
                 CryptographicOperations.ZeroMemory(digest);
             }
         }
+    }
+}
+
+
+internal sealed class NoOpPaymentRequestWebhookDeliveryAttemptStore
+    : IPaymentRequestWebhookDeliveryAttemptStore
+{
+    public static NoOpPaymentRequestWebhookDeliveryAttemptStore Instance { get; } = new();
+
+    private NoOpPaymentRequestWebhookDeliveryAttemptStore() { }
+
+    public Task AppendAsync(
+        PaymentRequestWebhookDeliveryAttempt attempt,
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        return Task.CompletedTask;
+    }
+
+    public Task<IReadOnlyList<PaymentRequestWebhookDeliveryAttempt>> ListAsync(
+        Guid subscriptionId,
+        int limit = 100,
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        IReadOnlyList<PaymentRequestWebhookDeliveryAttempt> empty = Array.Empty<PaymentRequestWebhookDeliveryAttempt>();
+        return Task.FromResult(empty);
+    }
+
+    public Task<PaymentRequestWebhookDeliveryReliabilityMetrics> GetMetricsAsync(
+        Guid subscriptionId,
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        return Task.FromResult(PaymentRequestWebhookDeliveryReliabilityMetrics.Empty(subscriptionId));
     }
 }

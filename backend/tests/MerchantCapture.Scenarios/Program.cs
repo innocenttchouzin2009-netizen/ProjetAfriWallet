@@ -73,11 +73,11 @@ try
         Check("failed execution is idempotent",again.ExecutionId==failed.ExecutionId&&failing.Calls==1,ref passed);
     }
 
-    Console.WriteLine($"
-Checks: {passed}
-Passed: {passed}
-Failed: 0
-Skipped: 0");
+    Console.WriteLine();
+    Console.WriteLine($"Checks: {passed}");
+    Console.WriteLine($"Passed: {passed}");
+    Console.WriteLine("Failed: 0");
+    Console.WriteLine("Skipped: 0");
     Console.WriteLine("AFW-BE-MERCHANT-CAPTURE-1 durable merchant capture execution scenarios: PASS");
 }
 finally

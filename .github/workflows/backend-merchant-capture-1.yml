@@ -1,0 +1,56 @@
+name: AFW-BE-MERCHANT-CAPTURE-1 Durable Merchant Capture Execution Foundation
+
+on:
+  push:
+    branches:
+      - feature/backend-merchant-capture-1
+    paths:
+      - 'backend/src/Merchants/MerchantCapture/**'
+      - 'backend/src/Merchants/MerchantPaymentDecision/**'
+      - 'backend/src/PaymentPlatform/MerchantAcquiring/**'
+      - 'backend/src/FinancialPlatform/Settlement/**'
+      - 'backend/tests/MerchantCapture.Scenarios/**'
+      - 'backend/tests/MerchantPaymentDecision.Scenarios/**'
+      - 'backend/tests/MerchantAcquiring.Scenarios/**'
+      - 'backend/tests/Settlement.Durable.Scenarios/**'
+      - '.github/workflows/backend-merchant-capture-1.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'backend/src/Merchants/MerchantCapture/**'
+      - 'backend/src/Merchants/MerchantPaymentDecision/**'
+      - 'backend/src/PaymentPlatform/MerchantAcquiring/**'
+      - 'backend/src/FinancialPlatform/Settlement/**'
+      - 'backend/tests/MerchantCapture.Scenarios/**'
+      - 'backend/tests/MerchantPaymentDecision.Scenarios/**'
+      - 'backend/tests/MerchantAcquiring.Scenarios/**'
+      - 'backend/tests/Settlement.Durable.Scenarios/**'
+      - '.github/workflows/backend-merchant-capture-1.yml'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Validate durable merchant capture execution foundation
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Build Merchant Capture Domain
+        run: dotnet build backend/src/Merchants/MerchantCapture/MerchantCapture.Domain/MerchantCapture.Domain.csproj -c Release --nologo
+      - name: Build Merchant Capture Application
+        run: dotnet build backend/src/Merchants/MerchantCapture/MerchantCapture.Application/MerchantCapture.Application.csproj -c Release --nologo
+      - name: Build Merchant Capture Infrastructure
+        run: dotnet build backend/src/Merchants/MerchantCapture/MerchantCapture.Infrastructure/MerchantCapture.Infrastructure.csproj -c Release --nologo
+      - name: Run Merchant Capture scenarios
+        run: dotnet run --project backend/tests/MerchantCapture.Scenarios/MerchantCapture.Scenarios.csproj -c Release
+      - name: Run Merchant Payment Decision regression
+        run: dotnet run --project backend/tests/MerchantPaymentDecision.Scenarios/MerchantPaymentDecision.Scenarios.csproj -c Release
+      - name: Run Merchant Acquiring regression
+        run: dotnet run --project backend/tests/MerchantAcquiring.Scenarios/MerchantAcquiring.Scenarios.csproj -c Release
+      - name: Run durable Settlement regression
+        run: dotnet run --project backend/tests/Settlement.Durable.Scenarios/Settlement.Durable.Scenarios.csproj -c Release

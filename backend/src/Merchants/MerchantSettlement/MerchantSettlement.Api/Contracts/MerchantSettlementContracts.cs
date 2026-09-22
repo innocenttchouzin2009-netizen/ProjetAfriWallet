@@ -1,1 +1,2 @@
 using AfriWallet.Merchants.Settlement.Domain.Settlements;namespace AfriWallet.Merchants.Settlement.Api.Contracts;public sealed record CreateMerchantSettlementRequest(Guid PaymentDecisionId,MerchantSettlementRoute Route,string IdempotencyKey);
+public sealed record RecordMerchantCaptureRequest(Guid DecisionId,Guid PaymentIntentId,string MerchantId,string DecisionType,string DecisionStatus,long AmountMinor,string Currency,string MerchantRegistryStatus,string MerchantVerificationStatus);

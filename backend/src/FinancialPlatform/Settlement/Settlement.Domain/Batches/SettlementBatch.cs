@@ -52,6 +52,35 @@ public sealed class SettlementBatch
         };
     }
 
+    public static SettlementBatch Restore(
+        Guid batchId,
+        IReadOnlyCollection<Guid> instructionIds,
+        string sourceCurrency,
+        string destinationCurrency,
+        long totalSourceAmountMinor,
+        long totalDestinationAmountMinor,
+        SettlementBatchStatus status,
+        DateTime createdAtUtc,
+        DateTime? executedAtUtc)
+    {
+        if (batchId == Guid.Empty) throw new ArgumentException("Batch ID is required.", nameof(batchId));
+        if (instructionIds is null || instructionIds.Count == 0) throw new ArgumentException("At least one instruction is required.", nameof(instructionIds));
+        if (!Enum.IsDefined(status)) throw new ArgumentOutOfRangeException(nameof(status));
+
+        return new SettlementBatch
+        {
+            BatchId = batchId,
+            InstructionIds = instructionIds.ToArray(),
+            SourceCurrency = sourceCurrency.Trim().ToUpperInvariant(),
+            DestinationCurrency = destinationCurrency.Trim().ToUpperInvariant(),
+            TotalSourceAmountMinor = totalSourceAmountMinor,
+            TotalDestinationAmountMinor = totalDestinationAmountMinor,
+            Status = status,
+            CreatedAtUtc = DateTime.SpecifyKind(createdAtUtc, DateTimeKind.Utc),
+            ExecutedAtUtc = executedAtUtc is null ? null : DateTime.SpecifyKind(executedAtUtc.Value, DateTimeKind.Utc)
+        };
+    }
+
     public void MarkExecuted(bool allSettled)
     {
         Status = allSettled ? SettlementBatchStatus.Settled : SettlementBatchStatus.PartiallySettled;

@@ -74,6 +74,7 @@ public sealed class EfMerchantSettlementRepository(MerchantSettlementDbContext d
             (MerchantSettlementReasonCode)entity.ReasonCode,
             entity.CorrelationId,
             entity.ProviderReference,
+            entity.CoreSettlementInstructionId,
             entity.CreatedAtUtc,
             entity.UpdatedAtUtc,
             entity.CompletedAtUtc,
@@ -129,6 +130,7 @@ public sealed class EfMerchantSettlementRepository(MerchantSettlementDbContext d
         entity.ReasonCode = (int)value.ReasonCode;
         entity.CorrelationId = value.CorrelationId;
         entity.ProviderReference = value.ProviderReference;
+        entity.CoreSettlementInstructionId = value.CoreSettlementInstructionId;
         entity.CreatedAtUtc = value.CreatedAtUtc;
         entity.UpdatedAtUtc = value.UpdatedAtUtc;
         entity.CompletedAtUtc = value.CompletedAtUtc;

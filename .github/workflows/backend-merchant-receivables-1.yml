@@ -1,0 +1,50 @@
+name: AFW-BE-MERCHANT-RECEIVABLES-1 Durable Merchant Receivables
+
+on:
+  push:
+    branches:
+      - feature/backend-merchant-receivables-1
+    paths:
+      - 'backend/src/Merchants/MerchantReceivables/**'
+      - 'backend/tests/MerchantReceivables.Scenarios/**'
+      - '.github/workflows/backend-merchant-receivables-1.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'backend/src/Merchants/MerchantReceivables/**'
+      - 'backend/tests/MerchantReceivables.Scenarios/**'
+      - '.github/workflows/backend-merchant-receivables-1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate merchant receivable obligations and fee netting
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build Merchant Receivables domain
+        run: dotnet build backend/src/Merchants/MerchantReceivables/MerchantReceivables.Domain/MerchantReceivables.Domain.csproj --configuration Release --nologo
+
+      - name: Build Merchant Receivables application
+        run: dotnet build backend/src/Merchants/MerchantReceivables/MerchantReceivables.Application/MerchantReceivables.Application.csproj --configuration Release --nologo
+
+      - name: Build Merchant Receivables infrastructure
+        run: dotnet build backend/src/Merchants/MerchantReceivables/MerchantReceivables.Infrastructure/MerchantReceivables.Infrastructure.csproj --configuration Release --nologo
+
+      - name: Run Merchant Receivables scenarios
+        run: dotnet run --project backend/tests/MerchantReceivables.Scenarios/MerchantReceivables.Scenarios.csproj --configuration Release
+
+      - name: Verify diff whitespace
+        run: git diff --check HEAD^ HEAD

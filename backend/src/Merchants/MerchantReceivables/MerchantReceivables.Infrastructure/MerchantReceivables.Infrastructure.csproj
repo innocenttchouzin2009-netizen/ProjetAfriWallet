@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\MerchantReceivables.Domain\MerchantReceivables.Domain.csproj" />
+    <ProjectReference Include="..\MerchantReceivables.Application\MerchantReceivables.Application.csproj" />
+    <ProjectReference Include="..\..\MerchantCapture\MerchantCapture.Application\MerchantCapture.Application.csproj" />
+    <ProjectReference Include="..\..\MerchantCapture\MerchantCapture.Domain\MerchantCapture.Domain.csproj" />
+    <ProjectReference Include="..\..\MerchantRegistry.Application\MerchantRegistry.Application.csproj" />
+    <ProjectReference Include="..\..\MerchantRegistry.Domain\MerchantRegistry.Domain.csproj" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.11" />
+  </ItemGroup>
+</Project>

@@ -1,3 +1,5 @@
+using Microsoft.EntityFrameworkCore;
+using Treasury.Infrastructure.Persistence;
 using Treasury.Application.Interfaces;
 using Treasury.Application.Services;
 using Treasury.Contracts.Requests;
@@ -5,11 +7,22 @@ using Treasury.Infrastructure.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddSingleton<ITreasuryRepository, InMemoryTreasuryRepository>();
+var treasuryConnectionString = builder.Configuration.GetConnectionString("TreasuryDatabase") ??
+    Environment.GetEnvironmentVariable("AFW_TREASURY_DB_CONNECTION_STRING") ??
+    "Data Source=treasury.db";
+
+builder.Services.AddDbContext<TreasuryDbContext>(options => options.UseSqlite(treasuryConnectionString));
+builder.Services.AddScoped<ITreasuryRepository, EfTreasuryRepository>();
 builder.Services.AddScoped<TreasuryLedgerService>();
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    await scope.ServiceProvider.GetRequiredService<TreasuryDbContext>().Database.EnsureCreatedAsync();
+}
+
 
 app.MapGet("/health/live", () => Results.Ok(new
 {

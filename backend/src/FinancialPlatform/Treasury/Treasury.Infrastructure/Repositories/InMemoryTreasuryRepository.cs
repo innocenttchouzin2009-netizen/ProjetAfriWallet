@@ -42,6 +42,14 @@ public sealed class InMemoryTreasuryRepository : ITreasuryRepository
         return Task.CompletedTask;
     }
 
+    public Task<TreasuryTransaction?> GetTransactionByCorrelationIdAsync(string correlationId, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var transaction = _transactions.Values.SingleOrDefault(x =>
+            string.Equals(x.CorrelationId, correlationId, StringComparison.Ordinal));
+        return Task.FromResult(transaction);
+    }
+
     public Task<IReadOnlyCollection<TreasuryEntry>> GetEntriesAsync(Guid accountId, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -62,6 +70,15 @@ public sealed class InMemoryTreasuryRepository : ITreasuryRepository
         if (!_reservations.TryAdd(reservation.ReservationId, reservation))
             throw new InvalidOperationException("Treasury reservation already exists.");
 
+        return Task.CompletedTask;
+    }
+
+    public Task SaveReservationAsync(TreasuryReservation reservation, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        if (!_reservations.ContainsKey(reservation.ReservationId))
+            throw new KeyNotFoundException("Treasury reservation not found.");
+        _reservations[reservation.ReservationId] = reservation;
         return Task.CompletedTask;
     }
 

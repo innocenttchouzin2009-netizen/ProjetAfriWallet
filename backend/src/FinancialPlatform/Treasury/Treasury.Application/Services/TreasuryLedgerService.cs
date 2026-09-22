@@ -39,6 +39,31 @@ public sealed class TreasuryLedgerService
         if (debitAccountId == creditAccountId)
             throw new InvalidOperationException("Debit and credit treasury accounts must differ.");
 
+        if (string.IsNullOrWhiteSpace(correlationId))
+            throw new ArgumentException("Correlation ID is required.", nameof(correlationId));
+
+        var normalizedCorrelationId = correlationId.Trim();
+        var existing = await _repository.GetTransactionByCorrelationIdAsync(normalizedCorrelationId, cancellationToken);
+        if (existing is not null)
+        {
+            var debit = existing.Entries.SingleOrDefault(x => x.DebitMinor > 0);
+            var credit = existing.Entries.SingleOrDefault(x => x.CreditMinor > 0);
+            var requestedCurrency = currencyCode.Trim().ToUpperInvariant();
+
+            if (!string.Equals(existing.Reference, reference.Trim(), StringComparison.Ordinal) ||
+                debit?.AccountId != debitAccountId ||
+                credit?.AccountId != creditAccountId ||
+                debit?.DebitMinor != amountMinor ||
+                credit?.CreditMinor != amountMinor ||
+                !string.Equals(debit?.CurrencyCode, requestedCurrency, StringComparison.OrdinalIgnoreCase) ||
+                !string.Equals(credit?.CurrencyCode, requestedCurrency, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("Treasury correlation ID was already used for a different transaction.");
+            }
+
+            return existing;
+        }
+
         var debitAccount = await RequireActiveAccountAsync(debitAccountId, cancellationToken);
         var creditAccount = await RequireActiveAccountAsync(creditAccountId, cancellationToken);
 
@@ -50,7 +75,7 @@ public sealed class TreasuryLedgerService
             throw new InvalidOperationException("Treasury account currency mismatch.");
         }
 
-        var transaction = new TreasuryTransaction(Guid.NewGuid(), reference, correlationId);
+        var transaction = new TreasuryTransaction(Guid.NewGuid(), reference, normalizedCorrelationId);
         transaction.AddDebit(debitAccountId, currency, amountMinor);
         transaction.AddCredit(creditAccountId, currency, amountMinor);
         transaction.Post();
@@ -111,6 +136,7 @@ public sealed class TreasuryLedgerService
             ?? throw new KeyNotFoundException("Treasury reservation not found.");
 
         reservation.Release();
+        await _repository.SaveReservationAsync(reservation, cancellationToken);
     }
 
     private async Task<TreasuryAccount> RequireActiveAccountAsync(Guid accountId, CancellationToken cancellationToken)

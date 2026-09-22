@@ -3,6 +3,11 @@ namespace Treasury.Domain.Reservations;
 public sealed class TreasuryReservation
 {
     public TreasuryReservation(Guid reservationId, Guid accountId, string currencyCode, long amountMinor, string reference)
+        : this(reservationId, accountId, currencyCode, amountMinor, reference, TreasuryReservationStatus.Active, DateTime.UtcNow, null)
+    {
+    }
+
+    private TreasuryReservation(Guid reservationId, Guid accountId, string currencyCode, long amountMinor, string reference, TreasuryReservationStatus status, DateTime createdAtUtc, DateTime? releasedAtUtc)
     {
         if (reservationId == Guid.Empty)
             throw new ArgumentException("Reservation ID is required.");
@@ -18,15 +23,29 @@ public sealed class TreasuryReservation
         CurrencyCode = currencyCode.ToUpperInvariant();
         AmountMinor = amountMinor;
         Reference = reference;
+        Status = status;
+        CreatedAtUtc = DateTime.SpecifyKind(createdAtUtc, DateTimeKind.Utc);
+        ReleasedAtUtc = releasedAtUtc is null ? null : DateTime.SpecifyKind(releasedAtUtc.Value, DateTimeKind.Utc);
     }
+
+    public static TreasuryReservation Restore(
+        Guid reservationId,
+        Guid accountId,
+        string currencyCode,
+        long amountMinor,
+        string reference,
+        TreasuryReservationStatus status,
+        DateTime createdAtUtc,
+        DateTime? releasedAtUtc) =>
+        new(reservationId, accountId, currencyCode, amountMinor, reference, status, createdAtUtc, releasedAtUtc);
 
     public Guid ReservationId { get; }
     public Guid AccountId { get; }
     public string CurrencyCode { get; }
     public long AmountMinor { get; }
     public string Reference { get; }
-    public TreasuryReservationStatus Status { get; private set; } = TreasuryReservationStatus.Active;
-    public DateTime CreatedAtUtc { get; } = DateTime.UtcNow;
+    public TreasuryReservationStatus Status { get; private set; }
+    public DateTime CreatedAtUtc { get; }
     public DateTime? ReleasedAtUtc { get; private set; }
 
     public void Release()

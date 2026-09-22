@@ -10,9 +10,11 @@ public interface ITreasuryRepository
     Task<TreasuryAccount?> GetAccountAsync(Guid accountId, CancellationToken cancellationToken);
 
     Task AddTransactionAsync(TreasuryTransaction transaction, CancellationToken cancellationToken);
+    Task<TreasuryTransaction?> GetTransactionByCorrelationIdAsync(string correlationId, CancellationToken cancellationToken);
     Task<IReadOnlyCollection<TreasuryEntry>> GetEntriesAsync(Guid accountId, CancellationToken cancellationToken);
 
     Task AddReservationAsync(TreasuryReservation reservation, CancellationToken cancellationToken);
+    Task SaveReservationAsync(TreasuryReservation reservation, CancellationToken cancellationToken);
     Task<TreasuryReservation?> GetReservationAsync(Guid reservationId, CancellationToken cancellationToken);
     Task<IReadOnlyCollection<TreasuryReservation>> GetReservationsAsync(Guid accountId, CancellationToken cancellationToken);
 }

@@ -1,0 +1,52 @@
+name: AFW-BE-TREASURY-DURABILITY-1 Durable Treasury Repository
+
+on:
+  push:
+    branches:
+      - feature/backend-treasury-durability-1
+    paths:
+      - 'backend/src/FinancialPlatform/Treasury/**'
+      - 'backend/tests/Treasury.Scenarios/**'
+      - 'backend/tests/Treasury.Durability.Scenarios/**'
+      - '.github/workflows/backend-treasury-durability-1.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'backend/src/FinancialPlatform/Treasury/**'
+      - 'backend/tests/Treasury.Scenarios/**'
+      - 'backend/tests/Treasury.Durability.Scenarios/**'
+      - '.github/workflows/backend-treasury-durability-1.yml'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Validate durable treasury journal and replay protection
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build Treasury Domain
+        run: dotnet build backend/src/FinancialPlatform/Treasury/Treasury.Domain/Treasury.Domain.csproj --configuration Release --nologo
+
+      - name: Build Treasury Application
+        run: dotnet build backend/src/FinancialPlatform/Treasury/Treasury.Application/Treasury.Application.csproj --configuration Release --nologo
+
+      - name: Build Treasury Infrastructure
+        run: dotnet build backend/src/FinancialPlatform/Treasury/Treasury.Infrastructure/Treasury.Infrastructure.csproj --configuration Release --nologo
+
+      - name: Build Treasury API
+        run: dotnet build backend/src/FinancialPlatform/Treasury/Treasury.Api/Treasury.Api.csproj --configuration Release --nologo
+
+      - name: Run existing Treasury scenarios
+        run: dotnet run --project backend/tests/Treasury.Scenarios/Treasury.Scenarios.csproj --configuration Release
+
+      - name: Run Treasury durability scenarios
+        run: dotnet run --project backend/tests/Treasury.Durability.Scenarios/Treasury.Durability.Scenarios.csproj --configuration Release

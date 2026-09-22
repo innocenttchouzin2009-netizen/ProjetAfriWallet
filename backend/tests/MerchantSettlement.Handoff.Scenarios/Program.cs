@@ -50,6 +50,13 @@ try
     Assert((await repo.GetByIdempotencyKeyAsync(settlement.IdempotencyKey))?.SettlementId == settlement.SettlementId,
         "Idempotency lookup must resolve persisted settlement.");
 
+    var boundCoreInstructionId = Guid.NewGuid();
+    settlement.BindCoreSettlementInstruction(boundCoreInstructionId, now.AddMinutes(1));
+    await repo.SaveAsync(settlement);
+    var boundReloaded = await repo.GetAsync(settlement.SettlementId);
+    Assert(boundReloaded?.CoreSettlementInstructionId == boundCoreInstructionId,
+        "Core settlement instruction link must survive EF reload.");
+
     var duplicateRejected = false;
     try
     {
@@ -90,12 +97,15 @@ try
         settlement.AmountMinor,
         settlement.Currency,
         settlement.IdempotencyKey,
-        "corr-001"));
+        "corr-001",
+        null));
 
     Assert(accepted.Status == MerchantSettlementProviderStatus.Accepted,
         "Merchant settlement route must hand off successfully.");
     Assert(Guid.TryParse(accepted.ProviderReference, out _),
         "Successful handoff must expose Settlement instruction id as provider reference.");
+    Assert(accepted.CoreSettlementInstructionId is Guid,
+        "Successful handoff must return the durable core Settlement instruction id.");
     Assert(settlementCore.CreateCalls == 1 && settlementCore.ExecuteCalls == 1,
         "Successful handoff must create and execute exactly one Settlement instruction.");
     Assert(settlementCore.LastSourceAccountId == source && settlementCore.LastDestinationAccountId == destination,
@@ -103,15 +113,36 @@ try
     Assert(settlementCore.LastAmountMinor == settlement.AmountMinor && settlementCore.LastCurrency == "XAF",
         "Amount/currency must be preserved during handoff.");
 
+    var retryAccepted = await provider.SubmitAsync(new MerchantSettlementProviderRequest(
+        settlement.SettlementId,
+        settlement.PaymentDecisionId,
+        settlement.PaymentIntentId,
+        settlement.MerchantId,
+        MerchantSettlementRoute.MerchantSettlement,
+        settlement.AmountMinor,
+        settlement.Currency,
+        settlement.IdempotencyKey,
+        "corr-002",
+        accepted.CoreSettlementInstructionId));
+
+    Assert(retryAccepted.Status == MerchantSettlementProviderStatus.Accepted,
+        "Retry handoff must succeed with the bound core Settlement instruction.");
+    Assert(retryAccepted.CoreSettlementInstructionId == accepted.CoreSettlementInstructionId,
+        "Retry must reuse the bound core Settlement instruction.");
+    Assert(settlementCore.CreateCalls == 1,
+        "Retry must not create a second core Settlement instruction.");
+    Assert(settlementCore.ExecuteCalls == 2,
+        "Retry may re-execute the same idempotent core Settlement instruction.");
+
     var payout = await provider.SubmitAsync(new MerchantSettlementProviderRequest(
         Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "merchant-001",
-        MerchantSettlementRoute.MerchantPayout, 10_000, "XAF", "idem-payout", "corr-payout"));
+        MerchantSettlementRoute.MerchantPayout, 10_000, "XAF", "idem-payout", "corr-payout", null));
     Assert(payout.Status == MerchantSettlementProviderStatus.PermanentFailure,
         "Merchant payout must remain outside this delivery.");
 
     var missingRoute = await provider.SubmitAsync(new MerchantSettlementProviderRequest(
         Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "merchant-missing",
-        MerchantSettlementRoute.MerchantSettlement, 10_000, "XAF", "idem-missing", "corr-missing"));
+        MerchantSettlementRoute.MerchantSettlement, 10_000, "XAF", "idem-missing", "corr-missing", null));
     Assert(missingRoute.Status == MerchantSettlementProviderStatus.PermanentFailure,
         "Missing account route must fail permanently.");
 
@@ -124,7 +155,7 @@ try
     var mismatchProvider = new MultiCurrencySettlementHandoffProvider(mismatchResolver, settlementCore);
     var mismatch = await mismatchProvider.SubmitAsync(new MerchantSettlementProviderRequest(
         Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "merchant-002",
-        MerchantSettlementRoute.MerchantSettlement, 10_000, "XAF", "idem-mismatch", "corr-mismatch"));
+        MerchantSettlementRoute.MerchantSettlement, 10_000, "XAF", "idem-mismatch", "corr-mismatch", null));
     Assert(mismatch.Status == MerchantSettlementProviderStatus.PermanentFailure,
         "Configured route currency mismatch must fail permanently.");
 

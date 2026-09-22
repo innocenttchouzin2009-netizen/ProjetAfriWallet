@@ -8,6 +8,18 @@ public sealed class TreasuryAccount
         string displayName,
         string currencyCode,
         TreasuryAccountType type)
+        : this(accountId, accountCode, displayName, currencyCode, type, TreasuryAccountStatus.Active, DateTime.UtcNow)
+    {
+    }
+
+    private TreasuryAccount(
+        Guid accountId,
+        string accountCode,
+        string displayName,
+        string currencyCode,
+        TreasuryAccountType type,
+        TreasuryAccountStatus status,
+        DateTime createdAtUtc)
     {
         if (accountId == Guid.Empty)
             throw new ArgumentException("Account ID is required.");
@@ -27,15 +39,27 @@ public sealed class TreasuryAccount
         DisplayName = displayName.Trim();
         CurrencyCode = currencyCode;
         Type = type;
+        Status = status;
+        CreatedAtUtc = DateTime.SpecifyKind(createdAtUtc, DateTimeKind.Utc);
     }
+
+    public static TreasuryAccount Restore(
+        Guid accountId,
+        string accountCode,
+        string displayName,
+        string currencyCode,
+        TreasuryAccountType type,
+        TreasuryAccountStatus status,
+        DateTime createdAtUtc) =>
+        new(accountId, accountCode, displayName, currencyCode, type, status, createdAtUtc);
 
     public Guid AccountId { get; }
     public string AccountCode { get; }
     public string DisplayName { get; private set; }
     public string CurrencyCode { get; }
     public TreasuryAccountType Type { get; }
-    public TreasuryAccountStatus Status { get; private set; } = TreasuryAccountStatus.Active;
-    public DateTime CreatedAtUtc { get; } = DateTime.UtcNow;
+    public TreasuryAccountStatus Status { get; private set; }
+    public DateTime CreatedAtUtc { get; }
 
     public void Suspend()
     {

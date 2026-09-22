@@ -5,6 +5,11 @@ public sealed class TreasuryTransaction
     private readonly List<TreasuryEntry> _entries = [];
 
     public TreasuryTransaction(Guid transactionId, string reference, string correlationId)
+        : this(transactionId, reference, correlationId, TreasuryTransactionStatus.Pending, DateTime.UtcNow, null, [])
+    {
+    }
+
+    private TreasuryTransaction(Guid transactionId, string reference, string correlationId, TreasuryTransactionStatus status, DateTime createdAtUtc, DateTime? postedAtUtc, IEnumerable<TreasuryEntry> entries)
     {
         if (transactionId == Guid.Empty)
             throw new ArgumentException("Transaction ID is required.");
@@ -14,14 +19,31 @@ public sealed class TreasuryTransaction
 
         TransactionId = transactionId;
         Reference = reference.Trim();
+        if (string.IsNullOrWhiteSpace(correlationId))
+            throw new ArgumentException("Correlation ID is required.");
+
         CorrelationId = correlationId.Trim();
+        Status = status;
+        CreatedAtUtc = DateTime.SpecifyKind(createdAtUtc, DateTimeKind.Utc);
+        PostedAtUtc = postedAtUtc is null ? null : DateTime.SpecifyKind(postedAtUtc.Value, DateTimeKind.Utc);
+        _entries.AddRange(entries);
     }
+
+    public static TreasuryTransaction Restore(
+        Guid transactionId,
+        string reference,
+        string correlationId,
+        TreasuryTransactionStatus status,
+        DateTime createdAtUtc,
+        DateTime? postedAtUtc,
+        IEnumerable<TreasuryEntry> entries) =>
+        new(transactionId, reference, correlationId, status, createdAtUtc, postedAtUtc, entries);
 
     public Guid TransactionId { get; }
     public string Reference { get; }
     public string CorrelationId { get; }
-    public TreasuryTransactionStatus Status { get; private set; } = TreasuryTransactionStatus.Pending;
-    public DateTime CreatedAtUtc { get; } = DateTime.UtcNow;
+    public TreasuryTransactionStatus Status { get; private set; }
+    public DateTime CreatedAtUtc { get; }
     public DateTime? PostedAtUtc { get; private set; }
     public IReadOnlyCollection<TreasuryEntry> Entries => _entries.AsReadOnly();
 

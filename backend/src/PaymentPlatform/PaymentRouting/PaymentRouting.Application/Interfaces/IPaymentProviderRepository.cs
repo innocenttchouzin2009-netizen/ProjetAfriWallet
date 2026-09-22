@@ -12,6 +12,10 @@ public interface IPaymentProviderRepository
         string providerId,
         CancellationToken cancellationToken);
 
+    Task UpdateAsync(
+        PaymentProvider provider,
+        CancellationToken cancellationToken);
+
     Task<IReadOnlyCollection<PaymentProvider>>
         ListAsync(
             CancellationToken cancellationToken);

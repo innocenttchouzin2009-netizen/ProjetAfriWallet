@@ -4,41 +4,26 @@ using PaymentRouting.Domain.Decisions;
 
 namespace PaymentRouting.Infrastructure.Repositories;
 
-public sealed class InMemoryRoutingDecisionRepository :
-    IRoutingDecisionRepository
+public sealed class InMemoryRoutingDecisionRepository : IRoutingDecisionRepository
 {
-    private readonly ConcurrentDictionary<
-        Guid,
-        RoutingDecision> _decisions = new();
+    private readonly ConcurrentDictionary<Guid, RoutingDecision> _decisions = new();
 
-    public Task AddAsync(
-        RoutingDecision decision,
-        CancellationToken cancellationToken)
+    public Task AddAsync(RoutingDecision decision, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        if (!_decisions.TryAdd(
-                decision.PaymentIntentId,
-                decision))
-        {
-            throw new InvalidOperationException(
-                "Routing decision already exists.");
-        }
+        if (!_decisions.TryAdd(decision.PaymentIntentId, decision))
+            throw new RoutingDecisionConflictException(decision.PaymentIntentId);
 
         return Task.CompletedTask;
     }
 
-    public Task<RoutingDecision?>
-        GetByPaymentIntentAsync(
-            Guid paymentIntentId,
-            CancellationToken cancellationToken)
+    public Task<RoutingDecision?> GetByPaymentIntentAsync(
+        Guid paymentIntentId,
+        CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-
-        _decisions.TryGetValue(
-            paymentIntentId,
-            out var decision);
-
+        _decisions.TryGetValue(paymentIntentId, out var decision);
         return Task.FromResult(decision);
     }
 }

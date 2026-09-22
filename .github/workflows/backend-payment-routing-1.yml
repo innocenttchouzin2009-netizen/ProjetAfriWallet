@@ -1,0 +1,52 @@
+name: AFW-BE-PAYMENT-ROUTING-1 Durable Payment Routing Foundation
+
+on:
+  push:
+    branches:
+      - feature/backend-payment-routing-1
+    paths:
+      - 'backend/src/PaymentPlatform/PaymentRouting/**'
+      - 'backend/tests/PaymentRouting.Scenarios/**'
+      - 'backend/tests/PaymentRouting.Persistence.Scenarios/**'
+      - '.github/workflows/backend-payment-routing-1.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'backend/src/PaymentPlatform/PaymentRouting/**'
+      - 'backend/tests/PaymentRouting.Scenarios/**'
+      - 'backend/tests/PaymentRouting.Persistence.Scenarios/**'
+      - '.github/workflows/backend-payment-routing-1.yml'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Validate durable payment routing foundation
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build Payment Routing Domain
+        run: dotnet build backend/src/PaymentPlatform/PaymentRouting/PaymentRouting.Domain/PaymentRouting.Domain.csproj --configuration Release --nologo
+
+      - name: Build Payment Routing Application
+        run: dotnet build backend/src/PaymentPlatform/PaymentRouting/PaymentRouting.Application/PaymentRouting.Application.csproj --configuration Release --nologo
+
+      - name: Build Payment Routing Infrastructure
+        run: dotnet build backend/src/PaymentPlatform/PaymentRouting/PaymentRouting.Infrastructure/PaymentRouting.Infrastructure.csproj --configuration Release --nologo
+
+      - name: Build Payment Routing API
+        run: dotnet build backend/src/PaymentPlatform/PaymentRouting/PaymentRouting.Api/PaymentRouting.Api.csproj --configuration Release --nologo
+
+      - name: Run existing payment routing scenarios
+        run: dotnet run --project backend/tests/PaymentRouting.Scenarios/PaymentRouting.Scenarios.csproj --configuration Release
+
+      - name: Run durable payment routing scenarios
+        run: dotnet run --project backend/tests/PaymentRouting.Persistence.Scenarios/PaymentRouting.Persistence.Scenarios.csproj --configuration Release

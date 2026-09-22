@@ -1,45 +1,48 @@
+using Microsoft.EntityFrameworkCore;
 using PaymentRouting.Application.Interfaces;
 using PaymentRouting.Application.Scoring;
 using PaymentRouting.Application.Services;
 using PaymentRouting.Contracts.Requests;
 using PaymentRouting.Domain.Routes;
+using PaymentRouting.Infrastructure.Persistence;
 using PaymentRouting.Infrastructure.Providers;
 using PaymentRouting.Infrastructure.Repositories;
 
-var builder =
-    WebApplication.CreateBuilder(args);
+var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddSingleton<
-    IPaymentProviderRepository,
-    InMemoryPaymentProviderRepository>();
+var connectionString =
+    builder.Configuration.GetConnectionString("PaymentRoutingDatabase")
+    ?? Environment.GetEnvironmentVariable("AFW_PAYMENT_ROUTING_DB_CONNECTION_STRING")
+    ?? "Data Source=payment-routing.db";
 
-builder.Services.AddSingleton<
-    IRoutingDecisionRepository,
-    InMemoryRoutingDecisionRepository>();
+builder.Services.AddDbContext<PaymentRoutingDbContext>(
+    options => options.UseSqlite(connectionString));
 
-builder.Services.AddSingleton<
-    PaymentRouteScorer>();
-
-builder.Services.AddScoped<
-    PaymentRoutingService>();
-
+builder.Services.AddScoped<IPaymentProviderRepository, EfPaymentProviderRepository>();
+builder.Services.AddScoped<IRoutingDecisionRepository, EfRoutingDecisionRepository>();
+builder.Services.AddSingleton<PaymentRouteScorer>();
+builder.Services.AddScoped<PaymentRoutingService>();
 builder.Services.AddOpenApi();
 
-var app =
-    builder.Build();
+var app = builder.Build();
 
-await SandboxProviderBootstrap.SeedAsync(
-    app.Services.GetRequiredService<
-        IPaymentProviderRepository>(),
-    CancellationToken.None);
+await using (var scope = app.Services.CreateAsyncScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<PaymentRoutingDbContext>();
+    await db.Database.EnsureCreatedAsync();
+
+    await SandboxProviderBootstrap.SeedAsync(
+        scope.ServiceProvider.GetRequiredService<IPaymentProviderRepository>(),
+        CancellationToken.None);
+}
 
 app.MapGet(
     "/health/live",
     () => Results.Ok(new
     {
         status = "Healthy",
-        service =
-            "afriwallet-payment-routing"
+        service = "afriwallet-payment-routing",
+        durablePersistence = true
     }));
 
 app.MapPost(
@@ -49,18 +52,17 @@ app.MapPost(
         PaymentRoutingService service,
         CancellationToken cancellationToken) =>
     {
-        var decision =
-            await service.RouteAsync(
-                new RoutingRequest(
-                    request.PaymentIntentId,
-                    request.CountryCode,
-                    request.CurrencyCode,
-                    request.AmountMinor,
-                    request.RequestedRail,
-                    request.PreferredProviderId,
-                    request.CorrelationId),
-                policy: null,
-                cancellationToken);
+        var decision = await service.RouteAsync(
+            new RoutingRequest(
+                request.PaymentIntentId,
+                request.CountryCode,
+                request.CurrencyCode,
+                request.AmountMinor,
+                request.RequestedRail,
+                request.PreferredProviderId,
+                request.CorrelationId),
+            policy: null,
+            cancellationToken);
 
         return Results.Ok(decision);
     });
@@ -71,9 +73,7 @@ app.MapGet(
         IPaymentProviderRepository repository,
         CancellationToken cancellationToken) =>
     {
-        return Results.Ok(
-            await repository.ListAsync(
-                cancellationToken));
+        return Results.Ok(await repository.ListAsync(cancellationToken));
     });
 
 app.MapGet(
@@ -83,19 +83,14 @@ app.MapGet(
         IRoutingDecisionRepository repository,
         CancellationToken cancellationToken) =>
     {
-        var decision =
-            await repository
-                .GetByPaymentIntentAsync(
-                    paymentIntentId,
-                    cancellationToken);
+        var decision = await repository.GetByPaymentIntentAsync(
+            paymentIntentId,
+            cancellationToken);
 
-        return decision is null
-            ? Results.NotFound()
-            : Results.Ok(decision);
+        return decision is null ? Results.NotFound() : Results.Ok(decision);
     });
 
 app.MapOpenApi();
-
 app.Run();
 
 public partial class Program;

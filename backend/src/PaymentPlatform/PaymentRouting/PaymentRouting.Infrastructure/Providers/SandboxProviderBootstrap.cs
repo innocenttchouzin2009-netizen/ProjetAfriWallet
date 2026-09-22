@@ -60,6 +60,9 @@ public static class SandboxProviderBootstrap
 
         foreach (var provider in providers)
         {
+            if (await repository.GetAsync(provider.ProviderId, cancellationToken) is not null)
+                continue;
+
             await repository.AddAsync(
                 provider,
                 cancellationToken);

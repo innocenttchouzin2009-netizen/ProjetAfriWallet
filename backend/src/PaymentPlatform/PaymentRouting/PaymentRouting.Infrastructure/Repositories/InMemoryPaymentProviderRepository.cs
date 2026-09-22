@@ -42,6 +42,19 @@ public sealed class InMemoryPaymentProviderRepository :
         return Task.FromResult(provider);
     }
 
+    public Task UpdateAsync(
+        PaymentProvider provider,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        if (!_providers.ContainsKey(provider.ProviderId))
+            throw new KeyNotFoundException("Payment provider not found.");
+
+        _providers[provider.ProviderId] = provider;
+        return Task.CompletedTask;
+    }
+
     public Task<IReadOnlyCollection<PaymentProvider>>
         ListAsync(
             CancellationToken cancellationToken)

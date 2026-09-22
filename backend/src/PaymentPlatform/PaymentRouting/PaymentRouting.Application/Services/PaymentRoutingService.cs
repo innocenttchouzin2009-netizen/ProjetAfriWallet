@@ -119,10 +119,23 @@ public sealed class PaymentRoutingService
                 $"Selected {selected.ProviderId} based on routing policy.",
                 DateTime.UtcNow);
 
-        await _decisions.AddAsync(
-            decision,
-            cancellationToken);
+        try
+        {
+            await _decisions.AddAsync(
+                decision,
+                cancellationToken);
 
-        return decision;
+            return decision;
+        }
+        catch (RoutingDecisionConflictException)
+        {
+            var persisted = await _decisions.GetByPaymentIntentAsync(
+                request.PaymentIntentId,
+                cancellationToken);
+
+            return persisted
+                ?? throw new InvalidOperationException(
+                    "Routing idempotency conflict occurred without a persisted decision.");
+        }
     }
 }

@@ -1,0 +1,41 @@
+name: AFW-BE-SETTLEMENT-FX-CLEARING-1
+
+on:
+  push:
+    branches:
+      - feature/backend-settlement-fx-clearing-1
+    paths:
+      - 'backend/src/FinancialPlatform/Settlement/**'
+      - 'backend/tests/Settlement.LedgerBacked.Scenarios/**'
+      - '.github/workflows/backend-settlement-fx-clearing-1.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'backend/src/FinancialPlatform/Settlement/**'
+      - 'backend/tests/Settlement.LedgerBacked.Scenarios/**'
+      - '.github/workflows/backend-settlement-fx-clearing-1.yml'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Validate settlement FX clearing
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build Settlement Infrastructure
+        run: dotnet build backend/src/FinancialPlatform/Settlement/Settlement.Infrastructure/Settlement.Infrastructure.csproj --configuration Release --nologo
+
+      - name: Build Settlement API
+        run: dotnet build backend/src/FinancialPlatform/Settlement/Settlement.Api/Settlement.Api.csproj --configuration Release --nologo
+
+      - name: Run ledger-backed settlement scenarios
+        run: dotnet run --project backend/tests/Settlement.LedgerBacked.Scenarios/Settlement.LedgerBacked.Scenarios.csproj --configuration Release

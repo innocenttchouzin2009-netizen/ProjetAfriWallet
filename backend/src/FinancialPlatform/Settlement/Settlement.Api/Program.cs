@@ -47,6 +47,23 @@ builder.Services.AddSingleton<AfriWallet.Fx.Application.IFxQuoteProvider>(sp =>
     new ConfiguredFxQuoteProvider(fxRates, sp.GetRequiredService<TimeProvider>()));
 builder.Services.AddSingleton<FxQuoteApplicationService>();
 builder.Services.AddScoped<Settlement.Application.Interfaces.IFxQuoteProvider, CoreFxQuoteProviderAdapter>();
+var eurXafSourceClearing = Guid.Parse(builder.Configuration["Settlement:FxClearing:EUR_XAF:SourceAccountId"] ?? "10000000-0000-0000-0000-000000000001");
+var eurXafDestinationClearing = Guid.Parse(builder.Configuration["Settlement:FxClearing:EUR_XAF:DestinationAccountId"] ?? "10000000-0000-0000-0000-000000000002");
+var usdXafSourceClearing = Guid.Parse(builder.Configuration["Settlement:FxClearing:USD_XAF:SourceAccountId"] ?? "10000000-0000-0000-0000-000000000003");
+var usdXafDestinationClearing = Guid.Parse(builder.Configuration["Settlement:FxClearing:USD_XAF:DestinationAccountId"] ?? "10000000-0000-0000-0000-000000000004");
+var xafEurSourceClearing = Guid.Parse(builder.Configuration["Settlement:FxClearing:XAF_EUR:SourceAccountId"] ?? "10000000-0000-0000-0000-000000000005");
+var xafEurDestinationClearing = Guid.Parse(builder.Configuration["Settlement:FxClearing:XAF_EUR:DestinationAccountId"] ?? "10000000-0000-0000-0000-000000000006");
+var xafUsdSourceClearing = Guid.Parse(builder.Configuration["Settlement:FxClearing:XAF_USD:SourceAccountId"] ?? "10000000-0000-0000-0000-000000000007");
+var xafUsdDestinationClearing = Guid.Parse(builder.Configuration["Settlement:FxClearing:XAF_USD:DestinationAccountId"] ?? "10000000-0000-0000-0000-000000000008");
+
+builder.Services.AddSingleton<ISettlementFxClearingAccountResolver>(
+    new ConfiguredSettlementFxClearingAccountResolver(
+        [
+            new("EUR", eurXafSourceClearing, "XAF", eurXafDestinationClearing),
+            new("USD", usdXafSourceClearing, "XAF", usdXafDestinationClearing),
+            new("XAF", xafEurSourceClearing, "EUR", xafEurDestinationClearing),
+            new("XAF", xafUsdSourceClearing, "USD", xafUsdDestinationClearing)
+        ]));
 builder.Services.AddScoped<ITreasurySettlementGateway, LedgerBackedTreasurySettlementGateway>();
 builder.Services.AddScoped<MultiCurrencySettlementService>();
 builder.Services.AddScoped<SettlementPositionService>();
@@ -66,7 +83,7 @@ app.MapGet("/health", () => Results.Ok(new
     delivery = "AFW-BE-SETTLEMENT-1",
     durablePersistence = true,
     ledgerBackedSameCurrency = true,
-    crossCurrencyLedgerPosting = false
+    crossCurrencyLedgerPosting = true
 }));
 
 app.MapPost(
@@ -94,9 +111,9 @@ app.MapPost(
             return Results.Ok(instruction);
         }
         catch (InvalidOperationException exception) when (
-            exception.Message.Contains("Cross-currency ledger posting", StringComparison.Ordinal))
+            exception.Message.Contains("FX clearing accounts", StringComparison.Ordinal))
         {
-            return Results.Conflict(new { code = "SETTLEMENT_FX_CLEARING_REQUIRED", message = exception.Message });
+            return Results.Conflict(new { code = "SETTLEMENT_FX_CLEARING_NOT_CONFIGURED", message = exception.Message });
         }
     });
 

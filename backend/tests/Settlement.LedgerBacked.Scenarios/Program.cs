@@ -49,7 +49,11 @@ try
         [new ConfiguredFxRate("EUR", "XAF", 655.957m)],
         timeProvider);
     var fxAdapter = new CoreFxQuoteProviderAdapter(new FxQuoteApplicationService(coreFxProvider));
-    var treasury = new LedgerBackedTreasurySettlementGateway(ledgerPosting, balanceRead, timeProvider);
+    var sourceClearing = Guid.NewGuid();
+    var destinationClearing = Guid.NewGuid();
+    var clearingResolver = new ConfiguredSettlementFxClearingAccountResolver(
+        [new SettlementFxClearingAccountPair("EUR", sourceClearing, "XAF", destinationClearing)]);
+    var treasury = new LedgerBackedTreasurySettlementGateway(ledgerPosting, balanceRead, clearingResolver, timeProvider);
     var service = new MultiCurrencySettlementService(repository, fxAdapter, treasury);
 
     var source = Guid.NewGuid();
@@ -113,18 +117,26 @@ try
         CancellationToken.None);
     Assert(crossCurrency.AppliedQuote is not null, "Cross-currency instruction must use the core FX adapter.");
 
-    var crossCurrencyBlocked = false;
-    try
-    {
-        await service.ExecuteInstructionAsync(crossCurrency.InstructionId, CancellationToken.None);
-    }
-    catch (InvalidOperationException ex) when (ex.Message.Contains("FX clearing model", StringComparison.Ordinal))
-    {
-        crossCurrencyBlocked = true;
-    }
-    Assert(crossCurrencyBlocked, "Cross-currency ledger posting must remain explicitly blocked in AFW-BE-SETTLEMENT-1.");
+    var crossCurrencyExecuted = await service.ExecuteInstructionAsync(crossCurrency.InstructionId, CancellationToken.None);
+    Assert(crossCurrencyExecuted.Status == SettlementInstructionStatus.Settled, "Cross-currency settlement must settle through FX clearing.");
 
-    Console.WriteLine("AFW-BE-SETTLEMENT-1 Settlement.LedgerBacked.Scenarios: PASS");
+    var crossSourceBalance = await balanceRead.ReadAsync(new BalanceKey(new AccountId(source), "EUR"));
+    var destinationXafBalance = await balanceRead.ReadAsync(new BalanceKey(new AccountId(crossCurrency.DestinationAccountId), "XAF"));
+    var sourceClearingBalance = await balanceRead.ReadAsync(new BalanceKey(new AccountId(sourceClearing), "EUR"));
+    var destinationClearingBalance = await balanceRead.ReadAsync(new BalanceKey(new AccountId(destinationClearing), "XAF"));
+
+    Assert(crossSourceBalance.NetMinor == 7_400, "Cross-currency source must be debited exactly once.");
+    Assert(destinationXafBalance.NetMinor == crossCurrency.DestinationAmountMinor, "Cross-currency destination must be credited by quoted amount.");
+    Assert(sourceClearingBalance.NetMinor == crossCurrency.SourceAmountMinor, "Source clearing must receive source amount.");
+    Assert(destinationClearingBalance.NetMinor == -crossCurrency.DestinationAmountMinor, "Destination clearing must fund destination amount.");
+
+    await service.ExecuteInstructionAsync(crossCurrency.InstructionId, CancellationToken.None);
+    var crossSourceBalanceAfterRetry = await balanceRead.ReadAsync(new BalanceKey(new AccountId(source), "EUR"));
+    var destinationXafBalanceAfterRetry = await balanceRead.ReadAsync(new BalanceKey(new AccountId(crossCurrency.DestinationAccountId), "XAF"));
+    Assert(crossSourceBalanceAfterRetry.NetMinor == 7_400, "Cross-currency duplicate execution must not debit source twice.");
+    Assert(destinationXafBalanceAfterRetry.NetMinor == crossCurrency.DestinationAmountMinor, "Cross-currency duplicate execution must not credit destination twice.");
+
+    Console.WriteLine("AFW-BE-SETTLEMENT-FX-CLEARING-1 Settlement.LedgerBacked.Scenarios: PASS");
 }
 finally
 {

@@ -224,7 +224,7 @@ public sealed class EnvironmentPaymentRequestWebhookSigningSecretResolver
 }
 
 
-public enum PaymentRequestWebhookSubscriptionAuditOperation { CredentialsRotated = 1, Enabled = 2, Disabled = 3, ConnectivityTested = 4 }
+public enum PaymentRequestWebhookSubscriptionAuditOperation { CredentialsRotated = 1, Enabled = 2, Disabled = 3, ConnectivityTested = 4, ReliabilityAutoDisabled = 5 }
 public sealed record PaymentRequestWebhookSubscriptionAuditEntry(Guid Id, Guid SubscriptionId, string IntegrationId, Guid? MerchantId, string ActorSubject, PaymentRequestWebhookSubscriptionAuditOperation Operation, string KeyId, string SecretReference, bool Succeeded, int? HttpStatusCode, string? Detail, DateTimeOffset OccurredAtUtc);
 public interface IPaymentRequestWebhookSubscriptionAuditStore { Task AppendAsync(PaymentRequestWebhookSubscriptionAuditEntry entry, CancellationToken cancellationToken = default); Task<IReadOnlyList<PaymentRequestWebhookSubscriptionAuditEntry>> ListAsync(Guid subscriptionId, CancellationToken cancellationToken = default); }
 public sealed record PaymentRequestWebhookConnectivityProbeResult(bool Succeeded, int? HttpStatusCode, string Detail, DateTimeOffset ObservedAtUtc);

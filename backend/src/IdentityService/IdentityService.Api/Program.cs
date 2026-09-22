@@ -129,6 +129,8 @@ builder.Services.AddScoped<IPaymentRequestWebhookDeliveryAttemptStore, EfPayment
 builder.Services.AddScoped<IPaymentRequestWebhookSigningSecretResolver, EnvironmentPaymentRequestWebhookSigningSecretResolver>();
 builder.Services.AddHttpClient<HttpPaymentRequestWebhookConnectivityProbe>();
 builder.Services.AddScoped<IPaymentRequestWebhookConnectivityProbe>(sp => sp.GetRequiredService<HttpPaymentRequestWebhookConnectivityProbe>());
+builder.Services.AddSingleton(PaymentRequestWebhookReliabilityProtectionOptions.Default);
+builder.Services.AddScoped<IPaymentRequestWebhookReliabilityProtector, PaymentRequestWebhookReliabilityProtector>();
 builder.Services.AddInAppNotifications(notificationsConnectionString, builder.Configuration);
 builder.Services.AddPushDeviceRegistration(pushDevicesConnectionString);
 builder.Services.AddNotificationPreferences(notificationPreferencesConnectionString);

@@ -18,6 +18,7 @@ public sealed class MultiCurrencySettlementHandoffProvider(
             return new(
                 MerchantSettlementProviderStatus.PermanentFailure,
                 null,
+                null,
                 "Merchant payout is outside AFW-BE-MERCHANT-SETTLEMENT-HANDOFF-1.");
 
         var route = await accountResolver.ResolveAsync(request.MerchantId, request.Route, request.Currency, ct);
@@ -25,23 +26,34 @@ public sealed class MultiCurrencySettlementHandoffProvider(
             return new(
                 MerchantSettlementProviderStatus.PermanentFailure,
                 null,
+                null,
                 "Merchant settlement account route is not configured.");
 
         if (!string.Equals(route.Currency, request.Currency, StringComparison.OrdinalIgnoreCase))
             return new(
                 MerchantSettlementProviderStatus.PermanentFailure,
                 null,
+                null,
                 "Merchant settlement account currency does not match the payment decision currency.");
 
         try
         {
-            var instruction = await settlementService.CreateInstructionAsync(
-                route.SourceAccountId,
-                route.DestinationAccountId,
-                request.Currency,
-                route.Currency,
-                request.AmountMinor,
-                ct);
+            SettlementInstruction instruction;
+            if (request.CoreSettlementInstructionId is Guid existingInstructionId)
+            {
+                instruction = await settlementService.GetInstructionAsync(existingInstructionId, ct)
+                    ?? throw new InvalidOperationException("Bound core settlement instruction was not found.");
+            }
+            else
+            {
+                instruction = await settlementService.CreateInstructionAsync(
+                    route.SourceAccountId,
+                    route.DestinationAccountId,
+                    request.Currency,
+                    route.Currency,
+                    request.AmountMinor,
+                    ct);
+            }
 
             var executed = await settlementService.ExecuteInstructionAsync(instruction.InstructionId, ct);
 
@@ -50,14 +62,17 @@ public sealed class MultiCurrencySettlementHandoffProvider(
                 SettlementInstructionStatus.Settled => new(
                     MerchantSettlementProviderStatus.Accepted,
                     executed.InstructionId.ToString("D"),
+                    executed.InstructionId,
                     "Merchant settlement handed off to durable Settlement core and settled."),
                 SettlementInstructionStatus.Rejected => new(
                     MerchantSettlementProviderStatus.PermanentFailure,
                     executed.InstructionId.ToString("D"),
+                    executed.InstructionId,
                     executed.RejectionReason ?? "Settlement core rejected the instruction."),
                 _ => new(
                     MerchantSettlementProviderStatus.TemporaryFailure,
                     executed.InstructionId.ToString("D"),
+                    executed.InstructionId,
                     "Settlement core did not reach a terminal result.")
             };
         }
@@ -67,11 +82,11 @@ public sealed class MultiCurrencySettlementHandoffProvider(
         }
         catch (InvalidOperationException exception)
         {
-            return new(MerchantSettlementProviderStatus.PermanentFailure, null, exception.Message);
+            return new(MerchantSettlementProviderStatus.PermanentFailure, null, request.CoreSettlementInstructionId, exception.Message);
         }
         catch (Exception exception)
         {
-            return new(MerchantSettlementProviderStatus.TemporaryFailure, null, exception.Message);
+            return new(MerchantSettlementProviderStatus.TemporaryFailure, null, request.CoreSettlementInstructionId, exception.Message);
         }
     }
 

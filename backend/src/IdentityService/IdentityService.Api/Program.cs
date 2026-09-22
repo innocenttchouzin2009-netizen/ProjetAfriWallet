@@ -223,6 +223,7 @@ app.MapPaymentRequestReconciliationEndpoints();
 app.MapPaymentRequestInboxOutboxEndpoints();
 app.MapPaymentRequestHistoryEndpoints();
 app.MapPaymentRequestEventOutboxOperationalEndpoints();
+app.MapPaymentRequestWebhookSubscriptionManagementEndpoints();
 app.MapNotificationEndpoints();
 app.MapPushDeviceEndpoints();
 app.MapNotificationPreferenceEndpoints();

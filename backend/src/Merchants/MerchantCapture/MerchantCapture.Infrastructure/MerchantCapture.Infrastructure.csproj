@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><TargetFramework>net10.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable><TreatWarningsAsErrors>true</TreatWarningsAsErrors></PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\MerchantCapture.Domain\MerchantCapture.Domain.csproj" />
+    <ProjectReference Include="..\MerchantCapture.Application\MerchantCapture.Application.csproj" />
+    <ProjectReference Include="..\..\MerchantPaymentDecision\MerchantPaymentDecision.Application\MerchantPaymentDecision.Application.csproj" />
+    <ProjectReference Include="..\..\MerchantPaymentDecision\MerchantPaymentDecision.Domain\MerchantPaymentDecision.Domain.csproj" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.11" />
+  </ItemGroup>
+</Project>

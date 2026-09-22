@@ -30,9 +30,15 @@ public sealed class EfTreasuryRepository(TreasuryDbContext dbContext) : ITreasur
     public async Task<TreasuryAccount?> GetAccountAsync(Guid accountId, CancellationToken cancellationToken)
     {
         var row = await dbContext.Accounts.AsNoTracking().SingleOrDefaultAsync(x => x.AccountId == accountId, cancellationToken);
-        return row is null ? null : TreasuryAccount.Restore(
-            row.AccountId, row.AccountCode, row.DisplayName, row.CurrencyCode,
-            (TreasuryAccountType)row.Type, (TreasuryAccountStatus)row.Status, row.CreatedAtUtc);
+        return row is null ? null : RestoreAccount(row);
+    }
+
+    public async Task<TreasuryAccount?> GetAccountByCodeAsync(string accountCode, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(accountCode)) return null;
+        var normalized = accountCode.Trim().ToUpperInvariant();
+        var row = await dbContext.Accounts.AsNoTracking().SingleOrDefaultAsync(x => x.AccountCode == normalized, cancellationToken);
+        return row is null ? null : RestoreAccount(row);
     }
 
     public async Task AddTransactionAsync(TreasuryTransaction transaction, CancellationToken cancellationToken)
@@ -139,6 +145,11 @@ public sealed class EfTreasuryRepository(TreasuryDbContext dbContext) : ITreasur
             .OrderBy(x => x.CreatedAtUtc)
             .ToListAsync(cancellationToken))
         .Select(Restore).ToArray();
+
+    private static TreasuryAccount RestoreAccount(TreasuryAccountEntity row) =>
+        TreasuryAccount.Restore(
+            row.AccountId, row.AccountCode, row.DisplayName, row.CurrencyCode,
+            (TreasuryAccountType)row.Type, (TreasuryAccountStatus)row.Status, row.CreatedAtUtc);
 
     private static TreasuryReservationEntity Map(TreasuryReservation value) => new()
     {

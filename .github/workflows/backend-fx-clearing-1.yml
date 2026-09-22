@@ -1,0 +1,63 @@
+name: AFW-BE-FX-CLEARING-1 Cross-Currency Clearing & Dual-Journal Settlement Foundation
+
+on:
+  push:
+    branches:
+      - feature/backend-fx-clearing-1
+    paths:
+      - 'backend/src/FinancialPlatform/Settlement/**'
+      - 'backend/src/FinancialPlatform/Treasury/**'
+      - 'backend/src/Ledger/**'
+      - 'backend/src/Balance/**'
+      - 'backend/src/Fx/**'
+      - 'backend/tests/Settlement.LedgerBacked.Scenarios/**'
+      - 'backend/tests/Settlement.FxClearing.Scenarios/**'
+      - '.github/workflows/backend-fx-clearing-1.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'backend/src/FinancialPlatform/Settlement/**'
+      - 'backend/src/FinancialPlatform/Treasury/**'
+      - 'backend/src/Ledger/**'
+      - 'backend/src/Balance/**'
+      - 'backend/src/Fx/**'
+      - 'backend/tests/Settlement.LedgerBacked.Scenarios/**'
+      - 'backend/tests/Settlement.FxClearing.Scenarios/**'
+      - '.github/workflows/backend-fx-clearing-1.yml'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Validate cross-currency clearing and dual-journal settlement
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build Ledger Application
+        run: dotnet build backend/src/Ledger/Ledger.Application/Ledger.Application.csproj --configuration Release --nologo
+
+      - name: Build Treasury Infrastructure
+        run: dotnet build backend/src/FinancialPlatform/Treasury/Treasury.Infrastructure/Treasury.Infrastructure.csproj --configuration Release --nologo
+
+      - name: Build Settlement Infrastructure
+        run: dotnet build backend/src/FinancialPlatform/Settlement/Settlement.Infrastructure/Settlement.Infrastructure.csproj --configuration Release --nologo
+
+      - name: Build Settlement API
+        run: dotnet build backend/src/FinancialPlatform/Settlement/Settlement.Api/Settlement.Api.csproj --configuration Release --nologo
+
+      - name: Run Treasury regression scenarios
+        run: dotnet run --project backend/tests/Treasury.Scenarios/Treasury.Scenarios.csproj --configuration Release
+
+      - name: Run Settlement ledger-backed regression scenarios
+        run: dotnet run --project backend/tests/Settlement.LedgerBacked.Scenarios/Settlement.LedgerBacked.Scenarios.csproj --configuration Release
+
+      - name: Run FX clearing dual-journal scenarios
+        run: dotnet run --project backend/tests/Settlement.FxClearing.Scenarios/Settlement.FxClearing.Scenarios.csproj --configuration Release

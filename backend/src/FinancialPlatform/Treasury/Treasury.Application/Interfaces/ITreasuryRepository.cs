@@ -8,6 +8,7 @@ public interface ITreasuryRepository
 {
     Task AddAccountAsync(TreasuryAccount account, CancellationToken cancellationToken);
     Task<TreasuryAccount?> GetAccountAsync(Guid accountId, CancellationToken cancellationToken);
+    Task<TreasuryAccount?> GetAccountByCodeAsync(string accountCode, CancellationToken cancellationToken);
 
     Task AddTransactionAsync(TreasuryTransaction transaction, CancellationToken cancellationToken);
     Task<TreasuryTransaction?> GetTransactionByCorrelationIdAsync(string correlationId, CancellationToken cancellationToken);

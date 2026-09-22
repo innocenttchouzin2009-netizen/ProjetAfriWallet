@@ -12,6 +12,9 @@ using Settlement.Infrastructure.Gateways;
 using Settlement.Infrastructure.Persistence;
 using Settlement.Infrastructure.Providers;
 using Settlement.Infrastructure.Repositories;
+using Treasury.Application.Interfaces;
+using Treasury.Infrastructure.Persistence;
+using Treasury.Infrastructure.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,11 +28,18 @@ var ledgerConnectionString =
     Environment.GetEnvironmentVariable("AFW_LEDGER_DB_CONNECTION_STRING") ??
     "Data Source=universal-ledger.db";
 
+var treasuryConnectionString =
+    builder.Configuration.GetConnectionString("TreasuryDatabase") ??
+    Environment.GetEnvironmentVariable("AFW_TREASURY_DB_CONNECTION_STRING") ??
+    "Data Source=treasury.db";
+
 builder.Services.AddDbContext<SettlementDbContext>(options => options.UseSqlite(settlementConnectionString));
 builder.Services.AddDbContext<LedgerDbContext>(options => options.UseSqlite(ledgerConnectionString));
+builder.Services.AddDbContext<TreasuryDbContext>(options => options.UseSqlite(treasuryConnectionString));
 
 builder.Services.AddScoped<ISettlementRepository, EfSettlementRepository>();
 builder.Services.AddScoped<IJournalRepository, EfJournalRepository>();
+builder.Services.AddScoped<ITreasuryRepository, EfTreasuryRepository>();
 builder.Services.AddScoped<LedgerPostingApplicationService>();
 builder.Services.AddScoped<ILedgerJournalReader, EfLedgerJournalReader>();
 builder.Services.AddScoped<BalanceProjectionService>();
@@ -57,6 +67,7 @@ using (var scope = app.Services.CreateScope())
 {
     await scope.ServiceProvider.GetRequiredService<SettlementDbContext>().Database.EnsureCreatedAsync();
     await scope.ServiceProvider.GetRequiredService<LedgerDbContext>().Database.EnsureCreatedAsync();
+    await scope.ServiceProvider.GetRequiredService<TreasuryDbContext>().Database.EnsureCreatedAsync();
 }
 
 app.MapGet("/health", () => Results.Ok(new
@@ -66,7 +77,8 @@ app.MapGet("/health", () => Results.Ok(new
     delivery = "AFW-BE-SETTLEMENT-1",
     durablePersistence = true,
     ledgerBackedSameCurrency = true,
-    crossCurrencyLedgerPosting = false
+    crossCurrencyLedgerPosting = true,
+    fxClearingAccountConvention = "FX-CLEARING-{CURRENCY}"
 }));
 
 app.MapPost(
@@ -94,9 +106,9 @@ app.MapPost(
             return Results.Ok(instruction);
         }
         catch (InvalidOperationException exception) when (
-            exception.Message.Contains("Cross-currency ledger posting", StringComparison.Ordinal))
+            exception.Message.Contains("FX clearing account", StringComparison.Ordinal))
         {
-            return Results.Conflict(new { code = "SETTLEMENT_FX_CLEARING_REQUIRED", message = exception.Message });
+            return Results.Conflict(new { code = "SETTLEMENT_FX_CLEARING_ACCOUNT_REQUIRED", message = exception.Message });
         }
     });
 

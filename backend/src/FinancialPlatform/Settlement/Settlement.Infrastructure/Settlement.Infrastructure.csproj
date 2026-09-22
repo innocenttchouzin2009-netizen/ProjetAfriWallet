@@ -8,6 +8,9 @@
     <ProjectReference Include="..\..\..\Balance\Balance.Domain\Balance.Domain.csproj" />
     <ProjectReference Include="..\..\..\Fx\Fx.Application\Fx.Application.csproj" />
     <ProjectReference Include="..\..\..\Fx\Fx.Domain\Fx.Domain.csproj" />
+    <ProjectReference Include="..\..\Treasury\Treasury.Application\Treasury.Application.csproj" />
+    <ProjectReference Include="..\..\Treasury\Treasury.Domain\Treasury.Domain.csproj" />
+    <ProjectReference Include="..\..\Treasury\Treasury.Infrastructure\Treasury.Infrastructure.csproj" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.11" />
   </ItemGroup>
   <PropertyGroup>

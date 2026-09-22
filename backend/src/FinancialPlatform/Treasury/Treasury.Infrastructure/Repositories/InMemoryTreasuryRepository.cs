@@ -29,6 +29,14 @@ public sealed class InMemoryTreasuryRepository : ITreasuryRepository
         return Task.FromResult(account);
     }
 
+    public Task<TreasuryAccount?> GetAccountByCodeAsync(string accountCode, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        if (string.IsNullOrWhiteSpace(accountCode)) return Task.FromResult<TreasuryAccount?>(null);
+        var normalized = accountCode.Trim().ToUpperInvariant();
+        return Task.FromResult(_accounts.Values.SingleOrDefault(x => x.AccountCode == normalized));
+    }
+
     public Task AddTransactionAsync(TreasuryTransaction transaction, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();

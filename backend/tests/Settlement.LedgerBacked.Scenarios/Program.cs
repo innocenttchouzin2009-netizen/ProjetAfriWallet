@@ -13,6 +13,7 @@ using Settlement.Infrastructure.Gateways;
 using Settlement.Infrastructure.Persistence;
 using Settlement.Infrastructure.Providers;
 using Settlement.Infrastructure.Repositories;
+using Treasury.Infrastructure.Repositories;
 
 static void Assert(bool condition, string message)
 {
@@ -49,7 +50,8 @@ try
         [new ConfiguredFxRate("EUR", "XAF", 655.957m)],
         timeProvider);
     var fxAdapter = new CoreFxQuoteProviderAdapter(new FxQuoteApplicationService(coreFxProvider));
-    var treasury = new LedgerBackedTreasurySettlementGateway(ledgerPosting, balanceRead, timeProvider);
+    var treasuryRepository = new InMemoryTreasuryRepository();
+    var treasury = new LedgerBackedTreasurySettlementGateway(ledgerPosting, balanceRead, treasuryRepository, timeProvider);
     var service = new MultiCurrencySettlementService(repository, fxAdapter, treasury);
 
     var source = Guid.NewGuid();
@@ -113,16 +115,16 @@ try
         CancellationToken.None);
     Assert(crossCurrency.AppliedQuote is not null, "Cross-currency instruction must use the core FX adapter.");
 
-    var crossCurrencyBlocked = false;
+    var missingClearingRejected = false;
     try
     {
         await service.ExecuteInstructionAsync(crossCurrency.InstructionId, CancellationToken.None);
     }
-    catch (InvalidOperationException ex) when (ex.Message.Contains("FX clearing model", StringComparison.Ordinal))
+    catch (InvalidOperationException ex) when (ex.Message.Contains("FX clearing account", StringComparison.Ordinal))
     {
-        crossCurrencyBlocked = true;
+        missingClearingRejected = true;
     }
-    Assert(crossCurrencyBlocked, "Cross-currency ledger posting must remain explicitly blocked in AFW-BE-SETTLEMENT-1.");
+    Assert(missingClearingRejected, "Cross-currency settlement must fail closed when clearing accounts are not configured.");
 
     Console.WriteLine("AFW-BE-SETTLEMENT-1 Settlement.LedgerBacked.Scenarios: PASS");
 }

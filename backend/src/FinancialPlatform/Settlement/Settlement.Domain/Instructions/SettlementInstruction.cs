@@ -90,6 +90,43 @@ public sealed class SettlementInstruction
         };
     }
 
+    public static SettlementInstruction Restore(
+        Guid instructionId,
+        Guid sourceAccountId,
+        Guid destinationAccountId,
+        string sourceCurrency,
+        string destinationCurrency,
+        long sourceAmountMinor,
+        long destinationAmountMinor,
+        FxQuote? quote,
+        SettlementInstructionStatus status,
+        string? rejectionReason,
+        DateTime createdAtUtc,
+        DateTime? executedAtUtc)
+    {
+        if (instructionId == Guid.Empty) throw new ArgumentException("Instruction ID is required.", nameof(instructionId));
+        if (sourceAccountId == Guid.Empty) throw new ArgumentException("Source account ID is required.", nameof(sourceAccountId));
+        if (destinationAccountId == Guid.Empty) throw new ArgumentException("Destination account ID is required.", nameof(destinationAccountId));
+        if (sourceAmountMinor <= 0 || destinationAmountMinor <= 0) throw new ArgumentOutOfRangeException(nameof(sourceAmountMinor));
+        if (!Enum.IsDefined(status)) throw new ArgumentOutOfRangeException(nameof(status));
+
+        return new SettlementInstruction
+        {
+            InstructionId = instructionId,
+            SourceAccountId = sourceAccountId,
+            DestinationAccountId = destinationAccountId,
+            SourceCurrency = sourceCurrency.Trim().ToUpperInvariant(),
+            DestinationCurrency = destinationCurrency.Trim().ToUpperInvariant(),
+            SourceAmountMinor = sourceAmountMinor,
+            DestinationAmountMinor = destinationAmountMinor,
+            AppliedQuote = quote,
+            Status = status,
+            RejectionReason = rejectionReason,
+            CreatedAtUtc = DateTime.SpecifyKind(createdAtUtc, DateTimeKind.Utc),
+            ExecutedAtUtc = executedAtUtc is null ? null : DateTime.SpecifyKind(executedAtUtc.Value, DateTimeKind.Utc)
+        };
+    }
+
     public void MarkSettled()
     {
         if (Status == SettlementInstructionStatus.Settled)

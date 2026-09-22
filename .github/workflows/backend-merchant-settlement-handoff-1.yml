@@ -1,0 +1,44 @@
+name: AFW-BE-MERCHANT-SETTLEMENT-HANDOFF-1
+
+on:
+  push:
+    branches:
+      - feature/backend-merchant-settlement-handoff-1
+    paths:
+      - 'backend/src/Merchants/MerchantSettlement/**'
+      - 'backend/tests/MerchantSettlement.Handoff.Scenarios/**'
+      - '.github/workflows/backend-merchant-settlement-handoff-1.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'backend/src/Merchants/MerchantSettlement/**'
+      - 'backend/tests/MerchantSettlement.Handoff.Scenarios/**'
+      - '.github/workflows/backend-merchant-settlement-handoff-1.yml'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Validate durable merchant settlement handoff
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build Merchant Settlement domain
+        run: dotnet build backend/src/Merchants/MerchantSettlement/MerchantSettlement.Domain/MerchantSettlement.Domain.csproj --configuration Release --nologo
+
+      - name: Build Merchant Settlement application
+        run: dotnet build backend/src/Merchants/MerchantSettlement/MerchantSettlement.Application/MerchantSettlement.Application.csproj --configuration Release --nologo
+
+      - name: Build Merchant Settlement infrastructure
+        run: dotnet build backend/src/Merchants/MerchantSettlement/MerchantSettlement.Infrastructure/MerchantSettlement.Infrastructure.csproj --configuration Release --nologo
+
+      - name: Run Merchant Settlement handoff scenarios
+        run: dotnet run --project backend/tests/MerchantSettlement.Handoff.Scenarios/MerchantSettlement.Handoff.Scenarios.csproj --configuration Release

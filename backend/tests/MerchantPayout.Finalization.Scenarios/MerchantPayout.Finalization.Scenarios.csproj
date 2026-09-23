@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/Merchants/MerchantPayout/MerchantPayout.Domain/MerchantPayout.Domain.csproj" />
+    <ProjectReference Include="../../src/Merchants/MerchantPayout/MerchantPayout.Application/MerchantPayout.Application.csproj" />
+    <ProjectReference Include="../../src/Merchants/MerchantPayout/MerchantPayout.Infrastructure/MerchantPayout.Infrastructure.csproj" />
+    <ProjectReference Include="../../src/Merchants/MerchantReceivables/MerchantReceivables.Domain/MerchantReceivables.Domain.csproj" />
+    <ProjectReference Include="../../src/Merchants/MerchantReceivables/MerchantReceivables.Application/MerchantReceivables.Application.csproj" />
+    <ProjectReference Include="../../src/Merchants/MerchantReceivables/MerchantReceivables.Infrastructure/MerchantReceivables.Infrastructure.csproj" />
+    <ProjectReference Include="../../src/Ledger/Ledger.Domain/Ledger.Domain.csproj" />
+    <ProjectReference Include="../../src/Ledger/Ledger.Application/Ledger.Application.csproj" />
+    <ProjectReference Include="../../src/Ledger/Ledger.Persistence/Ledger.Persistence.csproj" />
+    <ProjectReference Include="../../src/Transfer/Transfer.Application/Transfer.Application.csproj" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.11" />
+  </ItemGroup>
+</Project>

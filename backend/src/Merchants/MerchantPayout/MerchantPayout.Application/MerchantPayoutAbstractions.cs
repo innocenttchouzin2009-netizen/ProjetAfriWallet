@@ -70,3 +70,45 @@ public interface IMerchantPayoutAuditStore
     Task AppendAsync(MerchantPayoutAuditEvent auditEvent, CancellationToken cancellationToken = default);
     Task<IReadOnlyCollection<MerchantPayoutAuditEvent>> ListAsync(Guid payoutId, CancellationToken cancellationToken = default);
 }
+
+
+public sealed record MerchantPayoutFinalizationRequest(
+    Guid PayoutId,
+    Guid ReceivableId,
+    string MerchantId,
+    long AmountMinor,
+    string Currency,
+    MerchantPayoutDestinationType DestinationType,
+    string DestinationReference,
+    string Actor,
+    DateTimeOffset CompletedAtUtc);
+
+public sealed record MerchantPayoutFinalizationResult(
+    bool LedgerMutationPerformed,
+    bool MoneyMovementPerformed,
+    string? FinalizationReference)
+{
+    public static MerchantPayoutFinalizationResult None { get; } = new(false, false, null);
+}
+
+public interface IMerchantPayoutFinalizer
+{
+    Task<MerchantPayoutFinalizationResult> FinalizeAsync(
+        MerchantPayoutFinalizationRequest request,
+        CancellationToken cancellationToken = default);
+}
+
+public sealed class NoOpMerchantPayoutFinalizer : IMerchantPayoutFinalizer
+{
+    public static NoOpMerchantPayoutFinalizer Instance { get; } = new();
+
+    private NoOpMerchantPayoutFinalizer() { }
+
+    public Task<MerchantPayoutFinalizationResult> FinalizeAsync(
+        MerchantPayoutFinalizationRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        return Task.FromResult(MerchantPayoutFinalizationResult.None);
+    }
+}

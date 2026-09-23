@@ -34,7 +34,8 @@ public sealed class MerchantPayoutService(
     IMerchantPayoutRepository payouts,
     IMerchantPayoutProvider provider,
     IMerchantPayoutAuditStore audit,
-    TimeProvider timeProvider)
+    TimeProvider timeProvider,
+    IMerchantPayoutFinalizer? finalizer = null)
 {
     public async Task<MerchantPayoutDestination> RegisterDestinationAsync(
         RegisterMerchantPayoutDestinationCommand command,
@@ -133,11 +134,25 @@ public sealed class MerchantPayoutService(
 
         if (result.Succeeded)
         {
+            var completedAtUtc = timeProvider.GetUtcNow();
+            var finalization = await (finalizer ?? NoOpMerchantPayoutFinalizer.Instance).FinalizeAsync(
+                new MerchantPayoutFinalizationRequest(
+                    payout.PayoutId,
+                    payout.ReceivableId,
+                    payout.MerchantId,
+                    payout.AmountMinor,
+                    payout.Currency,
+                    destination.Type,
+                    destination.Reference,
+                    actor,
+                    completedAtUtc),
+                cancellationToken);
+
             payout.Complete(
                 result.ProviderReference ?? throw new InvalidOperationException("Payout provider reference is required."),
-                timeProvider.GetUtcNow());
+                completedAtUtc);
             await payouts.SaveAsync(payout, cancellationToken);
-            await WriteAudit(payout, destination, "payout.completed", actor, cancellationToken);
+            await WriteAudit(payout, destination, "payout.completed", actor, cancellationToken, finalization);
         }
         else
         {
@@ -167,7 +182,8 @@ public sealed class MerchantPayoutService(
         MerchantPayoutDestination destination,
         string eventType,
         string actor,
-        CancellationToken cancellationToken) =>
+        CancellationToken cancellationToken,
+        MerchantPayoutFinalizationResult? finalization = null) =>
         audit.AppendAsync(
             new MerchantPayoutAuditEvent(
                 Guid.NewGuid(),
@@ -183,8 +199,9 @@ public sealed class MerchantPayoutService(
                     ["destinationType"] = destination.Type.ToString(),
                     ["payoutExecutionPerformed"] = (payout.Status == MerchantPayoutStatus.Succeeded).ToString().ToLowerInvariant(),
                     ["realExternalPayoutPerformed"] = "false",
-                    ["ledgerMutationPerformed"] = "false",
-                    ["moneyMovementPerformed"] = "false"
+                    ["ledgerMutationPerformed"] = (finalization?.LedgerMutationPerformed ?? false).ToString().ToLowerInvariant(),
+                    ["moneyMovementPerformed"] = (finalization?.MoneyMovementPerformed ?? false).ToString().ToLowerInvariant(),
+                    ["finalizationReference"] = finalization?.FinalizationReference ?? string.Empty
                 }),
             cancellationToken);
 

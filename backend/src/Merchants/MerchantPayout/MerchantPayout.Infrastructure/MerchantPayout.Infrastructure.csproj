@@ -8,6 +8,11 @@
   <ItemGroup>
     <ProjectReference Include="..\MerchantPayout.Domain\MerchantPayout.Domain.csproj" />
     <ProjectReference Include="..\MerchantPayout.Application\MerchantPayout.Application.csproj" />
+    <ProjectReference Include="..\..\MerchantReceivables\MerchantReceivables.Application\MerchantReceivables.Application.csproj" />
+    <ProjectReference Include="..\..\MerchantReceivables\MerchantReceivables.Domain\MerchantReceivables.Domain.csproj" />
+    <ProjectReference Include="..\..\..\Ledger\Ledger.Application\Ledger.Application.csproj" />
+    <ProjectReference Include="..\..\..\Ledger\Ledger.Domain\Ledger.Domain.csproj" />
+    <ProjectReference Include="..\..\..\Transfer\Transfer.Application\Transfer.Application.csproj" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.11" />
   </ItemGroup>
 </Project>

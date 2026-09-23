@@ -1,0 +1,57 @@
+name: AFW-BE-MERCHANT-PAYOUT-FINALIZATION-1 Ledger-Backed AfWal Wallet Payout Finalization
+
+on:
+  push:
+    branches:
+      - feature/backend-merchant-payout-finalization-1
+    paths:
+      - 'backend/src/Merchants/MerchantPayout/**'
+      - 'backend/src/Merchants/MerchantReceivables/**'
+      - 'backend/src/Ledger/**'
+      - 'backend/src/Transfer/**'
+      - 'backend/tests/MerchantPayout.Scenarios/**'
+      - 'backend/tests/MerchantPayout.Finalization.Scenarios/**'
+      - 'backend/tests/MerchantPayout.Reconciliation.Http.Scenarios/**'
+      - '.github/workflows/backend-merchant-payout-finalization-1.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'backend/src/Merchants/MerchantPayout/**'
+      - 'backend/src/Merchants/MerchantReceivables/**'
+      - 'backend/src/Ledger/**'
+      - 'backend/src/Transfer/**'
+      - 'backend/tests/MerchantPayout.Scenarios/**'
+      - 'backend/tests/MerchantPayout.Finalization.Scenarios/**'
+      - 'backend/tests/MerchantPayout.Reconciliation.Http.Scenarios/**'
+      - '.github/workflows/backend-merchant-payout-finalization-1.yml'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Validate ledger-backed AfWal wallet payout finalization
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build Merchant Payout Application
+        run: dotnet build backend/src/Merchants/MerchantPayout/MerchantPayout.Application/MerchantPayout.Application.csproj -c Release --nologo
+
+      - name: Build Merchant Payout Infrastructure
+        run: dotnet build backend/src/Merchants/MerchantPayout/MerchantPayout.Infrastructure/MerchantPayout.Infrastructure.csproj -c Release --nologo
+
+      - name: Run Merchant Payout regression scenarios
+        run: dotnet run --project backend/tests/MerchantPayout.Scenarios/MerchantPayout.Scenarios.csproj -c Release
+
+      - name: Run Merchant Payout reconciliation regression
+        run: dotnet run --project backend/tests/MerchantPayout.Reconciliation.Http.Scenarios/MerchantPayout.Reconciliation.Http.Scenarios.csproj -c Release
+
+      - name: Run Merchant Payout finalization scenarios
+        run: dotnet run --project backend/tests/MerchantPayout.Finalization.Scenarios/MerchantPayout.Finalization.Scenarios.csproj -c Release

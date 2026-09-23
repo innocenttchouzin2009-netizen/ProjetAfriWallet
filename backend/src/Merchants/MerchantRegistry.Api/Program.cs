@@ -4,14 +4,29 @@ using AfriWallet.Merchants.Registry.Application.Commands;
 using AfriWallet.Merchants.Registry.Application.Services;
 using AfriWallet.Merchants.Registry.Domain.Profiles;
 using AfriWallet.Merchants.Registry.Infrastructure;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddSingleton<IMerchantRepository, InMemoryMerchantRepository>();
-builder.Services.AddSingleton<IMerchantAuditStore, InMemoryMerchantAuditStore>();
+
+var merchantRegistryConnectionString =
+    builder.Configuration.GetConnectionString("MerchantRegistryDatabase") ??
+    Environment.GetEnvironmentVariable("AFW_MERCHANT_REGISTRY_DB_CONNECTION_STRING") ??
+    "Data Source=merchant-registry.db";
+
+builder.Services.AddDbContext<MerchantRegistryDbContext>(options =>
+    options.UseSqlite(merchantRegistryConnectionString));
+builder.Services.AddScoped<IMerchantRepository, EfMerchantRepository>();
+builder.Services.AddScoped<IMerchantAuditStore, EfMerchantAuditStore>();
 builder.Services.AddSingleton<IMerchantClock, SystemMerchantClock>();
-builder.Services.AddSingleton<MerchantRegistryService>();
+builder.Services.AddScoped<MerchantRegistryService>();
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    scope.ServiceProvider.GetRequiredService<MerchantRegistryDbContext>().Database.EnsureCreated();
+}
+
 const string Actor = "afriwallet-merchant-registry-system";
 
 app.MapGet("/health", () => Results.Ok(new

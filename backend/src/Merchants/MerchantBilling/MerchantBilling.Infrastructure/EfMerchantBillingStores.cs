@@ -93,11 +93,12 @@ public sealed class EfMerchantBillingAuditStore(MerchantBillingDbContext db)
     {
         var rows = await db.Audit.AsNoTracking()
             .Where(x => x.HandoffId == handoffId)
-            .OrderBy(x => x.OccurredAtUtc)
-            .ThenBy(x => x.EventId)
             .ToListAsync(cancellationToken);
 
-        return rows.Select(x => new MerchantBillingAuditEvent(
+        return rows
+            .OrderBy(x => x.OccurredAtUtc)
+            .ThenBy(x => x.EventId)
+            .Select(x => new MerchantBillingAuditEvent(
             x.EventId,
             x.HandoffId,
             x.CaptureExecutionId,

@@ -22,6 +22,42 @@ public sealed class Merchant
         UpdatedAtUtc = createdAtUtc;
     }
 
+    public static Merchant Restore(
+        MerchantId merchantId,
+        string ownerAwid,
+        BusinessProfile profile,
+        MerchantStatus status,
+        IEnumerable<MerchantCapability> capabilities,
+        DateTimeOffset createdAtUtc,
+        DateTimeOffset updatedAtUtc,
+        DateTimeOffset? closedAtUtc)
+    {
+        if (!Enum.IsDefined(status))
+            throw new ArgumentOutOfRangeException(nameof(status));
+        if (createdAtUtc.Offset != TimeSpan.Zero || updatedAtUtc.Offset != TimeSpan.Zero ||
+            (closedAtUtc is not null && closedAtUtc.Value.Offset != TimeSpan.Zero))
+            throw new ArgumentException("Merchant timestamps must be UTC.");
+        if (updatedAtUtc < createdAtUtc)
+            throw new ArgumentException("Updated timestamp cannot precede creation.");
+
+        var merchant = new Merchant(merchantId, ownerAwid, profile, createdAtUtc)
+        {
+            Status = status,
+            UpdatedAtUtc = updatedAtUtc,
+            ClosedAtUtc = closedAtUtc
+        };
+
+        merchant._capabilities.Clear();
+        foreach (var capability in capabilities.Distinct())
+        {
+            if (!Enum.IsDefined(capability))
+                throw new ArgumentOutOfRangeException(nameof(capabilities));
+            merchant._capabilities.Add(capability);
+        }
+
+        return merchant;
+    }
+
     public MerchantId MerchantId { get; }
     public string OwnerAwid { get; }
     public MerchantStatus Status { get; private set; }

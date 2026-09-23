@@ -1,0 +1,64 @@
+name: AFW-BE-MERCHANT-REGISTRY-DURABILITY-1 Durable Merchant Registry
+
+on:
+  push:
+    branches:
+      - feature/backend-merchant-registry-durability-1
+    paths:
+      - 'backend/src/Merchants/MerchantRegistry.Domain/**'
+      - 'backend/src/Merchants/MerchantRegistry.Application/**'
+      - 'backend/src/Merchants/MerchantRegistry.Infrastructure/**'
+      - 'backend/src/Merchants/MerchantRegistry.Api/**'
+      - 'backend/tests/MerchantRegistry.Scenarios/**'
+      - 'backend/tests/MerchantRegistry.Durability.Scenarios/**'
+      - '.github/workflows/backend-merchant-registry-durability-1.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'backend/src/Merchants/MerchantRegistry.Domain/**'
+      - 'backend/src/Merchants/MerchantRegistry.Application/**'
+      - 'backend/src/Merchants/MerchantRegistry.Infrastructure/**'
+      - 'backend/src/Merchants/MerchantRegistry.Api/**'
+      - 'backend/tests/MerchantRegistry.Scenarios/**'
+      - 'backend/tests/MerchantRegistry.Durability.Scenarios/**'
+      - '.github/workflows/backend-merchant-registry-durability-1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate durable merchant registry
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build Merchant Registry Domain
+        run: dotnet build backend/src/Merchants/MerchantRegistry.Domain/MerchantRegistry.Domain.csproj --configuration Release --nologo
+
+      - name: Build Merchant Registry Application
+        run: dotnet build backend/src/Merchants/MerchantRegistry.Application/MerchantRegistry.Application.csproj --configuration Release --nologo
+
+      - name: Build Merchant Registry Infrastructure
+        run: dotnet build backend/src/Merchants/MerchantRegistry.Infrastructure/MerchantRegistry.Infrastructure.csproj --configuration Release --nologo
+
+      - name: Build Merchant Registry API
+        run: dotnet build backend/src/Merchants/MerchantRegistry.Api/MerchantRegistry.Api.csproj --configuration Release --nologo
+
+      - name: Run existing Merchant Registry scenarios
+        run: dotnet run --project backend/tests/MerchantRegistry.Scenarios/MerchantRegistry.Scenarios.csproj --configuration Release
+
+      - name: Run Merchant Registry durability scenarios
+        run: dotnet run --project backend/tests/MerchantRegistry.Durability.Scenarios/MerchantRegistry.Durability.Scenarios.csproj --configuration Release
+
+      - name: Verify git diff
+        run: git diff --check

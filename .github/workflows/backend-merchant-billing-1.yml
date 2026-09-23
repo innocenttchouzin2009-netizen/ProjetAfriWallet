@@ -1,0 +1,64 @@
+name: AFW-BE-MERCHANT-BILLING-1 Durable Capture to Receivable Handoff
+
+on:
+  push:
+    branches:
+      - feature/backend-merchant-billing-1
+    paths:
+      - 'backend/src/Merchants/MerchantBilling/**'
+      - 'backend/src/Merchants/MerchantCapture/**'
+      - 'backend/src/Merchants/MerchantReceivables/**'
+      - 'backend/tests/MerchantBilling.Scenarios/**'
+      - 'backend/tests/MerchantCapture.Scenarios/**'
+      - 'backend/tests/MerchantReceivables.Scenarios/**'
+      - '.github/workflows/backend-merchant-billing-1.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'backend/src/Merchants/MerchantBilling/**'
+      - 'backend/src/Merchants/MerchantCapture/**'
+      - 'backend/src/Merchants/MerchantReceivables/**'
+      - 'backend/tests/MerchantBilling.Scenarios/**'
+      - 'backend/tests/MerchantCapture.Scenarios/**'
+      - 'backend/tests/MerchantReceivables.Scenarios/**'
+      - '.github/workflows/backend-merchant-billing-1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate durable merchant billing handoff
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build Merchant Billing domain
+        run: dotnet build backend/src/Merchants/MerchantBilling/MerchantBilling.Domain/MerchantBilling.Domain.csproj --configuration Release --nologo
+
+      - name: Build Merchant Billing application
+        run: dotnet build backend/src/Merchants/MerchantBilling/MerchantBilling.Application/MerchantBilling.Application.csproj --configuration Release --nologo
+
+      - name: Build Merchant Billing infrastructure
+        run: dotnet build backend/src/Merchants/MerchantBilling/MerchantBilling.Infrastructure/MerchantBilling.Infrastructure.csproj --configuration Release --nologo
+
+      - name: Run Merchant Capture regression
+        run: dotnet run --project backend/tests/MerchantCapture.Scenarios/MerchantCapture.Scenarios.csproj --configuration Release
+
+      - name: Run Merchant Receivables regression
+        run: dotnet run --project backend/tests/MerchantReceivables.Scenarios/MerchantReceivables.Scenarios.csproj --configuration Release
+
+      - name: Run Merchant Billing handoff scenarios
+        run: dotnet run --project backend/tests/MerchantBilling.Scenarios/MerchantBilling.Scenarios.csproj --configuration Release
+
+      - name: Verify diff whitespace
+        run: git diff --check HEAD^ HEAD

@@ -8,6 +8,8 @@ public sealed class MerchantPayoutDbContext(DbContextOptions<MerchantPayoutDbCon
     public DbSet<MerchantPayoutDestinationEntity> Destinations => Set<MerchantPayoutDestinationEntity>();
     public DbSet<MerchantPayoutExecutionEntity> Payouts => Set<MerchantPayoutExecutionEntity>();
     public DbSet<MerchantPayoutAuditEntity> Audit => Set<MerchantPayoutAuditEntity>();
+    public DbSet<MerchantPayoutProviderResultEntity> ProviderResults => Set<MerchantPayoutProviderResultEntity>();
+    public DbSet<MerchantPayoutReconciliationEntity> Reconciliations => Set<MerchantPayoutReconciliationEntity>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -48,6 +50,27 @@ public sealed class MerchantPayoutDbContext(DbContextOptions<MerchantPayoutDbCon
             entity.Property(x => x.EventType).HasMaxLength(64).IsRequired();
             entity.Property(x => x.Actor).HasMaxLength(256).IsRequired();
             entity.HasIndex(x => new { x.PayoutId, x.OccurredAtUtc });
+        });
+
+        builder.Entity<MerchantPayoutProviderResultEntity>(entity =>
+        {
+            entity.ToTable("MerchantPayoutProviderResults");
+            entity.HasKey(x => x.ResultId);
+            entity.Property(x => x.MerchantId).HasMaxLength(128).IsRequired();
+            entity.Property(x => x.ProviderReference).HasMaxLength(256);
+            entity.Property(x => x.FailureCode).HasMaxLength(128);
+            entity.Property(x => x.Currency).HasMaxLength(3).IsRequired();
+            entity.HasIndex(x => new { x.PayoutId, x.ObservedAtUtc });
+        });
+
+        builder.Entity<MerchantPayoutReconciliationEntity>(entity =>
+        {
+            entity.ToTable("MerchantPayoutReconciliations");
+            entity.HasKey(x => x.ReconciliationId);
+            entity.Property(x => x.MerchantId).HasMaxLength(128).IsRequired();
+            entity.Property(x => x.ReasonCode).HasMaxLength(128).IsRequired();
+            entity.HasIndex(x => new { x.PayoutId, x.EvaluatedAtUtc });
+            entity.HasIndex(x => x.ResultId).IsUnique();
         });
     }
 }
@@ -101,4 +124,29 @@ public sealed class MerchantPayoutAuditEntity
     public string Actor { get; set; } = string.Empty;
     public DateTimeOffset OccurredAtUtc { get; set; }
     public string MetadataJson { get; set; } = "{}";
+}
+
+
+public sealed class MerchantPayoutProviderResultEntity
+{
+    public Guid ResultId { get; set; }
+    public Guid PayoutId { get; set; }
+    public string MerchantId { get; set; } = string.Empty;
+    public int Status { get; set; }
+    public string? ProviderReference { get; set; }
+    public string? FailureCode { get; set; }
+    public long AmountMinor { get; set; }
+    public string Currency { get; set; } = string.Empty;
+    public DateTimeOffset ObservedAtUtc { get; set; }
+}
+
+public sealed class MerchantPayoutReconciliationEntity
+{
+    public Guid ReconciliationId { get; set; }
+    public Guid PayoutId { get; set; }
+    public Guid ResultId { get; set; }
+    public string MerchantId { get; set; } = string.Empty;
+    public int Status { get; set; }
+    public string ReasonCode { get; set; } = string.Empty;
+    public DateTimeOffset EvaluatedAtUtc { get; set; }
 }

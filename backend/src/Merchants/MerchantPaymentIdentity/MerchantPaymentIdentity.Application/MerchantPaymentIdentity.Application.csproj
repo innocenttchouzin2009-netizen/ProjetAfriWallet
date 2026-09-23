@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\MerchantPaymentIdentity.Domain\MerchantPaymentIdentity.Domain.csproj" />
+    <ProjectReference Include="..\..\MerchantRegistry.Application\MerchantRegistry.Application.csproj" />
+    <ProjectReference Include="..\..\MerchantRegistry.Domain\MerchantRegistry.Domain.csproj" />
+    <ProjectReference Include="..\..\..\Wallet\Wallet.Application\Wallet.Application.csproj" />
+    <ProjectReference Include="..\..\..\Wallet\Wallet.Domain\Wallet.Domain.csproj" />
+  </ItemGroup>
+</Project>

@@ -18,6 +18,7 @@
     <ProjectReference Include="../../Merchants/MerchantTeamAccess/MerchantTeamAccess.Infrastructure/MerchantTeamAccess.Infrastructure.csproj" />
     <ProjectReference Include="../../Merchants/MerchantPayout/MerchantPayout.Application/MerchantPayout.Application.csproj" />
     <ProjectReference Include="../../Merchants/MerchantPayout/MerchantPayout.Infrastructure/MerchantPayout.Infrastructure.csproj" />
+    <ProjectReference Include="../../Merchants/MerchantPaymentIdentity/MerchantPaymentIdentity.Infrastructure/MerchantPaymentIdentity.Infrastructure.csproj" />
     <ProjectReference Include="../../Notifications/Notifications.Application/Notifications.Application.csproj" />
     <ProjectReference Include="../../Notifications/Notifications.Persistence/Notifications.Persistence.csproj" />
     <ProjectReference Include="../../P2P/P2P.Application/P2P.Application.csproj" />

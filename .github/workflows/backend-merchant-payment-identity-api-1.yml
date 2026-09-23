@@ -1,0 +1,35 @@
+name: AFW-BE-MERCHANT-PAYMENT-IDENTITY-API-1
+
+on:
+  push:
+    branches: [feature/backend-merchant-payment-identity-api-1]
+    paths:
+      - 'backend/src/IdentityService/IdentityService.Api/MerchantPaymentIdentity/**'
+      - 'backend/src/IdentityService/IdentityService.Api/Program.cs'
+      - 'backend/tests/MerchantPaymentIdentity.Http.Scenarios/**'
+      - '.github/workflows/backend-merchant-payment-identity-api-1.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'backend/src/IdentityService/IdentityService.Api/MerchantPaymentIdentity/**'
+      - 'backend/src/IdentityService/IdentityService.Api/Program.cs'
+      - 'backend/tests/MerchantPaymentIdentity.Http.Scenarios/**'
+      - '.github/workflows/backend-merchant-payment-identity-api-1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Build Identity API
+        run: dotnet build backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj --configuration Release --nologo
+      - name: Run Merchant Payment Identity HTTP scenarios
+        run: dotnet run --project backend/tests/MerchantPaymentIdentity.Http.Scenarios/MerchantPaymentIdentity.Http.Scenarios.csproj --configuration Release

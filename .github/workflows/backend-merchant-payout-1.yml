@@ -1,0 +1,56 @@
+name: AFW-BE-MERCHANT-PAYOUT-1 Durable Merchant Payout Execution Foundation
+
+on:
+  push:
+    branches:
+      - feature/backend-merchant-payout-1
+    paths:
+      - 'backend/src/Merchants/MerchantPayout/**'
+      - 'backend/src/Merchants/MerchantCapture/**'
+      - 'backend/src/Merchants/MerchantSettlement/**'
+      - 'backend/src/FinancialPlatform/Settlement/**'
+      - 'backend/tests/MerchantPayout.Scenarios/**'
+      - 'backend/tests/MerchantCapture.Scenarios/**'
+      - 'backend/tests/MerchantSettlementDurability.Scenarios/**'
+      - 'backend/tests/Settlement.LedgerBacked.Scenarios/**'
+      - '.github/workflows/backend-merchant-payout-1.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'backend/src/Merchants/MerchantPayout/**'
+      - 'backend/src/Merchants/MerchantCapture/**'
+      - 'backend/src/Merchants/MerchantSettlement/**'
+      - 'backend/src/FinancialPlatform/Settlement/**'
+      - 'backend/tests/MerchantPayout.Scenarios/**'
+      - 'backend/tests/MerchantCapture.Scenarios/**'
+      - 'backend/tests/MerchantSettlementDurability.Scenarios/**'
+      - 'backend/tests/Settlement.LedgerBacked.Scenarios/**'
+      - '.github/workflows/backend-merchant-payout-1.yml'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Validate durable merchant payout execution foundation
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Build Merchant Payout Domain
+        run: dotnet build backend/src/Merchants/MerchantPayout/MerchantPayout.Domain/MerchantPayout.Domain.csproj -c Release --nologo
+      - name: Build Merchant Payout Application
+        run: dotnet build backend/src/Merchants/MerchantPayout/MerchantPayout.Application/MerchantPayout.Application.csproj -c Release --nologo
+      - name: Build Merchant Payout Infrastructure
+        run: dotnet build backend/src/Merchants/MerchantPayout/MerchantPayout.Infrastructure/MerchantPayout.Infrastructure.csproj -c Release --nologo
+      - name: Run Merchant Payout scenarios
+        run: dotnet run --project backend/tests/MerchantPayout.Scenarios/MerchantPayout.Scenarios.csproj -c Release
+      - name: Run Merchant Capture regression
+        run: dotnet run --project backend/tests/MerchantCapture.Scenarios/MerchantCapture.Scenarios.csproj -c Release
+      - name: Run Merchant Settlement durability regression
+        run: dotnet run --project backend/tests/MerchantSettlementDurability.Scenarios/MerchantSettlementDurability.Scenarios.csproj -c Release
+      - name: Run durable Settlement regression
+        run: dotnet run --project backend/tests/Settlement.LedgerBacked.Scenarios/Settlement.LedgerBacked.Scenarios.csproj -c Release

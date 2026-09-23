@@ -6,6 +6,8 @@ using AfriWallet.Fx.Application;
 using AfriWallet.Fx.Infrastructure;
 using AfriWallet.Ledger.Application;
 using AfriWallet.Ledger.Persistence;
+using AfriWallet.Merchants.Payout.Application;
+using AfriWallet.Merchants.Payout.Infrastructure;
 using AfriWallet.P2P.Directory.Persistence;
 using AfriWallet.PaymentRequests.Webhooks;
 using AfriWallet.PaymentRequests.WebhookSubscriptions.Persistence;
@@ -22,6 +24,7 @@ using IdentityService.Api.Auth.Security;
 using IdentityService.Api.Balance;
 using IdentityService.Api.Fx;
 using IdentityService.Api.Ledger;
+using IdentityService.Api.MerchantPayouts;
 using IdentityService.Api.Notifications;
 using IdentityService.Api.P2P;
 using IdentityService.Api.PaymentRequests;
@@ -66,6 +69,10 @@ var paymentRequestWebhookSubscriptionsConnectionString = builder.Configuration.G
     Environment.GetEnvironmentVariable("AFW_PAYMENT_REQUEST_WEBHOOK_SUBSCRIPTIONS_DB_CONNECTION_STRING") ??
     "Data Source=payment-request-webhook-subscriptions.db";
 
+var merchantPayoutConnectionString = builder.Configuration.GetConnectionString("MerchantPayoutDatabase") ??
+    Environment.GetEnvironmentVariable("AFW_MERCHANT_PAYOUT_DB_CONNECTION_STRING") ??
+    "Data Source=merchant-payout.db";
+
 var notificationsConnectionString = builder.Configuration.GetConnectionString("NotificationsDatabase") ??
     Environment.GetEnvironmentVariable("AFW_NOTIFICATIONS_DB_CONNECTION_STRING") ??
     "Data Source=notifications-inbox.db";
@@ -86,6 +93,8 @@ builder.Services.AddDbContext<WalletDbContext>(options =>
     options.UseSqlite(walletConnectionString));
 builder.Services.AddDbContext<LedgerDbContext>(options =>
     options.UseSqlite(ledgerConnectionString));
+builder.Services.AddDbContext<MerchantPayoutDbContext>(options =>
+    options.UseSqlite(merchantPayoutConnectionString));
 
 builder.Services.AddSingleton(jwtOptions);
 builder.Services.AddSingleton<IClock, SystemClock>();
@@ -124,6 +133,11 @@ builder.Services.AddAuthoritativeP2PRecipientDirectory(recipientDirectoryConnect
 builder.Services.AddPaymentRequests(paymentRequestsConnectionString, builder.Configuration);
 builder.Services.AddDbContext<PaymentRequestWebhookSubscriptionDbContext>(options => options.UseSqlite(paymentRequestWebhookSubscriptionsConnectionString));
 builder.Services.AddScoped<IPaymentRequestWebhookSubscriptionRegistry, EfPaymentRequestWebhookSubscriptionRegistry>();
+builder.Services.AddScoped<IMerchantPayoutRepository, EfMerchantPayoutRepository>();
+builder.Services.AddScoped<IMerchantPayoutProviderResultStore, EfMerchantPayoutProviderResultStore>();
+builder.Services.AddScoped<IMerchantPayoutReconciliationStore, EfMerchantPayoutReconciliationStore>();
+builder.Services.AddSingleton<MerchantPayoutReconciliationPolicy>();
+builder.Services.AddScoped<MerchantPayoutReconciliationService>();
 builder.Services.AddScoped<IPaymentRequestWebhookSubscriptionAuditStore, EfPaymentRequestWebhookSubscriptionAuditStore>();
 builder.Services.AddScoped<IPaymentRequestWebhookDeliveryAttemptStore, EfPaymentRequestWebhookDeliveryAttemptStore>();
 builder.Services.AddScoped<IPaymentRequestWebhookSigningSecretResolver, EnvironmentPaymentRequestWebhookSigningSecretResolver>();
@@ -240,6 +254,7 @@ app.MapPaymentRequestHistoryEndpoints();
 app.MapPaymentRequestEventOutboxOperationalEndpoints();
 app.MapPaymentRequestWebhookSubscriptionManagementEndpoints();
 app.MapPaymentRequestWebhookSubscriptionOperationsEndpoints();
+app.MapMerchantPayoutReconciliationEndpoints();
 app.MapNotificationEndpoints();
 app.MapPushDeviceEndpoints();
 app.MapNotificationPreferenceEndpoints();

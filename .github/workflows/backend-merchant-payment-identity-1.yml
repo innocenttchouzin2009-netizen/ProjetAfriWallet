@@ -1,0 +1,63 @@
+name: AFW-BE-MERCHANT-PAYMENT-IDENTITY-1 Merchant AfWal ID Registry
+
+on:
+  push:
+    branches:
+      - feature/backend-merchant-payment-identity-1
+    paths:
+      - 'backend/src/Merchants/MerchantPaymentIdentity/**'
+      - 'backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj'
+      - 'backend/src/IdentityService/IdentityService.Api/Program.cs'
+      - 'backend/tests/MerchantPaymentIdentity.Scenarios/**'
+      - '.github/workflows/backend-merchant-payment-identity-1.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'backend/src/Merchants/MerchantPaymentIdentity/**'
+      - 'backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj'
+      - 'backend/src/IdentityService/IdentityService.Api/Program.cs'
+      - 'backend/tests/MerchantPaymentIdentity.Scenarios/**'
+      - '.github/workflows/backend-merchant-payment-identity-1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate Merchant AfWal ID durable resolution
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build Merchant Payment Identity Domain
+        run: dotnet build backend/src/Merchants/MerchantPaymentIdentity/MerchantPaymentIdentity.Domain/MerchantPaymentIdentity.Domain.csproj --configuration Release --nologo
+
+      - name: Build Merchant Payment Identity Application
+        run: dotnet build backend/src/Merchants/MerchantPaymentIdentity/MerchantPaymentIdentity.Application/MerchantPaymentIdentity.Application.csproj --configuration Release --nologo
+
+      - name: Build Merchant Payment Identity Infrastructure
+        run: dotnet build backend/src/Merchants/MerchantPaymentIdentity/MerchantPaymentIdentity.Infrastructure/MerchantPaymentIdentity.Infrastructure.csproj --configuration Release --nologo
+
+      - name: Build IdentityService composition
+        run: dotnet build backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj --configuration Release --nologo
+
+      - name: Run Merchant Payment Identity scenarios
+        run: dotnet run --project backend/tests/MerchantPaymentIdentity.Scenarios/MerchantPaymentIdentity.Scenarios.csproj --configuration Release
+
+      - name: Run Merchant Registry durability regression
+        run: dotnet run --project backend/tests/MerchantRegistry.Durability.Scenarios/MerchantRegistry.Durability.Scenarios.csproj --configuration Release
+
+      - name: Run Wallet persistence regression
+        run: dotnet run --project backend/tests/Wallet.Persistence.Scenarios/Wallet.Persistence.Scenarios.csproj --configuration Release
+
+      - name: Verify git diff
+        run: git diff --check

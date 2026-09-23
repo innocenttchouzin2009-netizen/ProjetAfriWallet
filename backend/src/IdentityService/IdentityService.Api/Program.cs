@@ -13,6 +13,7 @@ using AfriWallet.Merchants.TeamAccess.Infrastructure;
 using IdentityService.Api.MerchantTeamAccess;
 using AfriWallet.Merchants.Payout.Application;
 using AfriWallet.Merchants.Payout.Infrastructure;
+using AfriWallet.Merchants.PaymentIdentity.Infrastructure;
 using AfriWallet.P2P.Directory.Persistence;
 using AfriWallet.PaymentRequests.Webhooks;
 using AfriWallet.PaymentRequests.WebhookSubscriptions.Persistence;
@@ -86,6 +87,10 @@ var merchantTeamAccessConnectionString = builder.Configuration.GetConnectionStri
     Environment.GetEnvironmentVariable("AFW_MERCHANT_TEAM_ACCESS_DB_CONNECTION_STRING") ??
     "Data Source=merchant-team-access.db";
 
+var merchantPaymentIdentityConnectionString = builder.Configuration.GetConnectionString("MerchantPaymentIdentityDatabase") ??
+    Environment.GetEnvironmentVariable("AFW_MERCHANT_PAYMENT_IDENTITY_DB_CONNECTION_STRING") ??
+    "Data Source=merchant-payment-identity.db";
+
 var notificationsConnectionString = builder.Configuration.GetConnectionString("NotificationsDatabase") ??
     Environment.GetEnvironmentVariable("AFW_NOTIFICATIONS_DB_CONNECTION_STRING") ??
     "Data Source=notifications-inbox.db";
@@ -156,6 +161,7 @@ builder.Services.AddScoped<IMerchantOwnerReader, MerchantRegistryOwnerReader>();
 builder.Services.AddScoped<IMerchantTeamRepository, EfMerchantTeamRepository>();
 builder.Services.AddScoped<IMerchantTeamAuditStore, EfMerchantTeamAuditStore>();
 builder.Services.AddScoped<MerchantTeamAccessService>();
+builder.Services.AddMerchantPaymentIdentity(merchantPaymentIdentityConnectionString);
 builder.Services.AddScoped<IMerchantPayoutProviderResultStore, EfMerchantPayoutProviderResultStore>();
 builder.Services.AddScoped<IMerchantPayoutReconciliationStore, EfMerchantPayoutReconciliationStore>();
 builder.Services.AddSingleton<MerchantPayoutReconciliationPolicy>();
@@ -262,6 +268,7 @@ using (var scope = app.Services.CreateScope())
 {
     scope.ServiceProvider.GetRequiredService<MerchantRegistryDbContext>().Database.EnsureCreated();
     scope.ServiceProvider.GetRequiredService<MerchantTeamAccessDbContext>().Database.EnsureCreated();
+    scope.ServiceProvider.GetRequiredService<MerchantPaymentIdentityDbContext>().Database.EnsureCreated();
 }
 
 app.UseAuthentication();

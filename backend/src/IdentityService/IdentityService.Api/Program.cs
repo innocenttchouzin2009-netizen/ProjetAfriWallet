@@ -6,6 +6,11 @@ using AfriWallet.Fx.Application;
 using AfriWallet.Fx.Infrastructure;
 using AfriWallet.Ledger.Application;
 using AfriWallet.Ledger.Persistence;
+using AfriWallet.Merchants.Registry.Application.Abstractions;
+using AfriWallet.Merchants.Registry.Infrastructure;
+using AfriWallet.Merchants.TeamAccess.Application;
+using AfriWallet.Merchants.TeamAccess.Infrastructure;
+using IdentityService.Api.MerchantTeamAccess;
 using AfriWallet.Merchants.Payout.Application;
 using AfriWallet.Merchants.Payout.Infrastructure;
 using AfriWallet.P2P.Directory.Persistence;
@@ -73,6 +78,14 @@ var merchantPayoutConnectionString = builder.Configuration.GetConnectionString("
     Environment.GetEnvironmentVariable("AFW_MERCHANT_PAYOUT_DB_CONNECTION_STRING") ??
     "Data Source=merchant-payout.db";
 
+var merchantRegistryConnectionString = builder.Configuration.GetConnectionString("MerchantRegistryDatabase") ??
+    Environment.GetEnvironmentVariable("AFW_MERCHANT_REGISTRY_DB_CONNECTION_STRING") ??
+    "Data Source=merchant-registry.db";
+
+var merchantTeamAccessConnectionString = builder.Configuration.GetConnectionString("MerchantTeamAccessDatabase") ??
+    Environment.GetEnvironmentVariable("AFW_MERCHANT_TEAM_ACCESS_DB_CONNECTION_STRING") ??
+    "Data Source=merchant-team-access.db";
+
 var notificationsConnectionString = builder.Configuration.GetConnectionString("NotificationsDatabase") ??
     Environment.GetEnvironmentVariable("AFW_NOTIFICATIONS_DB_CONNECTION_STRING") ??
     "Data Source=notifications-inbox.db";
@@ -95,6 +108,10 @@ builder.Services.AddDbContext<LedgerDbContext>(options =>
     options.UseSqlite(ledgerConnectionString));
 builder.Services.AddDbContext<MerchantPayoutDbContext>(options =>
     options.UseSqlite(merchantPayoutConnectionString));
+builder.Services.AddDbContext<MerchantRegistryDbContext>(options =>
+    options.UseSqlite(merchantRegistryConnectionString));
+builder.Services.AddDbContext<MerchantTeamAccessDbContext>(options =>
+    options.UseSqlite(merchantTeamAccessConnectionString));
 
 builder.Services.AddSingleton(jwtOptions);
 builder.Services.AddSingleton<IClock, SystemClock>();
@@ -134,6 +151,11 @@ builder.Services.AddPaymentRequests(paymentRequestsConnectionString, builder.Con
 builder.Services.AddDbContext<PaymentRequestWebhookSubscriptionDbContext>(options => options.UseSqlite(paymentRequestWebhookSubscriptionsConnectionString));
 builder.Services.AddScoped<IPaymentRequestWebhookSubscriptionRegistry, EfPaymentRequestWebhookSubscriptionRegistry>();
 builder.Services.AddScoped<IMerchantPayoutRepository, EfMerchantPayoutRepository>();
+builder.Services.AddScoped<IMerchantRepository, EfMerchantRepository>();
+builder.Services.AddScoped<IMerchantOwnerReader, MerchantRegistryOwnerReader>();
+builder.Services.AddScoped<IMerchantTeamRepository, EfMerchantTeamRepository>();
+builder.Services.AddScoped<IMerchantTeamAuditStore, EfMerchantTeamAuditStore>();
+builder.Services.AddScoped<MerchantTeamAccessService>();
 builder.Services.AddScoped<IMerchantPayoutProviderResultStore, EfMerchantPayoutProviderResultStore>();
 builder.Services.AddScoped<IMerchantPayoutReconciliationStore, EfMerchantPayoutReconciliationStore>();
 builder.Services.AddSingleton<MerchantPayoutReconciliationPolicy>();
@@ -236,6 +258,12 @@ builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
+using (var scope = app.Services.CreateScope())
+{
+    scope.ServiceProvider.GetRequiredService<MerchantRegistryDbContext>().Database.EnsureCreated();
+    scope.ServiceProvider.GetRequiredService<MerchantTeamAccessDbContext>().Database.EnsureCreated();
+}
+
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -255,6 +283,7 @@ app.MapPaymentRequestEventOutboxOperationalEndpoints();
 app.MapPaymentRequestWebhookSubscriptionManagementEndpoints();
 app.MapPaymentRequestWebhookSubscriptionOperationsEndpoints();
 app.MapMerchantPayoutReconciliationEndpoints();
+app.MapMerchantTeamAccessEndpoints();
 app.MapNotificationEndpoints();
 app.MapPushDeviceEndpoints();
 app.MapNotificationPreferenceEndpoints();

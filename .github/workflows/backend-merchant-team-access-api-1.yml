@@ -1,0 +1,79 @@
+name: AFW-BE-MERCHANT-TEAM-ACCESS-API-1 Protected Merchant Team Access API
+
+on:
+  push:
+    branches:
+      - feature/backend-merchant-team-access-api-1
+    paths:
+      - 'backend/src/IdentityService/IdentityService.Api/**'
+      - 'backend/src/Merchants/MerchantTeamAccess/**'
+      - 'backend/src/Merchants/MerchantRegistry/**'
+      - 'backend/src/P2P/P2P.Directory.Persistence/**'
+      - 'backend/src/P2P/P2P.Infrastructure/**'
+      - 'backend/tests/MerchantTeamAccess.Scenarios/**'
+      - 'backend/tests/MerchantTeamAccess.Http.Scenarios/**'
+      - 'backend/tests/MerchantRegistry.Durability.Scenarios/**'
+      - 'backend/tests/P2P.Directory.Persistence.Scenarios/**'
+      - '.github/workflows/backend-merchant-team-access-api-1.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'backend/src/IdentityService/IdentityService.Api/**'
+      - 'backend/src/Merchants/MerchantTeamAccess/**'
+      - 'backend/src/Merchants/MerchantRegistry/**'
+      - 'backend/src/P2P/P2P.Directory.Persistence/**'
+      - 'backend/src/P2P/P2P.Infrastructure/**'
+      - 'backend/tests/MerchantTeamAccess.Scenarios/**'
+      - 'backend/tests/MerchantTeamAccess.Http.Scenarios/**'
+      - 'backend/tests/MerchantRegistry.Durability.Scenarios/**'
+      - 'backend/tests/P2P.Directory.Persistence.Scenarios/**'
+      - '.github/workflows/backend-merchant-team-access-api-1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate protected merchant team access API
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build Merchant Team Access Domain
+        run: dotnet build backend/src/Merchants/MerchantTeamAccess/MerchantTeamAccess.Domain/MerchantTeamAccess.Domain.csproj --configuration Release --nologo
+
+      - name: Build Merchant Team Access Application
+        run: dotnet build backend/src/Merchants/MerchantTeamAccess/MerchantTeamAccess.Application/MerchantTeamAccess.Application.csproj --configuration Release --nologo
+
+      - name: Build Merchant Team Access Infrastructure
+        run: dotnet build backend/src/Merchants/MerchantTeamAccess/MerchantTeamAccess.Infrastructure/MerchantTeamAccess.Infrastructure.csproj --configuration Release --nologo
+
+      - name: Build Merchant Registry Infrastructure
+        run: dotnet build backend/src/Merchants/MerchantRegistry.Infrastructure/MerchantRegistry.Infrastructure.csproj --configuration Release --nologo
+
+      - name: Build IdentityService host
+        run: dotnet build backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj --configuration Release --nologo
+
+      - name: Run Merchant Team Access foundation scenarios
+        run: dotnet run --project backend/tests/MerchantTeamAccess.Scenarios/MerchantTeamAccess.Scenarios.csproj --configuration Release
+
+      - name: Run protected Merchant Team Access HTTP scenarios
+        run: dotnet run --project backend/tests/MerchantTeamAccess.Http.Scenarios/MerchantTeamAccess.Http.Scenarios.csproj --configuration Release
+
+      - name: Run Merchant Registry durability regression
+        run: dotnet run --project backend/tests/MerchantRegistry.Durability.Scenarios/MerchantRegistry.Durability.Scenarios.csproj --configuration Release
+
+      - name: Run AfWal recipient directory persistence regression
+        run: dotnet run --project backend/tests/P2P.Directory.Persistence.Scenarios/P2P.Directory.Persistence.Scenarios.csproj --configuration Release
+
+      - name: Verify git diff
+        run: git diff --check

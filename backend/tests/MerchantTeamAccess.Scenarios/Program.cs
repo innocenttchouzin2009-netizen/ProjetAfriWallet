@@ -34,8 +34,8 @@ try{
   var repo=new EfMerchantTeamRepository(restarted);var list=await repo.ListAsync("AFM-TEAM-001");
   Check("team membership survives restart",list.Count==3,ref passed);
  }
- Console.WriteLine($"
-AFW-BE-MERCHANT-TEAM-ACCESS-1 scenarios: PASS ({passed})");
+ Console.WriteLine();
+ Console.WriteLine($"AFW-BE-MERCHANT-TEAM-ACCESS-1 scenarios: PASS ({passed})");
 }finally{if(File.Exists(path))File.Delete(path);}
 sealed class OwnerReader(MerchantOwnerSnapshot value):IMerchantOwnerReader{public Task<MerchantOwnerSnapshot?> GetAsync(string id,CancellationToken ct=default){ct.ThrowIfCancellationRequested();return Task.FromResult<MerchantOwnerSnapshot?>(string.Equals(id,value.MerchantId,StringComparison.OrdinalIgnoreCase)?value:null);}}
 sealed class FixedTimeProvider(DateTimeOffset now):TimeProvider{public override DateTimeOffset GetUtcNow()=>now;}

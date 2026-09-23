@@ -12,6 +12,10 @@
     <ProjectReference Include="../../Fx/Fx.Infrastructure/Fx.Infrastructure.csproj" />
     <ProjectReference Include="../../Ledger/Ledger.Application/Ledger.Application.csproj" />
     <ProjectReference Include="../../Ledger/Ledger.Persistence/Ledger.Persistence.csproj" />
+    <ProjectReference Include="../../Merchants/MerchantRegistry.Application/MerchantRegistry.Application.csproj" />
+    <ProjectReference Include="../../Merchants/MerchantRegistry.Infrastructure/MerchantRegistry.Infrastructure.csproj" />
+    <ProjectReference Include="../../Merchants/MerchantTeamAccess/MerchantTeamAccess.Application/MerchantTeamAccess.Application.csproj" />
+    <ProjectReference Include="../../Merchants/MerchantTeamAccess/MerchantTeamAccess.Infrastructure/MerchantTeamAccess.Infrastructure.csproj" />
     <ProjectReference Include="../../Merchants/MerchantPayout/MerchantPayout.Application/MerchantPayout.Application.csproj" />
     <ProjectReference Include="../../Merchants/MerchantPayout/MerchantPayout.Infrastructure/MerchantPayout.Infrastructure.csproj" />
     <ProjectReference Include="../../Notifications/Notifications.Application/Notifications.Application.csproj" />

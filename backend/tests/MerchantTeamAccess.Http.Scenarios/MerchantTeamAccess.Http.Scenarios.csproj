@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/IdentityService/IdentityService.Api/IdentityService.Api.csproj" />
+    <ProjectReference Include="../../src/Merchants/MerchantRegistry.Application/MerchantRegistry.Application.csproj" />
+    <ProjectReference Include="../../src/Merchants/MerchantRegistry.Domain/MerchantRegistry.Domain.csproj" />
+    <ProjectReference Include="../../src/Merchants/MerchantRegistry.Infrastructure/MerchantRegistry.Infrastructure.csproj" />
+    <ProjectReference Include="../../src/Merchants/MerchantTeamAccess/MerchantTeamAccess.Application/MerchantTeamAccess.Application.csproj" />
+    <ProjectReference Include="../../src/Merchants/MerchantTeamAccess/MerchantTeamAccess.Domain/MerchantTeamAccess.Domain.csproj" />
+    <ProjectReference Include="../../src/Merchants/MerchantTeamAccess/MerchantTeamAccess.Infrastructure/MerchantTeamAccess.Infrastructure.csproj" />
+    <ProjectReference Include="../../src/P2P/P2P.Directory.Persistence/P2P.Directory.Persistence.csproj" />
+    <ProjectReference Include="../../src/P2P/P2P.Infrastructure/P2P.Infrastructure.csproj" />
+    <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="10.0.11" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.11" />
+  </ItemGroup>
+</Project>

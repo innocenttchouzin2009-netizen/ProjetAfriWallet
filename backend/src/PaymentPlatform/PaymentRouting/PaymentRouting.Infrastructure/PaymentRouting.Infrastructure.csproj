@@ -3,6 +3,7 @@
   <ItemGroup>
     <ProjectReference Include="..\PaymentRouting.Domain\PaymentRouting.Domain.csproj" />
     <ProjectReference Include="..\PaymentRouting.Application\PaymentRouting.Application.csproj" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.11" />
   </ItemGroup>
 
   <PropertyGroup>

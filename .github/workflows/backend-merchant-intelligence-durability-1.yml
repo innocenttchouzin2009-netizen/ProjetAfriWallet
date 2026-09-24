@@ -1,0 +1,22 @@
+name: AFW-BE-MERCHANT-INTELLIGENCE-DURABILITY-1
+on:
+  push:
+    branches: [feature/backend-merchant-intelligence-durability-1]
+    paths: ['backend/src/Merchants/MerchantIntelligence/**','backend/tests/MerchantIntelligence.Durability.Scenarios/**','.github/workflows/backend-merchant-intelligence-durability-1.yml']
+  pull_request:
+    branches: [main]
+    paths: ['backend/src/Merchants/MerchantIntelligence/**','backend/tests/MerchantIntelligence.Durability.Scenarios/**','.github/workflows/backend-merchant-intelligence-durability-1.yml']
+  workflow_dispatch:
+permissions: { contents: read }
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with: { dotnet-version: 10.0.x }
+      - name: Build Merchant Intelligence API
+        run: dotnet build backend/src/Merchants/MerchantIntelligence/MerchantIntelligence.Api/MerchantIntelligence.Api.csproj -c Release --nologo
+      - name: Run restart-safe durability scenarios
+        run: dotnet run --project backend/tests/MerchantIntelligence.Durability.Scenarios/MerchantIntelligence.Durability.Scenarios.csproj -c Release

@@ -42,7 +42,7 @@ public sealed class EfMerchantIntelligenceRepository(MerchantIntelligenceDbConte
     }
     public async Task<MerchantRiskFinding?> GetLatestAsync(string merchantId, CancellationToken cancellationToken=default)
     {
-        var entity=await db.Findings.AsNoTracking().Where(x=>x.MerchantId==merchantId.Trim()).OrderByDescending(x=>x.CreatedAtUtc).FirstOrDefaultAsync(cancellationToken);
+        var rows=await db.Findings.AsNoTracking().Where(x=>x.MerchantId==merchantId.Trim()).ToArrayAsync(cancellationToken);\n        var entity=rows.OrderByDescending(x=>x.CreatedAtUtc).FirstOrDefault();
         if(entity is null) return null;
         var metrics=JsonSerializer.Deserialize<MerchantCommerceMetrics>(entity.MetricsJson,Json) ?? throw new InvalidOperationException("Stored metrics are invalid.");
         var patterns=JsonSerializer.Deserialize<MerchantRiskPattern[]>(entity.PatternsJson,Json) ?? [];

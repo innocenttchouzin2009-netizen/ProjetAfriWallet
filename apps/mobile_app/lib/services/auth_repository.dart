@@ -29,10 +29,9 @@ class RemoteAuthRepository implements AuthRepository {
   RemoteAuthRepository(
     this._remoteDataSource,
     this._sessionStore, {
-    AuthErrorParser errorParser = const AuthErrorParser(),
+    this._errorParser = const AuthErrorParser(),
     DateTime Function()? utcNow,
-  })  : _errorParser = errorParser,
-        _utcNow = utcNow ?? DateTime.now;
+  }) : _utcNow = utcNow ?? DateTime.now;
 
   final AuthRemoteDataSource _remoteDataSource;
   final AuthSessionStore _sessionStore;

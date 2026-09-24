@@ -3,17 +3,26 @@ using AfriWallet.Fraud.Decision.Application.Abstractions;
 using AfriWallet.Fraud.Decision.Application.Policies;
 using AfriWallet.Fraud.Decision.Application.Services;
 using AfriWallet.Fraud.Decision.Infrastructure;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
+var connectionString = builder.Configuration.GetConnectionString("FraudDecision")
+    ?? "Data Source=fraud-decision.db";
+builder.Services.AddDbContext<FraudDecisionDbContext>(options => options.UseSqlite(connectionString));
 builder.Services.AddSingleton<IDeviceRiskDecisionReader, SandboxDeviceRiskDecisionReader>();
 builder.Services.AddSingleton<ITransactionFraudDecisionReader, SandboxTransactionFraudDecisionReader>();
-builder.Services.AddSingleton<IFraudDecisionRepository, InMemoryFraudDecisionRepository>();
-builder.Services.AddSingleton<IFraudDecisionAuditStore, InMemoryFraudDecisionAuditStore>();
+builder.Services.AddScoped<IFraudDecisionRepository, EfFraudDecisionRepository>();
+builder.Services.AddScoped<IFraudDecisionAuditStore, EfFraudDecisionAuditStore>();
 builder.Services.AddSingleton<IFraudDecisionClock, SystemFraudDecisionClock>();
 builder.Services.AddSingleton<FraudDecisionPolicy>();
-builder.Services.AddSingleton<FraudDecisionService>();
+builder.Services.AddScoped<FraudDecisionService>();
 
 var app = builder.Build();
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<FraudDecisionDbContext>();
+    await db.Database.EnsureCreatedAsync();
+}
 const string actor = "afriwallet-fraud-system";
 
 app.MapGet("/health", () => Results.Ok(new

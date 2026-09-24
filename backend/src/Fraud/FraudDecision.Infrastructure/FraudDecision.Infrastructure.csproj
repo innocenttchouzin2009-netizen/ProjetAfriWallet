@@ -8,5 +8,6 @@
   <ItemGroup>
     <ProjectReference Include="..\FraudDecision.Domain\FraudDecision.Domain.csproj" />
     <ProjectReference Include="..\FraudDecision.Application\FraudDecision.Application.csproj" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.11" />
   </ItemGroup>
 </Project>

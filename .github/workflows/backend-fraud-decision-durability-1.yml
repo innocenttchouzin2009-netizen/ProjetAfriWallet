@@ -1,0 +1,23 @@
+name: AFW-BE-FRAUD-DECISION-DURABILITY-1
+
+on:
+  push:
+    branches: [ feature/backend-fraud-decision-durability-1 ]
+  pull_request:
+    paths:
+      - 'backend/src/Fraud/FraudDecision.**'
+      - 'backend/tests/FraudDecision.**'
+      - '.github/workflows/backend-fraud-decision-durability-1.yml'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Build Fraud Decision API
+        run: dotnet build backend/src/Fraud/FraudDecision.Api/FraudDecision.Api.csproj -c Release --nologo
+      - name: Run Fraud Decision scenarios
+        run: dotnet run --project backend/tests/FraudDecision.Scenarios/FraudDecision.Scenarios.csproj -c Release

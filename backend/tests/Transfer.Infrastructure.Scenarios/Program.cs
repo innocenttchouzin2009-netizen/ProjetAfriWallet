@@ -36,6 +36,71 @@ await RunAsync("balance adapter delegates interpretation to availability policy"
     Assert(available == 5000 && policy.LastProjection?.NetMinor == 5000, "Balance policy delegation mismatch.");
 });
 
+await RunAsync("mobile wallet balance adapter resolves wallet to ledger-backed balance", async () =>
+{
+    var walletId = Guid.NewGuid();
+    var account = AccountId.New();
+    var counterparty = AccountId.New();
+    var resolver = new ConfiguredWalletLedgerAccountResolver(
+        new Dictionary<Guid, AccountId> { [walletId] = account });
+    var journal = JournalEntry.Create(
+        JournalEntryId.New(),
+        "EUR",
+        "SEED",
+        Guid.NewGuid(),
+        DateTimeOffset.UtcNow,
+        [new LedgerLine(counterparty, LedgerSide.Debit, 12_345), new LedgerLine(account, LedgerSide.Credit, 12_345)]);
+    var readService = new LedgerBackedBalanceReadService(
+        new FakeJournalReader([journal]),
+        new BalanceProjectionService());
+    var adapter = new LedgerBackedMobileWalletBalanceReader(
+        resolver,
+        readService,
+        new NonNegativeNetTransferFundsAvailabilityPolicy());
+
+    var available = await adapter.ReadAvailableMinorAsync(walletId, "eur");
+
+    Assert(available == 12_345, "Mobile wallet balance must come from the mapped ledger account.");
+});
+
+await RunAsync("mobile wallet balance adapter rejects unresolved ledger account", async () =>
+{
+    var adapter = new LedgerBackedMobileWalletBalanceReader(
+        new ConfiguredWalletLedgerAccountResolver(new Dictionary<Guid, AccountId>()),
+        new LedgerBackedBalanceReadService(new FakeJournalReader([]), new BalanceProjectionService()),
+        new NonNegativeNetTransferFundsAvailabilityPolicy());
+
+    await ExpectAsync<InvalidOperationException>(() =>
+        adapter.ReadAvailableMinorAsync(Guid.NewGuid(), "XAF"));
+});
+
+await RunAsync("mobile wallet balance adapter applies non-negative availability policy", async () =>
+{
+    var walletId = Guid.NewGuid();
+    var account = AccountId.New();
+    var counterparty = AccountId.New();
+    var resolver = new ConfiguredWalletLedgerAccountResolver(
+        new Dictionary<Guid, AccountId> { [walletId] = account });
+    var journal = JournalEntry.Create(
+        JournalEntryId.New(),
+        "XAF",
+        "SEED",
+        Guid.NewGuid(),
+        DateTimeOffset.UtcNow,
+        [new LedgerLine(account, LedgerSide.Debit, 750), new LedgerLine(counterparty, LedgerSide.Credit, 750)]);
+    var readService = new LedgerBackedBalanceReadService(
+        new FakeJournalReader([journal]),
+        new BalanceProjectionService());
+    var adapter = new LedgerBackedMobileWalletBalanceReader(
+        resolver,
+        readService,
+        new NonNegativeNetTransferFundsAvailabilityPolicy());
+
+    var available = await adapter.ReadAvailableMinorAsync(walletId, "xaf");
+
+    Assert(available == 0, "Available mobile balance must never expose a negative amount.");
+});
+
 await RunAsync("ledger adapter delegates correlation lookup and posting", async () =>
 {
     var repository = new FakeJournalRepository();

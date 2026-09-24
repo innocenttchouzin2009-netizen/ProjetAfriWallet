@@ -59,7 +59,7 @@ public sealed class EfMerchantIntelligenceAuditStore(MerchantIntelligenceDbConte
     }
     public async Task<IReadOnlyCollection<MerchantIntelligenceAuditEvent>> GetAsync(Guid findingId,CancellationToken cancellationToken=default)
     {
-        var rows=await db.AuditEvents.AsNoTracking().Where(x=>x.FindingId==findingId).OrderBy(x=>x.OccurredAtUtc).ToArrayAsync(cancellationToken);
-        return rows.Select(x=>new MerchantIntelligenceAuditEvent(x.EventId,x.FindingId,x.MerchantId,x.EventType,x.Actor,x.OccurredAtUtc,JsonSerializer.Deserialize<Dictionary<string,string>>(x.MetadataJson,Json) ?? new())).ToArray();
+        var rows=await db.AuditEvents.AsNoTracking().Where(x=>x.FindingId==findingId).ToArrayAsync(cancellationToken);
+        return rows.OrderBy(x=>x.OccurredAtUtc).Select(x=>new MerchantIntelligenceAuditEvent(x.EventId,x.FindingId,x.MerchantId,x.EventType,x.Actor,x.OccurredAtUtc,JsonSerializer.Deserialize<Dictionary<string,string>>(x.MetadataJson,Json) ?? new())).ToArray();
     }
 }

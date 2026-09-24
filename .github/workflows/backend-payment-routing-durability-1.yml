@@ -1,0 +1,23 @@
+name: AFW-BE-PAYMENT-ROUTING-DURABILITY-1
+
+on:
+  push:
+    branches: [ feature/backend-payment-routing-durability-1 ]
+  pull_request:
+    paths:
+      - 'backend/src/PaymentPlatform/PaymentRouting/**'
+      - 'backend/tests/PaymentRouting.Durability.Scenarios/**'
+      - '.github/workflows/backend-payment-routing-durability-1.yml'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Build Payment Routing API
+        run: dotnet build backend/src/PaymentPlatform/PaymentRouting/PaymentRouting.Api/PaymentRouting.Api.csproj --configuration Release
+      - name: Run restart-safe durability scenarios
+        run: dotnet run --project backend/tests/PaymentRouting.Durability.Scenarios/PaymentRouting.Durability.Scenarios.csproj --configuration Release

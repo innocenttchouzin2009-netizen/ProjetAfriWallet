@@ -1,0 +1,94 @@
+name: Mobile Beta2.2 Auth & Session Integration
+
+on:
+  push:
+    branches:
+      - feature/mobile-beta2.2
+    paths:
+      - 'apps/mobile_app/lib/models/auth_error.dart'
+      - 'apps/mobile_app/lib/models/auth_requests.dart'
+      - 'apps/mobile_app/lib/models/auth_session.dart'
+      - 'apps/mobile_app/lib/models/current_auth_session.dart'
+      - 'apps/mobile_app/lib/network/auth_error_parser.dart'
+      - 'apps/mobile_app/lib/services/auth_remote_data_source.dart'
+      - 'apps/mobile_app/lib/services/auth_repository.dart'
+      - 'apps/mobile_app/lib/services/secure_session_store.dart'
+      - 'apps/mobile_app/lib/services/secure_storage_adapter.dart'
+      - 'apps/mobile_app/test/auth_contract_test.dart'
+      - 'apps/mobile_app/test/auth_repository_remote_data_source_test.dart'
+      - 'apps/mobile_app/test/secure_session_store_test.dart'
+      - 'apps/mobile_app/pubspec.yaml'
+      - 'apps/mobile_app/pubspec.lock'
+      - '.github/workflows/mobile-beta2.2-auth-session-foundation.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'apps/mobile_app/lib/models/auth_error.dart'
+      - 'apps/mobile_app/lib/models/auth_requests.dart'
+      - 'apps/mobile_app/lib/models/auth_session.dart'
+      - 'apps/mobile_app/lib/models/current_auth_session.dart'
+      - 'apps/mobile_app/lib/network/auth_error_parser.dart'
+      - 'apps/mobile_app/lib/services/auth_remote_data_source.dart'
+      - 'apps/mobile_app/lib/services/auth_repository.dart'
+      - 'apps/mobile_app/lib/services/secure_session_store.dart'
+      - 'apps/mobile_app/lib/services/secure_storage_adapter.dart'
+      - 'apps/mobile_app/test/auth_contract_test.dart'
+      - 'apps/mobile_app/test/auth_repository_remote_data_source_test.dart'
+      - 'apps/mobile_app/test/secure_session_store_test.dart'
+      - 'apps/mobile_app/pubspec.yaml'
+      - 'apps/mobile_app/pubspec.lock'
+      - '.github/workflows/mobile-beta2.2-auth-session-foundation.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/mobile_app
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Flutter 3.47.2
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.2'
+          cache: true
+
+      - name: Flutter version
+        run: flutter --version
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Verify lockfile is synchronized
+        run: git diff --exit-code -- pubspec.lock
+
+      - name: Generate localizations
+        run: flutter gen-l10n
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test Beta2.2 auth contracts
+        run: flutter test test/auth_contract_test.dart
+
+      - name: Test Beta2.2 secure session store
+        run: flutter test test/secure_session_store_test.dart
+
+      - name: Test Beta2.2 auth repository integration
+        run: flutter test test/auth_repository_remote_data_source_test.dart
+
+      - name: Run complete Flutter test suite
+        run: flutter test
+
+      - name: Verify Beta2.2 diff
+        working-directory: .
+        run: git diff --check 3105b818e27fcc119397cb7f2bc28a5e4885f477..HEAD

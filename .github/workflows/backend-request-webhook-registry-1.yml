@@ -55,4 +55,3 @@ jobs:
 
       - name: Run Commit 9 webhook registry scenarios
         run: dotnet run --project backend/tests/PaymentRequests.WebhookRegistry.Scenarios/PaymentRequests.WebhookRegistry.Scenarios.csproj --configuration Release
-

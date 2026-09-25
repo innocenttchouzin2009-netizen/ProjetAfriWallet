@@ -151,6 +151,7 @@ builder.Services.AddSingleton<IFxQuoteProvider>(services =>
 builder.Services.AddSingleton<FxQuoteApplicationService>();
 
 builder.Services.AddInternalTransferModule(builder.Configuration);
+builder.Services.AddWalletOverview();
 builder.Services.AddP2PCore();
 builder.Services.AddAuthoritativeP2PRecipientDirectory(recipientDirectoryConnectionString);
 builder.Services.AddPaymentRequests(paymentRequestsConnectionString, builder.Configuration);

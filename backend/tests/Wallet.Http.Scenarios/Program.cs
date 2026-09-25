@@ -26,6 +26,7 @@ await RunAsync("unauthenticated wallet access returns 401", async () =>
 
 var clientA = CreateClient(app, ownerA);
 var clientB = CreateClient(app, ownerB);
+var balanceReader = app.Services.GetRequiredService<TestMobileWalletBalanceReader>();
 Guid walletId = Guid.Empty;
 
 await RunAsync("owner can create wallet", async () =>
@@ -36,6 +37,24 @@ await RunAsync("owner can create wallet", async () =>
     Assert(wallet is not null, "Created wallet response is required.");
     Assert(wallet!.OwnerId == ownerA, "Wallet owner must come from authenticated sub claim.");
     walletId = wallet.WalletId;
+    balanceReader.SetAvailableMinor(walletId, 12_345);
+});
+
+await RunAsync("wallet overview returns owner wallets with available balance", async () =>
+{
+    var response = await clientA.GetAsync("/api/v1/wallets/overview");
+    Assert(response.StatusCode == HttpStatusCode.OK, $"Expected 200, got {(int)response.StatusCode}.");
+
+    var overview = await response.Content.ReadFromJsonAsync<WalletOverviewResponse>();
+    Assert(overview is not null, "Wallet overview response is required.");
+    Assert(overview!.Wallets.Count == 1, "Owner overview must contain exactly one wallet.");
+
+    var item = overview.Wallets[0];
+    Assert(item.WalletId == walletId, "Overview wallet id mismatch.");
+    Assert(item.Currency == "XAF", "Overview currency mismatch.");
+    Assert(item.AvailableMinor == 12_345, "Overview available balance mismatch.");
+    Assert(item.Status == "ACTIVE", "Overview status mismatch.");
+    Assert(item.CountryCode == "CM", "Overview country code mismatch.");
 });
 
 await RunAsync("duplicate wallet is rejected", async () =>
@@ -57,6 +76,9 @@ await RunAsync("wallet ownership is concealed from another user", async () =>
 
     var list = await clientB.GetFromJsonAsync<WalletView[]>("/api/v1/wallets");
     Assert(list is not null && list.Length == 0, "Second user must not see first user's wallets.");
+
+    var overview = await clientB.GetFromJsonAsync<WalletOverviewResponse>("/api/v1/wallets/overview");
+    Assert(overview is not null && overview.Wallets.Count == 0, "Second user must not see first user's wallet overview.");
 
     var close = await clientB.PostAsync($"/api/v1/wallets/{walletId}/close", null);
     Assert(close.StatusCode == HttpStatusCode.NotFound, $"Expected 404 for foreign lifecycle action, got {(int)close.StatusCode}.");
@@ -92,7 +114,11 @@ static async Task<WebApplication> BuildAppAsync()
     builder.Services.AddAuthorization();
     builder.Services.AddSingleton<IWalletRepository, InMemoryWalletRepository>();
     builder.Services.AddSingleton<ISupportedCurrencyPolicy>(new FixedSupportedCurrencyPolicy("XAF", "EUR", "USD"));
+    builder.Services.AddSingleton<TestMobileWalletBalanceReader>();
+    builder.Services.AddSingleton<IMobileWalletBalanceReader>(services =>
+        services.GetRequiredService<TestMobileWalletBalanceReader>());
     builder.Services.AddScoped<WalletRegistryApplicationService>();
+    builder.Services.AddScoped<MobileWalletReadApplicationService>();
 
     var app = builder.Build();
     app.UseAuthentication();
@@ -156,6 +182,20 @@ sealed class InMemoryWalletRepository : IWalletRepository
         _wallets[wallet.Id.Value] = wallet;
         return Task.CompletedTask;
     }
+}
+
+sealed class TestMobileWalletBalanceReader : IMobileWalletBalanceReader
+{
+    private readonly Dictionary<Guid, long> _availableMinorByWallet = new();
+
+    public void SetAvailableMinor(Guid walletId, long availableMinor) =>
+        _availableMinorByWallet[walletId] = availableMinor;
+
+    public Task<long> ReadAvailableMinorAsync(
+        Guid walletId,
+        string currencyCode,
+        CancellationToken cancellationToken = default) =>
+        Task.FromResult(_availableMinorByWallet.GetValueOrDefault(walletId));
 }
 
 sealed class HeaderTestAuthHandler(

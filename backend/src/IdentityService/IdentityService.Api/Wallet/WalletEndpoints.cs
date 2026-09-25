@@ -12,6 +12,7 @@ public static class WalletEndpoints
 
         group.MapPost("/", CreateWalletAsync);
         group.MapGet("/", ListWalletsAsync);
+        group.MapGet("/overview", GetWalletOverviewAsync);
         group.MapGet("/{walletId:guid}", GetWalletAsync);
         group.MapPost("/{walletId:guid}/suspend", SuspendWalletAsync);
         group.MapPost("/{walletId:guid}/activate", ActivateWalletAsync);
@@ -53,6 +54,33 @@ public static class WalletEndpoints
 
         var result = await service.ListByOwnerAsync(userId, cancellationToken);
         return ToHttpResult(result, httpContext, Results.Ok);
+    }
+
+    private static async Task<IResult> GetWalletOverviewAsync(
+        ClaimsPrincipal principal,
+        MobileWalletReadApplicationService service,
+        HttpContext httpContext,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(principal, out var userId))
+        {
+            return Unauthorized(httpContext);
+        }
+
+        var result = await service.ListAsync(userId, cancellationToken);
+        return ToHttpResult(
+            result,
+            httpContext,
+            success => Results.Ok(
+                new WalletOverviewResponse(
+                    success.Wallets
+                        .Select(wallet => new WalletOverviewItemResponse(
+                            wallet.WalletId,
+                            wallet.Currency,
+                            wallet.AvailableMinor,
+                            wallet.Status,
+                            wallet.CountryCode))
+                        .ToArray())));
     }
 
     private static async Task<IResult> GetWalletAsync(

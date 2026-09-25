@@ -13,10 +13,14 @@ on:
       - 'apps/mobile_app/lib/services/auth_remote_data_source.dart'
       - 'apps/mobile_app/lib/services/auth_repository.dart'
       - 'apps/mobile_app/lib/services/secure_session_store.dart'
+      - 'apps/mobile_app/lib/services/auth_session_store.dart'
+      - 'apps/mobile_app/lib/services/auth_state_controller.dart'
       - 'apps/mobile_app/lib/services/secure_storage_adapter.dart'
       - 'apps/mobile_app/test/auth_contract_test.dart'
       - 'apps/mobile_app/test/auth_repository_remote_data_source_test.dart'
       - 'apps/mobile_app/test/secure_session_store_test.dart'
+      - 'apps/mobile_app/test/auth_session_store_test.dart'
+      - 'apps/mobile_app/test/auth_state_controller_test.dart'
       - 'apps/mobile_app/pubspec.yaml'
       - 'apps/mobile_app/pubspec.lock'
       - '.github/workflows/mobile-beta2.2-auth-session-foundation.yml'
@@ -32,10 +36,14 @@ on:
       - 'apps/mobile_app/lib/services/auth_remote_data_source.dart'
       - 'apps/mobile_app/lib/services/auth_repository.dart'
       - 'apps/mobile_app/lib/services/secure_session_store.dart'
+      - 'apps/mobile_app/lib/services/auth_session_store.dart'
+      - 'apps/mobile_app/lib/services/auth_state_controller.dart'
       - 'apps/mobile_app/lib/services/secure_storage_adapter.dart'
       - 'apps/mobile_app/test/auth_contract_test.dart'
       - 'apps/mobile_app/test/auth_repository_remote_data_source_test.dart'
       - 'apps/mobile_app/test/secure_session_store_test.dart'
+      - 'apps/mobile_app/test/auth_session_store_test.dart'
+      - 'apps/mobile_app/test/auth_state_controller_test.dart'
       - 'apps/mobile_app/pubspec.yaml'
       - 'apps/mobile_app/pubspec.lock'
       - '.github/workflows/mobile-beta2.2-auth-session-foundation.yml'
@@ -83,6 +91,12 @@ jobs:
       - name: Test Beta2.2 secure session store
         run: flutter test test/secure_session_store_test.dart
 
+      - name: Test Beta2.2 auth session store
+        run: flutter test test/auth_session_store_test.dart
+
+      - name: Test Beta2.2 auth state restoration
+        run: flutter test test/auth_state_controller_test.dart
+
       - name: Test Beta2.2 auth repository integration
         run: flutter test test/auth_repository_remote_data_source_test.dart
 
@@ -91,4 +105,4 @@ jobs:
 
       - name: Verify Beta2.2 diff
         working-directory: .
-        run: git diff --check 3105b818e27fcc119397cb7f2bc28a5e4885f477..HEAD
+        run: git diff --check cecde3bb4526c5b0d913907603e90a511e4ced8a..HEAD

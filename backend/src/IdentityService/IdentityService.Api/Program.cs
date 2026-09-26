@@ -135,6 +135,7 @@ builder.Services.AddScoped<AuthApplicationService>();
 builder.Services.AddScoped<IWalletRepository, EfWalletRepository>();
 builder.Services.AddSingleton<ISupportedCurrencyPolicy, ConfiguredSupportedCurrencyPolicy>();
 builder.Services.AddScoped<WalletRegistryApplicationService>();
+builder.Services.AddScoped<MobileWalletReadApplicationService>();
 
 builder.Services.AddScoped<IJournalRepository, EfJournalRepository>();
 builder.Services.AddScoped<LedgerPostingApplicationService>();

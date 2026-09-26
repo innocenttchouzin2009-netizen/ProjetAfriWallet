@@ -22,6 +22,9 @@ await RunAsync("unauthenticated wallet access returns 401", async () =>
 {
     var response = await anonymous.GetAsync("/api/v1/wallets");
     Assert(response.StatusCode == HttpStatusCode.Unauthorized, $"Expected 401, got {(int)response.StatusCode}.");
+
+    var mobile = await anonymous.GetAsync("/api/v1/wallets/mobile");
+    Assert(mobile.StatusCode == HttpStatusCode.Unauthorized, $"Expected mobile read 401, got {(int)mobile.StatusCode}.");
 });
 
 var clientA = CreateClient(app, ownerA);
@@ -36,6 +39,30 @@ await RunAsync("owner can create wallet", async () =>
     Assert(wallet is not null, "Created wallet response is required.");
     Assert(wallet!.OwnerId == ownerA, "Wallet owner must come from authenticated sub claim.");
     walletId = wallet.WalletId;
+});
+
+await RunAsync("mobile wallet read returns authenticated owner's balance projection", async () =>
+{
+    var response = await clientA.GetAsync("/api/v1/wallets/mobile");
+    Assert(response.StatusCode == HttpStatusCode.OK, $"Expected 200, got {(int)response.StatusCode}.");
+
+    var result = await response.Content.ReadFromJsonAsync<MobileWalletReadResult>();
+    Assert(result is not null, "Mobile wallet read response is required.");
+    Assert(result!.Wallets.Count == 1, "Owner A must see exactly one mobile wallet.");
+    Assert(result.Wallets[0].WalletId == walletId, "Mobile wallet id must match the authenticated owner's wallet.");
+    Assert(result.Wallets[0].Currency == "XAF", "Mobile wallet currency must be projected.");
+    Assert(result.Wallets[0].AvailableMinor == 125000, "Mobile wallet available balance must come from the balance reader.");
+    Assert(result.Wallets[0].Status == "ACTIVE", "Mobile wallet status must be projected.");
+    Assert(result.Wallets[0].CountryCode == "CM", "Mobile wallet country must be projected.");
+});
+
+await RunAsync("mobile wallet read remains isolated by authenticated owner", async () =>
+{
+    var response = await clientB.GetAsync("/api/v1/wallets/mobile");
+    Assert(response.StatusCode == HttpStatusCode.OK, $"Expected 200, got {(int)response.StatusCode}.");
+
+    var result = await response.Content.ReadFromJsonAsync<MobileWalletReadResult>();
+    Assert(result is not null && result.Wallets.Count == 0, "Owner B must not see owner A's mobile wallets.");
 });
 
 await RunAsync("duplicate wallet is rejected", async () =>
@@ -92,7 +119,9 @@ static async Task<WebApplication> BuildAppAsync()
     builder.Services.AddAuthorization();
     builder.Services.AddSingleton<IWalletRepository, InMemoryWalletRepository>();
     builder.Services.AddSingleton<ISupportedCurrencyPolicy>(new FixedSupportedCurrencyPolicy("XAF", "EUR", "USD"));
+    builder.Services.AddSingleton<IMobileWalletBalanceReader>(new FixedMobileWalletBalanceReader(125000));
     builder.Services.AddScoped<WalletRegistryApplicationService>();
+    builder.Services.AddScoped<MobileWalletReadApplicationService>();
 
     var app = builder.Build();
     app.UseAuthentication();
@@ -121,6 +150,15 @@ static void Assert(bool condition, string message)
     {
         throw new InvalidOperationException(message);
     }
+}
+
+sealed class FixedMobileWalletBalanceReader(long availableMinor) : IMobileWalletBalanceReader
+{
+    public Task<long> ReadAvailableMinorAsync(
+        Guid walletId,
+        string currencyCode,
+        CancellationToken cancellationToken = default) =>
+        Task.FromResult(availableMinor);
 }
 
 sealed class FixedSupportedCurrencyPolicy(params string[] supported) : ISupportedCurrencyPolicy

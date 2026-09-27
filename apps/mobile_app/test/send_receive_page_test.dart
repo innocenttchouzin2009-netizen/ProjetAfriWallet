@@ -52,6 +52,11 @@ void main() {
   });
 
   testWidgets('scanned P2P QR is submitted explicitly as QR recipient', (tester) async {
+    tester.view.physicalSize = const Size(1080, 1920);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
     final repository = _FakeTransferRepository();
 
     await tester.pumpWidget(MaterialApp(
@@ -73,11 +78,7 @@ void main() {
     await tester.enterText(find.widgetWithText(TextField, 'Montant'), '25');
     await tester.enterText(find.widgetWithText(TextField, 'Devise (EUR, XAF…)'), 'XAF');
     final continueButton = find.widgetWithText(FilledButton, 'Continuer');
-    await tester.scrollUntilVisible(
-      continueButton,
-      300,
-      scrollable: find.byType(Scrollable).first,
-    );
+    expect(continueButton, findsOneWidget);
     await tester.tap(continueButton);
     await tester.pumpAndSettle();
 

@@ -40,7 +40,7 @@ public sealed class TransactionTimelineProjectionService
             .Select(ProjectItem)
             .ToArray();
 
-        var nextBefore = hasMore && items.Length > 0
+        DateTimeOffset? nextBefore = hasMore && items.Length > 0
             ? items[^1].OccurredAt
             : null;
 

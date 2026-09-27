@@ -9,12 +9,14 @@ class SendReceivePage extends StatefulWidget {
   const SendReceivePage({
     super.key,
     required this.repository,
+    this.sourceWalletId,
     this.initialMode = SendReceiveMode.send,
     this.onContinue,
     this.onReturnToWallet,
   });
 
   final TransferRepository repository;
+  final String? sourceWalletId;
   final SendReceiveMode initialMode;
   final VoidCallback? onContinue;
   final VoidCallback? onReturnToWallet;
@@ -40,6 +42,12 @@ class _SendReceivePageState extends State<SendReceivePage> {
   }
 
   Future<void> _send() async {
+    final sourceWalletId = widget.sourceWalletId?.trim();
+    if (sourceWalletId == null || sourceWalletId.isEmpty) {
+      setState(() => _error = 'Sélectionnez un portefeuille source avant l’envoi.');
+      return;
+    }
+
     final payee = _payeeController.text.trim();
     final amount = double.tryParse(_amountController.text.replaceAll(',', '.'));
     final currency = _currencyController.text.trim().toUpperCase();
@@ -55,7 +63,7 @@ class _SendReceivePageState extends State<SendReceivePage> {
     });
     try {
       final receipt = await widget.repository.send(SendTransferRequest(
-        payerId: 'CURRENT-AUTHENTICATED-USER',
+        sourceWalletId: sourceWalletId,
         payeeId: payee,
         amountMinor: (amount * 100).round(),
         currencyCode: currency,

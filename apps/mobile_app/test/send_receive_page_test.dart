@@ -26,7 +26,12 @@ class _FakeTransferRepository implements TransferRepository {
 void main() {
   testWidgets('defaults to send mode and submits transfer through repository only', (tester) async {
     final repository = _FakeTransferRepository();
-    await tester.pumpWidget(MaterialApp(home: SendReceivePage(repository: repository)));
+    await tester.pumpWidget(MaterialApp(
+      home: SendReceivePage(
+        repository: repository,
+        sourceWalletId: 'WALLET-SOURCE-EUR',
+      ),
+    ));
 
     expect(find.text('Envoyer de l’argent'), findsOneWidget);
     await tester.enterText(find.widgetWithText(TextField, 'AfWal ID ou identifiant destinataire'), '@receiver');
@@ -34,9 +39,24 @@ void main() {
     await tester.tap(find.widgetWithText(FilledButton, 'Continuer'));
     await tester.pumpAndSettle();
 
+    expect(repository.lastRequest?.sourceWalletId, 'WALLET-SOURCE-EUR');
     expect(repository.lastRequest?.payeeId, '@receiver');
     expect(repository.lastRequest?.amountMinor, 1250);
     expect(find.textContaining('PI-TEST-001'), findsOneWidget);
+  });
+
+  testWidgets('refuses send when no source wallet is provided', (tester) async {
+    final repository = _FakeTransferRepository();
+    await tester.pumpWidget(MaterialApp(home: SendReceivePage(repository: repository)));
+
+    await tester.enterText(find.widgetWithText(TextField, 'AfWal ID ou identifiant destinataire'), '@receiver');
+    await tester.enterText(find.widgetWithText(TextField, 'Montant'), '12.50');
+    await tester.tap(find.widgetWithText(FilledButton, 'Continuer'));
+    await tester.pumpAndSettle();
+
+    expect(repository.lastRequest, isNull);
+    expect(find.byKey(const Key('send-error')), findsOneWidget);
+    expect(find.textContaining('portefeuille source'), findsOneWidget);
   });
 
   testWidgets('opens receive tab directly when receive mode is requested', (tester) async {
@@ -91,7 +111,12 @@ void main() {
   });
 
   testWidgets('unavailable repository never simulates transfer', (tester) async {
-    await tester.pumpWidget(const MaterialApp(home: SendReceivePage(repository: UnavailableTransferRepository())));
+    await tester.pumpWidget(const MaterialApp(
+      home: SendReceivePage(
+        repository: UnavailableTransferRepository(),
+        sourceWalletId: 'WALLET-SOURCE-EUR',
+      ),
+    ));
     await tester.enterText(find.widgetWithText(TextField, 'AfWal ID ou identifiant destinataire'), '@receiver');
     await tester.enterText(find.widgetWithText(TextField, 'Montant'), '10');
     await tester.tap(find.widgetWithText(FilledButton, 'Continuer'));

@@ -13,7 +13,7 @@ import 'package:mobile_app/services/transfer_repository.dart';
 
 void main() {
   group('AuthenticatedTransferRepository', () {
-    test('sends an AfWal ID transfer with the stored access token', () async {
+    test('sends an AfWal ID transfer with the explicit source wallet', () async {
       late http.Request captured;
       final apiClient = ApiClient(
         baseUrl: 'https://api.afwal.test',
@@ -40,7 +40,7 @@ void main() {
         _FakeAuthSessionStore(_storedSession()),
       );
       const request = SendTransferRequest(
-        payerId: '22222222-2222-2222-2222-222222222222',
+        sourceWalletId: '22222222-2222-2222-2222-222222222222',
         payeeId: '@recipient',
         amountMinor: 2500,
         currencyCode: 'XAF',
@@ -54,7 +54,7 @@ void main() {
       expect(captured.method, 'POST');
       expect(captured.url.path, '/api/v1/p2p/transfers');
       expect(captured.headers['Authorization'], 'Bearer access-secret');
-      expect(requestBody['sourceWalletId'], request.payerId);
+      expect(requestBody['sourceWalletId'], request.sourceWalletId);
       expect(requestBody['recipientKind'], 'afwal-id');
       expect(requestBody['recipientValue'], request.payeeId);
       expect(requestBody['currencyCode'], request.currencyCode);
@@ -89,7 +89,7 @@ void main() {
       await expectLater(
         repository.send(
           const SendTransferRequest(
-            payerId: '22222222-2222-2222-2222-222222222222',
+            sourceWalletId: '22222222-2222-2222-2222-222222222222',
             payeeId: '@recipient',
             amountMinor: 2500,
             currencyCode: 'XAF',

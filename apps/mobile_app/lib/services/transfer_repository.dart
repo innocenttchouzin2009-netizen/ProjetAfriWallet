@@ -48,7 +48,7 @@ class AuthenticatedTransferRepository implements TransferRepository {
     final response = await _remoteDataSource.executeTransfer(
       accessToken,
       P2PTransferRequest(
-        sourceWalletId: request.payerId,
+        sourceWalletId: request.sourceWalletId,
         recipientKind: P2PRecipientKind.afWalId,
         recipientValue: request.payeeId,
         currencyCode: request.currencyCode,

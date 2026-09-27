@@ -49,7 +49,10 @@ class AuthenticatedTransferRepository implements TransferRepository {
       accessToken,
       P2PTransferRequest(
         sourceWalletId: request.sourceWalletId,
-        recipientKind: P2PRecipientKind.afWalId,
+        recipientKind: switch (request.recipientKind) {
+          TransferRecipientKind.afWalId => P2PRecipientKind.afWalId,
+          TransferRecipientKind.qr => P2PRecipientKind.qr,
+        },
         recipientValue: request.payeeId,
         currencyCode: request.currencyCode,
         amountMinor: request.amountMinor,

@@ -1,8 +1,11 @@
 enum TransferStatus { created, authorized, processing, completed, cancelled, failed }
 
+enum TransferRecipientKind { afWalId, qr }
+
 class SendTransferRequest {
   const SendTransferRequest({
     required this.sourceWalletId,
+    this.recipientKind = TransferRecipientKind.afWalId,
     required this.payeeId,
     required this.amountMinor,
     required this.currencyCode,
@@ -10,6 +13,7 @@ class SendTransferRequest {
   });
 
   final String sourceWalletId;
+  final TransferRecipientKind recipientKind;
   final String payeeId;
   final int amountMinor;
   final String currencyCode;

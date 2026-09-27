@@ -5,10 +5,15 @@ import 'package:mobile_app/pages/send_receive_page.dart';
 import 'package:mobile_app/services/transfer_repository.dart';
 
 class _FakeTransferRepository implements TransferRepository {
+  _FakeTransferRepository({
+    this.receiveIdentity = const ReceiveIdentity(publicLabel: '@afwal-id-test'),
+  });
+
+  final ReceiveIdentity receiveIdentity;
   SendTransferRequest? lastRequest;
 
   @override
-  Future<ReceiveIdentity> loadReceiveIdentity() async => const ReceiveIdentity(publicLabel: '@afwal-id-test');
+  Future<ReceiveIdentity> loadReceiveIdentity() async => receiveIdentity;
 
   @override
   Future<TransferReceipt> send(SendTransferRequest request) async {
@@ -34,22 +39,75 @@ void main() {
     ));
 
     expect(find.text('Envoyer de l’argent'), findsOneWidget);
-    await tester.enterText(find.widgetWithText(TextField, 'AfWal ID ou identifiant destinataire'), '@receiver');
+    await tester.enterText(find.byKey(const Key('p2p-recipient-input')), '@receiver');
     await tester.enterText(find.widgetWithText(TextField, 'Montant'), '12.50');
     await tester.tap(find.widgetWithText(FilledButton, 'Continuer'));
     await tester.pumpAndSettle();
 
     expect(repository.lastRequest?.sourceWalletId, 'WALLET-SOURCE-EUR');
+    expect(repository.lastRequest?.recipientKind, TransferRecipientKind.afWalId);
     expect(repository.lastRequest?.payeeId, '@receiver');
     expect(repository.lastRequest?.amountMinor, 1250);
     expect(find.textContaining('PI-TEST-001'), findsOneWidget);
+  });
+
+  testWidgets('scanned P2P QR is submitted explicitly as QR recipient', (tester) async {
+    final repository = _FakeTransferRepository();
+
+    await tester.pumpWidget(MaterialApp(
+      home: SendReceivePage(
+        repository: repository,
+        sourceWalletId: 'WALLET-SOURCE-XAF',
+        p2pQrScanner: (_) async => 'qr-token-abc',
+      ),
+    ));
+
+    await tester.tap(find.text('QR'));
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('scan-p2p-qr')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('p2p-qr-token-input')), findsOneWidget);
+    expect(find.text('qr-token-abc'), findsOneWidget);
+
+    await tester.enterText(find.widgetWithText(TextField, 'Montant'), '25');
+    await tester.enterText(find.widgetWithText(TextField, 'Devise (EUR, XAF…)'), 'XAF');
+    await tester.tap(find.widgetWithText(FilledButton, 'Continuer'));
+    await tester.pumpAndSettle();
+
+    expect(repository.lastRequest?.sourceWalletId, 'WALLET-SOURCE-XAF');
+    expect(repository.lastRequest?.recipientKind, TransferRecipientKind.qr);
+    expect(repository.lastRequest?.payeeId, 'qr-token-abc');
+    expect(repository.lastRequest?.amountMinor, 2500);
+    expect(repository.lastRequest?.currencyCode, 'XAF');
+  });
+
+  testWidgets('cancelled QR scan does not invent a recipient', (tester) async {
+    final repository = _FakeTransferRepository();
+
+    await tester.pumpWidget(MaterialApp(
+      home: SendReceivePage(
+        repository: repository,
+        sourceWalletId: 'WALLET-SOURCE-EUR',
+        p2pQrScanner: (_) async => null,
+      ),
+    ));
+
+    await tester.tap(find.text('QR'));
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('scan-p2p-qr')));
+    await tester.pumpAndSettle();
+
+    final field = tester.widget<TextField>(find.byKey(const Key('p2p-qr-token-input')));
+    expect(field.controller?.text, isEmpty);
+    expect(repository.lastRequest, isNull);
   });
 
   testWidgets('refuses send when no source wallet is provided', (tester) async {
     final repository = _FakeTransferRepository();
     await tester.pumpWidget(MaterialApp(home: SendReceivePage(repository: repository)));
 
-    await tester.enterText(find.widgetWithText(TextField, 'AfWal ID ou identifiant destinataire'), '@receiver');
+    await tester.enterText(find.byKey(const Key('p2p-recipient-input')), '@receiver');
     await tester.enterText(find.widgetWithText(TextField, 'Montant'), '12.50');
     await tester.tap(find.widgetWithText(FilledButton, 'Continuer'));
     await tester.pumpAndSettle();
@@ -72,6 +130,27 @@ void main() {
     expect(find.text('Recevoir de l’argent'), findsOneWidget);
     expect(find.byKey(const Key('receive-public-label')), findsOneWidget);
     expect(find.text('@afwal-id-test'), findsOneWidget);
+  });
+
+  testWidgets('receive renders backend P2P QR token as QR', (tester) async {
+    final repository = _FakeTransferRepository(
+      receiveIdentity: const ReceiveIdentity(
+        publicLabel: '@receiver',
+        qrToken: 'secure-backend-p2p-token',
+      ),
+    );
+
+    await tester.pumpWidget(MaterialApp(
+      home: SendReceivePage(
+        repository: repository,
+        initialMode: SendReceiveMode.receive,
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('receive-p2p-qr-card')), findsOneWidget);
+    expect(find.byKey(const Key('receive-p2p-qr')), findsOneWidget);
+    expect(find.textContaining('identité de réception P2P'), findsOneWidget);
   });
 
   testWidgets('send mode exposes explicit return to wallet callback', (tester) async {
@@ -117,7 +196,7 @@ void main() {
         sourceWalletId: 'WALLET-SOURCE-EUR',
       ),
     ));
-    await tester.enterText(find.widgetWithText(TextField, 'AfWal ID ou identifiant destinataire'), '@receiver');
+    await tester.enterText(find.byKey(const Key('p2p-recipient-input')), '@receiver');
     await tester.enterText(find.widgetWithText(TextField, 'Montant'), '10');
     await tester.tap(find.widgetWithText(FilledButton, 'Continuer'));
     await tester.pumpAndSettle();

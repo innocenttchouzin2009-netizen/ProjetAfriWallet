@@ -14,9 +14,11 @@ import 'pages/transaction_history_page.dart';
 import 'pages/wallet_home_page.dart';
 import 'services/identity_repository.dart';
 import 'services/qr_payment_repository.dart';
+import 'services/secure_session_store.dart';
 import 'services/subscription_repository.dart';
 import 'services/transaction_history_repository.dart';
 import 'services/transfer_repository.dart';
+import 'services/wallet_production_wiring.dart';
 import 'services/wallet_repository.dart';
 import 'theme/afwal_theme.dart';
 
@@ -30,6 +32,7 @@ class AfriWalletApp extends StatefulWidget {
     this.repository,
     this.identityRepository,
     this.walletRepository,
+    this.authSessionStore,
     this.transferRepository,
     this.transactionHistoryRepository,
     this.qrPaymentRepository,
@@ -38,6 +41,7 @@ class AfriWalletApp extends StatefulWidget {
   final SubscriptionRepository? repository;
   final IdentityRepository? identityRepository;
   final WalletRepository? walletRepository;
+  final AuthSessionStore? authSessionStore;
   final TransferRepository? transferRepository;
   final TransactionHistoryRepository? transactionHistoryRepository;
   final QrPaymentRepository? qrPaymentRepository;
@@ -58,11 +62,32 @@ class _AfriWalletAppState extends State<AfriWalletApp> {
   bool _hasVisitedQrPayments = false;
   SendReceiveMode _sendReceiveInitialMode = SendReceiveMode.send;
   LocaleController? _localeController;
+  WalletProductionWiring? _walletProductionWiring;
+  late final WalletRepository _walletRepository;
 
   @override
   void initState() {
     super.initState();
+    _wireWalletRepository();
     _loadSavedLocale();
+  }
+
+  void _wireWalletRepository() {
+    final injectedRepository = widget.walletRepository;
+    if (injectedRepository != null) {
+      _walletRepository = injectedRepository;
+      return;
+    }
+
+    final sessionStore = widget.authSessionStore;
+    if (sessionStore == null) {
+      _walletRepository = const UnavailableWalletRepository();
+      return;
+    }
+
+    final wiring = WalletProductionWiring(sessionStore: sessionStore);
+    _walletProductionWiring = wiring;
+    _walletRepository = wiring.repository;
   }
 
   Future<void> _loadSavedLocale() async {
@@ -113,7 +138,7 @@ class _AfriWalletAppState extends State<AfriWalletApp> {
     }
     if (!_hasVisitedWalletHome) {
       return WalletHomePage(
-        repository: widget.walletRepository ?? const UnavailableWalletRepository(),
+        repository: _walletRepository,
         transactionHistoryRepository:
             widget.transactionHistoryRepository ?? const UnavailableTransactionHistoryRepository(),
         qrPaymentRepository: widget.qrPaymentRepository ?? const UnavailableQrPaymentRepository(),
@@ -159,6 +184,12 @@ class _AfriWalletAppState extends State<AfriWalletApp> {
         ));
       },
     );
+  }
+
+  @override
+  void dispose() {
+    _walletProductionWiring?.dispose();
+    super.dispose();
   }
 
   @override

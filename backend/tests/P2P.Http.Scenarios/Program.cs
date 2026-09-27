@@ -18,6 +18,12 @@ await using var fixture = await P2PHttpFixture.CreateAsync(configureRecipientPro
 var anonymous = fixture.App.GetTestClient();
 var ownerClient = CreateClient(fixture.App, fixture.OwnerId);
 
+await RunAsync("receive identity requires authentication", async () =>
+{
+    var response = await anonymous.PostAsync("/api/v1/p2p/receive-identity", content: null);
+    Assert(response.StatusCode == HttpStatusCode.Unauthorized, $"Expected 401, got {(int)response.StatusCode}.");
+});
+
 await RunAsync("P2P transfer requires authentication", async () =>
 {
     var response = await anonymous.PostAsJsonAsync("/api/v1/p2p/transfers", fixture.AfWalRequest(Guid.NewGuid()));
@@ -75,6 +81,29 @@ await RunAsync("owned source executes QR P2P transfer", async () =>
     var result = await response.Content.ReadFromJsonAsync<P2PTransferResponse>();
     Assert(result?.TargetWalletId == fixture.TargetWalletId, "QR target wallet mismatch.");
     Assert(result?.RecipientKind == "qr", "QR recipient kind mismatch.");
+});
+
+await RunAsync("authenticated owner receives public label and fresh QR token", async () =>
+{
+    var firstResponse = await ownerClient.PostAsync("/api/v1/p2p/receive-identity", content: null);
+    Assert(firstResponse.StatusCode == HttpStatusCode.OK, $"Expected 200, got {(int)firstResponse.StatusCode}.");
+    var first = await firstResponse.Content.ReadFromJsonAsync<P2PReceiveIdentityResponse>();
+    Assert(first?.PublicLabel == "owner.one", "Receive public label mismatch.");
+    Assert(!string.IsNullOrWhiteSpace(first?.QrToken), "Receive QR token is required.");
+
+    var secondResponse = await ownerClient.PostAsync("/api/v1/p2p/receive-identity", content: null);
+    Assert(secondResponse.StatusCode == HttpStatusCode.OK, $"Expected 200, got {(int)secondResponse.StatusCode}.");
+    var second = await secondResponse.Content.ReadFromJsonAsync<P2PReceiveIdentityResponse>();
+    Assert(!string.Equals(first!.QrToken, second?.QrToken, StringComparison.Ordinal), "Each receive issuance must rotate the QR token.");
+});
+
+await RunAsync("unknown receive identity returns 404", async () =>
+{
+    var response = await CreateClient(fixture.App, Guid.NewGuid())
+        .PostAsync("/api/v1/p2p/receive-identity", content: null);
+    Assert(response.StatusCode == HttpStatusCode.NotFound, $"Expected 404, got {(int)response.StatusCode}.");
+    var error = await response.Content.ReadFromJsonAsync<P2PErrorResponse>();
+    Assert(error?.Code == P2PErrorCode.ReceiveIdentityNotFound, "Expected P2P_RECEIVE_IDENTITY_NOT_FOUND.");
 });
 
 await using (var unavailable = await P2PHttpFixture.CreateAsync(configureRecipientProviders: false))
@@ -181,6 +210,8 @@ sealed class P2PHttpFixture : IAsyncDisposable
                 {
                     ["opaque-qr-token-1"] = recipientOwnerId
                 }));
+            builder.Services.AddSingleton<IReceiveIdentityIssuer>(
+                new FakeReceiveIdentityIssuer(ownerId, "owner.one"));
         }
 
         builder.Services.AddSingleton<RecordingP2PTransferPort>();
@@ -235,6 +266,21 @@ sealed class FakeQrRecipientDirectory(IReadOnlyDictionary<string, Guid> entries)
     {
         cancellationToken.ThrowIfCancellationRequested();
         return Task.FromResult(entries.TryGetValue(qrToken, out var ownerId) ? (Guid?)ownerId : null);
+    }
+}
+
+sealed class FakeReceiveIdentityIssuer(Guid ownerId, string publicLabel) : IReceiveIdentityIssuer
+{
+    public Task<IssuedReceiveIdentity?> IssueAsync(Guid requestedOwnerId, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        if (requestedOwnerId != ownerId)
+        {
+            return Task.FromResult<IssuedReceiveIdentity?>(null);
+        }
+
+        return Task.FromResult<IssuedReceiveIdentity?>(
+            new IssuedReceiveIdentity(publicLabel, $"issued-{Guid.NewGuid():N}"));
     }
 }
 

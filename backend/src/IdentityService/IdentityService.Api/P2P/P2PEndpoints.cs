@@ -11,11 +11,60 @@ public static class P2PEndpoints
 {
     public static IEndpointRouteBuilder MapP2PEndpoints(this IEndpointRouteBuilder endpoints)
     {
-        endpoints.MapGroup("/api/v1/p2p")
-            .RequireAuthorization()
-            .MapPost("/transfers", ExecuteAsync);
+        var group = endpoints.MapGroup("/api/v1/p2p")
+            .RequireAuthorization();
+
+        group.MapPost("/transfers", ExecuteAsync);
+        group.MapPost("/receive-identity", IssueReceiveIdentityAsync);
 
         return endpoints;
+    }
+
+    private static async Task<IResult> IssueReceiveIdentityAsync(
+        ClaimsPrincipal principal,
+        IReceiveIdentityIssuer issuer,
+        HttpContext httpContext,
+        CancellationToken cancellationToken)
+    {
+        if (!Guid.TryParse(principal.FindFirst("sub")?.Value, out var userId))
+        {
+            return Results.Json(
+                new P2PErrorResponse(
+                    P2PErrorCode.Unauthorized,
+                    "Authenticated user id is missing.",
+                    httpContext.TraceIdentifier),
+                statusCode: StatusCodes.Status401Unauthorized);
+        }
+
+        try
+        {
+            var identity = await issuer.IssueAsync(userId, cancellationToken);
+            if (identity is null)
+            {
+                return Results.NotFound(new P2PErrorResponse(
+                    P2PErrorCode.ReceiveIdentityNotFound,
+                    "Active AfWal receive identity was not found.",
+                    httpContext.TraceIdentifier));
+            }
+
+            return Results.Ok(new P2PReceiveIdentityResponse(
+                identity.PublicLabel,
+                identity.QrToken));
+        }
+        catch (ArgumentException exception)
+        {
+            return Results.BadRequest(new P2PErrorResponse(
+                P2PErrorCode.ValidationError,
+                exception.Message,
+                httpContext.TraceIdentifier));
+        }
+        catch (InvalidOperationException exception)
+        {
+            return Results.Conflict(new P2PErrorResponse(
+                P2PErrorCode.Conflict,
+                exception.Message,
+                httpContext.TraceIdentifier));
+        }
     }
 
     private static async Task<IResult> ExecuteAsync(

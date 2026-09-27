@@ -72,7 +72,9 @@ void main() {
 
     await tester.enterText(find.widgetWithText(TextField, 'Montant'), '25');
     await tester.enterText(find.widgetWithText(TextField, 'Devise (EUR, XAF…)'), 'XAF');
-    await tester.tap(find.widgetWithText(FilledButton, 'Continuer'));
+    final continueButton = find.widgetWithText(FilledButton, 'Continuer');
+    await tester.ensureVisible(continueButton);
+    await tester.tap(continueButton);
     await tester.pumpAndSettle();
 
     expect(repository.lastRequest?.sourceWalletId, 'WALLET-SOURCE-XAF');

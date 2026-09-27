@@ -73,7 +73,11 @@ void main() {
     await tester.enterText(find.widgetWithText(TextField, 'Montant'), '25');
     await tester.enterText(find.widgetWithText(TextField, 'Devise (EUR, XAF…)'), 'XAF');
     final continueButton = find.widgetWithText(FilledButton, 'Continuer');
-    await tester.ensureVisible(continueButton);
+    await tester.scrollUntilVisible(
+      continueButton,
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
     await tester.tap(continueButton);
     await tester.pumpAndSettle();
 

@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../TransactionTimeline.Application/TransactionTimeline.Application.csproj" />
+    <ProjectReference Include="../../Ledger/Ledger.Domain/Ledger.Domain.csproj" />
+    <ProjectReference Include="../../Ledger/Ledger.Persistence/Ledger.Persistence.csproj" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.11" />
+  </ItemGroup>
+</Project>

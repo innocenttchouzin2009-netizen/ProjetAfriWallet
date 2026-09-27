@@ -1,0 +1,57 @@
+name: AFW-BE-P2P-RECEIVE-IDENTITY-1 Secure Receive Identity
+
+on:
+  push:
+    branches:
+      - feature/backend-p2p-receive-identity-1
+    paths:
+      - 'backend/src/P2P/**'
+      - 'backend/src/IdentityService/IdentityService.Api/P2P/**'
+      - 'backend/tests/P2P.Directory.Persistence.Scenarios/**'
+      - 'backend/tests/P2P.Http.Scenarios/**'
+      - '.github/workflows/backend-p2p-receive-identity-1.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'backend/src/P2P/**'
+      - 'backend/src/IdentityService/IdentityService.Api/P2P/**'
+      - 'backend/tests/P2P.Directory.Persistence.Scenarios/**'
+      - 'backend/tests/P2P.Http.Scenarios/**'
+      - '.github/workflows/backend-p2p-receive-identity-1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate secure receive identity
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore IdentityService
+        run: dotnet restore backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj
+
+      - name: Build IdentityService with receive identity wiring
+        run: dotnet build backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj --configuration Release --no-restore --nologo
+
+      - name: Run receive identity persistence scenarios
+        run: dotnet run --project backend/tests/P2P.Directory.Persistence.Scenarios/P2P.Directory.Persistence.Scenarios.csproj --configuration Release
+
+      - name: Run protected P2P HTTP scenarios
+        run: dotnet run --project backend/tests/P2P.Http.Scenarios/P2P.Http.Scenarios.csproj --configuration Release
+
+      - name: Verify scoped diff
+        run: git diff --check f0b314d35bd6e7066d2ef016f12c978fae632e73..HEAD

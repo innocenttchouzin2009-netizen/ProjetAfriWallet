@@ -1,0 +1,74 @@
+name: Mobile Beta2.6 Source Wallet Selection
+
+on:
+  push:
+    branches:
+      - feature/mobile-beta2.6
+    paths:
+      - 'apps/mobile_app/lib/models/payment_transfer.dart'
+      - 'apps/mobile_app/lib/pages/send_receive_page.dart'
+      - 'apps/mobile_app/lib/services/transfer_repository.dart'
+      - 'apps/mobile_app/test/transfer_repository_test.dart'
+      - 'apps/mobile_app/test/send_receive_page_test.dart'
+      - '.github/workflows/mobile-beta2.6-source-wallet-selection.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'apps/mobile_app/lib/models/payment_transfer.dart'
+      - 'apps/mobile_app/lib/pages/send_receive_page.dart'
+      - 'apps/mobile_app/lib/services/transfer_repository.dart'
+      - 'apps/mobile_app/test/transfer_repository_test.dart'
+      - 'apps/mobile_app/test/send_receive_page_test.dart'
+      - '.github/workflows/mobile-beta2.6-source-wallet-selection.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: apps/mobile_app
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Flutter 3.47.2
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.2'
+          cache: true
+
+      - name: Flutter version
+        run: flutter --version
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Verify lockfile is synchronized
+        run: git diff --exit-code -- pubspec.lock
+
+      - name: Generate localizations
+        run: flutter gen-l10n
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test transfer repository
+        run: flutter test test/transfer_repository_test.dart
+
+      - name: Test send and receive page
+        run: flutter test test/send_receive_page_test.dart
+
+      - name: Run complete Flutter test suite
+        run: flutter test
+
+      - name: Verify Beta2.6 Commit 1 diff
+        working-directory: .
+        run: git diff --check 90a90e6cca91ddd9515c1db3d5b965a99d2b3e06..HEAD

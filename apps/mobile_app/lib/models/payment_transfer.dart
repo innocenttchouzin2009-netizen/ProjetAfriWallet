@@ -2,14 +2,14 @@ enum TransferStatus { created, authorized, processing, completed, cancelled, fai
 
 class SendTransferRequest {
   const SendTransferRequest({
-    required this.payerId,
+    required this.sourceWalletId,
     required this.payeeId,
     required this.amountMinor,
     required this.currencyCode,
     required this.idempotencyKey,
   });
 
-  final String payerId;
+  final String sourceWalletId;
   final String payeeId;
   final int amountMinor;
   final String currencyCode;

@@ -6,5 +6,6 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../Timeline.Domain/Timeline.Domain.csproj" />
+    <ProjectReference Include="../../Ledger/Ledger.Domain/Ledger.Domain.csproj" />
   </ItemGroup>
 </Project>

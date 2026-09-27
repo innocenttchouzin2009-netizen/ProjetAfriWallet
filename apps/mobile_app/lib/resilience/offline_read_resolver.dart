@@ -11,10 +11,14 @@ class OfflineReadResolver<T> {
     required ReadCache<T> cache,
     required ReadResiliencePolicy policy,
     required UtcNow utcNow,
-  }) : _remoteRead = remoteRead,
-       _cache = cache,
-       _policy = policy,
-       _utcNow = utcNow;
+  }) : this._(remoteRead, cache, policy, utcNow);
+
+  const OfflineReadResolver._(
+    this._remoteRead,
+    this._cache,
+    this._policy,
+    this._utcNow,
+  );
 
   final RemoteRead<T> _remoteRead;
   final ReadCache<T> _cache;

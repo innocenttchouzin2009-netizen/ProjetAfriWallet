@@ -9,11 +9,16 @@ typedef ReadCacheDecoder<T> = T Function(Object? value);
 
 class SharedPreferencesReadCache<T> implements ReadCache<T> {
   const SharedPreferencesReadCache({
-    required this.key,
+    required String key,
     required ReadCacheEncoder<T> encode,
     required ReadCacheDecoder<T> decode,
-  }) : _encode = encode,
-       _decode = decode;
+  }) : this._(key, encode, decode);
+
+  const SharedPreferencesReadCache._(
+    this.key,
+    this._encode,
+    this._decode,
+  );
 
   final String key;
   final ReadCacheEncoder<T> _encode;

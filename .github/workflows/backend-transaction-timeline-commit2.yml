@@ -1,0 +1,48 @@
+name: Transaction Timeline Commit 2 CI
+
+on:
+  push:
+    branches:
+      - feature/backend-transaction-timeline-1
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate Transaction Timeline Commit 2
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore Ledger Projection Scenarios
+        run: >-
+          dotnet restore
+          backend/tests/TransactionTimeline.LedgerProjection.Scenarios/TransactionTimeline.LedgerProjection.Scenarios.csproj
+
+      - name: Build TransactionTimeline.Infrastructure
+        run: >-
+          dotnet build
+          backend/src/TransactionTimeline/TransactionTimeline.Infrastructure/TransactionTimeline.Infrastructure.csproj
+          --configuration Release
+          --no-restore
+
+      - name: Run Ledger Projection Scenarios
+        run: >-
+          dotnet run
+          --project backend/tests/TransactionTimeline.LedgerProjection.Scenarios/TransactionTimeline.LedgerProjection.Scenarios.csproj
+          --configuration Release
+          --no-restore
+
+      - name: Verify diff hygiene from locked base
+        run: git diff --check ef6e350a02c1acbad8b555153355bb2a3509c038...HEAD

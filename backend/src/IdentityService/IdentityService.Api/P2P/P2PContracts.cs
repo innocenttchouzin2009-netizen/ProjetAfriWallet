@@ -18,6 +18,10 @@ public sealed record P2PTransferResponse(
     DateTimeOffset CreatedAtUtc,
     string RecipientKind);
 
+public sealed record P2PReceiveIdentityResponse(
+    string PublicLabel,
+    string QrToken);
+
 public sealed record P2PErrorResponse(string Code, string Message, string TraceId);
 
 public static class P2PErrorCode
@@ -26,6 +30,7 @@ public static class P2PErrorCode
     public const string ValidationError = "P2P_VALIDATION_ERROR";
     public const string NotFound = "P2P_NOT_FOUND";
     public const string RecipientNotFound = "P2P_RECIPIENT_NOT_FOUND";
+    public const string ReceiveIdentityNotFound = "P2P_RECEIVE_IDENTITY_NOT_FOUND";
     public const string Conflict = "P2P_CONFLICT";
     public const string RecipientProvidersUnavailable = "P2P_RECIPIENT_PROVIDERS_UNAVAILABLE";
 }

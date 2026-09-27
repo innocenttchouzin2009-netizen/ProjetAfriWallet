@@ -16,7 +16,9 @@ var afWalOwner = Guid.NewGuid();
 var qrOwner = Guid.NewGuid();
 const string afWalId = "recipient.one";
 const string qrToken = "opaque-qr-token-commit5";
+const string oldReceiveQrToken = "opaque-old-receive-token";
 var qrHash = RecipientDirectoryNormalization.HashQrToken(qrToken);
+var oldReceiveQrHash = RecipientDirectoryNormalization.HashQrToken(oldReceiveQrToken);
 
 db.AfWalIdentities.Add(new AfWalIdentityEntry
 {
@@ -32,10 +34,18 @@ db.QrRecipients.Add(new QrRecipientEntry
     TokenHash = qrHash,
     IsActive = true
 });
+db.QrRecipients.Add(new QrRecipientEntry
+{
+    Id = Guid.NewGuid(),
+    OwnerId = afWalOwner,
+    TokenHash = oldReceiveQrHash,
+    IsActive = true
+});
 await db.SaveChangesAsync();
 
 var afWalDirectory = new EfAfWalIdentityDirectory(db);
 var qrDirectory = new EfQrRecipientDirectory(db);
+var receiveIdentityIssuer = new EfReceiveIdentityIssuer(db);
 
 await RunAsync("AfWal ID resolves authoritative owner", async () =>
 {
@@ -63,10 +73,32 @@ await RunAsync("QR token resolves through SHA-256 hash", async () =>
 
 await RunAsync("raw QR token is not persisted", async () =>
 {
-    var stored = await db.QrRecipients.AsNoTracking().SingleAsync();
+    var stored = await db.QrRecipients.AsNoTracking().SingleAsync(x => x.OwnerId == qrOwner);
     Assert(stored.TokenHash == qrHash, "Stored QR hash mismatch.");
     Assert(stored.TokenHash.Length == 64, "SHA-256 hex digest must be 64 characters.");
     Assert(!string.Equals(stored.TokenHash, qrToken, StringComparison.Ordinal), "Raw QR token must never be stored.");
+});
+
+await RunAsync("receive identity rotates QR and stores only the new hash", async () =>
+{
+    var first = await receiveIdentityIssuer.IssueAsync(afWalOwner);
+    Assert(first is not null, "Receive identity must be issued for an active AfWal ID.");
+    Assert(first!.PublicLabel == afWalId, "Receive public label mismatch.");
+    Assert(!string.IsNullOrWhiteSpace(first.QrToken), "Issued QR token is required.");
+    Assert(await qrDirectory.ResolveOwnerIdAsync(oldReceiveQrToken) is null, "Previous QR token must be deactivated.");
+    Assert(await qrDirectory.ResolveOwnerIdAsync(first.QrToken) == afWalOwner, "Issued QR token must resolve the owner.");
+
+    var second = await receiveIdentityIssuer.IssueAsync(afWalOwner);
+    Assert(second is not null, "Second receive identity issuance is required.");
+    Assert(!string.Equals(first.QrToken, second!.QrToken, StringComparison.Ordinal), "QR token must rotate on every issuance.");
+    Assert(await qrDirectory.ResolveOwnerIdAsync(first.QrToken) is null, "Previously issued QR token must be revoked after rotation.");
+    Assert(await qrDirectory.ResolveOwnerIdAsync(second.QrToken) == afWalOwner, "Newest QR token must resolve the owner.");
+
+    var ownerEntries = await db.QrRecipients.AsNoTracking().Where(x => x.OwnerId == afWalOwner).ToListAsync();
+    Assert(ownerEntries.Count(x => x.IsActive) == 1, "Exactly one QR token may remain active for the owner.");
+    var active = ownerEntries.Single(x => x.IsActive);
+    Assert(active.TokenHash == RecipientDirectoryNormalization.HashQrToken(second.QrToken), "Only the QR hash may be persisted.");
+    Assert(!string.Equals(active.TokenHash, second.QrToken, StringComparison.Ordinal), "Raw issued QR token must never be stored.");
 });
 
 await RunAsync("inactive identities fail closed", async () =>

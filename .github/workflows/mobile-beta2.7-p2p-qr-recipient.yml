@@ -1,0 +1,67 @@
+name: Mobile Beta2.7 P2P QR Recipient Foundation
+
+on:
+  push:
+    branches:
+      - feature/mobile-beta2.7
+    paths:
+      - 'apps/mobile_app/lib/models/payment_transfer.dart'
+      - 'apps/mobile_app/lib/services/transfer_repository.dart'
+      - 'apps/mobile_app/test/transfer_repository_test.dart'
+      - '.github/workflows/mobile-beta2.7-p2p-qr-recipient.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'apps/mobile_app/lib/models/payment_transfer.dart'
+      - 'apps/mobile_app/lib/services/transfer_repository.dart'
+      - 'apps/mobile_app/test/transfer_repository_test.dart'
+      - '.github/workflows/mobile-beta2.7-p2p-qr-recipient.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: apps/mobile_app
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Flutter 3.47.2
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.2'
+          cache: true
+
+      - name: Flutter version
+        run: flutter --version
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Verify lockfile is synchronized
+        run: git diff --exit-code -- pubspec.lock
+
+      - name: Generate localizations
+        run: flutter gen-l10n
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test transfer repository
+        run: flutter test test/transfer_repository_test.dart
+
+      - name: Run complete Flutter test suite
+        run: flutter test
+
+      - name: Verify Beta2.7 diff
+        working-directory: .
+        run: git diff --check 3fd9db6b52c56e40062168bdd9da3a7f7e3d90cb..HEAD

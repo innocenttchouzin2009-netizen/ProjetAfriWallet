@@ -72,6 +72,52 @@ void main() {
       apiClient.close();
     });
 
+    test('sends a QR recipient transfer when recipient kind is explicit', () async {
+      late http.Request captured;
+      final apiClient = ApiClient(
+        baseUrl: 'https://api.afwal.test',
+        httpClient: MockClient((request) async {
+          captured = request;
+          return http.Response(
+            jsonEncode(<String, Object?>{
+              'transferId': '55555555-5555-5555-5555-555555555555',
+              'sourceWalletId': '22222222-2222-2222-2222-222222222222',
+              'targetWalletId': '33333333-3333-3333-3333-333333333333',
+              'currencyCode': 'XAF',
+              'amountMinor': 2500,
+              'correlationId': '66666666-6666-6666-6666-666666666666',
+              'createdAtUtc': '2026-09-27T20:00:00Z',
+              'recipientKind': 'qr',
+            }),
+            200,
+            headers: <String, String>{'content-type': 'application/json'},
+          );
+        }),
+      );
+      final repository = AuthenticatedTransferRepository(
+        P2PRemoteDataSource(apiClient),
+        _FakeAuthSessionStore(_storedSession()),
+      );
+      const request = SendTransferRequest(
+        sourceWalletId: '22222222-2222-2222-2222-222222222222',
+        recipientKind: TransferRecipientKind.qr,
+        payeeId: 'qr-token-abc',
+        amountMinor: 2500,
+        currencyCode: 'XAF',
+        idempotencyKey: '66666666-6666-6666-6666-666666666666',
+      );
+
+      await repository.send(request);
+      final requestBody =
+          jsonDecode(captured.body) as Map<String, dynamic>;
+
+      expect(requestBody['sourceWalletId'], request.sourceWalletId);
+      expect(requestBody['recipientKind'], 'qr');
+      expect(requestBody['recipientValue'], 'qr-token-abc');
+      expect(requestBody['correlationId'], request.idempotencyKey);
+      apiClient.close();
+    });
+
     test('rejects transfers when no authenticated session exists', () async {
       var remoteCalled = false;
       final apiClient = ApiClient(

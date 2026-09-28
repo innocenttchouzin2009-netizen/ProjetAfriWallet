@@ -1,0 +1,66 @@
+name: Certify e421d0d1 Flutter Gate
+
+on:
+  push:
+    branches:
+      - ci/certify-e421d0d1-wallet-transfer
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: apps/mobile_app
+
+    steps:
+      - name: Checkout exact target SHA
+        uses: actions/checkout@v4
+        with:
+          ref: e421d0d1af1d93ffe0d1c5073b4d5b88e3a42e99
+          fetch-depth: 0
+
+      - name: Verify exact SHA
+        working-directory: .
+        run: test "$(git rev-parse HEAD)" = "e421d0d1af1d93ffe0d1c5073b4d5b88e3a42e99"
+
+      - name: Set up Flutter 3.47.2
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.2'
+          cache: true
+
+      - name: Flutter version
+        run: flutter --version
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Verify lockfile is synchronized
+        run: git diff --exit-code -- pubspec.lock
+
+      - name: Generate localizations
+        run: flutter gen-l10n
+
+      - name: Flutter analyze
+        run: flutter analyze
+
+      - name: Wallet repository tests
+        run: flutter test test/wallet_repository_test.dart
+
+      - name: Transfer repository tests
+        run: flutter test test/transfer_repository_test.dart
+
+      - name: Complete Flutter test suite
+        run: flutter test
+
+      - name: Git diff check requested gate
+        working-directory: .
+        run: git diff --check
+
+      - name: Verify exact commit diff
+        working-directory: .
+        run: git diff --check e421d0d1af1d93ffe0d1c5073b4d5b88e3a42e99^ e421d0d1af1d93ffe0d1c5073b4d5b88e3a42e99

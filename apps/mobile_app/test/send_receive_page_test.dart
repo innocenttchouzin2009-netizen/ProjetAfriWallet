@@ -29,7 +29,7 @@ class _FakeTransferRepository implements TransferRepository {
 }
 
 void main() {
-  testWidgets('defaults to send mode and submits transfer through repository only', (tester) async {
+  testWidgets('defaults to send mode and requires explicit review confirmation', (tester) async {
     final repository = _FakeTransferRepository();
     await tester.pumpWidget(MaterialApp(
       home: SendReceivePage(
@@ -41,14 +41,22 @@ void main() {
     expect(find.text('Envoyer de l’argent'), findsOneWidget);
     await tester.enterText(find.byKey(const Key('p2p-recipient-input')), '@receiver');
     await tester.enterText(find.widgetWithText(TextField, 'Montant'), '12.50');
-    await tester.tap(find.widgetWithText(FilledButton, 'Continuer'));
+    await tester.tap(find.byKey(const Key('review-p2p-transfer')));
+    await tester.pumpAndSettle();
+
+    expect(repository.lastRequest, isNull);
+    expect(find.text('Vérifier le transfert'), findsOneWidget);
+    expect(find.text('@receiver'), findsOneWidget);
+    expect(find.text('12.50 EUR'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('confirm-p2p-transfer')));
     await tester.pumpAndSettle();
 
     expect(repository.lastRequest?.sourceWalletId, 'WALLET-SOURCE-EUR');
     expect(repository.lastRequest?.recipientKind, TransferRecipientKind.afWalId);
     expect(repository.lastRequest?.payeeId, '@receiver');
     expect(repository.lastRequest?.amountMinor, 1250);
-    expect(find.textContaining('PI-TEST-001'), findsOneWidget);
+    expect(find.byKey(const Key('p2p-transfer-receipt')), findsOneWidget);
   });
 
   testWidgets('scanned P2P QR is submitted explicitly as QR recipient', (tester) async {
@@ -77,9 +85,17 @@ void main() {
 
     await tester.enterText(find.widgetWithText(TextField, 'Montant'), '25');
     await tester.enterText(find.widgetWithText(TextField, 'Devise (EUR, XAF…)'), 'XAF');
-    final continueButton = find.widgetWithText(FilledButton, 'Continuer');
+    final continueButton = find.byKey(const Key('review-p2p-transfer'));
     expect(continueButton, findsOneWidget);
     await tester.tap(continueButton);
+    await tester.pumpAndSettle();
+
+    expect(repository.lastRequest, isNull);
+    expect(find.text('QR P2P'), findsOneWidget);
+    expect(find.text('qr-token-abc'), findsOneWidget);
+    expect(find.text('25.00 XAF'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('confirm-p2p-transfer')));
     await tester.pumpAndSettle();
 
     expect(repository.lastRequest?.sourceWalletId, 'WALLET-SOURCE-XAF');
@@ -205,10 +221,14 @@ void main() {
     ));
     await tester.enterText(find.byKey(const Key('p2p-recipient-input')), '@receiver');
     await tester.enterText(find.widgetWithText(TextField, 'Montant'), '10');
-    await tester.tap(find.widgetWithText(FilledButton, 'Continuer'));
+    await tester.tap(find.byKey(const Key('review-p2p-transfer')));
+    await tester.pumpAndSettle();
+    expect(find.text('Vérifier le transfert'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('confirm-p2p-transfer')));
     await tester.pumpAndSettle();
 
-    expect(find.byKey(const Key('send-error')), findsOneWidget);
+    expect(find.byKey(const Key('p2p-review-error')), findsOneWidget);
     expect(find.textContaining('Aucun transfert n’a été simulé'), findsOneWidget);
   });
 

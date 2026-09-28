@@ -70,7 +70,7 @@ class _P2pTransferReviewPageState extends State<P2pTransferReviewPage> {
           _ReviewRow(label: 'Destinataire', value: request.payeeId),
           _ReviewRow(
             label: 'Montant',
-            value: '${amount} ${request.currencyCode}',
+            value: '$amount ${request.currencyCode}',
           ),
           const SizedBox(height: 24),
           FilledButton.icon(

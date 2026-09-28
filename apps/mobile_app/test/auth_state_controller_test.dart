@@ -1,36 +1,22 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile_app/models/auth_session.dart';
-import 'package:mobile_app/services/auth_session_store.dart';
+import 'package:mobile_app/services/auth_session_coordinator.dart';
 import 'package:mobile_app/services/auth_state_controller.dart';
 
 void main() {
   test('auth state starts in restoring state without a session', () {
-    final controller = AuthStateController(
-      SecureSessionStore(_FakeSecureStorage()),
-    );
+    final controller = AuthStateController(_FakeSessionLifecycle());
 
     expect(controller.state.status, AuthStateStatus.restoring);
     expect(controller.state.session, isNull);
     expect(controller.state.isAuthenticated, isFalse);
   });
 
-  test('restore exposes a valid persisted session as authenticated', () async {
-    final storage = _FakeSecureStorage();
-    final now = DateTime.utc(2026, 9, 25, 18);
-    final store = SecureSessionStore(storage, utcNow: () => now);
-
-    await store.save(
-      const AuthSessionResponse(
-        accessToken: 'access-token',
-        refreshToken: 'refresh-token',
-        tokenType: 'Bearer',
-        expiresIn: 900,
-        sessionId: 'session-1',
-        userId: 'user-1',
-      ),
+  test('restore exposes a resolved session as authenticated', () async {
+    final controller = AuthStateController(
+      _FakeSessionLifecycle(session: _session()),
     );
 
-    final controller = AuthStateController(store);
     await controller.restore();
 
     expect(controller.state.status, AuthStateStatus.authenticated);
@@ -39,10 +25,9 @@ void main() {
     expect(controller.state.session?.userId, 'user-1');
   });
 
-  test('restore resolves to unauthenticated when no session exists', () async {
-    final controller = AuthStateController(
-      SecureSessionStore(_FakeSecureStorage()),
-    );
+  test('restore resolves to unauthenticated when lifecycle returns no session',
+      () async {
+    final controller = AuthStateController(_FakeSessionLifecycle());
 
     await controller.restore();
 
@@ -50,35 +35,9 @@ void main() {
     expect(controller.state.session, isNull);
   });
 
-  test('restore stays local and rejects an expired stored session', () async {
-    final storage = _FakeSecureStorage();
-    var now = DateTime.utc(2026, 9, 25, 18);
-    final store = SecureSessionStore(storage, utcNow: () => now);
-
-    await store.save(
-      const AuthSessionResponse(
-        accessToken: 'access-token',
-        refreshToken: 'refresh-token',
-        tokenType: 'Bearer',
-        expiresIn: 60,
-        sessionId: 'session-1',
-        userId: 'user-1',
-      ),
-    );
-
-    now = now.add(const Duration(seconds: 60));
-
-    final controller = AuthStateController(store);
-    await controller.restore();
-
-    expect(controller.state.status, AuthStateStatus.unauthenticated);
-    expect(controller.state.session, isNull);
-    expect(storage.values, isEmpty);
-  });
-
-  test('restore fails closed when secure storage cannot be read', () async {
+  test('restore fails closed when lifecycle restoration throws', () async {
     final controller = AuthStateController(
-      SecureSessionStore(_ThrowingSecureStorage()),
+      _FakeSessionLifecycle(restoreError: StateError('refresh unavailable')),
     );
 
     await controller.restore();
@@ -88,57 +47,55 @@ void main() {
     expect(controller.state.isAuthenticated, isFalse);
   });
 
-  test('clearLocalSession clears storage and local auth state', () async {
-    final storage = _FakeSecureStorage();
-    final now = DateTime.utc(2026, 9, 25, 18);
-    final store = SecureSessionStore(storage, utcNow: () => now);
+  test('clearLocalSession invalidates lifecycle and local auth state', () async {
+    final lifecycle = _FakeSessionLifecycle(session: _session());
+    final controller = AuthStateController(lifecycle);
 
-    await store.save(
-      const AuthSessionResponse(
-        accessToken: 'access-token',
-        refreshToken: 'refresh-token',
-        tokenType: 'Bearer',
-        expiresIn: 900,
-        sessionId: 'session-1',
-        userId: 'user-1',
-      ),
-    );
-
-    final controller = AuthStateController(store);
     await controller.restore();
     await controller.clearLocalSession();
 
+    expect(lifecycle.clearCalls, 1);
     expect(controller.state.status, AuthStateStatus.unauthenticated);
-    expect(storage.values, isEmpty);
+    expect(controller.state.session, isNull);
   });
 }
 
-class _FakeSecureStorage implements SecureKeyValueStorage {
-  final Map<String, String> values = <String, String>{};
-
-  @override
-  Future<void> delete(String key) async {
-    values.remove(key);
-  }
-
-  @override
-  Future<String?> read(String key) async => values[key];
-
-  @override
-  Future<void> write(String key, String value) async {
-    values[key] = value;
-  }
+StoredAuthSession _session() {
+  return StoredAuthSession(
+    accessToken: 'access-token',
+    refreshToken: 'refresh-token',
+    tokenType: 'Bearer',
+    sessionId: 'session-1',
+    userId: 'user-1',
+    accessTokenExpiresAtUtc: DateTime.utc(2026, 9, 28, 12),
+  );
 }
 
-class _ThrowingSecureStorage implements SecureKeyValueStorage {
-  @override
-  Future<void> delete(String key) async {}
+class _FakeSessionLifecycle implements AuthSessionLifecycle {
+  _FakeSessionLifecycle({
+    this.session,
+    this.restoreError,
+  });
+
+  StoredAuthSession? session;
+  final Object? restoreError;
+  int clearCalls = 0;
 
   @override
-  Future<String?> read(String key) async {
-    throw StateError('secure storage unavailable');
+  Future<StoredAuthSession?> restoreValidSession() async {
+    final error = restoreError;
+    if (error != null) {
+      throw error;
+    }
+    return session;
   }
 
   @override
-  Future<void> write(String key, String value) async {}
+  Future<StoredAuthSession?> refreshSession() async => session;
+
+  @override
+  Future<void> clearLocalSession() async {
+    clearCalls += 1;
+    session = null;
+  }
 }

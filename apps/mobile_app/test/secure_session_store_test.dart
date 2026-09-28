@@ -27,7 +27,20 @@ void main() {
         restored.accessTokenExpiresAtUtc,
         session.accessTokenExpiresAtUtc,
       );
-      expect(storage.values.length, 1);
+      expect(storage.values.keys, <String>[SecureSessionStore.storageKey]);
+    });
+
+    test('read retains a session whose access token is expired', () async {
+      final expired = _session(
+        expiresAtUtc: DateTime.utc(2026, 9, 28, 9),
+      );
+      await store.save(expired);
+
+      final restored = await store.read();
+
+      expect(restored, isNotNull);
+      expect(restored!.sessionId, expired.sessionId);
+      expect(storage.values, isNotEmpty);
     });
 
     test('clear removes the persisted session', () async {
@@ -44,14 +57,14 @@ void main() {
     });
 
     test('corrupted session fails closed and deletes the record', () async {
-      storage.values['afwal.auth.session.v1'] = '{not-json';
+      storage.values[SecureSessionStore.storageKey] = '{not-json';
 
       expect(await store.read(), isNull);
       expect(storage.values, isEmpty);
     });
 
     test('invalid session shape fails closed and deletes the record', () async {
-      storage.values['afwal.auth.session.v1'] = '{"accessToken":"only"}';
+      storage.values[SecureSessionStore.storageKey] = '{"accessToken":"only"}';
 
       expect(await store.read(), isNull);
       expect(storage.values, isEmpty);
@@ -59,14 +72,15 @@ void main() {
   });
 }
 
-StoredAuthSession _session() {
+StoredAuthSession _session({DateTime? expiresAtUtc}) {
   return StoredAuthSession(
     accessToken: 'access-secret',
     refreshToken: 'refresh-secret',
     tokenType: 'Bearer',
     sessionId: 'session-1',
     userId: 'user-1',
-    accessTokenExpiresAtUtc: DateTime.parse('2026-09-24T11:00:00Z'),
+    accessTokenExpiresAtUtc:
+        expiresAtUtc ?? DateTime.parse('2026-09-28T11:00:00Z'),
   );
 }
 

@@ -1,12 +1,14 @@
 import 'package:flutter/foundation.dart';
 
 import '../models/auth_session.dart';
-import 'auth_session_store.dart';
+import '../models/auth_session_lifecycle.dart';
+import 'secure_session_store.dart';
 
 enum AuthStateStatus {
   restoring,
   unauthenticated,
   authenticated,
+  refreshRequired,
   restorationFailed,
 }
 
@@ -25,16 +27,25 @@ class AuthState {
   const AuthState.authenticated(StoredAuthSession session)
       : this._(AuthStateStatus.authenticated, session);
 
+  const AuthState.refreshRequired(StoredAuthSession session)
+      : this._(AuthStateStatus.refreshRequired, session);
+
   final AuthStateStatus status;
   final StoredAuthSession? session;
 
   bool get isAuthenticated => status == AuthStateStatus.authenticated;
+
+  bool get hasStoredSession => session != null;
 }
 
 class AuthStateController extends ChangeNotifier {
-  AuthStateController(this._sessionStore);
+  AuthStateController(
+    this._sessionStore, {
+    DateTime Function()? utcNow,
+  }) : _utcNow = utcNow ?? DateTime.now;
 
-  final SecureSessionStore _sessionStore;
+  final AuthSessionStore _sessionStore;
+  final DateTime Function() _utcNow;
 
   AuthState _state = const AuthState.restoring();
 
@@ -50,7 +61,14 @@ class AuthStateController extends ChangeNotifier {
         return;
       }
 
-      _setState(AuthState.authenticated(session));
+      switch (session.lifecycleAt(_utcNow())) {
+        case AuthSessionLifecycle.active:
+          _setState(AuthState.authenticated(session));
+          return;
+        case AuthSessionLifecycle.refreshRequired:
+          _setState(AuthState.refreshRequired(session));
+          return;
+      }
     } catch (_) {
       _setState(const AuthState.restorationFailed());
     }

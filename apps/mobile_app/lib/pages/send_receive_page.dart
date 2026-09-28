@@ -4,6 +4,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 import '../models/payment_transfer.dart';
 import '../services/transfer_repository.dart';
 import 'p2p_qr_scanner_page.dart';
+import 'p2p_transfer_review_page.dart';
 
 enum SendReceiveMode { send, receive }
 
@@ -35,8 +36,6 @@ class _SendReceivePageState extends State<SendReceivePage> {
   final _payeeController = TextEditingController();
   final _amountController = TextEditingController();
   final _currencyController = TextEditingController(text: 'EUR');
-  bool _submitting = false;
-  TransferReceipt? _receipt;
   String? _error;
   TransferRecipientKind _recipientKind = TransferRecipientKind.afWalId;
 
@@ -71,11 +70,10 @@ class _SendReceivePageState extends State<SendReceivePage> {
       _recipientKind = kind;
       _payeeController.clear();
       _error = null;
-      _receipt = null;
     });
   }
 
-  Future<void> _send() async {
+  Future<void> _reviewTransfer() async {
     final sourceWalletId = widget.sourceWalletId?.trim();
     if (sourceWalletId == null || sourceWalletId.isEmpty) {
       setState(() => _error = 'Sélectionnez un portefeuille source avant l’envoi.');
@@ -90,28 +88,25 @@ class _SendReceivePageState extends State<SendReceivePage> {
       return;
     }
 
-    setState(() {
-      _submitting = true;
-      _error = null;
-      _receipt = null;
-    });
-    try {
-      final receipt = await widget.repository.send(SendTransferRequest(
-        sourceWalletId: sourceWalletId,
-        recipientKind: _recipientKind,
-        payeeId: payee,
-        amountMinor: (amount * 100).round(),
-        currencyCode: currency,
-        idempotencyKey: DateTime.now().microsecondsSinceEpoch.toString(),
-      ));
-      if (!mounted) return;
-      setState(() => _receipt = receipt);
-    } catch (error) {
-      if (!mounted) return;
-      setState(() => _error = error.toString());
-    } finally {
-      if (mounted) setState(() => _submitting = false);
-    }
+    setState(() => _error = null);
+
+    final request = SendTransferRequest(
+      sourceWalletId: sourceWalletId,
+      recipientKind: _recipientKind,
+      payeeId: payee,
+      amountMinor: (amount * 100).round(),
+      currencyCode: currency,
+      idempotencyKey: DateTime.now().microsecondsSinceEpoch.toString(),
+    );
+
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => P2pTransferReviewPage(
+          repository: widget.repository,
+          request: request,
+        ),
+      ),
+    );
   }
 
   @override
@@ -200,22 +195,14 @@ class _SendReceivePageState extends State<SendReceivePage> {
         ),
         const SizedBox(height: 20),
         FilledButton.icon(
-          onPressed: _submitting ? null : _send,
-          icon: const Icon(Icons.north_east),
-          label: Text(_submitting ? 'Envoi…' : 'Continuer'),
+          key: const Key('review-p2p-transfer'),
+          onPressed: _reviewTransfer,
+          icon: const Icon(Icons.arrow_forward),
+          label: const Text('Continuer'),
         ),
         if (_error != null) ...[
           const SizedBox(height: 16),
           Text(_error!, key: const Key('send-error')),
-        ],
-        if (_receipt != null) ...[
-          const SizedBox(height: 16),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text('Payment Intent ${_receipt!.paymentIntentId}\nÉtat: ${_receipt!.status.name}'),
-            ),
-          ),
         ],
         if (widget.onReturnToWallet != null) ...[
           const SizedBox(height: 20),

@@ -2,99 +2,96 @@ import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile_app/models/auth_session.dart';
-import 'package:mobile_app/services/auth_session_store.dart';
+import 'package:mobile_app/services/secure_session_store.dart';
+import 'package:mobile_app/services/secure_storage_adapter.dart';
 
 void main() {
-  test('secure session store persists a single session payload', () async {
-    final storage = _FakeSecureStorage();
-    final now = DateTime.utc(2026, 9, 25, 18);
-    final store = SecureSessionStore(storage, utcNow: () => now);
+  group('canonical auth session store', () {
+    test('persists one complete session payload under the canonical key', () async {
+      final storage = _FakeSecureStorage();
+      final store = SecureSessionStore(storage);
 
-    await store.save(
-      const AuthSessionResponse(
-        accessToken: 'access-token',
-        refreshToken: 'refresh-token',
-        tokenType: 'Bearer',
-        expiresIn: 900,
-        sessionId: 'session-1',
-        userId: 'user-1',
-      ),
-    );
+      await store.save(_session());
 
-    expect(storage.values.keys, <String>[SecureSessionStore.storageKey]);
+      expect(storage.values.keys, <String>[SecureSessionStore.storageKey]);
 
-    final raw = storage.values[SecureSessionStore.storageKey]!;
-    final persisted = jsonDecode(raw) as Map<String, dynamic>;
-    expect(
-      persisted['accessTokenExpiresAtUtc'],
-      '2026-09-25T18:15:00.000Z',
-    );
+      final raw = storage.values[SecureSessionStore.storageKey]!;
+      final persisted = jsonDecode(raw) as Map<String, dynamic>;
+      expect(persisted['accessToken'], 'access-token');
+      expect(persisted['refreshToken'], 'refresh-token');
+      expect(
+        persisted['accessTokenExpiresAtUtc'],
+        '2026-09-25T18:15:00.000Z',
+      );
+    });
 
-    final restored = await store.read();
-    expect(restored, isNotNull);
-    expect(restored!.accessToken, 'access-token');
-    expect(restored.refreshToken, 'refresh-token');
-    expect(restored.sessionId, 'session-1');
-  });
+    test('keeps refresh material when only the access token is expired', () async {
+      final storage = _FakeSecureStorage();
+      final store = SecureSessionStore(storage);
+      await store.save(
+        _session(
+          accessTokenExpiresAtUtc: DateTime.utc(2026, 9, 25, 18),
+        ),
+      );
 
-  test('secure session store clears a session at access-token expiry', () async {
-    final storage = _FakeSecureStorage();
-    var now = DateTime.utc(2026, 9, 25, 18);
-    final store = SecureSessionStore(storage, utcNow: () => now);
+      final restored = await store.read();
 
-    await store.save(
-      const AuthSessionResponse(
-        accessToken: 'access-token',
-        refreshToken: 'refresh-token',
-        tokenType: 'Bearer',
-        expiresIn: 60,
-        sessionId: 'session-1',
-        userId: 'user-1',
-      ),
-    );
+      expect(restored, isNotNull);
+      expect(restored!.refreshToken, 'refresh-token');
+      expect(storage.values, isNotEmpty);
+    });
 
-    now = now.add(const Duration(seconds: 60));
+    test('clears malformed persisted data', () async {
+      final storage = _FakeSecureStorage()
+        ..values[SecureSessionStore.storageKey] = '{"accessToken":42}';
+      final store = SecureSessionStore(storage);
 
-    expect(await store.read(), isNull);
-    expect(storage.values, isEmpty);
-  });
+      expect(await store.read(), isNull);
+      expect(storage.values, isEmpty);
+    });
 
-  test('secure session store clears malformed persisted data', () async {
-    final storage = _FakeSecureStorage()
-      ..values[SecureSessionStore.storageKey] = '{"accessToken":42}';
-    final store = SecureSessionStore(
-      storage,
-      utcNow: () => DateTime.utc(2026, 9, 25, 18),
-    );
+    test('clear removes the persisted session payload', () async {
+      final storage = _FakeSecureStorage()
+        ..values[SecureSessionStore.storageKey] = '{}';
+      final store = SecureSessionStore(storage);
 
-    expect(await store.read(), isNull);
-    expect(storage.values, isEmpty);
-  });
+      await store.clear();
 
-  test('clear removes the persisted session payload', () async {
-    final storage = _FakeSecureStorage()
-      ..values[SecureSessionStore.storageKey] = '{}';
-    final store = SecureSessionStore(storage);
-
-    await store.clear();
-
-    expect(storage.values, isEmpty);
+      expect(storage.values, isEmpty);
+    });
   });
 }
 
-class _FakeSecureStorage implements SecureKeyValueStorage {
+StoredAuthSession _session({
+  DateTime? accessTokenExpiresAtUtc,
+}) {
+  return StoredAuthSession(
+    accessToken: 'access-token',
+    refreshToken: 'refresh-token',
+    tokenType: 'Bearer',
+    sessionId: 'session-1',
+    userId: 'user-1',
+    accessTokenExpiresAtUtc:
+        accessTokenExpiresAtUtc ?? DateTime.utc(2026, 9, 25, 18, 15),
+  );
+}
+
+class _FakeSecureStorage implements SecureStorageAdapter {
   final Map<String, String> values = <String, String>{};
 
   @override
-  Future<void> delete(String key) async {
+  Future<void> delete({required String key}) async {
     values.remove(key);
   }
 
   @override
-  Future<String?> read(String key) async => values[key];
+  Future<String?> read({required String key}) async => values[key];
 
   @override
-  Future<void> write(String key, String value) async {
+  Future<void> write({
+    required String key,
+    required String value,
+  }) async {
     values[key] = value;
   }
 }

@@ -1,7 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile_app/models/auth_session.dart';
-import 'package:mobile_app/services/auth_session_store.dart';
 import 'package:mobile_app/services/auth_state_controller.dart';
+import 'package:mobile_app/services/secure_session_store.dart';
+import 'package:mobile_app/services/secure_storage_adapter.dart';
 
 void main() {
   test('auth state starts in restoring state without a session', () {
@@ -14,21 +15,10 @@ void main() {
     expect(controller.state.isAuthenticated, isFalse);
   });
 
-  test('restore exposes a valid persisted session as authenticated', () async {
+  test('restore exposes a persisted session as authenticated', () async {
     final storage = _FakeSecureStorage();
-    final now = DateTime.utc(2026, 9, 25, 18);
-    final store = SecureSessionStore(storage, utcNow: () => now);
-
-    await store.save(
-      const AuthSessionResponse(
-        accessToken: 'access-token',
-        refreshToken: 'refresh-token',
-        tokenType: 'Bearer',
-        expiresIn: 900,
-        sessionId: 'session-1',
-        userId: 'user-1',
-      ),
-    );
+    final store = SecureSessionStore(storage);
+    await store.save(_session());
 
     final controller = AuthStateController(store);
     await controller.restore();
@@ -50,30 +40,21 @@ void main() {
     expect(controller.state.session, isNull);
   });
 
-  test('restore stays local and rejects an expired stored session', () async {
+  test('restore preserves refreshable session after access-token expiry', () async {
     final storage = _FakeSecureStorage();
-    var now = DateTime.utc(2026, 9, 25, 18);
-    final store = SecureSessionStore(storage, utcNow: () => now);
-
+    final store = SecureSessionStore(storage);
     await store.save(
-      const AuthSessionResponse(
-        accessToken: 'access-token',
-        refreshToken: 'refresh-token',
-        tokenType: 'Bearer',
-        expiresIn: 60,
-        sessionId: 'session-1',
-        userId: 'user-1',
+      _session(
+        accessTokenExpiresAtUtc: DateTime.utc(2026, 9, 25, 18),
       ),
     );
-
-    now = now.add(const Duration(seconds: 60));
 
     final controller = AuthStateController(store);
     await controller.restore();
 
-    expect(controller.state.status, AuthStateStatus.unauthenticated);
-    expect(controller.state.session, isNull);
-    expect(storage.values, isEmpty);
+    expect(controller.state.status, AuthStateStatus.authenticated);
+    expect(controller.state.session?.refreshToken, 'refresh-token');
+    expect(storage.values, isNotEmpty);
   });
 
   test('restore fails closed when secure storage cannot be read', () async {
@@ -90,19 +71,8 @@ void main() {
 
   test('clearLocalSession clears storage and local auth state', () async {
     final storage = _FakeSecureStorage();
-    final now = DateTime.utc(2026, 9, 25, 18);
-    final store = SecureSessionStore(storage, utcNow: () => now);
-
-    await store.save(
-      const AuthSessionResponse(
-        accessToken: 'access-token',
-        refreshToken: 'refresh-token',
-        tokenType: 'Bearer',
-        expiresIn: 900,
-        sessionId: 'session-1',
-        userId: 'user-1',
-      ),
-    );
+    final store = SecureSessionStore(storage);
+    await store.save(_session());
 
     final controller = AuthStateController(store);
     await controller.restore();
@@ -113,32 +83,52 @@ void main() {
   });
 }
 
-class _FakeSecureStorage implements SecureKeyValueStorage {
+StoredAuthSession _session({
+  DateTime? accessTokenExpiresAtUtc,
+}) {
+  return StoredAuthSession(
+    accessToken: 'access-token',
+    refreshToken: 'refresh-token',
+    tokenType: 'Bearer',
+    sessionId: 'session-1',
+    userId: 'user-1',
+    accessTokenExpiresAtUtc:
+        accessTokenExpiresAtUtc ?? DateTime.utc(2026, 9, 25, 18, 15),
+  );
+}
+
+class _FakeSecureStorage implements SecureStorageAdapter {
   final Map<String, String> values = <String, String>{};
 
   @override
-  Future<void> delete(String key) async {
+  Future<void> delete({required String key}) async {
     values.remove(key);
   }
 
   @override
-  Future<String?> read(String key) async => values[key];
+  Future<String?> read({required String key}) async => values[key];
 
   @override
-  Future<void> write(String key, String value) async {
+  Future<void> write({
+    required String key,
+    required String value,
+  }) async {
     values[key] = value;
   }
 }
 
-class _ThrowingSecureStorage implements SecureKeyValueStorage {
+class _ThrowingSecureStorage implements SecureStorageAdapter {
   @override
-  Future<void> delete(String key) async {}
+  Future<void> delete({required String key}) async {}
 
   @override
-  Future<String?> read(String key) async {
+  Future<String?> read({required String key}) async {
     throw StateError('secure storage unavailable');
   }
 
   @override
-  Future<void> write(String key, String value) async {}
+  Future<void> write({
+    required String key,
+    required String value,
+  }) async {}
 }

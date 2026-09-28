@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../models/auth_session.dart';
-import 'auth_session_store.dart';
+import 'secure_session_store.dart';
 
 enum AuthStateStatus {
   restoring,
@@ -34,7 +34,7 @@ class AuthState {
 class AuthStateController extends ChangeNotifier {
   AuthStateController(this._sessionStore);
 
-  final SecureSessionStore _sessionStore;
+  final AuthSessionStore _sessionStore;
 
   AuthState _state = const AuthState.restoring();
 

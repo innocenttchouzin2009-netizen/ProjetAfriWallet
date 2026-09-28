@@ -1,0 +1,64 @@
+name: Mobile Beta2.11 Auth Session Lifecycle
+
+on:
+  push:
+    branches:
+      - feature/mobile-beta2.11
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    if: github.event_name == 'push' || github.head_ref == 'feature/mobile-beta2.11'
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: apps/mobile_app
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Flutter 3.47.2
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.2'
+          cache: true
+
+      - name: Flutter version
+        run: flutter --version
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Verify lockfile is synchronized
+        run: git diff --exit-code -- pubspec.lock
+
+      - name: Generate localizations
+        run: flutter gen-l10n
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test auth session lifecycle
+        run: flutter test test/auth_session_lifecycle_test.dart
+
+      - name: Test secure session store
+        run: flutter test test/secure_session_store_test.dart
+
+      - name: Test auth state controller
+        run: flutter test test/auth_state_controller_test.dart
+
+      - name: Run complete Flutter test suite
+        run: flutter test
+
+      - name: Verify Beta2.11 diff
+        working-directory: .
+        run: git diff --check a47bc46feb60d0c78180f1467747c936021453a9..HEAD

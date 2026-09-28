@@ -1,0 +1,61 @@
+name: Mobile Beta2.9 P2P QR Send Receive UX
+
+on:
+  push:
+    branches:
+      - feature/mobile-beta2.9
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    if: github.event_name == 'push' || github.head_ref == 'feature/mobile-beta2.9'
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: apps/mobile_app
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Flutter 3.47.2
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.2'
+          cache: true
+
+      - name: Flutter version
+        run: flutter --version
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Verify lockfile is synchronized
+        run: git diff --exit-code -- pubspec.lock
+
+      - name: Generate localizations
+        run: flutter gen-l10n
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test P2P QR send and receive UX
+        run: flutter test test/send_receive_page_test.dart test/transfer_repository_test.dart
+
+      - name: Test existing QR scanner contract
+        run: flutter test test/qr_scanner_page_test.dart
+
+      - name: Run complete Flutter test suite
+        run: flutter test
+
+      - name: Verify Beta2.9 diff
+        working-directory: .
+        run: git diff --check 7b5e9999247bca6d42049c43bdb2d39af9bc0352..HEAD

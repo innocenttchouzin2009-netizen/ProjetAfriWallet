@@ -148,6 +148,24 @@ void main() {
       expect(store.value?.refreshToken, 'refresh-new');
     });
 
+    test('retryable refresh failure preserves the stored refresh token',
+        () async {
+      final store = _MemorySessionStore()
+        ..value = _stored(refreshToken: 'refresh-old');
+      final repository = RemoteAuthRepository(
+        _remote((request) async => http.Response('temporarily unavailable', 503)),
+        store,
+      );
+
+      await expectLater(
+        repository.refresh(),
+        throwsA(isA<AuthRepositoryException>()),
+      );
+
+      expect(store.value?.refreshToken, 'refresh-old');
+      expect(store.clearCalls, 0);
+    });
+
     test('backend auth error is mapped to the stable auth code', () async {
       final repository = RemoteAuthRepository(
         _remote((request) async {
@@ -194,6 +212,23 @@ void main() {
         throwsA(isA<AuthRepositoryException>()),
       );
       expect(store.value, isNull);
+      expect(store.clearCalls, 1);
+    });
+
+    test('logout-all clears local session even when remote revocation fails',
+        () async {
+      final store = _MemorySessionStore()..value = _stored();
+      final repository = RemoteAuthRepository(
+        _remote((request) async => http.Response('offline', 503)),
+        store,
+      );
+
+      await expectLater(
+        repository.logoutAll(),
+        throwsA(isA<AuthRepositoryException>()),
+      );
+      expect(store.value, isNull);
+      expect(store.clearCalls, 1);
     });
 
     test('session-dependent operations fail closed without local session', () async {
@@ -256,6 +291,7 @@ StoredAuthSession _stored({
 
 class _MemorySessionStore implements AuthSessionStore {
   StoredAuthSession? value;
+  int clearCalls = 0;
 
   @override
   Future<void> save(StoredAuthSession session) async {
@@ -267,6 +303,7 @@ class _MemorySessionStore implements AuthSessionStore {
 
   @override
   Future<void> clear() async {
+    clearCalls += 1;
     value = null;
   }
 }

@@ -7,12 +7,13 @@ import 'package:mobile_app/data/remote/wallet_remote_data_source.dart';
 import 'package:mobile_app/models/auth_session.dart';
 import 'package:mobile_app/network/api_client.dart';
 import 'package:mobile_app/network/api_exception.dart';
+import 'package:mobile_app/services/auth_session_coordinator.dart';
 import 'package:mobile_app/services/secure_session_store.dart';
 import 'package:mobile_app/services/wallet_repository.dart';
 
 void main() {
   group('AuthenticatedWalletRepository', () {
-    test('loads wallets with the access token from the stored session', () async {
+    test('loads wallets with the lifecycle-restored access token', () async {
       late http.Request captured;
       final apiClient = ApiClient(
         baseUrl: 'https://api.afwal.test',
@@ -35,21 +36,49 @@ void main() {
           );
         }),
       );
-      final repository = AuthenticatedWalletRepository(
+      final lifecycle = _FakeAuthSessionLifecycle(
+        _storedSession(accessToken: 'access-fresh'),
+      );
+      final repository = AuthenticatedWalletRepository.withSessionLifecycle(
         WalletRemoteDataSource(apiClient),
-        _FakeAuthSessionStore(_storedSession()),
+        lifecycle,
       );
 
       final wallets = await repository.loadWalletBalances();
 
-      expect(captured.headers['Authorization'], 'Bearer access-secret');
+      expect(lifecycle.restoreCalls, 1);
+      expect(captured.headers['Authorization'], 'Bearer access-fresh');
       expect(wallets, hasLength(1));
       expect(wallets.single.currency, 'XAF');
       expect(wallets.single.availableMinor, 125000);
       apiClient.close();
     });
 
-    test('rejects wallet reads when no authenticated session exists', () async {
+    test('rejects wallet reads when lifecycle cannot restore a session', () async {
+      var remoteCalled = false;
+      final apiClient = ApiClient(
+        baseUrl: 'https://api.afwal.test',
+        httpClient: MockClient((_) async {
+          remoteCalled = true;
+          return http.Response('{"wallets":[]}', 200);
+        }),
+      );
+      final lifecycle = _FakeAuthSessionLifecycle(null);
+      final repository = AuthenticatedWalletRepository.withSessionLifecycle(
+        WalletRemoteDataSource(apiClient),
+        lifecycle,
+      );
+
+      await expectLater(
+        repository.loadWalletBalances(),
+        throwsA(isA<WalletUnavailableException>()),
+      );
+      expect(lifecycle.restoreCalls, 1);
+      expect(remoteCalled, isFalse);
+      apiClient.close();
+    });
+
+    test('never sends a wallet request with an expired stored token', () async {
       var remoteCalled = false;
       final apiClient = ApiClient(
         baseUrl: 'https://api.afwal.test',
@@ -60,7 +89,12 @@ void main() {
       );
       final repository = AuthenticatedWalletRepository(
         WalletRemoteDataSource(apiClient),
-        _FakeAuthSessionStore(null),
+        _FakeAuthSessionStore(
+          _storedSession(
+            accessToken: 'access-expired',
+            expiresAtUtc: DateTime.utc(2000),
+          ),
+        ),
       );
 
       await expectLater(
@@ -76,9 +110,9 @@ void main() {
         baseUrl: 'https://api.afwal.test',
         httpClient: MockClient((_) async => http.Response('', 401)),
       );
-      final repository = AuthenticatedWalletRepository(
+      final repository = AuthenticatedWalletRepository.withSessionLifecycle(
         WalletRemoteDataSource(apiClient),
-        _FakeAuthSessionStore(_storedSession()),
+        _FakeAuthSessionLifecycle(_storedSession()),
       );
 
       await expectLater(
@@ -90,14 +124,39 @@ void main() {
   });
 }
 
-StoredAuthSession _storedSession() => StoredAuthSession(
-      accessToken: 'access-secret',
+StoredAuthSession _storedSession({
+  String accessToken = 'access-secret',
+  DateTime? expiresAtUtc,
+}) =>
+    StoredAuthSession(
+      accessToken: accessToken,
       refreshToken: 'refresh-secret',
       tokenType: 'Bearer',
       sessionId: 'session-1',
       userId: 'user-1',
-      accessTokenExpiresAtUtc: DateTime.utc(2026, 9, 27, 12),
+      accessTokenExpiresAtUtc: expiresAtUtc ?? DateTime.utc(2100),
     );
+
+class _FakeAuthSessionLifecycle implements AuthSessionLifecycle {
+  _FakeAuthSessionLifecycle(this.session);
+
+  StoredAuthSession? session;
+  int restoreCalls = 0;
+
+  @override
+  Future<StoredAuthSession?> restoreValidSession() async {
+    restoreCalls += 1;
+    return session;
+  }
+
+  @override
+  Future<StoredAuthSession?> refreshSession() async => session;
+
+  @override
+  Future<void> clearLocalSession() async {
+    session = null;
+  }
+}
 
 class _FakeAuthSessionStore implements AuthSessionStore {
   _FakeAuthSessionStore(this.session);

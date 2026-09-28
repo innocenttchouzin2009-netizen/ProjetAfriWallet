@@ -8,12 +8,13 @@ import 'package:mobile_app/models/auth_session.dart';
 import 'package:mobile_app/models/payment_transfer.dart';
 import 'package:mobile_app/network/api_client.dart';
 import 'package:mobile_app/network/api_exception.dart';
+import 'package:mobile_app/services/auth_session_coordinator.dart';
 import 'package:mobile_app/services/secure_session_store.dart';
 import 'package:mobile_app/services/transfer_repository.dart';
 
 void main() {
   group('AuthenticatedTransferRepository', () {
-    test('sends an AfWal ID transfer with the explicit source wallet', () async {
+    test('sends an AfWal ID transfer with the lifecycle-restored token', () async {
       late http.Request captured;
       final apiClient = ApiClient(
         baseUrl: 'https://api.afwal.test',
@@ -35,9 +36,12 @@ void main() {
           );
         }),
       );
-      final repository = AuthenticatedTransferRepository(
+      final lifecycle = _FakeAuthSessionLifecycle(
+        _storedSession(accessToken: 'access-fresh'),
+      );
+      final repository = AuthenticatedTransferRepository.withSessionLifecycle(
         P2PRemoteDataSource(apiClient),
-        _FakeAuthSessionStore(_storedSession()),
+        lifecycle,
       );
       const request = SendTransferRequest(
         sourceWalletId: '22222222-2222-2222-2222-222222222222',
@@ -48,12 +52,12 @@ void main() {
       );
 
       final receipt = await repository.send(request);
-      final requestBody =
-          jsonDecode(captured.body) as Map<String, dynamic>;
+      final requestBody = jsonDecode(captured.body) as Map<String, dynamic>;
 
+      expect(lifecycle.restoreCalls, 1);
       expect(captured.method, 'POST');
       expect(captured.url.path, '/api/v1/p2p/transfers');
-      expect(captured.headers['Authorization'], 'Bearer access-secret');
+      expect(captured.headers['Authorization'], 'Bearer access-fresh');
       expect(requestBody['sourceWalletId'], request.sourceWalletId);
       expect(requestBody['recipientKind'], 'afwal-id');
       expect(requestBody['recipientValue'], request.payeeId);
@@ -94,9 +98,9 @@ void main() {
           );
         }),
       );
-      final repository = AuthenticatedTransferRepository(
+      final repository = AuthenticatedTransferRepository.withSessionLifecycle(
         P2PRemoteDataSource(apiClient),
-        _FakeAuthSessionStore(_storedSession()),
+        _FakeAuthSessionLifecycle(_storedSession()),
       );
       const request = SendTransferRequest(
         sourceWalletId: '22222222-2222-2222-2222-222222222222',
@@ -108,8 +112,7 @@ void main() {
       );
 
       await repository.send(request);
-      final requestBody =
-          jsonDecode(captured.body) as Map<String, dynamic>;
+      final requestBody = jsonDecode(captured.body) as Map<String, dynamic>;
 
       expect(requestBody['sourceWalletId'], request.sourceWalletId);
       expect(requestBody['recipientKind'], 'qr');
@@ -118,7 +121,7 @@ void main() {
       apiClient.close();
     });
 
-    test('rejects transfers when no authenticated session exists', () async {
+    test('rejects transfers when lifecycle cannot restore a session', () async {
       var remoteCalled = false;
       final apiClient = ApiClient(
         baseUrl: 'https://api.afwal.test',
@@ -127,9 +130,10 @@ void main() {
           return http.Response('{}', 200);
         }),
       );
-      final repository = AuthenticatedTransferRepository(
+      final lifecycle = _FakeAuthSessionLifecycle(null);
+      final repository = AuthenticatedTransferRepository.withSessionLifecycle(
         P2PRemoteDataSource(apiClient),
-        _FakeAuthSessionStore(null),
+        lifecycle,
       );
 
       await expectLater(
@@ -144,11 +148,39 @@ void main() {
         ),
         throwsA(isA<TransferUnavailableException>()),
       );
+      expect(lifecycle.restoreCalls, 1);
       expect(remoteCalled, isFalse);
       apiClient.close();
     });
 
-    test('loads the backend receive identity with the stored token', () async {
+    test('never sends a P2P request with an expired stored token', () async {
+      var remoteCalled = false;
+      final apiClient = ApiClient(
+        baseUrl: 'https://api.afwal.test',
+        httpClient: MockClient((_) async {
+          remoteCalled = true;
+          return http.Response('{}', 200);
+        }),
+      );
+      final repository = AuthenticatedTransferRepository(
+        P2PRemoteDataSource(apiClient),
+        _FakeAuthSessionStore(
+          _storedSession(
+            accessToken: 'access-expired',
+            expiresAtUtc: DateTime.utc(2000),
+          ),
+        ),
+      );
+
+      await expectLater(
+        repository.loadReceiveIdentity(),
+        throwsA(isA<TransferUnavailableException>()),
+      );
+      expect(remoteCalled, isFalse);
+      apiClient.close();
+    });
+
+    test('loads the backend receive identity with the lifecycle token', () async {
       late http.Request captured;
       final apiClient = ApiClient(
         baseUrl: 'https://api.afwal.test',
@@ -164,13 +196,15 @@ void main() {
           );
         }),
       );
-      final repository = AuthenticatedTransferRepository(
+      final lifecycle = _FakeAuthSessionLifecycle(_storedSession());
+      final repository = AuthenticatedTransferRepository.withSessionLifecycle(
         P2PRemoteDataSource(apiClient),
-        _FakeAuthSessionStore(_storedSession()),
+        lifecycle,
       );
 
       final identity = await repository.loadReceiveIdentity();
 
+      expect(lifecycle.restoreCalls, 1);
       expect(captured.method, 'POST');
       expect(captured.url.path, '/api/v1/p2p/receive-identity');
       expect(captured.headers['Authorization'], 'Bearer access-secret');
@@ -185,9 +219,9 @@ void main() {
         baseUrl: 'https://api.afwal.test',
         httpClient: MockClient((_) async => http.Response('', 401)),
       );
-      final repository = AuthenticatedTransferRepository(
+      final repository = AuthenticatedTransferRepository.withSessionLifecycle(
         P2PRemoteDataSource(apiClient),
-        _FakeAuthSessionStore(_storedSession()),
+        _FakeAuthSessionLifecycle(_storedSession()),
       );
 
       await expectLater(
@@ -199,14 +233,39 @@ void main() {
   });
 }
 
-StoredAuthSession _storedSession() => StoredAuthSession(
-      accessToken: 'access-secret',
+StoredAuthSession _storedSession({
+  String accessToken = 'access-secret',
+  DateTime? expiresAtUtc,
+}) =>
+    StoredAuthSession(
+      accessToken: accessToken,
       refreshToken: 'refresh-secret',
       tokenType: 'Bearer',
       sessionId: 'session-1',
       userId: 'user-1',
-      accessTokenExpiresAtUtc: DateTime.utc(2026, 9, 27, 14),
+      accessTokenExpiresAtUtc: expiresAtUtc ?? DateTime.utc(2100),
     );
+
+class _FakeAuthSessionLifecycle implements AuthSessionLifecycle {
+  _FakeAuthSessionLifecycle(this.session);
+
+  StoredAuthSession? session;
+  int restoreCalls = 0;
+
+  @override
+  Future<StoredAuthSession?> restoreValidSession() async {
+    restoreCalls += 1;
+    return session;
+  }
+
+  @override
+  Future<StoredAuthSession?> refreshSession() async => session;
+
+  @override
+  Future<void> clearLocalSession() async {
+    session = null;
+  }
+}
 
 class _FakeAuthSessionStore implements AuthSessionStore {
   _FakeAuthSessionStore(this.session);

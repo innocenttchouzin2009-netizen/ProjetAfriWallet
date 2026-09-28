@@ -1,5 +1,7 @@
 import '../data/remote/p2p_remote_data_source.dart';
+import '../models/auth_session.dart';
 import '../models/payment_transfer.dart';
+import 'auth_session_coordinator.dart';
 import 'secure_session_store.dart';
 
 abstract interface class TransferRepository {
@@ -37,10 +39,16 @@ class AuthenticatedTransferRepository implements TransferRepository {
   const AuthenticatedTransferRepository(
     this._remoteDataSource,
     this._sessionStore,
-  );
+  ) : _sessionLifecycle = null;
+
+  const AuthenticatedTransferRepository.withSessionLifecycle(
+    this._remoteDataSource,
+    this._sessionLifecycle,
+  ) : _sessionStore = null;
 
   final P2PRemoteDataSource _remoteDataSource;
-  final AuthSessionStore _sessionStore;
+  final AuthSessionStore? _sessionStore;
+  final AuthSessionLifecycle? _sessionLifecycle;
 
   @override
   Future<TransferReceipt> send(SendTransferRequest request) async {
@@ -81,13 +89,28 @@ class AuthenticatedTransferRepository implements TransferRepository {
   }
 
   Future<String> _requireAccessToken() async {
-    final session = await _sessionStore.read();
+    final session = await _restoreValidSession();
     if (session == null) {
       throw const TransferUnavailableException(
-        'Une session authentifiée est requise pour utiliser les transferts.',
+        'Une session authentifiée valide est requise pour utiliser les transferts.',
       );
     }
 
     return session.accessToken;
+  }
+
+  Future<StoredAuthSession?> _restoreValidSession() async {
+    final lifecycle = _sessionLifecycle;
+    if (lifecycle != null) {
+      return lifecycle.restoreValidSession();
+    }
+
+    final session = await _sessionStore!.read();
+    if (session == null ||
+        session.isAccessTokenExpired(DateTime.now().toUtc())) {
+      return null;
+    }
+
+    return session;
   }
 }

@@ -13,6 +13,7 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   cupertino_icons: ^1.0.8
+  flutter_secure_storage: ^11.2.0
   http: ^1.2.2
   intl: ^0.20.0
   mobile_scanner: ^7.4.0

@@ -1,0 +1,66 @@
+name: Mobile Beta2.11 Secure Storage
+
+on:
+  push:
+    branches:
+      - feature/mobile-beta2.11-secure-storage
+    paths:
+      - 'apps/mobile_app/lib/services/flutter_secure_storage_adapter.dart'
+      - 'apps/mobile_app/test/flutter_secure_storage_adapter_test.dart'
+      - 'apps/mobile_app/pubspec.yaml'
+      - 'apps/mobile_app/pubspec.lock'
+      - '.github/workflows/mobile-beta2.11-secure-storage.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'apps/mobile_app/lib/services/flutter_secure_storage_adapter.dart'
+      - 'apps/mobile_app/test/flutter_secure_storage_adapter_test.dart'
+      - 'apps/mobile_app/pubspec.yaml'
+      - 'apps/mobile_app/pubspec.lock'
+      - '.github/workflows/mobile-beta2.11-secure-storage.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: apps/mobile_app
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Flutter 3.47.2
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.2'
+          cache: true
+
+      - name: Flutter version
+        run: flutter --version
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Generate localizations
+        run: flutter gen-l10n
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test secure storage adapter
+        run: flutter test test/flutter_secure_storage_adapter_test.dart
+
+      - name: Run complete Flutter test suite
+        run: flutter test
+
+      - name: Verify Beta2.11 Secure Storage diff
+        working-directory: .
+        run: git diff --check e421d0d1af1d93ffe0d1c5073b4d5b88e3a42e99..HEAD

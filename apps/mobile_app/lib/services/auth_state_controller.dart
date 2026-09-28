@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../models/auth_session.dart';
-import 'secure_session_store.dart';
+import 'auth_session_coordinator.dart';
 
 enum AuthStateStatus {
   restoring,
@@ -32,9 +32,9 @@ class AuthState {
 }
 
 class AuthStateController extends ChangeNotifier {
-  AuthStateController(this._sessionStore);
+  AuthStateController(this._sessionLifecycle);
 
-  final AuthSessionStore _sessionStore;
+  final AuthSessionLifecycle _sessionLifecycle;
 
   AuthState _state = const AuthState.restoring();
 
@@ -44,7 +44,7 @@ class AuthStateController extends ChangeNotifier {
     _setState(const AuthState.restoring());
 
     try {
-      final session = await _sessionStore.read();
+      final session = await _sessionLifecycle.restoreValidSession();
       if (session == null) {
         _setState(const AuthState.unauthenticated());
         return;
@@ -57,7 +57,7 @@ class AuthStateController extends ChangeNotifier {
   }
 
   Future<void> clearLocalSession() async {
-    await _sessionStore.clear();
+    await _sessionLifecycle.clearLocalSession();
     _setState(const AuthState.unauthenticated());
   }
 

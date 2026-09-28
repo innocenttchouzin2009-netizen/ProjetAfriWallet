@@ -4,8 +4,8 @@ import 'secure_storage_adapter.dart';
 
 final class FlutterSecureStorageAdapter implements SecureStorageAdapter {
   const FlutterSecureStorageAdapter({
-    FlutterSecureStorage storage = const FlutterSecureStorage(),
-  }) : _storage = storage;
+    this._storage = const FlutterSecureStorage(),
+  });
 
   final FlutterSecureStorage _storage;
 

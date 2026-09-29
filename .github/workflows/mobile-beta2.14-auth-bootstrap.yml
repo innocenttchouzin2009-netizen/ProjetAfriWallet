@@ -1,0 +1,101 @@
+name: Mobile Beta2.14 Auth Bootstrap
+
+on:
+  push:
+    branches:
+      - feature/mobile-beta2.14
+    paths:
+      - 'apps/mobile_app/lib/main.dart'
+      - 'apps/mobile_app/lib/services/auth_production_wiring.dart'
+      - 'apps/mobile_app/lib/services/auth_session_coordinator.dart'
+      - 'apps/mobile_app/lib/services/auth_state_controller.dart'
+      - 'apps/mobile_app/lib/services/secure_session_store.dart'
+      - 'apps/mobile_app/lib/widgets/auth_session_gate.dart'
+      - 'apps/mobile_app/test/widget_test.dart'
+      - 'apps/mobile_app/test/auth_production_wiring_test.dart'
+      - 'apps/mobile_app/test/auth_session_gate_test.dart'
+      - 'apps/mobile_app/test/auth_state_controller_test.dart'
+      - 'apps/mobile_app/test/auth_session_coordinator_test.dart'
+      - 'apps/mobile_app/test/auth_session_store_test.dart'
+      - '.github/workflows/mobile-beta2.14-auth-bootstrap.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'apps/mobile_app/lib/main.dart'
+      - 'apps/mobile_app/lib/services/auth_production_wiring.dart'
+      - 'apps/mobile_app/lib/services/auth_session_coordinator.dart'
+      - 'apps/mobile_app/lib/services/auth_state_controller.dart'
+      - 'apps/mobile_app/lib/services/secure_session_store.dart'
+      - 'apps/mobile_app/lib/widgets/auth_session_gate.dart'
+      - 'apps/mobile_app/test/widget_test.dart'
+      - 'apps/mobile_app/test/auth_production_wiring_test.dart'
+      - 'apps/mobile_app/test/auth_session_gate_test.dart'
+      - 'apps/mobile_app/test/auth_state_controller_test.dart'
+      - 'apps/mobile_app/test/auth_session_coordinator_test.dart'
+      - 'apps/mobile_app/test/auth_session_store_test.dart'
+      - '.github/workflows/mobile-beta2.14-auth-bootstrap.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    defaults:
+      run:
+        working-directory: apps/mobile_app
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Flutter 3.47.2
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.2'
+          cache: true
+
+      - name: Flutter version
+        run: flutter --version
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Generate localizations
+        run: flutter gen-l10n
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test app auth bootstrap
+        run: flutter test test/widget_test.dart
+
+      - name: Test auth production wiring
+        run: flutter test test/auth_production_wiring_test.dart
+
+      - name: Test auth session gate
+        run: flutter test test/auth_session_gate_test.dart
+
+      - name: Test auth state controller
+        run: flutter test test/auth_state_controller_test.dart
+
+      - name: Test auth session coordinator
+        run: flutter test test/auth_session_coordinator_test.dart
+
+      - name: Test secure auth session store
+        run: flutter test test/auth_session_store_test.dart
+
+      - name: Run complete Flutter test suite
+        run: flutter test
+
+      - name: Verify Beta2.14 Auth bootstrap diff
+        working-directory: .
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check 766ac870fd887c7628dc72361992c7fcb2bf6586..HEAD

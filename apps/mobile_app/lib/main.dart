@@ -227,7 +227,7 @@ class _AfriWalletAppState extends State<AfriWalletApp> {
           unawaited(_authProductionWiring.stateController.restore());
         },
       ),
-      authenticatedBuilder: (_, __) => _buildAuthenticatedExperience(),
+      authenticatedBuilder: (_, _) => _buildAuthenticatedExperience(),
       restorationFailedBuilder: (_, retry) => Scaffold(
         body: SafeArea(
           child: Center(

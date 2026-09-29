@@ -36,7 +36,6 @@ on:
       - 'apps/mobile_app/test/auth_production_wiring_test.dart'
       - 'apps/mobile_app/pubspec.yaml'
       - 'apps/mobile_app/pubspec.lock'
-      - '.github/workflows/mobile-beta2.13-auth-session-gate.yml'
   workflow_dispatch:
 
 permissions:

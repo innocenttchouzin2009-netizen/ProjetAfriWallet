@@ -15,6 +15,7 @@ import 'pages/subscriptions_page.dart';
 import 'pages/transaction_history_page.dart';
 import 'pages/wallet_home_page.dart';
 import 'services/auth_production_wiring.dart';
+import 'services/authenticated_production_wiring.dart';
 import 'services/identity_repository.dart';
 import 'services/qr_payment_repository.dart';
 import 'services/secure_session_store.dart';
@@ -67,17 +68,35 @@ class _AfriWalletAppState extends State<AfriWalletApp> {
   bool _hasVisitedQrPayments = false;
   SendReceiveMode _sendReceiveInitialMode = SendReceiveMode.send;
   LocaleController? _localeController;
+  AuthenticatedProductionWiring? _ownedAuthenticatedProductionWiring;
   AuthProductionWiring? _ownedAuthProductionWiring;
   late final AuthProductionWiring _authProductionWiring;
   WalletProductionWiring? _walletProductionWiring;
   late final WalletRepository _walletRepository;
+  late final TransferRepository _transferRepository;
 
   @override
   void initState() {
     super.initState();
+    _wireProductionDependencies();
+    _loadSavedLocale();
+  }
+
+  void _wireProductionDependencies() {
+    if (widget.authProductionWiring == null && widget.authSessionStore == null) {
+      final wiring = AuthenticatedProductionWiring();
+      _ownedAuthenticatedProductionWiring = wiring;
+      _authProductionWiring = wiring.auth;
+      _walletRepository = widget.walletRepository ?? wiring.walletRepository;
+      _transferRepository =
+          widget.transferRepository ?? wiring.transferRepository;
+      return;
+    }
+
     _wireAuthProduction();
     _wireWalletRepository();
-    _loadSavedLocale();
+    _transferRepository =
+        widget.transferRepository ?? const UnavailableTransferRepository();
   }
 
   void _wireAuthProduction() {
@@ -163,8 +182,7 @@ class _AfriWalletAppState extends State<AfriWalletApp> {
     }
     if (!_hasVisitedSendReceive) {
       return SendReceivePage(
-        repository:
-            widget.transferRepository ?? const UnavailableTransferRepository(),
+        repository: _transferRepository,
         initialMode: _sendReceiveInitialMode,
         onReturnToWallet: _returnToWalletHome,
         onContinue: () => setState(() => _hasVisitedSendReceive = true),
@@ -269,6 +287,7 @@ class _AfriWalletAppState extends State<AfriWalletApp> {
   void dispose() {
     _walletProductionWiring?.dispose();
     _ownedAuthProductionWiring?.dispose();
+    _ownedAuthenticatedProductionWiring?.dispose();
     super.dispose();
   }
 

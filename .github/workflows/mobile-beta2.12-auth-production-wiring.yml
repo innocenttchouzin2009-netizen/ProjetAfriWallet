@@ -1,0 +1,62 @@
+name: Mobile Beta2.12 Auth Production Wiring
+
+on:
+  push:
+    branches:
+      - feature/mobile-beta2.12-auth-production-wiring
+    paths:
+      - 'apps/mobile_app/lib/services/auth_production_wiring.dart'
+      - 'apps/mobile_app/test/auth_production_wiring_test.dart'
+      - '.github/workflows/mobile-beta2.12-auth-production-wiring.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'apps/mobile_app/lib/services/auth_production_wiring.dart'
+      - 'apps/mobile_app/test/auth_production_wiring_test.dart'
+      - '.github/workflows/mobile-beta2.12-auth-production-wiring.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: apps/mobile_app
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Flutter 3.47.2
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.2'
+          cache: true
+
+      - name: Flutter version
+        run: flutter --version
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Generate localizations
+        run: flutter gen-l10n
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test Auth production wiring
+        run: flutter test test/auth_production_wiring_test.dart
+
+      - name: Run complete Flutter test suite
+        run: flutter test
+
+      - name: Verify Beta2.12 Auth production wiring diff
+        working-directory: .
+        run: git diff --check 3b0869a1ff20b97b18c928b9f860c73c7d676334..HEAD

@@ -1,9 +1,11 @@
 import '../models/auth_error.dart';
+import '../models/auth_requests.dart';
 import '../models/auth_session.dart';
 import 'auth_repository.dart';
 import 'secure_session_store.dart';
 
 abstract interface class AuthSessionLifecycle {
+  Future<StoredAuthSession> login(AuthLoginRequest request);
   Future<StoredAuthSession?> restoreValidSession();
   Future<StoredAuthSession?> refreshSession();
   Future<void> clearLocalSession();
@@ -21,6 +23,11 @@ class AuthSessionCoordinator implements AuthSessionLifecycle {
   final DateTime Function() _utcNow;
 
   Future<StoredAuthSession?>? _refreshInFlight;
+
+  @override
+  Future<StoredAuthSession> login(AuthLoginRequest request) {
+    return _repository.login(request);
+  }
 
   @override
   Future<StoredAuthSession?> restoreValidSession() async {

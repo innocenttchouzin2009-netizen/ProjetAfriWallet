@@ -11,6 +11,28 @@ import 'package:mobile_app/services/secure_session_store.dart';
 
 void main() {
   group('AuthSessionCoordinator', () {
+    test('delegates login to repository and returns stored session', () async {
+      final expected = _session(
+        accessToken: 'access-login',
+        refreshToken: 'refresh-login',
+      );
+      final repository = _FakeAuthRepository()
+        ..loginHandler = (request) async {
+          expect(request.identifier, 'user@example.com');
+          expect(request.deviceId, 'device-1');
+          return expected;
+        };
+      final coordinator = AuthSessionCoordinator(
+        repository,
+        _MemorySessionStore(),
+      );
+
+      final resolved = await coordinator.login(_loginRequest());
+
+      expect(resolved, same(expected));
+      expect(repository.loginCalls, 1);
+    });
+
     test('reuses a locally valid access token without refreshing', () async {
       final store = _MemorySessionStore()
         ..value = _session(
@@ -151,6 +173,16 @@ void main() {
   });
 }
 
+AuthLoginRequest _loginRequest() {
+  return const AuthLoginRequest(
+    identifier: 'user@example.com',
+    password: 'correct-horse-battery-staple',
+    deviceId: 'device-1',
+    platform: 'android',
+    deviceName: 'Pixel',
+  );
+}
+
 StoredAuthSession _session({
   String accessToken = 'access-token',
   String refreshToken = 'refresh-token',
@@ -185,8 +217,20 @@ class _MemorySessionStore implements AuthSessionStore {
 }
 
 class _FakeAuthRepository implements AuthRepository {
+  int loginCalls = 0;
   int refreshCalls = 0;
+  Future<StoredAuthSession> Function(AuthLoginRequest request)? loginHandler;
   Future<StoredAuthSession> Function()? refreshHandler;
+
+  @override
+  Future<StoredAuthSession> login(AuthLoginRequest request) {
+    loginCalls += 1;
+    final handler = loginHandler;
+    if (handler == null) {
+      throw StateError('Unexpected login call.');
+    }
+    return handler(request);
+  }
 
   @override
   Future<StoredAuthSession> refresh() {
@@ -197,10 +241,6 @@ class _FakeAuthRepository implements AuthRepository {
     }
     return handler();
   }
-
-  @override
-  Future<StoredAuthSession> login(AuthLoginRequest request) =>
-      throw UnimplementedError();
 
   @override
   Future<StoredAuthSession?> readStoredSession() =>

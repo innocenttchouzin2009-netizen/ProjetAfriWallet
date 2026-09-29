@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile_app/models/auth_requests.dart';
 import 'package:mobile_app/models/auth_session.dart';
 import 'package:mobile_app/services/auth_session_coordinator.dart';
 import 'package:mobile_app/services/auth_state_controller.dart';
@@ -140,6 +141,11 @@ class _FakeSessionLifecycle implements AuthSessionLifecycle {
 
   final Future<StoredAuthSession?> Function() restoreHandler;
   int restoreCalls = 0;
+
+  @override
+  Future<StoredAuthSession> login(AuthLoginRequest request) {
+    throw StateError('Unexpected login call.');
+  }
 
   @override
   Future<StoredAuthSession?> restoreValidSession() {

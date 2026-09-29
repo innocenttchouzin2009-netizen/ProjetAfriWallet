@@ -1,60 +1,77 @@
-name: Mobile Beta2.13 Auth Session Gate
+name: Mobile Beta2.13 Candidate Certification
 
 on:
-  push:
-    branches:
-      - feature/mobile-beta2.13-auth-app-bootstrap-session-gate
-    paths:
-      - 'apps/mobile_app/lib/models/auth_*.dart'
-      - 'apps/mobile_app/lib/models/current_auth_session.dart'
-      - 'apps/mobile_app/lib/network/api_client.dart'
-      - 'apps/mobile_app/lib/services/auth_*.dart'
-      - 'apps/mobile_app/lib/services/secure_session_store.dart'
-      - 'apps/mobile_app/lib/services/secure_storage_adapter.dart'
-      - 'apps/mobile_app/lib/widgets/auth_session_gate.dart'
-      - 'apps/mobile_app/test/auth_session_gate_test.dart'
-      - 'apps/mobile_app/test/auth_state_controller_test.dart'
-      - 'apps/mobile_app/test/auth_session_coordinator_test.dart'
-      - 'apps/mobile_app/test/auth_production_wiring_test.dart'
-      - 'apps/mobile_app/pubspec.yaml'
-      - 'apps/mobile_app/pubspec.lock'
-      - '.github/workflows/mobile-beta2.13-auth-session-gate.yml'
-  pull_request:
-    branches:
-      - main
-    paths:
-      - 'apps/mobile_app/lib/models/auth_*.dart'
-      - 'apps/mobile_app/lib/models/current_auth_session.dart'
-      - 'apps/mobile_app/lib/network/api_client.dart'
-      - 'apps/mobile_app/lib/services/auth_*.dart'
-      - 'apps/mobile_app/lib/services/secure_session_store.dart'
-      - 'apps/mobile_app/lib/services/secure_storage_adapter.dart'
-      - 'apps/mobile_app/lib/widgets/auth_session_gate.dart'
-      - 'apps/mobile_app/test/auth_session_gate_test.dart'
-      - 'apps/mobile_app/test/auth_state_controller_test.dart'
-      - 'apps/mobile_app/test/auth_session_coordinator_test.dart'
-      - 'apps/mobile_app/test/auth_production_wiring_test.dart'
-      - 'apps/mobile_app/pubspec.yaml'
-      - 'apps/mobile_app/pubspec.lock'
   workflow_dispatch:
+    inputs:
+      candidate_sha:
+        description: Full 40-character commit SHA to certify
+        required: true
+        type: string
 
 permissions:
   contents: read
+  statuses: write
 
 jobs:
-  validate:
+  certify:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+
+    env:
+      CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+      BASE_SHA: 9718a1cc762139145b031dbed208e4f82140093f
+      STATUS_CONTEXT: mobile-beta2.13/candidate-certification
 
     defaults:
       run:
         working-directory: apps/mobile_app
 
     steps:
-      - name: Checkout
+      - name: Validate candidate SHA input
+        working-directory: .
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ ! "${CANDIDATE_SHA}" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "candidate_sha must be a full lowercase 40-character Git SHA."
+            exit 1
+          fi
+
+      - name: Checkout exact candidate
         uses: actions/checkout@v4
         with:
+          ref: ${{ inputs.candidate_sha }}
           fetch-depth: 0
+
+      - name: Assert exact candidate checkout
+        id: candidate_assertion
+        working-directory: .
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual_sha="$(git rev-parse HEAD)"
+          echo "candidate_sha=${CANDIDATE_SHA}"
+          echo "checked_out_sha=${actual_sha}"
+
+          test "${actual_sha}" = "${CANDIDATE_SHA}"
+          git cat-file -e "${CANDIDATE_SHA}^{commit}"
+          git cat-file -e "${BASE_SHA}^{commit}"
+          git merge-base --is-ancestor "${BASE_SHA}" "${CANDIDATE_SHA}"
+
+      - name: Mark candidate certification pending
+        id: pending_status
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: process.env.CANDIDATE_SHA,
+              state: 'pending',
+              context: process.env.STATUS_CONTEXT,
+              description: 'Beta2.13 Auth/Session candidate certification in progress',
+              target_url: `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+            });
 
       - name: Set up Flutter 3.47.2
         uses: subosito/flutter-action@v2
@@ -83,6 +100,42 @@ jobs:
       - name: Test auth production wiring
         run: flutter test test/auth_production_wiring_test.dart
 
-      - name: Verify Beta2.13 diff
+      - name: Verify Beta2.13 candidate diff
         working-directory: .
-        run: git diff --check 9718a1cc762139145b031dbed208e4f82140093f...HEAD
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check "${BASE_SHA}...${CANDIDATE_SHA}"
+
+      - name: Write certification summary
+        if: always()
+        working-directory: .
+        shell: bash
+        run: |
+          {
+            echo "## Mobile Beta2.13 candidate certification"
+            echo
+            echo "- Candidate: \`${CANDIDATE_SHA}\`"
+            echo "- Base: \`${BASE_SHA}\`"
+            echo "- Job status: **${{ job.status }}**"
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Report candidate certification status
+        if: always() && steps.candidate_assertion.outcome == 'success'
+        uses: actions/github-script@v7
+        env:
+          CERTIFICATION_JOB_STATUS: ${{ job.status }}
+        with:
+          script: |
+            const succeeded = process.env.CERTIFICATION_JOB_STATUS === 'success';
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: process.env.CANDIDATE_SHA,
+              state: succeeded ? 'success' : 'failure',
+              context: process.env.STATUS_CONTEXT,
+              description: succeeded
+                ? 'Beta2.13 Auth/Session candidate certified'
+                : 'Beta2.13 Auth/Session candidate certification failed',
+              target_url: `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+            });

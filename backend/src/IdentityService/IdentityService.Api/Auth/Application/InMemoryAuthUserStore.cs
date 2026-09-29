@@ -8,6 +8,15 @@ public sealed class InMemoryAuthUserStore : IAuthUserStore
     private readonly ConcurrentDictionary<string, AuthUser> _users =
         new(StringComparer.Ordinal);
 
+    public Task<AuthUser?> FindByIdAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var user = _users.Values.SingleOrDefault(candidate => candidate.Id == userId);
+        return Task.FromResult(user);
+    }
+
     public Task<AuthUser?> FindByNormalizedIdentifierAsync(
         string normalizedIdentifier,
         CancellationToken cancellationToken = default)

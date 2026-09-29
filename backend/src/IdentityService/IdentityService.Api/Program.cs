@@ -30,6 +30,7 @@ using IdentityService.Api.Auth.Persistence;
 using IdentityService.Api.Auth.Security;
 using IdentityService.Api.Balance;
 using IdentityService.Api.Fx;
+using IdentityService.Api.Identity;
 using IdentityService.Api.Ledger;
 using IdentityService.Api.MerchantPayouts;
 using IdentityService.Api.Notifications;
@@ -131,6 +132,7 @@ builder.Services.AddSingleton(AuthSessionOptions.Default);
 builder.Services.AddSingleton(AuthApplicationOptions.Default);
 builder.Services.AddScoped<AuthSessionLifecycleService>();
 builder.Services.AddScoped<AuthApplicationService>();
+builder.Services.AddScoped<CurrentProfileReadService>();
 
 builder.Services.AddScoped<IWalletRepository, EfWalletRepository>();
 builder.Services.AddSingleton<ISupportedCurrencyPolicy, ConfiguredSupportedCurrencyPolicy>();
@@ -278,6 +280,7 @@ app.UseAuthorization();
 
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
 app.MapAuthEndpoints();
+app.MapIdentityEndpoints();
 app.MapWalletEndpoints();
 app.MapLedgerEndpoints();
 app.MapBalanceEndpoints();

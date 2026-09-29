@@ -6,6 +6,17 @@ namespace IdentityService.Api.Auth.Persistence;
 
 public sealed class EfAuthUserStore(AuthDbContext db) : IAuthUserStore
 {
+    public async Task<AuthUser?> FindByIdAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        var entity = await db.Users
+            .AsNoTracking()
+            .SingleOrDefaultAsync(user => user.Id == userId, cancellationToken);
+
+        return entity is null ? null : ToDomain(entity);
+    }
+
     public async Task<AuthUser?> FindByNormalizedIdentifierAsync(
         string normalizedIdentifier,
         CancellationToken cancellationToken = default)

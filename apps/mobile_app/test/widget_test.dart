@@ -47,7 +47,7 @@ void main() {
       SharedPreferences.setMockInitialValues({});
       var networkCalls = 0;
       final wiring = _testAuthWiring(
-        onRequest: (_) {
+        onRequest: (_) async {
           networkCalls += 1;
           return http.Response('', 500);
         },
@@ -80,7 +80,7 @@ void main() {
       SharedPreferences.setMockInitialValues({});
       var networkCalls = 0;
       final wiring = _testAuthWiring(
-        onRequest: (_) {
+        onRequest: (_) async {
           networkCalls += 1;
           return http.Response('', 500);
         },

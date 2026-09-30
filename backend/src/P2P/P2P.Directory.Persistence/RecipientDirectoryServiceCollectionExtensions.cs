@@ -19,6 +19,7 @@ public static class RecipientDirectoryServiceCollectionExtensions
         services.AddScoped<IAfWalIdentityDirectory, EfAfWalIdentityDirectory>();
         services.AddScoped<IQrRecipientDirectory, EfQrRecipientDirectory>();
         services.AddScoped<IReceiveIdentityIssuer, EfReceiveIdentityIssuer>();
+        services.AddScoped<ICurrentAfWalIdentityReader, EfCurrentAfWalIdentityReader>();
         return services;
     }
 }

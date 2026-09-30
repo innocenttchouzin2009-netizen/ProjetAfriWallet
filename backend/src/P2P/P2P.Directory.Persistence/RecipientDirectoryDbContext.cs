@@ -16,6 +16,9 @@ public sealed class RecipientDirectoryDbContext(DbContextOptions<RecipientDirect
         afWal.HasIndex(x => x.AfWalId).IsUnique();
         afWal.Property(x => x.OwnerId).IsRequired();
         afWal.Property(x => x.IsActive).IsRequired();
+        afWal.HasIndex(x => x.OwnerId)
+            .IsUnique()
+            .HasFilter("\\"IsActive\\" = 1");
 
         var qr = modelBuilder.Entity<QrRecipientEntry>();
         qr.ToTable("P2PQrRecipients");

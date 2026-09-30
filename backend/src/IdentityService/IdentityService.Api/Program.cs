@@ -30,6 +30,7 @@ using IdentityService.Api.Auth.Persistence;
 using IdentityService.Api.Auth.Security;
 using IdentityService.Api.Balance;
 using IdentityService.Api.Fx;
+using IdentityService.Api.Identity;
 using IdentityService.Api.Ledger;
 using IdentityService.Api.MerchantPayouts;
 using IdentityService.Api.Notifications;
@@ -278,6 +279,7 @@ app.UseAuthorization();
 
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
 app.MapAuthEndpoints();
+app.MapIdentityEndpoints();
 app.MapWalletEndpoints();
 app.MapLedgerEndpoints();
 app.MapBalanceEndpoints();

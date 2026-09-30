@@ -1,0 +1,50 @@
+name: AFW-BE-IDENTITY-MOBILE-READ-1 Identity Mobile Read
+
+on:
+  push:
+    branches:
+      - feature/backend-identity-mobile-read-1
+    paths:
+      - 'backend/src/IdentityService/**'
+      - 'backend/tests/IdentityService.MobileRead.Scenarios/**'
+      - '.github/workflows/backend-identity-mobile-read-1.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'backend/src/IdentityService/**'
+      - 'backend/tests/IdentityService.MobileRead.Scenarios/**'
+      - '.github/workflows/backend-identity-mobile-read-1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate identity mobile read
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build IdentityService.Api
+        run: dotnet build backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj --no-restore
+
+      - name: Run IdentityService.MobileRead scenarios
+        run: dotnet run --project backend/tests/IdentityService.MobileRead.Scenarios
+
+      - name: Verify diff cleanliness
+        run: git diff --check

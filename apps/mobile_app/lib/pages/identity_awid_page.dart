@@ -1,17 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../models/awid_profile.dart';
-import '../services/identity_repository.dart';
+import '../models/current_identity_profile.dart';
+import '../models/payment_transfer.dart';
+import '../services/identity_read_repository.dart';
+import '../services/transfer_repository.dart';
 
 class IdentityAwidPage extends StatefulWidget {
   const IdentityAwidPage({
     super.key,
-    required this.repository,
+    required this.identityRepository,
+    required this.transferRepository,
     required this.onContinue,
   });
 
-  final IdentityRepository repository;
+  final IdentityReadRepository identityRepository;
+  final TransferRepository transferRepository;
   final VoidCallback onContinue;
 
   @override
@@ -19,20 +23,30 @@ class IdentityAwidPage extends StatefulWidget {
 }
 
 class _IdentityAwidPageState extends State<IdentityAwidPage> {
-  late Future<AwidProfile> _profileFuture;
+  late Future<_IdentityPresentationData> _identityFuture;
 
   @override
   void initState() {
     super.initState();
-    _profileFuture = widget.repository.loadCurrentProfile();
+    _identityFuture = _loadIdentity();
+  }
+
+  Future<_IdentityPresentationData> _loadIdentity() async {
+    final profileFuture = widget.identityRepository.loadCurrentProfile();
+    final receiveIdentityFuture = widget.transferRepository.loadReceiveIdentity();
+
+    return _IdentityPresentationData(
+      profile: await profileFuture,
+      receiveIdentity: await receiveIdentityFuture,
+    );
   }
 
   void _retry() {
-    setState(() => _profileFuture = widget.repository.loadCurrentProfile());
+    setState(() => _identityFuture = _loadIdentity());
   }
 
-  Future<void> _copyAwid(String awid) async {
-    await Clipboard.setData(ClipboardData(text: awid));
+  Future<void> _copyAfWalId(String afWalId) async {
+    await Clipboard.setData(ClipboardData(text: afWalId));
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('AfWal ID copié')),
@@ -44,26 +58,35 @@ class _IdentityAwidPageState extends State<IdentityAwidPage> {
     return Scaffold(
       appBar: AppBar(title: const Text('Mon AfWal ID')),
       body: SafeArea(
-        child: FutureBuilder<AwidProfile>(
-          future: _profileFuture,
+        child: FutureBuilder<_IdentityPresentationData>(
+          future: _identityFuture,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
             }
 
             if (snapshot.hasError) {
-              return _IdentityUnavailable(onRetry: _retry, onContinue: widget.onContinue);
+              return _IdentityUnavailable(
+                onRetry: _retry,
+                onContinue: widget.onContinue,
+              );
             }
 
-            final profile = snapshot.data;
-            if (profile == null) {
-              return _IdentityUnavailable(onRetry: _retry, onContinue: widget.onContinue);
+            final identity = snapshot.data;
+            if (identity == null) {
+              return _IdentityUnavailable(
+                onRetry: _retry,
+                onContinue: widget.onContinue,
+              );
             }
 
             return ListView(
               padding: const EdgeInsets.all(24),
               children: [
-                Text('Votre identité financière', style: Theme.of(context).textTheme.headlineMedium),
+                Text(
+                  'Votre identité financière',
+                  style: Theme.of(context).textTheme.headlineMedium,
+                ),
                 const SizedBox(height: 8),
                 Text(
                   'Votre AfWal ID est votre identifiant public. Il ne donne jamais accès à vos fonds ni à vos identifiants de connexion.',
@@ -76,22 +99,35 @@ class _IdentityAwidPageState extends State<IdentityAwidPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('AFWAL ID', style: TextStyle(fontWeight: FontWeight.w700)),
+                        const Text(
+                          'AFWAL ID',
+                          style: TextStyle(fontWeight: FontWeight.w700),
+                        ),
                         const SizedBox(height: 14),
-                        Text(profile.publicLabel, style: Theme.of(context).textTheme.headlineSmall),
-                        const SizedBox(height: 6),
-                        Text(profile.displayName),
+                        Text(
+                          identity.receiveIdentity.publicLabel,
+                          style: Theme.of(context).textTheme.headlineSmall,
+                        ),
+                        const SizedBox(height: 12),
+                        const Text(
+                          'Identité de connexion',
+                          style: TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(identity.profile.identifier),
                         const SizedBox(height: 16),
-                        Row(
+                        const Row(
                           children: [
-                            Icon(profile.isPrivate ? Icons.lock_outline : Icons.public, size: 18),
-                            const SizedBox(width: 8),
-                            Text(profile.isPrivate ? 'Profil privé' : 'Profil public'),
+                            Icon(Icons.verified_user_outlined, size: 18),
+                            SizedBox(width: 8),
+                            Text('Identité vérifiée par le backend'),
                           ],
                         ),
                         const SizedBox(height: 16),
                         OutlinedButton.icon(
-                          onPressed: () => _copyAwid(profile.publicLabel),
+                          onPressed: () => _copyAfWalId(
+                            identity.receiveIdentity.publicLabel,
+                          ),
                           icon: const Icon(Icons.copy_rounded),
                           label: const Text('Copier mon AfWal ID'),
                         ),
@@ -109,8 +145,10 @@ class _IdentityAwidPageState extends State<IdentityAwidPage> {
                         const SizedBox(height: 12),
                         const Text('QR AfWal ID'),
                         const SizedBox(height: 8),
-                        const Text(
-                          'Le QR dynamique sera affiché uniquement lorsqu’un jeton QR valide sera fourni par le backend.',
+                        Text(
+                          identity.receiveIdentity.hasBackendQr
+                              ? 'Un jeton QR sécurisé est disponible depuis le backend.'
+                              : 'Le QR dynamique sera affiché uniquement lorsqu’un jeton QR valide sera fourni par le backend.',
                           textAlign: TextAlign.center,
                         ),
                       ],
@@ -118,7 +156,10 @@ class _IdentityAwidPageState extends State<IdentityAwidPage> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                FilledButton(onPressed: widget.onContinue, child: const Text('Continuer')),
+                FilledButton(
+                  onPressed: widget.onContinue,
+                  child: const Text('Continuer'),
+                ),
               ],
             );
           },
@@ -128,8 +169,21 @@ class _IdentityAwidPageState extends State<IdentityAwidPage> {
   }
 }
 
+class _IdentityPresentationData {
+  const _IdentityPresentationData({
+    required this.profile,
+    required this.receiveIdentity,
+  });
+
+  final CurrentIdentityProfile profile;
+  final ReceiveIdentity receiveIdentity;
+}
+
 class _IdentityUnavailable extends StatelessWidget {
-  const _IdentityUnavailable({required this.onRetry, required this.onContinue});
+  const _IdentityUnavailable({
+    required this.onRetry,
+    required this.onContinue,
+  });
 
   final VoidCallback onRetry;
   final VoidCallback onContinue;
@@ -143,15 +197,24 @@ class _IdentityUnavailable extends StatelessWidget {
         children: [
           const Icon(Icons.badge_outlined, size: 64),
           const SizedBox(height: 16),
-          Text('AfWal ID indisponible', style: Theme.of(context).textTheme.headlineSmall),
+          Text(
+            'AfWal ID indisponible',
+            style: Theme.of(context).textTheme.headlineSmall,
+          ),
           const SizedBox(height: 8),
           const Text(
-            'Aucune identité n’est simulée. Connectez le service d’identité pour afficher votre véritable AfWal ID.',
+            'Aucune identité n’est simulée. Les données doivent provenir des services backend autoritatifs.',
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 20),
-          FilledButton.tonal(onPressed: onRetry, child: const Text('Réessayer')),
-          TextButton(onPressed: onContinue, child: const Text('Continuer sans afficher mon ID')),
+          FilledButton.tonal(
+            onPressed: onRetry,
+            child: const Text('Réessayer'),
+          ),
+          TextButton(
+            onPressed: onContinue,
+            child: const Text('Continuer sans afficher mon ID'),
+          ),
         ],
       ),
     );

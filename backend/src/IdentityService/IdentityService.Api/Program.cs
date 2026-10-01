@@ -133,6 +133,7 @@ builder.Services.AddSingleton(AuthApplicationOptions.Default);
 builder.Services.AddScoped<AuthSessionLifecycleService>();
 builder.Services.AddScoped<AuthApplicationService>();
 builder.Services.AddScoped<CurrentProfileReadService>();
+builder.Services.AddScoped<PublicAfWalIdReadService>();
 
 builder.Services.AddScoped<IWalletRepository, EfWalletRepository>();
 builder.Services.AddSingleton<ISupportedCurrencyPolicy, ConfiguredSupportedCurrencyPolicy>();
@@ -281,6 +282,7 @@ app.UseAuthorization();
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
 app.MapAuthEndpoints();
 app.MapIdentityEndpoints();
+app.MapPublicAfWalIdEndpoints();
 app.MapWalletEndpoints();
 app.MapLedgerEndpoints();
 app.MapBalanceEndpoints();

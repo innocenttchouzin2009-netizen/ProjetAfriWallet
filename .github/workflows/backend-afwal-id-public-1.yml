@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feature/backend-afwal-id-public-1
+      - feature/backend-afwal-id-public-1-clean
     paths:
       - 'backend/src/IdentityService/**'
       - 'backend/tests/IdentityService.AfWalIdPublic.Scenarios/**'

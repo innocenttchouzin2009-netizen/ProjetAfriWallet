@@ -33,7 +33,9 @@ jobs:
           dotnet-version: 10.0.x
 
       - name: Restore
-        run: dotnet restore
+        run: |
+          dotnet restore
+          dotnet restore backend/src/TransactionRead/TransactionRead.Application/TransactionRead.Application.csproj
 
       - name: Build TransactionRead Application
         run: dotnet build backend/src/TransactionRead/TransactionRead.Application/TransactionRead.Application.csproj --configuration Release --nologo --no-restore

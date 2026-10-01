@@ -133,6 +133,7 @@ builder.Services.AddSingleton(AuthApplicationOptions.Default);
 builder.Services.AddScoped<AuthSessionLifecycleService>();
 builder.Services.AddScoped<AuthApplicationService>();
 builder.Services.AddScoped<CurrentProfileReadService>();
+builder.Services.AddScoped<CurrentIdentityReadService>();
 builder.Services.AddScoped<PublicAfWalIdReadService>();
 
 builder.Services.AddScoped<IWalletRepository, EfWalletRepository>();

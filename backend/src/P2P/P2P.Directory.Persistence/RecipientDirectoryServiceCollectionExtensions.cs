@@ -17,6 +17,7 @@ public static class RecipientDirectoryServiceCollectionExtensions
 
         services.AddDbContext<RecipientDirectoryDbContext>(options => options.UseSqlite(connectionString));
         services.AddScoped<IAfWalIdentityDirectory, EfAfWalIdentityDirectory>();
+        services.AddScoped<ICurrentAfWalIdentityReader, EfCurrentAfWalIdentityReader>();
         services.AddScoped<IQrRecipientDirectory, EfQrRecipientDirectory>();
         services.AddScoped<IReceiveIdentityIssuer, EfReceiveIdentityIssuer>();
         return services;

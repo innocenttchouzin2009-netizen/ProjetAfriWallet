@@ -18,7 +18,7 @@ jobs:
     timeout-minutes: 35
 
     env:
-      CANDIDATE_SHA: 80eefec072a5d66c9158ec2318e898696305a15a
+      CANDIDATE_SHA: a31410f36a24c68d065a55fa48a738a15caaa9cf
       BASE_SHA: 04a989c9654c472a725ed8f6b040829e3ad3c723
       STATUS_CONTEXT: mobile-beta2.18/identity-presentation
 

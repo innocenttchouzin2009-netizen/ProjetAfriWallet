@@ -32,12 +32,13 @@ class _IdentityAwidPageState extends State<IdentityAwidPage> {
   }
 
   Future<_IdentityPresentationData> _loadIdentity() async {
-    final profileFuture = widget.identityRepository.loadCurrentProfile();
-    final receiveIdentityFuture = widget.transferRepository.loadReceiveIdentity();
+    final profile = await widget.identityRepository.loadCurrentProfile();
+    final receiveIdentity =
+        await widget.transferRepository.loadReceiveIdentity();
 
     return _IdentityPresentationData(
-      profile: await profileFuture,
-      receiveIdentity: await receiveIdentityFuture,
+      profile: profile,
+      receiveIdentity: receiveIdentity,
     );
   }
 

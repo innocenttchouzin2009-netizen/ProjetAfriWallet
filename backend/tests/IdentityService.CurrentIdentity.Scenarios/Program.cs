@@ -4,6 +4,7 @@ using System.Security.Claims;
 using System.Text.Encodings.Web;
 using AfriWallet.P2P.Directory.Persistence;
 using IdentityService.Api.Auth.Abstractions;
+using IdentityService.Api.Auth.Application;
 using IdentityService.Api.Auth.Domain;
 using IdentityService.Api.Identity;
 using Microsoft.AspNetCore.Authentication;

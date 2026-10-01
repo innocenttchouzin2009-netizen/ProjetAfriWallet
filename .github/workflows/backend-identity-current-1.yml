@@ -1,0 +1,68 @@
+name: AFW-BE-IDENTITY-CURRENT-1
+
+on:
+  push:
+    branches:
+      - feature/backend-identity-current-1-clean
+    paths:
+      - 'backend/src/IdentityService/**'
+      - 'backend/src/P2P/P2P.Directory.Persistence/**'
+      - 'backend/tests/IdentityService.CurrentIdentity.Scenarios/**'
+      - '.github/workflows/backend-identity-current-1.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'backend/src/IdentityService/**'
+      - 'backend/src/P2P/P2P.Directory.Persistence/**'
+      - 'backend/tests/IdentityService.CurrentIdentity.Scenarios/**'
+  workflow_dispatch:
+    inputs:
+      candidate_sha:
+        description: Full commit SHA to certify
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    env:
+      CANDIDATE_SHA: ${{ inputs.candidate_sha || github.sha }}
+
+    steps:
+      - name: Validate candidate SHA
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ ! "${CANDIDATE_SHA}" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "candidate SHA must be a full lowercase 40-character Git SHA."
+            exit 1
+          fi
+
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.CANDIDATE_SHA }}
+          fetch-depth: 0
+
+      - name: Set up .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build IdentityService.Api
+        run: dotnet build backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj --no-restore
+
+      - name: Run AFW-BE-IDENTITY-CURRENT-1 scenarios
+        run: dotnet run --project backend/tests/IdentityService.CurrentIdentity.Scenarios
+
+      - name: Verify diff cleanliness
+        run: git diff --check

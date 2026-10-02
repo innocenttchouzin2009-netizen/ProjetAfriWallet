@@ -12,6 +12,20 @@ class IdentityReadUnavailableException implements Exception {
   const IdentityReadUnavailableException();
 }
 
+class UnavailableIdentityReadRepository implements IdentityReadRepository {
+  const UnavailableIdentityReadRepository();
+
+  @override
+  Future<CurrentIdentityProfile> loadCurrentProfile() async {
+    throw const IdentityReadUnavailableException();
+  }
+
+  @override
+  Future<PublicAfWalIdentity> loadPublicAfWalId(String afWalId) async {
+    throw const IdentityReadUnavailableException();
+  }
+}
+
 class RemoteIdentityReadRepository implements IdentityReadRepository {
   const RemoteIdentityReadRepository(this._remoteDataSource, this._sessionStore);
 

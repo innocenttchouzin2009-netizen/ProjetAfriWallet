@@ -1,7 +1,9 @@
+import '../data/remote/identity_remote_data_source.dart';
 import '../data/remote/p2p_remote_data_source.dart';
 import '../network/api_client.dart';
 import 'api_config.dart';
 import 'auth_production_wiring.dart';
+import 'identity_read_repository.dart';
 import 'secure_session_store.dart';
 import 'secure_storage_adapter.dart';
 import 'transfer_repository.dart';
@@ -18,6 +20,10 @@ class AuthenticatedProductionWiring {
       apiClient: _apiClient,
       secureStorageAdapter: secureStorageAdapter,
     );
+    identityReadRepository = RemoteIdentityReadRepository(
+      IdentityRemoteDataSource(_apiClient),
+      auth.sessionStore,
+    );
     wallet = WalletProductionWiring(
       sessionStore: auth.sessionStore,
       apiClient: _apiClient,
@@ -32,6 +38,7 @@ class AuthenticatedProductionWiring {
   final bool _ownsApiClient;
 
   late final AuthProductionWiring auth;
+  late final IdentityReadRepository identityReadRepository;
   late final WalletProductionWiring wallet;
   late final TransferRepository transferRepository;
 

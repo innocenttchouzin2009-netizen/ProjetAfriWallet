@@ -16,7 +16,7 @@ import 'pages/transaction_history_page.dart';
 import 'pages/wallet_home_page.dart';
 import 'services/auth_production_wiring.dart';
 import 'services/authenticated_production_wiring.dart';
-import 'services/identity_repository.dart';
+import 'services/identity_read_repository.dart';
 import 'services/qr_payment_repository.dart';
 import 'services/secure_session_store.dart';
 import 'services/subscription_repository.dart';
@@ -35,7 +35,7 @@ class AfriWalletApp extends StatefulWidget {
   const AfriWalletApp({
     super.key,
     this.repository,
-    this.identityRepository,
+    this.identityReadRepository,
     this.walletRepository,
     this.authSessionStore,
     this.authProductionWiring,
@@ -45,7 +45,7 @@ class AfriWalletApp extends StatefulWidget {
   });
 
   final SubscriptionRepository? repository;
-  final IdentityRepository? identityRepository;
+  final IdentityReadRepository? identityReadRepository;
   final WalletRepository? walletRepository;
   final AuthSessionStore? authSessionStore;
   final AuthProductionWiring? authProductionWiring;
@@ -72,6 +72,7 @@ class _AfriWalletAppState extends State<AfriWalletApp> {
   AuthProductionWiring? _ownedAuthProductionWiring;
   late final AuthProductionWiring _authProductionWiring;
   WalletProductionWiring? _walletProductionWiring;
+  late final IdentityReadRepository _identityReadRepository;
   late final WalletRepository _walletRepository;
   late final TransferRepository _transferRepository;
 
@@ -87,6 +88,8 @@ class _AfriWalletAppState extends State<AfriWalletApp> {
       final wiring = AuthenticatedProductionWiring();
       _ownedAuthenticatedProductionWiring = wiring;
       _authProductionWiring = wiring.auth;
+      _identityReadRepository =
+          widget.identityReadRepository ?? wiring.identityReadRepository;
       _walletRepository = widget.walletRepository ?? wiring.walletRepository;
       _transferRepository =
           widget.transferRepository ?? wiring.transferRepository;
@@ -94,6 +97,8 @@ class _AfriWalletAppState extends State<AfriWalletApp> {
     }
 
     _wireAuthProduction();
+    _identityReadRepository = widget.identityReadRepository ??
+        const UnavailableIdentityReadRepository();
     _wireWalletRepository();
     _transferRepository =
         widget.transferRepository ?? const UnavailableTransferRepository();
@@ -162,8 +167,8 @@ class _AfriWalletAppState extends State<AfriWalletApp> {
   Widget _buildAuthenticatedExperience() {
     if (!_hasVisitedIdentity) {
       return IdentityAwidPage(
-        repository:
-            widget.identityRepository ?? const UnavailableIdentityRepository(),
+        identityRepository: _identityReadRepository,
+        transferRepository: _transferRepository,
         onContinue: () => setState(() => _hasVisitedIdentity = true),
       );
     }

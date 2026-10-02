@@ -1,0 +1,74 @@
+name: AFW-BE-TRANSACTION-HISTORY-COMMIT3
+
+on:
+  push:
+    branches:
+      - feature/backend-transaction-history-1-r3
+    paths:
+      - 'backend/src/TransactionHistory/**'
+      - 'backend/tests/TransactionHistory.Ownership.Scenarios/**'
+      - '.github/workflows/backend-transaction-history-ownership.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'backend/src/TransactionHistory/**'
+      - 'backend/tests/TransactionHistory.Ownership.Scenarios/**'
+  workflow_dispatch:
+    inputs:
+      candidate_sha:
+        description: Full commit SHA to certify
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    name: Certify Commit 3 - Wallet Ownership Authorization Adapter
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    env:
+      CANDIDATE_SHA: ${{ inputs.candidate_sha || github.sha }}
+
+    steps:
+      - name: Validate candidate SHA
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ ! "${CANDIDATE_SHA}" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "candidate SHA must be a full lowercase 40-character Git SHA."
+            exit 1
+          fi
+
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.candidate_sha || github.sha }}
+          fetch-depth: 0
+
+      - name: Assert exact candidate checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${CANDIDATE_SHA}"
+          git cat-file -e "${CANDIDATE_SHA}^{commit}"
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore TransactionHistory ownership scenarios
+        run: dotnet restore backend/tests/TransactionHistory.Ownership.Scenarios/TransactionHistory.Ownership.Scenarios.csproj
+
+      - name: Build TransactionHistory infrastructure
+        run: dotnet build backend/src/TransactionHistory/TransactionHistory.Infrastructure/TransactionHistory.Infrastructure.csproj --no-restore
+
+      - name: Run TransactionHistory ownership scenarios
+        run: dotnet run --project backend/tests/TransactionHistory.Ownership.Scenarios/TransactionHistory.Ownership.Scenarios.csproj
+
+      - name: Verify candidate diff cleanliness
+        run: git diff --check fcd0b35ec6368011ad1d80d73243534b1680eb2b..HEAD

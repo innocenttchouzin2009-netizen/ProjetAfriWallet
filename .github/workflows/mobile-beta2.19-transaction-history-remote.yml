@@ -18,7 +18,7 @@ jobs:
     timeout-minutes: 30
 
     env:
-      CANDIDATE_SHA: b6bd522eb484da00dfa23ee99bd7342aecc0d791
+      CANDIDATE_SHA: 4db5c34e9ce0c0308cd5cd92f3de9c0db66a6644
       BASE_SHA: 3de9c701d9b8827251ada4b38c84c1d15f70e652
       STATUS_CONTEXT: mobile-beta2.19/transaction-history-remote
 

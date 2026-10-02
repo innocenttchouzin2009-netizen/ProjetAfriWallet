@@ -56,8 +56,8 @@ await ExpectInvalidOperationAsync(
     "decode rejects unsupported QR type",
     () => application.DecodeAsync(
         new DecodeQrRequest(
-            "AFW|Unknown|merchant-001|7500|XAF|AfWal Market|Order 42")),
-    ref passed);
+            "AFW|Unknown|merchant-001|7500|XAF|AfWal Market|Order 42")));
+passed++;
 
 await ExpectInvalidOperationAsync(
     "static initiation rejects amount mismatch",
@@ -66,8 +66,8 @@ await ExpectInvalidOperationAsync(
             staticQr.QrId,
             "wallet-001",
             7000m,
-            "XAF")),
-    ref passed);
+            "XAF")));
+passed++;
 
 var stillActive = await gateway.FindByQrIdAsync(staticQr.QrId);
 Check(
@@ -141,11 +141,11 @@ Check(
 await ExpectInvalidOperationAsync(
     "receipt rejects unknown transfer",
     () => application.GenerateReceiptAsync(
-        new QrReceiptRequest("missing-transfer")),
-    ref passed);
+        new QrReceiptRequest("missing-transfer")));
+passed++;
 
 Console.WriteLine(
-    $"QR payment application scenarios passed: {passed}/12");
+    $"QR payment application scenarios passed: {passed}/13");
 
 static void Check(
     string name,
@@ -164,8 +164,7 @@ static void Check(
 
 static async Task ExpectInvalidOperationAsync(
     string name,
-    Func<Task> action,
-    ref int passed)
+    Func<Task> action)
 {
     try
     {
@@ -173,7 +172,6 @@ static async Task ExpectInvalidOperationAsync(
     }
     catch (InvalidOperationException)
     {
-        passed++;
         Console.WriteLine($"PASS: {name}");
         return;
     }

@@ -16,8 +16,10 @@ class TransactionHistoryRemoteDataSource {
   }) async {
     final queryParameters = <String, String>{
       if (limit != null) 'limit': limit.toString(),
-      if (cursor != null) 'cursor': cursor,
     };
+    if (cursor != null) {
+      queryParameters['cursor'] = cursor;
+    }
 
     final payload = await _apiClient.getJson(
       transactionsPath,

@@ -81,7 +81,7 @@ public sealed class LedgerBackedTransactionHistoryReader(
             ? items.Take(validatedPage.Limit).ToArray()
             : items;
 
-        var nextCursor = hasMore && pageItems.Length > 0
+        TransactionHistoryCursor? nextCursor = hasMore && pageItems.Length > 0
             ? new TransactionHistoryCursor(
                 pageItems[^1].OccurredAtUtc,
                 pageItems[^1].TransactionId)

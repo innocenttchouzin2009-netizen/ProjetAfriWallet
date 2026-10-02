@@ -1,4 +1,4 @@
-name: Mobile Beta2.19 Transaction History Remote Foundation
+name: Mobile Beta2.19 Transaction History Commit 2 Certification
 
 on:
   push:
@@ -18,16 +18,16 @@ jobs:
     timeout-minutes: 30
 
     env:
-      CANDIDATE_SHA: 4db5c34e9ce0c0308cd5cd92f3de9c0db66a6644
+      CANDIDATE_SHA: c259590e90ba07b846b8cfbfeb33520e06f70d01
       BASE_SHA: 3de9c701d9b8827251ada4b38c84c1d15f70e652
-      STATUS_CONTEXT: mobile-beta2.19/transaction-history-remote
+      STATUS_CONTEXT: mobile-beta2.19/transaction-history-repository
 
     defaults:
       run:
         working-directory: apps/mobile_app
 
     steps:
-      - name: Checkout exact Beta2.19 Commit 1
+      - name: Checkout exact Beta2.19 Commit 2
         uses: actions/checkout@v4
         with:
           ref: ${{ env.CANDIDATE_SHA }}
@@ -55,7 +55,7 @@ jobs:
               sha: process.env.CANDIDATE_SHA,
               state: 'pending',
               context: process.env.STATUS_CONTEXT,
-              description: 'Beta2.19 Commit 1 certification in progress',
+              description: 'Beta2.19 Commit 2 certification in progress',
               target_url: `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
             });
 
@@ -77,10 +77,13 @@ jobs:
       - name: Analyze
         run: flutter analyze
 
-      - name: Test transaction history remote data source
+      - name: Test transaction history repository
+        run: flutter test test/transaction_history_repository_test.dart
+
+      - name: Test Beta2.19 transaction history remote data source
         run: flutter test test/transaction_history_remote_data_source_test.dart
 
-      - name: Verify Beta2.19 Commit 1 diff
+      - name: Verify Beta2.19 Commit 2 diff
         working-directory: .
         shell: bash
         run: |
@@ -93,10 +96,14 @@ jobs:
         shell: bash
         run: |
           {
-            echo "## Mobile Beta2.19 Commit 1 certification"
+            echo "## Mobile Beta2.19 Commit 2 certification"
             echo
             echo "- Candidate: `${CANDIDATE_SHA}`"
             echo "- Base: `${BASE_SHA}`"
+            echo "- Analyze: `flutter analyze`"
+            echo "- Repository test: `transaction_history_repository_test.dart`"
+            echo "- Remote test: `transaction_history_remote_data_source_test.dart`"
+            echo "- Diff check: `git diff --check`"
             echo "- Job status: **${{ job.status }}**"
           } >> "${GITHUB_STEP_SUMMARY}"
 
@@ -115,7 +122,7 @@ jobs:
               state: succeeded ? 'success' : 'failure',
               context: process.env.STATUS_CONTEXT,
               description: succeeded
-                ? 'Beta2.19 Commit 1 certified'
-                : 'Beta2.19 Commit 1 certification failed',
+                ? 'Beta2.19 Commit 2 certified'
+                : 'Beta2.19 Commit 2 certification failed',
               target_url: `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
             });

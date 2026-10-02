@@ -10,7 +10,7 @@ import 'package:mobile_app/services/secure_storage_adapter.dart';
 
 void main() {
   test(
-    'authenticated production wiring shares one secure session across wallet and P2P',
+    'authenticated production wiring shares one secure session across wallet, P2P, and transaction history',
     () async {
       final requests = <http.Request>[];
       final apiClient = ApiClient(
@@ -31,6 +31,30 @@ void main() {
                     'countryCode': 'CM',
                   },
                 ],
+              }),
+              200,
+              headers: <String, String>{'content-type': 'application/json'},
+            );
+          }
+
+          if (request.method == 'GET' &&
+              request.url.path == '/api/v1/transactions') {
+            return http.Response(
+              jsonEncode(<String, Object?>{
+                'items': <Object?>[
+                  <String, Object?>{
+                    'transactionId': 'txn-wiring-1',
+                    'walletId': '11111111-1111-1111-1111-111111111111',
+                    'amountMinor': 2500,
+                    'currencyCode': 'XAF',
+                    'direction': 'Incoming',
+                    'status': 'Completed',
+                    'occurredAtUtc': '2026-10-02T16:00:00Z',
+                    'reference': 'AFW-WIRING-1',
+                    'counterpartyLabel': 'Merchant Wiring',
+                  },
+                ],
+                'nextCursor': null,
               }),
               200,
               headers: <String, String>{'content-type': 'application/json'},
@@ -76,10 +100,14 @@ void main() {
       final wallets = await wiring.walletRepository.loadWalletBalances();
       final receiveIdentity =
           await wiring.transferRepository.loadReceiveIdentity();
+      final transactions =
+          await wiring.transactionHistoryRepository.listTransactions();
 
       expect(wallets, hasLength(1));
       expect(receiveIdentity.qrToken, 'qr-token');
-      expect(requests, hasLength(2));
+      expect(transactions, hasLength(1));
+      expect(transactions.single.transactionId, 'txn-wiring-1');
+      expect(requests, hasLength(3));
       expect(
         requests.every(
           (request) =>

@@ -1,0 +1,53 @@
+name: AFW-BE-TRANSACTION-HISTORY-HTTP
+
+on:
+  push:
+    branches:
+      - feature/backend-transaction-history-1-r3
+    paths:
+      - 'backend/src/IdentityService/IdentityService.Api/TransactionHistory/**'
+      - 'backend/src/IdentityService/IdentityService.Api/Program.cs'
+      - 'backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj'
+      - 'backend/tests/TransactionHistory.Http.Scenarios/**'
+      - '.github/workflows/backend-transaction-history-http.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'backend/src/IdentityService/IdentityService.Api/TransactionHistory/**'
+      - 'backend/src/IdentityService/IdentityService.Api/Program.cs'
+      - 'backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj'
+      - 'backend/tests/TransactionHistory.Http.Scenarios/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    name: Certify Transaction History HTTP Adapter
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore TransactionHistory HTTP scenarios
+        run: dotnet restore backend/tests/TransactionHistory.Http.Scenarios/TransactionHistory.Http.Scenarios.csproj
+
+      - name: Build IdentityService API
+        run: dotnet build backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj --no-restore
+
+      - name: Run TransactionHistory HTTP scenarios
+        run: dotnet run --project backend/tests/TransactionHistory.Http.Scenarios/TransactionHistory.Http.Scenarios.csproj --no-restore
+
+      - name: Verify candidate diff cleanliness
+        run: git diff --check 4e6a154bb104768fba66852eacdae338d6bfec1e..HEAD

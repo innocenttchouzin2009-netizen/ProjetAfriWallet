@@ -1,0 +1,51 @@
+name: AFW-BE-TRANSACTION-HISTORY-COMMIT1
+
+on:
+  push:
+    branches:
+      - feature/backend-transaction-history-1-r3
+    paths:
+      - 'backend/src/TransactionHistory/**'
+      - 'backend/tests/TransactionHistory.Projection.Scenarios/**'
+      - '.github/workflows/backend-transaction-history-commit1.yml'
+  pull_request:
+    paths:
+      - 'backend/src/TransactionHistory/**'
+      - 'backend/tests/TransactionHistory.Projection.Scenarios/**'
+      - '.github/workflows/backend-transaction-history-commit1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  transaction-history-commit1:
+    name: TransactionHistory Commit 1 targeted gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore TransactionHistory application
+        run: dotnet restore backend/src/TransactionHistory/TransactionHistory.Application/TransactionHistory.Application.csproj
+
+      - name: Restore projection scenarios
+        run: dotnet restore backend/tests/TransactionHistory.Projection.Scenarios/TransactionHistory.Projection.Scenarios.csproj
+
+      - name: Build TransactionHistory application
+        run: dotnet build backend/src/TransactionHistory/TransactionHistory.Application/TransactionHistory.Application.csproj --configuration Release --no-restore
+
+      - name: Run TransactionHistory projection scenarios
+        run: dotnet run --project backend/tests/TransactionHistory.Projection.Scenarios/TransactionHistory.Projection.Scenarios.csproj --configuration Release --no-restore
+
+      - name: Verify Commit 1 diff cleanliness
+        run: git diff --check ce047160f29d4dd4d2494819e5a93ed2fe7a262d 6a791525f8b121441a81323d2d6adb0c4e3dcf02

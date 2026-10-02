@@ -31,6 +31,8 @@
     <ProjectReference Include="../../PaymentRequests/PaymentRequests.WebhookSubscriptions.Persistence/PaymentRequests.WebhookSubscriptions.Persistence.csproj" />
     <ProjectReference Include="../../Transfer/Transfer.Application/Transfer.Application.csproj" />
     <ProjectReference Include="../../Transfer/Transfer.Infrastructure/Transfer.Infrastructure.csproj" />
+    <ProjectReference Include="../../TransactionHistory/TransactionHistory.Application/TransactionHistory.Application.csproj" />
+    <ProjectReference Include="../../TransactionHistory/TransactionHistory.Infrastructure/TransactionHistory.Infrastructure.csproj" />
     <ProjectReference Include="../../Wallet/Wallet.Application/Wallet.Application.csproj" />
     <ProjectReference Include="../../Wallet/Wallet.Persistence/Wallet.Persistence.csproj" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.11" />

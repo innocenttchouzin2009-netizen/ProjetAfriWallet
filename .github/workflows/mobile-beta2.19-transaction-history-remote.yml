@@ -1,0 +1,121 @@
+name: Mobile Beta2.19 Transaction History Remote Foundation
+
+on:
+  push:
+    branches:
+      - feature/mobile-beta2.19
+    paths:
+      - '.github/workflows/mobile-beta2.19-transaction-history-remote.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  statuses: write
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      CANDIDATE_SHA: b6bd522eb484da00dfa23ee99bd7342aecc0d791
+      BASE_SHA: 3de9c701d9b8827251ada4b38c84c1d15f70e652
+      STATUS_CONTEXT: mobile-beta2.19/transaction-history-remote
+
+    defaults:
+      run:
+        working-directory: apps/mobile_app
+
+    steps:
+      - name: Checkout exact Beta2.19 Commit 1
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.CANDIDATE_SHA }}
+          fetch-depth: 0
+
+      - name: Assert exact candidate lineage
+        id: candidate_assertion
+        working-directory: .
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual_sha="$(git rev-parse HEAD)"
+          test "${actual_sha}" = "${CANDIDATE_SHA}"
+          git cat-file -e "${CANDIDATE_SHA}^{commit}"
+          git cat-file -e "${BASE_SHA}^{commit}"
+          git merge-base --is-ancestor "${BASE_SHA}" "${CANDIDATE_SHA}"
+
+      - name: Mark certification pending
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: process.env.CANDIDATE_SHA,
+              state: 'pending',
+              context: process.env.STATUS_CONTEXT,
+              description: 'Beta2.19 Commit 1 certification in progress',
+              target_url: `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+            });
+
+      - name: Set up Flutter 3.47.2
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.2'
+          cache: true
+
+      - name: Flutter version
+        run: flutter --version
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Generate localizations
+        run: flutter gen-l10n
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test transaction history remote data source
+        run: flutter test test/transaction_history_remote_data_source_test.dart
+
+      - name: Verify Beta2.19 Commit 1 diff
+        working-directory: .
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check "${BASE_SHA}...${CANDIDATE_SHA}"
+
+      - name: Write certification summary
+        if: always()
+        working-directory: .
+        shell: bash
+        run: |
+          {
+            echo "## Mobile Beta2.19 Commit 1 certification"
+            echo
+            echo "- Candidate: `${CANDIDATE_SHA}`"
+            echo "- Base: `${BASE_SHA}`"
+            echo "- Job status: **${{ job.status }}**"
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Report certification status
+        if: always() && steps.candidate_assertion.outcome == 'success'
+        uses: actions/github-script@v7
+        env:
+          CERTIFICATION_JOB_STATUS: ${{ job.status }}
+        with:
+          script: |
+            const succeeded = process.env.CERTIFICATION_JOB_STATUS === 'success';
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: process.env.CANDIDATE_SHA,
+              state: succeeded ? 'success' : 'failure',
+              context: process.env.STATUS_CONTEXT,
+              description: succeeded
+                ? 'Beta2.19 Commit 1 certified'
+                : 'Beta2.19 Commit 1 certification failed',
+              target_url: `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+            });

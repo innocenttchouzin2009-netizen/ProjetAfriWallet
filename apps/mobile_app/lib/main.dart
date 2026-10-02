@@ -75,6 +75,7 @@ class _AfriWalletAppState extends State<AfriWalletApp> {
   late final IdentityReadRepository _identityReadRepository;
   late final WalletRepository _walletRepository;
   late final TransferRepository _transferRepository;
+  late final TransactionHistoryRepository _transactionHistoryRepository;
 
   @override
   void initState() {
@@ -93,6 +94,8 @@ class _AfriWalletAppState extends State<AfriWalletApp> {
       _walletRepository = widget.walletRepository ?? wiring.walletRepository;
       _transferRepository =
           widget.transferRepository ?? wiring.transferRepository;
+      _transactionHistoryRepository = widget.transactionHistoryRepository ??
+          wiring.transactionHistoryRepository;
       return;
     }
 
@@ -102,6 +105,8 @@ class _AfriWalletAppState extends State<AfriWalletApp> {
     _wireWalletRepository();
     _transferRepository =
         widget.transferRepository ?? const UnavailableTransferRepository();
+    _transactionHistoryRepository = widget.transactionHistoryRepository ??
+        const UnavailableTransactionHistoryRepository();
   }
 
   void _wireAuthProduction() {
@@ -175,8 +180,7 @@ class _AfriWalletAppState extends State<AfriWalletApp> {
     if (!_hasVisitedWalletHome) {
       return WalletHomePage(
         repository: _walletRepository,
-        transactionHistoryRepository: widget.transactionHistoryRepository ??
-            const UnavailableTransactionHistoryRepository(),
+        transactionHistoryRepository: _transactionHistoryRepository,
         qrPaymentRepository:
             widget.qrPaymentRepository ?? const UnavailableQrPaymentRepository(),
         subscriptionRepository: widget.repository,
@@ -195,8 +199,7 @@ class _AfriWalletAppState extends State<AfriWalletApp> {
     }
     if (!_hasVisitedTransactions) {
       return TransactionHistoryPage(
-        repository: widget.transactionHistoryRepository ??
-            const UnavailableTransactionHistoryRepository(),
+        repository: _transactionHistoryRepository,
         onReturnToWallet: _returnToWalletHome,
         onContinue: () => setState(() => _hasVisitedTransactions = true),
       );

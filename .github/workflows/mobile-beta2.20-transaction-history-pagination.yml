@@ -1,4 +1,4 @@
-name: Mobile Beta2.20 Transaction History Pagination Contract Certification
+name: Mobile Beta2.20 Commit 2 Transaction History Pagination Certification
 
 on:
   push:
@@ -18,22 +18,22 @@ jobs:
     timeout-minutes: 30
 
     env:
-      CANDIDATE_SHA: 24a4f0f1196c64eb42fc71fca7738d63feb8bb1a
-      BASE_SHA: 663ee7d40aa10a08fc116837381b0930f9c1c48f
-      STATUS_CONTEXT: mobile-beta2.20/transaction-history-pagination-contract
+      CANDIDATE_SHA: 54a20220d3c356ebdbe7a8d4e23214e26ee53be0
+      BASE_SHA: 7ea24b9a4b0347d2f598f23b3c9ede455ffeb2f6
+      STATUS_CONTEXT: mobile-beta2.20/commit2-pagination-controller
 
     defaults:
       run:
         working-directory: apps/mobile_app
 
     steps:
-      - name: Checkout exact Beta2.20 Commit 1 candidate
+      - name: Checkout exact Beta2.20 Commit 2 candidate
         uses: actions/checkout@v4
         with:
           ref: ${{ env.CANDIDATE_SHA }}
           fetch-depth: 0
 
-      - name: Assert exact candidate lineage
+      - name: Assert exact Commit 2 lineage
         id: candidate_assertion
         working-directory: .
         shell: bash
@@ -43,7 +43,7 @@ jobs:
           test "${actual_sha}" = "${CANDIDATE_SHA}"
           git cat-file -e "${CANDIDATE_SHA}^{commit}"
           git cat-file -e "${BASE_SHA}^{commit}"
-          git merge-base --is-ancestor "${BASE_SHA}" "${CANDIDATE_SHA}"
+          test "$(git rev-parse "${CANDIDATE_SHA}^")" = "${BASE_SHA}"
 
       - name: Mark certification pending
         uses: actions/github-script@v7
@@ -55,7 +55,7 @@ jobs:
               sha: process.env.CANDIDATE_SHA,
               state: 'pending',
               context: process.env.STATUS_CONTEXT,
-              description: 'Beta2.20 Commit 1 certification in progress',
+              description: 'Beta2.20 Commit 2 certification in progress',
               target_url: `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
             });
 
@@ -77,21 +77,27 @@ jobs:
       - name: Analyze
         run: flutter analyze
 
-      - name: Test transaction history repository
+      - name: Test transaction history pagination controller
+        run: flutter test test/transaction_history_pagination_controller_test.dart
+
+      - name: Test existing transaction history page
+        run: flutter test test/transaction_history_page_test.dart
+
+      - name: Test existing transaction history repository
         run: flutter test test/transaction_history_repository_test.dart
 
-      - name: Test transaction history remote data source
+      - name: Test existing transaction history remote data source
         run: flutter test test/transaction_history_remote_data_source_test.dart
 
       - name: Run complete Flutter test suite
         run: flutter test
 
-      - name: Verify Beta2.20 Commit 1 diff
+      - name: Verify Beta2.20 Commit 2 diff
         working-directory: .
         shell: bash
         run: |
           set -euo pipefail
-          git diff --check "${BASE_SHA}...${CANDIDATE_SHA}"
+          git diff --check "${BASE_SHA}..${CANDIDATE_SHA}"
 
       - name: Write certification summary
         if: always()
@@ -99,15 +105,17 @@ jobs:
         shell: bash
         run: |
           {
-            echo "## Mobile Beta2.20 Commit 1 certification"
+            echo "## Mobile Beta2.20 Commit 2 certification"
             echo
             echo "- Candidate: \`${CANDIDATE_SHA}\`"
-            echo "- Base: \`${BASE_SHA}\`"
+            echo "- Parent/base: \`${BASE_SHA}\`"
             echo "- Analyze: \`flutter analyze\`"
-            echo "- Repository test: \`transaction_history_repository_test.dart\`"
-            echo "- Remote test: \`transaction_history_remote_data_source_test.dart\`"
+            echo "- Pagination controller: \`transaction_history_pagination_controller_test.dart\`"
+            echo "- Existing page test: \`transaction_history_page_test.dart\`"
+            echo "- Existing repository test: \`transaction_history_repository_test.dart\`"
+            echo "- Existing remote test: \`transaction_history_remote_data_source_test.dart\`"
             echo "- Full suite: \`flutter test\`"
-            echo "- Diff check: \`git diff --check\`"
+            echo "- Diff check: \`git diff --check ${BASE_SHA}..${CANDIDATE_SHA}\`"
             echo "- Job status: **${{ job.status }}**"
           } >> "${GITHUB_STEP_SUMMARY}"
 
@@ -126,7 +134,7 @@ jobs:
               state: succeeded ? 'success' : 'failure',
               context: process.env.STATUS_CONTEXT,
               description: succeeded
-                ? 'Beta2.20 Commit 1 certified'
-                : 'Beta2.20 Commit 1 certification failed',
+                ? 'Beta2.20 Commit 2 certified'
+                : 'Beta2.20 Commit 2 certification failed',
               target_url: `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
             });

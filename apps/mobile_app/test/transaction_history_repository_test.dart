@@ -14,7 +14,7 @@ import 'package:mobile_app/services/transaction_history_repository.dart';
 void main() {
   group('AuthenticatedTransactionHistoryRepository', () {
     test(
-      'loads and maps transaction history with the stored access token',
+      'propagates pagination and maps the remote page with the stored access token',
       () async {
         late http.Request captured;
         final apiClient = ApiClient(
@@ -36,7 +36,7 @@ void main() {
                     'counterpartyLabel': 'Merchant A',
                   },
                 ],
-                'nextCursor': null,
+                'nextCursor': 'cursor-next',
               }),
               200,
               headers: <String, String>{'content-type': 'application/json'},
@@ -48,11 +48,19 @@ void main() {
           _FakeAuthSessionStore(_storedSession()),
         );
 
-        final transactions = await repository.listTransactions();
+        final page = await repository.listTransactionPage(
+          limit: 25,
+          cursor: 'cursor-input',
+        );
 
         expect(captured.headers['Authorization'], 'Bearer access-secret');
-        expect(transactions, hasLength(1));
-        final transaction = transactions.single;
+        expect(captured.url.queryParameters, <String, String>{
+          'limit': '25',
+          'cursor': 'cursor-input',
+        });
+        expect(page.nextCursor, 'cursor-next');
+        expect(page.items, hasLength(1));
+        final transaction = page.items.single;
         expect(transaction.transactionId, 'txn-1');
         expect(transaction.amountMinor, 125000);
         expect(transaction.currencyCode, 'XAF');
@@ -61,6 +69,47 @@ void main() {
         expect(transaction.occurredAt, DateTime.utc(2026, 10, 2, 12, 30));
         expect(transaction.reference, 'AFW-REF-1');
         expect(transaction.counterpartyLabel, 'Merchant A');
+        apiClient.close();
+      },
+    );
+
+    test(
+      'keeps the legacy non-paginated list contract compatible',
+      () async {
+        final apiClient = ApiClient(
+          baseUrl: 'https://api.afwal.test',
+          httpClient: MockClient(
+            (_) async => http.Response(
+              jsonEncode(<String, Object?>{
+                'items': <Object?>[
+                  <String, Object?>{
+                    'transactionId': 'txn-legacy',
+                    'walletId': 'wallet-1',
+                    'amountMinor': 100,
+                    'currencyCode': 'EUR',
+                    'direction': 'Incoming',
+                    'status': 'Completed',
+                    'occurredAtUtc': '2026-10-02T12:00:00Z',
+                    'reference': 'AFW-LEGACY',
+                    'counterpartyLabel': null,
+                  },
+                ],
+                'nextCursor': 'ignored-by-legacy-contract',
+              }),
+              200,
+              headers: <String, String>{'content-type': 'application/json'},
+            ),
+          ),
+        );
+        final repository = AuthenticatedTransactionHistoryRepository(
+          TransactionHistoryRemoteDataSource(apiClient),
+          _FakeAuthSessionStore(_storedSession()),
+        );
+
+        final transactions = await repository.listTransactions();
+
+        expect(transactions, hasLength(1));
+        expect(transactions.single.transactionId, 'txn-legacy');
         apiClient.close();
       },
     );
@@ -103,7 +152,7 @@ void main() {
         );
 
         await expectLater(
-          repository.listTransactions(),
+          repository.listTransactionPage(limit: 25),
           throwsA(isA<ApiUnauthorizedException>()),
         );
         apiClient.close();

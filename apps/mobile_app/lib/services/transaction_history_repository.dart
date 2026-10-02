@@ -3,8 +3,26 @@ import '../data/remote/transaction_history_remote_data_source.dart';
 import '../models/transaction_history.dart';
 import 'secure_session_store.dart';
 
+class TransactionHistoryPageResult {
+  const TransactionHistoryPageResult({
+    required this.items,
+    required this.nextCursor,
+  });
+
+  final List<TransactionHistoryItem> items;
+  final String? nextCursor;
+}
+
 abstract class TransactionHistoryRepository {
   Future<List<TransactionHistoryItem>> listTransactions();
+}
+
+abstract class PaginatedTransactionHistoryRepository
+    implements TransactionHistoryRepository {
+  Future<TransactionHistoryPageResult> listTransactionPage({
+    int? limit,
+    String? cursor,
+  });
 }
 
 class TransactionHistoryUnavailableException implements Exception {
@@ -15,7 +33,8 @@ class TransactionHistoryUnavailableException implements Exception {
   String toString() => message;
 }
 
-class UnavailableTransactionHistoryRepository implements TransactionHistoryRepository {
+class UnavailableTransactionHistoryRepository
+    implements PaginatedTransactionHistoryRepository {
   const UnavailableTransactionHistoryRepository();
 
   @override
@@ -26,10 +45,22 @@ class UnavailableTransactionHistoryRepository implements TransactionHistoryRepos
       ),
     );
   }
+
+  @override
+  Future<TransactionHistoryPageResult> listTransactionPage({
+    int? limit,
+    String? cursor,
+  }) {
+    return Future<TransactionHistoryPageResult>.error(
+      const TransactionHistoryUnavailableException(
+        'Transaction history is unavailable. No transaction data is simulated.',
+      ),
+    );
+  }
 }
 
 class AuthenticatedTransactionHistoryRepository
-    implements TransactionHistoryRepository {
+    implements PaginatedTransactionHistoryRepository {
   const AuthenticatedTransactionHistoryRepository(
     this._remoteDataSource,
     this._sessionStore,
@@ -40,6 +71,15 @@ class AuthenticatedTransactionHistoryRepository
 
   @override
   Future<List<TransactionHistoryItem>> listTransactions() async {
+    final page = await listTransactionPage();
+    return page.items;
+  }
+
+  @override
+  Future<TransactionHistoryPageResult> listTransactionPage({
+    int? limit,
+    String? cursor,
+  }) async {
     final session = await _sessionStore.read();
     if (session == null) {
       throw const TransactionHistoryUnavailableException(
@@ -47,8 +87,15 @@ class AuthenticatedTransactionHistoryRepository
       );
     }
 
-    final page = await _remoteDataSource.listTransactions(session.accessToken);
-    return page.items.map(_mapItem).toList(growable: false);
+    final page = await _remoteDataSource.listTransactions(
+      session.accessToken,
+      limit: limit,
+      cursor: cursor,
+    );
+    return TransactionHistoryPageResult(
+      items: page.items.map(_mapItem).toList(growable: false),
+      nextCursor: page.nextCursor,
+    );
   }
 
   TransactionHistoryItem _mapItem(TransactionHistoryRemoteItem item) {

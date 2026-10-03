@@ -141,6 +141,25 @@ Respecter les vérifications exigées par le corridor avant paiement. Tout chang
 Ajouter ce parcours dans AFW-MOB-MOMO-PAYOUT-1 et préparer les contrats de recherche dans AFW-BE-MOMO-PAYOUT-1.
 Tests : collage international, indicatif absent/invalide/partagé, résultat complet/partiel, timeout, pays/opérateur non activé, bouton manuel disponible dès l'ouverture, modification du numéro pendant la recherche, réponse tardive, et réutilisation du bénéficiaire après succès.
 
+## Fluidité de l'expérience — critères acceptés le 3 octobre 2026
+
+L'exigence couvre le contrat backend AFW-BE-MOMO-PAYOUT-1 et sa traduction dans AFW-MOB-MOMO-PAYOUT-1. Le backend seul ne livre pas l'expérience mobile complète.
+
+- Un écran initial simple : numéro international, « Rechercher », « Saisir manuellement ». Permettre collage et saisie ; ne jamais lire le presse-papiers sans action utilisateur.
+- Accepter espaces et séparateurs courants, aider à corriger l'indicatif/format avec un message près du champ, conserver la saisie après erreur.
+- Au clic, afficher immédiatement l'état de recherche ; empêcher les requêtes dupliquées. Garder accessibles retour, correction du numéro et saisie manuelle.
+- Présenter une fiche lisible : nom disponible, pays, opérateur, numéro. Employer un vocabulaire utilisateur ; aucun message de debug, identifiant fournisseur ou détail technique.
+- Séparer les résultats partiels sans forcer à recommencer : conserver les champs valides et préremplir le formulaire manuel ; rester transparent sur les informations non vérifiées.
+- Réponse lente ou connexion interrompue : attente bornée, choix manuel accessible, possibilité de réessayer, aucune perte de saisie ; résultat obsolète ignoré.
+- Corriger une destination sans repartir de zéro ; aucun devis périmé réutilisé.
+- Après succès confirmé, retrouver facilement le bénéficiaire enregistré pour un nouvel envoi, sans nouvelle demande d'opérateur.
+- Éléments tactiles confortables, labels accessibles aux lecteurs d'écran, contraste lisible, texte agrandissable et états compréhensibles sans dépendre de la couleur ; adapter au clavier et aux petits écrans.
+- Validation UX obligatoire avant de déclarer le parcours prêt : premier bénéficiaire, bénéficiaire existant, résultat partiel, recherche lente, perte de réseau, numéro invalide, correction, saisie manuelle, réponse tardive et corridor indisponible.
+- Vérifier ces parcours sur le pilote Cameroun avec des essais utilisateurs ; mesurer temps de recherche, temps pour compléter l'ajout, recours au manuel et abandon sans journaliser nom/numéro en clair.
+- Les tests backend vérifient des réponses structurées exploitables par Flutter (résultats partiels, erreurs et capacités), sans mouvement financier déclenché par la recherche. Les tests mobile couvrent conservation de saisie, navigation et absence de blocage.
+
+Statut : exigences documentées ; expérience non encore implémentée ni validée auprès d'utilisateurs.
+
 ## Activation en production
 
 Préconditions : capacité outbound vérifiée du partenaire, contrats et autorisations du corridor, conformité, liquidité/préfinancement, frais/FX, limites, monitoring et procédure de support.

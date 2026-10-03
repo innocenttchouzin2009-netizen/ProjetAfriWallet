@@ -51,8 +51,8 @@ Check(
 await ExpectCodeAsync(
     "idempotency key reuse with different request is rejected",
     QrPaymentContractValues.ErrorCodes.IdempotencyConflict,
-    () => contract.InitiateAsync(request with { AmountMinor = 7600 }),
-    ref passed);
+    () => contract.InitiateAsync(request with { AmountMinor = 7600 }));
+passed++;
 
 var beforeStatus = generated.UpdatedAt;
 var status1 = await contract.GetStatusAsync(owner, first.TransferIntentId);
@@ -67,8 +67,8 @@ Check(
 await ExpectCodeAsync(
     "status is concealed from a different authenticated user",
     QrPaymentContractValues.ErrorCodes.NotFound,
-    () => contract.GetStatusAsync(foreign, first.TransferIntentId),
-    ref passed);
+    () => contract.GetStatusAsync(foreign, first.TransferIntentId));
+passed++;
 
 var dynamic = legacy.GenerateQr(
     new GenerateQrCommand(
@@ -99,8 +99,7 @@ Console.WriteLine($"QR payment application scenarios passed: {passed}/7");
 static async Task ExpectCodeAsync(
     string name,
     string expectedCode,
-    Func<Task> action,
-    ref int passed)
+    Func<Task> action)
 {
     try
     {
@@ -108,7 +107,6 @@ static async Task ExpectCodeAsync(
     }
     catch (QrPaymentContractException exception) when (exception.Code == expectedCode)
     {
-        passed++;
         Console.WriteLine($"PASS: {name}");
         return;
     }

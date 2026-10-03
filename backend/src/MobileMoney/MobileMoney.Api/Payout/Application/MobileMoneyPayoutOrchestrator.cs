@@ -9,15 +9,18 @@ public sealed class MobileMoneyPayoutOrchestrator
     private readonly IMobileMoneyPayoutStore _store;
     private readonly IMobileMoneyPayoutProvider _provider;
     private readonly IMobileMoneyPayoutClock _clock;
+    private readonly IMobileMoneyPayoutEligibilityPolicy _eligibilityPolicy;
 
     public MobileMoneyPayoutOrchestrator(
         IMobileMoneyPayoutStore store,
         IMobileMoneyPayoutProvider provider,
-        IMobileMoneyPayoutClock clock)
+        IMobileMoneyPayoutClock clock,
+        IMobileMoneyPayoutEligibilityPolicy eligibilityPolicy)
     {
         _store = store ?? throw new ArgumentNullException(nameof(store));
         _provider = provider ?? throw new ArgumentNullException(nameof(provider));
         _clock = clock ?? throw new ArgumentNullException(nameof(clock));
+        _eligibilityPolicy = eligibilityPolicy ?? throw new ArgumentNullException(nameof(eligibilityPolicy));
     }
 
     public async Task<MobileMoneyPayoutResponse> CreateAndSubmitAsync(
@@ -50,6 +53,24 @@ public sealed class MobileMoneyPayoutOrchestrator
             request.Beneficiary.OperatorCode,
             request.Beneficiary.DisplayName);
 
+        var corridor = new MobileMoneyPayoutCorridor(
+            request.SourceCountryCode,
+            request.SourceCurrency,
+            beneficiary.CountryCode,
+            request.Currency,
+            beneficiary.OperatorCode);
+
+        var eligibility = await _eligibilityPolicy.EvaluateAsync(
+            corridor,
+            cancellationToken);
+
+        if (!eligibility.IsEligible)
+        {
+            throw new MobileMoneyPayoutEligibilityException(
+                eligibility.FailureCode ??
+                MobileMoneyPayoutEligibilityCodes.CorridorNotSupported);
+        }
+
         var payout = MobileMoneyPayout.Create(
             request.SourceWalletId,
             request.AmountMinor,
@@ -66,6 +87,8 @@ public sealed class MobileMoneyPayoutOrchestrator
         var submission = new MobileMoneyPayoutSubmission(
             payout.PayoutId,
             payout.SourceWalletId,
+            corridor.SourceCountryCode,
+            corridor.SourceCurrency,
             payout.AmountMinor,
             payout.Currency,
             payout.Beneficiary,

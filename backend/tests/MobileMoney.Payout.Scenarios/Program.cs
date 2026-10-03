@@ -198,12 +198,16 @@ static void ContractsSurface()
 
     var request = new CreateMobileMoneyPayoutRequest(
         "wallet-001",
+        "DE",
+        "EUR",
         25_000,
         "XAF",
         beneficiary,
         "payout-key-001");
 
     AssertEqual("wallet-001", request.SourceWalletId);
+    AssertEqual("DE", request.SourceCountryCode);
+    AssertEqual("EUR", request.SourceCurrency);
     AssertEqual(25_000L, request.AmountMinor);
     AssertEqual("XAF", request.Currency);
     AssertEqual("+237690000001", request.Beneficiary.Msisdn);

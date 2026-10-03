@@ -11,7 +11,11 @@ internal static class PayoutOrchestrationScenarios
         {
             ("orchestrator persists and submits accepted payout", AcceptedPayout),
             ("provider rejection marks payout failed", RejectedPayout),
-            ("idempotent replay avoids duplicate provider submission", IdempotentReplay)
+            ("idempotent replay avoids duplicate provider submission", IdempotentReplay),
+            ("unsupported corridor is rejected before provider submission", UnsupportedCorridor),
+            ("unsupported operator is rejected without silent substitution", UnsupportedOperator),
+            ("disabled corridor is rejected before provider submission", DisabledCorridor),
+            ("collection-only capability cannot authorize payout", CollectionOnlyCapability)
         };
 
         foreach (var scenario in scenarios)
@@ -26,21 +30,16 @@ internal static class PayoutOrchestrationScenarios
 
     private static void AcceptedPayout()
     {
-        var times = new[]
-        {
-            Utc(12, 0),
-            Utc(12, 1),
-            Utc(12, 2)
-        };
-
         var store = new ScenarioPayoutStore();
         var provider = new ScenarioPayoutProvider(
             MobileMoneyPayoutSubmissionResult.Success("provider-ref-001"));
-        var clock = new ScenarioPayoutClock(times);
-        var orchestrator = new MobileMoneyPayoutOrchestrator(
+        var orchestrator = CreateOrchestrator(
             store,
             provider,
-            clock);
+            EligiblePolicy(),
+            Utc(12, 0),
+            Utc(12, 1),
+            Utc(12, 2));
 
         var response = orchestrator.CreateAndSubmitAsync(
             ValidRequest("key-accepted")).GetAwaiter().GetResult();
@@ -54,6 +53,8 @@ internal static class PayoutOrchestrationScenarios
         AssertEqual(MobileMoneyPayoutStatus.Processing, store.SavedStatuses[1]);
         AssertEqual(MobileMoneyPayoutStatus.Submitted, store.SavedStatuses[2]);
         AssertEqual(response.PayoutId, provider.LastSubmission!.PayoutId);
+        AssertEqual("DE", provider.LastSubmission.SourceCountryCode);
+        AssertEqual("EUR", provider.LastSubmission.SourceCurrency);
         AssertEqual(25_000L, provider.LastSubmission.AmountMinor);
         AssertEqual("XAF", provider.LastSubmission.Currency);
     }
@@ -63,14 +64,13 @@ internal static class PayoutOrchestrationScenarios
         var store = new ScenarioPayoutStore();
         var provider = new ScenarioPayoutProvider(
             MobileMoneyPayoutSubmissionResult.Rejected("PROVIDER_REJECTED"));
-        var clock = new ScenarioPayoutClock(
+        var orchestrator = CreateOrchestrator(
+            store,
+            provider,
+            EligiblePolicy(),
             Utc(13, 0),
             Utc(13, 1),
             Utc(13, 2));
-        var orchestrator = new MobileMoneyPayoutOrchestrator(
-            store,
-            provider,
-            clock);
 
         var response = orchestrator.CreateAndSubmitAsync(
             ValidRequest("key-rejected")).GetAwaiter().GetResult();
@@ -103,11 +103,10 @@ internal static class PayoutOrchestrationScenarios
         var store = new ScenarioPayoutStore(existing);
         var provider = new ScenarioPayoutProvider(
             MobileMoneyPayoutSubmissionResult.Success("should-not-be-used"));
-        var clock = new ScenarioPayoutClock();
-        var orchestrator = new MobileMoneyPayoutOrchestrator(
+        var orchestrator = CreateOrchestrator(
             store,
             provider,
-            clock);
+            new ConfiguredMobileMoneyPayoutEligibilityPolicy([]));
 
         var response = orchestrator.CreateAndSubmitAsync(
             ValidRequest("  key-existing  ")).GetAwaiter().GetResult();
@@ -119,16 +118,112 @@ internal static class PayoutOrchestrationScenarios
         AssertEqual(0, store.SavedStatuses.Count);
     }
 
+    private static void UnsupportedCorridor()
+    {
+        AssertEligibilityDenied(
+            ValidRequest("key-corridor", sourceCountryCode: "FR"),
+            EligiblePolicy(),
+            MobileMoneyPayoutEligibilityCodes.CorridorNotSupported);
+    }
+
+    private static void UnsupportedOperator()
+    {
+        AssertEligibilityDenied(
+            ValidRequest("key-operator", operatorCode: "ORANGE-CM"),
+            EligiblePolicy(),
+            MobileMoneyPayoutEligibilityCodes.OperatorNotActivated);
+    }
+
+    private static void DisabledCorridor()
+    {
+        AssertEligibilityDenied(
+            ValidRequest("key-disabled"),
+            Policy(enabled: false, collectionEnabled: true, outboundPayoutEnabled: true),
+            MobileMoneyPayoutEligibilityCodes.CorridorDisabled);
+    }
+
+    private static void CollectionOnlyCapability()
+    {
+        AssertEligibilityDenied(
+            ValidRequest("key-collection-only"),
+            Policy(enabled: true, collectionEnabled: true, outboundPayoutEnabled: false),
+            MobileMoneyPayoutEligibilityCodes.OutboundPayoutCapabilityRequired);
+    }
+
+    private static void AssertEligibilityDenied(
+        CreateMobileMoneyPayoutRequest request,
+        IMobileMoneyPayoutEligibilityPolicy policy,
+        string expectedCode)
+    {
+        var store = new ScenarioPayoutStore();
+        var provider = new ScenarioPayoutProvider(
+            MobileMoneyPayoutSubmissionResult.Success("must-not-submit"));
+        var orchestrator = CreateOrchestrator(store, provider, policy);
+
+        try
+        {
+            orchestrator.CreateAndSubmitAsync(request).GetAwaiter().GetResult();
+        }
+        catch (MobileMoneyPayoutEligibilityException exception)
+        {
+            AssertEqual(expectedCode, exception.Code);
+            AssertEqual(0, provider.SubmissionCount);
+            AssertEqual(0, store.SavedStatuses.Count);
+            return;
+        }
+
+        throw new InvalidOperationException(
+            $"Expected eligibility failure '{expectedCode}'.");
+    }
+
+    private static MobileMoneyPayoutOrchestrator CreateOrchestrator(
+        ScenarioPayoutStore store,
+        ScenarioPayoutProvider provider,
+        IMobileMoneyPayoutEligibilityPolicy policy,
+        params DateTimeOffset[] times) =>
+        new(
+            store,
+            provider,
+            new ScenarioPayoutClock(times),
+            policy);
+
+    private static IMobileMoneyPayoutEligibilityPolicy EligiblePolicy() =>
+        Policy(enabled: true, collectionEnabled: true, outboundPayoutEnabled: true);
+
+    private static IMobileMoneyPayoutEligibilityPolicy Policy(
+        bool enabled,
+        bool collectionEnabled,
+        bool outboundPayoutEnabled) =>
+        new ConfiguredMobileMoneyPayoutEligibilityPolicy(
+        [
+            new MobileMoneyPayoutCorridorCapability(
+                new MobileMoneyPayoutCorridor(
+                    "DE",
+                    "EUR",
+                    "CM",
+                    "XAF",
+                    "MTN-CM"),
+                enabled,
+                collectionEnabled,
+                outboundPayoutEnabled)
+        ]);
+
     private static CreateMobileMoneyPayoutRequest ValidRequest(
-        string idempotencyKey) =>
+        string idempotencyKey,
+        string sourceCountryCode = "DE",
+        string sourceCurrency = "EUR",
+        string destinationCountryCode = "CM",
+        string operatorCode = "MTN-CM") =>
         new(
             "wallet-001",
+            sourceCountryCode,
+            sourceCurrency,
             25_000,
             "xaf",
             new MobileMoneyBeneficiaryRequest(
                 "+237690000001",
-                "cm",
-                "mtn-cm",
+                destinationCountryCode,
+                operatorCode,
                 "Ada"),
             idempotencyKey);
 

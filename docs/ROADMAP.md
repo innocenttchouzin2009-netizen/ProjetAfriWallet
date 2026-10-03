@@ -100,6 +100,18 @@ AFW-MOB-MOMO-PAYOUT-1 : saisie du numéro, affichage du nom/opérateur détecté
 
 Tests : formats local/international, pays incohérent, lookup réussi/inconnu/ambigu/indisponible, nom absent ou masqué, préfixe insuffisant, enregistrement au succès seulement, duplication de callback, isolation par expéditeur, redémarrage, paiement suivant sans confirmation spécifique d'opérateur et anomalie partenaire bloquant l'envoi.
 
+### Détection rapide et choix manuel — précision acceptée le 3 octobre 2026
+
+- Valider séparément les capacités de détection de l'opérateur et de récupération du nom du titulaire ; l'échec ou le retard d'une recherche ne doit pas masquer le résultat disponible de l'autre.
+- Si l'opérateur n'est pas détecté rapidement, proposer immédiatement un choix manuel parmi les opérateurs Mobile Money activés pour le pays (ex. MTN MoMo / Orange Money au Cameroun).
+- Définir un délai maximal d'attente de détection configurable et mesuré au pilote ; ne pas imposer d'attente indéfinie. Aucun seuil chiffré n'est encore validé.
+- Le choix manuel de l'opérateur permet de poursuivre le parcours selon les exigences du corridor. Il ne vaut ni vérification du titulaire ni autorisation de contourner une vérification obligatoire.
+- Présenter le nom uniquement selon la preuve disponible : retourné/vérifié par le partenaire ou indisponible. Ne pas inventer un nom si la recherche échoue.
+- Une réponse de détection tardive ne remplace jamais silencieusement le choix manuel ou une destination déjà confirmée ; en cas de désaccord, demander de résoudre l'anomalie avant l'envoi.
+- Après succès confirmé, mémoriser le bénéficiaire et l'opérateur choisi comme prévu ; aux paiements suivants, réutilisation sans demande systématique d'opérateur.
+
+Tests complémentaires : opérateur détecté sans nom, nom disponible sans opérateur, détection lente/timeout, sélection manuelle, réponse tardive identique/contradictoire et respect des vérifications obligatoires du corridor.
+
 ## Activation en production
 
 Préconditions : capacité outbound vérifiée du partenaire, contrats et autorisations du corridor, conformité, liquidité/préfinancement, frais/FX, limites, monitoring et procédure de support.

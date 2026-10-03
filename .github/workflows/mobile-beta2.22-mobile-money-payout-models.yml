@@ -1,0 +1,130 @@
+name: Mobile Beta2.22 Commit 1 Mobile Money Payout Models Certification
+
+on:
+  push:
+    branches:
+      - feature/mobile-beta2.22
+    paths:
+      - '.github/workflows/mobile-beta2.22-mobile-money-payout-models.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  statuses: write
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      CANDIDATE_SHA: 6d1b908cd15953d079791314713dccea3684b795
+      BASE_SHA: b658657bbb687632e280dee30c44cfcb9481bd50
+      STATUS_CONTEXT: mobile-beta2.22/commit1-mobile-money-payout-models
+
+    defaults:
+      run:
+        working-directory: apps/mobile_app
+
+    steps:
+      - name: Checkout exact Beta2.22 Commit 1 candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.CANDIDATE_SHA }}
+          fetch-depth: 0
+
+      - name: Assert exact Commit 1 lineage
+        id: candidate_assertion
+        working-directory: .
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual_sha="$(git rev-parse HEAD)"
+          test "${actual_sha}" = "${CANDIDATE_SHA}"
+          git cat-file -e "${CANDIDATE_SHA}^{commit}"
+          git cat-file -e "${BASE_SHA}^{commit}"
+          test "$(git rev-parse "${CANDIDATE_SHA}^")" = "${BASE_SHA}"
+
+      - name: Mark certification pending
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: process.env.CANDIDATE_SHA,
+              state: 'pending',
+              context: process.env.STATUS_CONTEXT,
+              description: 'Beta2.22 Commit 1 certification in progress',
+              target_url: `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+            });
+
+      - name: Set up Flutter 3.47.2
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.2'
+          cache: true
+
+      - name: Flutter version
+        run: flutter --version
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Generate localizations
+        run: flutter gen-l10n
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test Mobile Money payout models
+        run: flutter test test/mobile_money_payout_models_test.dart
+
+      - name: Run complete Flutter test suite
+        run: flutter test
+
+      - name: Verify Beta2.22 Commit 1 diff
+        working-directory: .
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check "${BASE_SHA}..${CANDIDATE_SHA}"
+
+      - name: Write certification summary
+        if: always()
+        working-directory: .
+        shell: bash
+        run: |
+          {
+            echo "## Mobile Beta2.22 Commit 1 certification"
+            echo
+            echo "- Candidate: \`${CANDIDATE_SHA}\`"
+            echo "- Parent/base: \`${BASE_SHA}\`"
+            echo "- Dependencies: \`flutter pub get\`"
+            echo "- Localizations: \`flutter gen-l10n\`"
+            echo "- Analyze: \`flutter analyze\`"
+            echo "- Targeted test: \`mobile_money_payout_models_test.dart\`"
+            echo "- Full suite: \`flutter test\`"
+            echo "- Diff check: \`git diff --check ${BASE_SHA}..${CANDIDATE_SHA}\`"
+            echo "- Job status: **${{ job.status }}**"
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Report certification status
+        if: always() && steps.candidate_assertion.outcome == 'success'
+        uses: actions/github-script@v7
+        env:
+          CERTIFICATION_JOB_STATUS: ${{ job.status }}
+        with:
+          script: |
+            const succeeded = process.env.CERTIFICATION_JOB_STATUS === 'success';
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: process.env.CANDIDATE_SHA,
+              state: succeeded ? 'success' : 'failure',
+              context: process.env.STATUS_CONTEXT,
+              description: succeeded
+                ? 'Beta2.22 Commit 1 certified'
+                : 'Beta2.22 Commit 1 certification failed',
+              target_url: `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+            });

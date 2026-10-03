@@ -7,7 +7,7 @@ Ticket de développement : [AFW-BE-MOMO-PAYOUT-1 — #223](https://github.com/in
 ## Objectif accepté
 
 Un expéditeur de la diaspora peut envoyer de l'argent directement sur le compte Mobile Money d'un bénéficiaire en Afrique, même si celui-ci n'a aucun compte AfWal.
-Destination : pays + opérateur + numéro Mobile Money + identité requise par le partenaire.
+Destination : numéro international recherché → pays, opérateur et identité du titulaire selon capacités partenaire ; saisie manuelle disponible immédiatement.
 Avant confirmation : montant débité, frais, taux de change, montant exact reçu, expiration du devis et délai annoncé selon les capacités du partenaire.
 
 ## Priorité
@@ -75,7 +75,7 @@ Le pilote fixe les objectifs chiffrés et seuils d'alerte après essais représe
 Cette décision remplace la demande antérieure de confirmation de l'opérateur à chaque transfert.
 
 ### Premier transfert
-- Dans le contexte du pays de destination choisi, l'utilisateur saisit uniquement le numéro Mobile Money ; AfWal le normalise au format international et vérifie sa structure.
+- L'utilisateur colle le numéro Mobile Money avec l'indicatif international ; AfWal le normalise, vérifie sa structure et détermine le pays lorsque possible. Le parcours manuel permet de choisir le pays.
 - AfWal cherche à détecter automatiquement l'opérateur du wallet et le nom du titulaire Mobile Money via un service autorisé de vérification du partenaire/opérateur.
 - Afficher le nom retourné (éventuellement masqué selon le contrat) et l'opérateur, par exemple MTN MoMo ou Orange Money au Cameroun, afin que l'utilisateur confirme la destination lors du premier envoi.
 - Ne pas déduire le nom des contacts du téléphone, d'un annuaire ou d'un profil AfWal. Un préfixe de numéro fournit au mieux une suggestion d'opérateur et ne prouve ni le titulaire ni l'existence d'un wallet.
@@ -111,6 +111,35 @@ Tests : formats local/international, pays incohérent, lookup réussi/inconnu/am
 - Après succès confirmé, mémoriser le bénéficiaire et l'opérateur choisi comme prévu ; aux paiements suivants, réutilisation sans demande systématique d'opérateur.
 
 Tests complémentaires : opérateur détecté sans nom, nom disponible sans opérateur, détection lente/timeout, sélection manuelle, réponse tardive identique/contradictoire et respect des vérifications obligatoires du corridor.
+
+## Ajouter un bénéficiaire — recherche par numéro international, décision du 3 octobre 2026
+
+Cette précision remplace le choix préalable du pays dans le parcours automatique. L'utilisateur peut ouvrir « Ajouter un bénéficiaire » et rechercher directement par numéro avec indicatif international.
+
+### Parcours automatique demandé
+1. Afficher une barre de recherche avec le texte : « Collez le numéro du bénéficiaire ici avec le code du pays ».
+2. Afficher un bouton « Rechercher ». Le bouton « Saisir manuellement » reste visible immédiatement sous la barre, sans attendre un échec.
+3. Après « Rechercher », normaliser et valider le numéro international, déterminer le pays de destination lorsque possible, puis rechercher séparément le nom du titulaire Mobile Money et l'opérateur du wallet via les capacités autorisées du partenaire.
+4. Afficher une fiche résultat : nom du bénéficiaire (si obtenu), numéro normalisé, pays et opérateur Mobile Money, avec le statut de vérification approprié.
+5. L'utilisateur confirme la destination pour le premier paiement. Après succès confirmé, enregistrer automatiquement le bénéficiaire et réutiliser ses coordonnées aux paiements suivants sans nouvelle question systématique sur l'opérateur.
+
+### Recherche et résultats
+- Accepter le collage de numéros internationaux avec espaces ou séparateurs et normaliser sans altérer la destination. Accepter les formats internationaux pris en charge (+indicatif ou 00indicatif).
+- Sans indicatif valide, demander de le compléter ou proposer « Saisir manuellement » ; ne pas deviner silencieusement le pays.
+- Si l'indicatif est partagé et ne permet pas de déterminer un pays unique, utiliser les règles de numérotation disponibles ou demander une précision ; aucune fausse certitude.
+- Ne lancer aucune opération financière via « Rechercher ». La recherche est authentifiée, limitée en fréquence et protège les données personnelles ; ne pas exposer un annuaire public de titulaires.
+- Montrer les résultats disponibles indépendamment : pays reconnu même si nom/opérateur indisponible. Ne pas afficher un nom ou opérateur comme vérifié sans preuve.
+- Afficher un état de recherche, un délai borné/configurable, puis un message utile en cas d'échec ou de résultat partiel. « Saisir manuellement » reste accessible.
+- Ignorer une réponse obsolète après modification du numéro ou passage à la saisie manuelle ; une réponse tardive ne remplace jamais silencieusement les choix actuels.
+- Ne pas confondre pays détecté et disponibilité du corridor. Un pays/opérateur identifié mais non activé est clairement indisponible pour l'envoi.
+
+### Saisir manuellement
+Ouvrir un formulaire pays, numéro et opérateur parmi les capacités activées. Un nom saisi manuellement si nécessaire reste distinct d'un nom vérifié.
+Respecter les vérifications exigées par le corridor avant paiement. Tout changement de destination invalide le devis précédent.
+
+### Code et validation
+Ajouter ce parcours dans AFW-MOB-MOMO-PAYOUT-1 et préparer les contrats de recherche dans AFW-BE-MOMO-PAYOUT-1.
+Tests : collage international, indicatif absent/invalide/partagé, résultat complet/partiel, timeout, pays/opérateur non activé, bouton manuel disponible dès l'ouverture, modification du numéro pendant la recherche, réponse tardive, et réutilisation du bénéficiaire après succès.
 
 ## Activation en production
 

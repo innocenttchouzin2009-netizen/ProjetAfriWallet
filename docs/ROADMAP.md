@@ -70,23 +70,35 @@ Objectif : crédit du bénéficiaire en quelques secondes lorsque les conditions
 Répartition du code : prévoir les capacités de délai dans le lot 1 ; estimation affichable dans le lot 2 ; horodatages et mesures dans les lots 3–4 ; statut/estimation dans Flutter ; validation des performances de bout en bout au pilote.
 Le pilote fixe les objectifs chiffrés et seuils d'alerte après essais représentatifs ; tester également retard opérateur, callback tardif et résultat inconnu.
 
-## Numéro et opérateur du bénéficiaire — exigence acceptée le 3 octobre 2026
+## Reconnaissance et mémorisation du bénéficiaire — décision corrigée le 3 octobre 2026
 
-À l'ajout du bénéficiaire, AfWal demande le pays et le numéro Mobile Money, normalise le numéro au format international et vérifie sa structure selon le pays.
-AfWal tente de reconnaître l'opérateur Mobile Money local parmi les opérateurs pris en charge : au Cameroun, MTN MoMo ou Orange Money selon les capacités activées.
+Cette décision remplace la demande antérieure de confirmation de l'opérateur à chaque transfert.
 
-- Afficher un champ opérateur obligatoire. Une détection peut le préremplir, mais l'utilisateur doit confirmer ou corriger le choix ; sans détection fiable, demander une sélection explicite.
-- Distinguer opérateur téléphonique et opérateur du wallet Mobile Money. La reconnaissance du numéro ou du réseau ne prouve pas qu'un wallet existe, est actif ou appartient à la personne attendue.
-- Privilégier une vérification autorisée du partenaire lorsqu'elle existe. Une table de préfixes ne fournit qu'une suggestion ; ne pas la traiter comme une preuve actuelle de l'opérateur.
-- Conserver la source et la date de détection/vérification, ainsi que le niveau de certitude. Présenter clairement « suggéré », « confirmé par vous » ou « vérifié par le partenaire », selon les preuves disponibles.
-- Enregistrer pays, numéro normalisé et opérateur explicitement confirmé avec le bénéficiaire ; protéger ces données dans les logs et le stockage.
-- Avant CHAQUE transaction, afficher et demander la confirmation de l'opérateur local avec le numéro et le bénéficiaire, même pour un bénéficiaire déjà enregistré. Ne jamais le déduire silencieusement.
-- Si une nouvelle vérification contredit le choix ou le bénéficiaire enregistré, bloquer l'envoi et demander une correction/confirmation cohérente ; aucun basculement automatique MTN ↔ Orange.
-- Lier pays, numéro et opérateur au devis accepté. Toute modification de destination invalide le devis et exige un nouveau devis et une nouvelle confirmation.
-- Revalider l'éligibilité du corridor et de l'opérateur avant exécution ; un opérateur reconnu mais non activé reste indisponible.
+### Premier transfert
+- Dans le contexte du pays de destination choisi, l'utilisateur saisit uniquement le numéro Mobile Money ; AfWal le normalise au format international et vérifie sa structure.
+- AfWal cherche à détecter automatiquement l'opérateur du wallet et le nom du titulaire Mobile Money via un service autorisé de vérification du partenaire/opérateur.
+- Afficher le nom retourné (éventuellement masqué selon le contrat) et l'opérateur, par exemple MTN MoMo ou Orange Money au Cameroun, afin que l'utilisateur confirme la destination lors du premier envoi.
+- Ne pas déduire le nom des contacts du téléphone, d'un annuaire ou d'un profil AfWal. Un préfixe de numéro fournit au mieux une suggestion d'opérateur et ne prouve ni le titulaire ni l'existence d'un wallet.
+- La disponibilité de la résolution nom + opérateur doit être auditée et validée par corridor/partenaire ; aucune API offrant cette capacité n'est encore confirmée par cette roadmap.
+- En cas de détection indisponible ou ambiguë, indiquer clairement la limite. Demander le choix de l'opérateur si nécessaire ; ne jamais présenter un nom saisi manuellement comme un nom vérifié. Si la vérification est obligatoire sur le corridor, bloquer l'envoi tant qu'elle n'aboutit pas.
 
-Code : inclure modèle/normalisation et contrat de reconnaissance dans AFW-BE-MOMO-PAYOUT-1 ; validation de destination et devis dans le lot 2 ; vérification avant exécution dans les lots 3–4 ; détection, choix et confirmation obligatoire à chaque envoi dans AFW-MOB-MOMO-PAYOUT-1.
-Tests ciblés : numéro local/international, pays incohérent, numéro invalide, détection indisponible/ambiguë, suggestion corrigée, désaccord partenaire, opérateur non activé, bénéficiaire enregistré nécessitant confirmation à chaque envoi, changement de destination invalidant le devis et absence de substitution silencieuse.
+### Enregistrement et paiements suivants
+- Après le premier transfert confirmé réussi, enregistrer automatiquement le bénéficiaire pour cet expéditeur : pays, numéro normalisé, opérateur, nom affichable et provenance/date de vérification.
+- Ne pas enregistrer comme bénéficiaire validé une simple soumission, un échec ou une opération dont le résultat est encore inconnu.
+- Lors d'un paiement suivant, sélectionner le bénéficiaire enregistré ou retrouver celui-ci à partir de son numéro dans le même pays ; réutiliser son opérateur sans demander de le choisir ou confirmer à nouveau.
+- Afficher les coordonnées et le nom sur le récapitulatif normal du paiement. Cette confirmation du paiement ne constitue pas une nouvelle saisie/confirmation spécifique de l'opérateur.
+- Conserver les contrôles techniques d'éligibilité et, lorsque nécessaire, une vérification partenaire en arrière-plan. Ils ne doivent pas créer une demande systématique à l'utilisateur.
+- En cas de changement détecté, coordonnées modifiées ou contradiction du partenaire, interrompre l'envoi et résoudre l'anomalie ; ne jamais remplacer silencieusement l'opérateur ou le titulaire.
+- Lier pays, numéro et opérateur au devis ; une modification de destination invalide le devis et exige un nouveau devis.
+- Enregistrement durable, isolé par expéditeur, et idempotent : callbacks dupliqués, paiements répétés et redémarrages ne créent pas de doublons. Protéger nom/numéro, limiter les accès et respecter les règles de confidentialité du partenaire.
+
+### Prochains lots de code
+AFW-BE-MOMO-PAYOUT-1 : audit des capacités de résolution nom/opérateur, normalisation, contrat de lookup autorisé et modèle de bénéficiaire enregistré ; tests avec réponses simulées explicitement identifiées.
+Lot 2 : destination liée au devis.
+Lots 3–4 : enregistrement automatique après succès confirmé, idempotence/durabilité et contrôles en arrière-plan.
+AFW-MOB-MOMO-PAYOUT-1 : saisie du numéro, affichage du nom/opérateur détectés, premier envoi puis réutilisation sans nouvelle question sur l'opérateur.
+
+Tests : formats local/international, pays incohérent, lookup réussi/inconnu/ambigu/indisponible, nom absent ou masqué, préfixe insuffisant, enregistrement au succès seulement, duplication de callback, isolation par expéditeur, redémarrage, paiement suivant sans confirmation spécifique d'opérateur et anomalie partenaire bloquant l'envoi.
 
 ## Activation en production
 

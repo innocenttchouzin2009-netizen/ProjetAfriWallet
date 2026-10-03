@@ -12,7 +12,8 @@ var scenarios = new (string Name, Action Run)[]
     ("payout can fail before terminal success", FailureLifecycle),
     ("Created payout can be cancelled", CancellationLifecycle),
     ("terminal statuses are immutable", TerminalStatusesAreImmutable),
-    ("contracts preserve payout request/response surface", ContractsSurface)
+    ("contracts preserve payout request/response surface", ContractsSurface),
+    ("eligibility contracts preserve remote integration surface", EligibilityContractsSurface)
 };
 
 foreach (var scenario in scenarios)
@@ -241,6 +242,33 @@ static void ContractsSurface()
 
     AssertEqual("PAYOUT_INVALID_REQUEST", error.Code);
     AssertEqual("correlation-001", error.CorrelationId);
+}
+
+
+static void EligibilityContractsSurface()
+{
+    var request = new MobileMoneyPayoutEligibilityRequest(
+        "DE",
+        "EUR",
+        "CM",
+        "XAF",
+        "MTN-CM");
+
+    AssertEqual("DE", request.SourceCountryCode);
+    AssertEqual("EUR", request.SourceCurrency);
+    AssertEqual("CM", request.DestinationCountryCode);
+    AssertEqual("XAF", request.DestinationCurrency);
+    AssertEqual("MTN-CM", request.OperatorCode);
+
+    var eligible = new MobileMoneyPayoutEligibilityResponse(true, null);
+    Assert(eligible.IsEligible, "Eligible response must be true.");
+    Assert(eligible.FailureCode is null, "Eligible response must not carry a failure code.");
+
+    var denied = new MobileMoneyPayoutEligibilityResponse(
+        false,
+        "PAYOUT_CORRIDOR_NOT_SUPPORTED");
+    Assert(!denied.IsEligible, "Denied response must be false.");
+    AssertEqual("PAYOUT_CORRIDOR_NOT_SUPPORTED", denied.FailureCode);
 }
 
 static MobileMoneyBeneficiary ValidBeneficiary() =>

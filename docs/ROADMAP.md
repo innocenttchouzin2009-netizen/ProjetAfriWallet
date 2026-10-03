@@ -160,6 +160,31 @@ L'exigence couvre le contrat backend AFW-BE-MOMO-PAYOUT-1 et sa traduction dans 
 
 Statut : exigences documentées ; expérience non encore implémentée ni validée auprès d'utilisateurs.
 
+## Financement du transfert — wallet, paiement externe ou split
+
+Décision acceptée le 3 octobre 2026 : le transfert international peut être financé sans recharge manuelle préalable du wallet.
+Le parcours bénéficiaire/payout reste découplé du choix de financement, tout en réutilisant les moteurs financiers et contrôles existants.
+Ce découplage ne dispense pas du compte utilisateur, de la traçabilité ou des contrôles requis.
+
+Jalon distinct : [AFW-BE-TRANSFER-FUNDING-1 — #227](https://github.com/innocenttchouzin2009-netizen/ProjetAfriWallet/issues/227), lié à #223.
+À préparer après les contrats de destination/éligibilité du lot MoMo 1 ; nécessaire avant les lots d'exécution pour couvrir financement externe et split. Ne pas étendre le lot MoMo 1 à tous les connecteurs de collecte.
+
+### Choix au paiement
+- « Solde AfWal » : solde disponible utilisable, paiement total si suffisant.
+- Paiement externe total : Apple Pay, Google Pay, carte bancaire ou virement SEPA/SEPA Instant, uniquement selon intégrations activées et éligibilité. Moyens non disponibles clairement indiqués.
+- « Utiliser mon solde AfWal et compléter » : choix explicite du montant wallet, complément via un moyen externe compatible. Aucun débit automatique ni split entre plusieurs moyens externes dans ce premier périmètre.
+- Afficher total frais inclus, part wallet, reste externe, monnaies, conversions et délai estimé avant confirmation. Si le wallet est vide, proposer le financement externe sans obliger à le recharger.
+- Exemple illustratif en même devise : total à payer 100 EUR, wallet disponible 30 EUR → choix de payer 100 EUR par moyen externe ou 30 EUR wallet + 70 EUR externe. Si des frais s'ajoutent, le total et le complément sont recalculés avant acceptation.
+
+### Exécution fiable
+Le premier lot définit un plan de financement et son éligibilité ; il n'active aucun moyen externe live.
+Dans les lots d'exécution, réserver la part wallet, confirmer la collecte externe via preuve serveur et exécuter le payout une seule fois après validation des parts et contrôles requis.
+Gérer solde concurrent, devis expiré, échec/inconnu externe et payout rejeté avec réconciliation et récupération vers les sources selon règles partenaires ; aucune collecte ou restitution aveugle.
+Le financement bancaire classique peut imposer une attente ; SEPA Instant doit être activé et confirmé séparément. Le délai total inclut financement et payout.
+Tests : wallet vide/partiel/suffisant, choix externe malgré solde, split exact avec frais/FX, réservations concurrentes, collecte refusée/inconnue, doublons et récupération après échec payout.
+
+Statut : planifié, code non commencé ; disponibilité Apple Pay/Google Pay/SEPA dépend des partenaires et validations.
+
 ## Activation en production
 
 Préconditions : capacité outbound vérifiée du partenaire, contrats et autorisations du corridor, conformité, liquidité/préfinancement, frais/FX, limites, monitoring et procédure de support.

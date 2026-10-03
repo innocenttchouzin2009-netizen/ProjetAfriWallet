@@ -113,7 +113,7 @@ await RunAsync("owner status endpoint is read-only", async () =>
 
     Assert(first is not null && second is not null, "Status responses are required.");
     Assert(first == second, "Repeated status reads must be identical.");
-    Assert(first.Status == QrPaymentContractValues.Statuses.Initiated, "Status read must not promote payment state.");
+    Assert(first!.Status == QrPaymentContractValues.Statuses.Initiated, "Status read must not promote payment state.");
 });
 
 Console.WriteLine("QR payment HTTP authentication/idempotency/status scenarios passed.");
@@ -133,8 +133,8 @@ static async Task<WebApplication> BuildAppAsync(Guid owner, Guid walletId)
         Wallet.Create(
             WalletId.From(walletId),
             owner,
-            Currency.From("XAF"),
-            CountryCode.From("CM"),
+            Currency.Create("XAF"),
+            CountryCode.Create("CM"),
             DateTimeOffset.UtcNow));
 
     builder.Services.AddSingleton<IWalletRepository>(wallets);

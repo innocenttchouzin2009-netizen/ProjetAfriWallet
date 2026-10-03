@@ -54,6 +54,22 @@ Hors périmètre du premier lot : appels financiers réels, choix contractuel fi
 - Réservations, règlement et restitutions éventuelles sont traçables dans le ledger et réconciliés.
 - L'utilisateur voit le statut, la référence et le montant reçu ; les logs ne divulguent pas le numéro complet.
 
+## Rapidité de versement — exigence acceptée le 3 octobre 2026
+
+Référence d'expérience souhaitée par l'utilisateur : Taptap Send, pour un versement rapide application → Mobile Money. Il s'agit d'une référence d'expérience, sans partenariat AfWal/Taptap Send annoncé.
+Objectif : crédit du bénéficiaire en quelques secondes lorsque les conditions le permettent. Cet objectif n'est pas une garantie universelle ni un délai de production déjà validé.
+
+- Mesurer le délai de bout en bout depuis la confirmation de l'expéditeur dans AfWal jusqu'au crédit réel du Mobile Money ; enregistrer séparément l'heure de réception de sa confirmation par AfWal pour distinguer crédit et retard de notification.
+- Si l'heure réelle de crédit n'est pas fournie, mesurer le délai jusqu'à confirmation fournisseur comme indicateur de substitution, explicitement identifié.
+- Instrumenter les étapes : contrôles/réservation, soumission, traitement partenaire, crédit et callback/interrogation de statut ; ne jamais confondre réponse API rapide et argent disponible.
+- Évaluer latences médiane/p95/p99, taux de succès, délais dépassés et résultats inconnus par corridor et opérateur ; inclure les opérations en attente dans le bilan.
+- Afficher avant l'envoi une estimation réaliste selon corridor/opérateur, puis le statut et la confirmation de crédit. Ne pas afficher « instantané garanti » sans preuve contractuelle et mesures.
+- Sélectionner le partenaire selon capacité de versement rapide, disponibilité, preuve de crédit, suivi de statut et performances mesurées ; prévoir liquidité/préfinancement selon son modèle.
+- Conserver les contrôles de conformité, l'idempotence et la réconciliation ; la vitesse ne justifie aucune double exécution.
+
+Répartition du code : prévoir les capacités de délai dans le lot 1 ; estimation affichable dans le lot 2 ; horodatages et mesures dans les lots 3–4 ; statut/estimation dans Flutter ; validation des performances de bout en bout au pilote.
+Le pilote fixe les objectifs chiffrés et seuils d'alerte après essais représentatifs ; tester également retard opérateur, callback tardif et résultat inconnu.
+
 ## Activation en production
 
 Préconditions : capacité outbound vérifiée du partenaire, contrats et autorisations du corridor, conformité, liquidité/préfinancement, frais/FX, limites, monitoring et procédure de support.

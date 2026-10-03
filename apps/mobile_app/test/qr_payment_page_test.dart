@@ -5,9 +5,27 @@ import 'package:mobile_app/pages/qr_payment_page.dart';
 import 'package:mobile_app/services/qr_payment_repository.dart';
 
 class FakeQrPaymentRepository implements QrPaymentRepository {
+  int decodeCalls = 0;
+  String? lastRawCode;
+
   @override
-  Future<QrPaymentPayload> decodeAndValidate(String rawCode) {
-    throw UnimplementedError();
+  Future<QrPaymentPayload> decodeAndValidate(String rawCode) async {
+    decodeCalls += 1;
+    lastRawCode = rawCode;
+
+    if (rawCode.trim() != 'valid-code') {
+      throw const InvalidQrPaymentException('QR backend invalide.');
+    }
+
+    return const QrPaymentPayload(
+      type: QrPaymentType.static,
+      merchantId: 'merchant-001',
+      amountMinor: 1550,
+      currencyCode: 'XAF',
+      merchantName: 'Afri Shop',
+      description: 'Coffee purchase',
+      qrId: 'qr-001',
+    );
   }
 
   @override
@@ -25,13 +43,15 @@ class FakeQrPaymentRepository implements QrPaymentRepository {
 }
 
 void main() {
-  testWidgets('camera-first page keeps test validation as a non-payment path', (
+  testWidgets('test input is validated through the certified QR repository', (
     tester,
   ) async {
+    final repository = FakeQrPaymentRepository();
+
     await tester.pumpWidget(
       MaterialApp(
         home: QrPaymentPage(
-          repository: FakeQrPaymentRepository(),
+          repository: repository,
           onContinue: () {},
         ),
       ),
@@ -42,11 +62,13 @@ void main() {
 
     await tester.enterText(
       find.byKey(const Key('qr-test-input')),
-      'AFW|Static|merchant-001|15.50|XAF|Afri Shop|Coffee purchase',
+      'valid-code',
     );
     await tester.tap(find.byKey(const Key('validate-qr-test-input')));
     await tester.pumpAndSettle();
 
+    expect(repository.decodeCalls, 1);
+    expect(repository.lastRawCode, 'valid-code');
     expect(find.text('Vérifiez avant de payer'), findsOneWidget);
     expect(find.text('Afri Shop'), findsOneWidget);
     expect(find.text('15.50 XAF'), findsOneWidget);
@@ -64,11 +86,15 @@ void main() {
     expect(find.text('Paiement réussi'), findsNothing);
   });
 
-  testWidgets('invalid test QR never reaches review', (tester) async {
+  testWidgets('repository validation failure never reaches review', (
+    tester,
+  ) async {
+    final repository = FakeQrPaymentRepository();
+
     await tester.pumpWidget(
       MaterialApp(
         home: QrPaymentPage(
-          repository: FakeQrPaymentRepository(),
+          repository: repository,
           onContinue: () {},
         ),
       ),
@@ -76,37 +102,43 @@ void main() {
 
     await tester.enterText(
       find.byKey(const Key('qr-test-input')),
-      'NOT-AFW|bad',
+      'invalid-code',
     );
     await tester.tap(find.byKey(const Key('validate-qr-test-input')));
     await tester.pumpAndSettle();
 
+    expect(repository.decodeCalls, 1);
     expect(find.byKey(const Key('qr-validation-error')), findsOneWidget);
     expect(find.text('Vérifiez avant de payer'), findsNothing);
     expect(find.text('Paiement réussi'), findsNothing);
   });
 
-  testWidgets('wallet return invokes dedicated callback without legacy continuation', (tester) async {
-    var returnCount = 0;
-    var continueCount = 0;
+  testWidgets(
+    'wallet return invokes dedicated callback without legacy continuation',
+    (tester) async {
+      var returnCount = 0;
+      var continueCount = 0;
 
-    await tester.pumpWidget(
-      MaterialApp(
-        home: QrPaymentPage(
-          repository: FakeQrPaymentRepository(),
-          onReturnToWallet: () => returnCount += 1,
-          onContinue: () => continueCount += 1,
+      await tester.pumpWidget(
+        MaterialApp(
+          home: QrPaymentPage(
+            repository: FakeQrPaymentRepository(),
+            onReturnToWallet: () => returnCount += 1,
+            onContinue: () => continueCount += 1,
+          ),
         ),
-      ),
-    );
+      );
 
-    await tester.tap(find.byKey(const Key('qr-return-to-wallet')));
+      await tester.tap(find.byKey(const Key('qr-return-to-wallet')));
 
-    expect(returnCount, 1);
-    expect(continueCount, 0);
-  });
+      expect(returnCount, 1);
+      expect(continueCount, 0);
+    },
+  );
 
-  testWidgets('legacy continuation remains available when supplied', (tester) async {
+  testWidgets('legacy continuation remains available when supplied', (
+    tester,
+  ) async {
     var continueCount = 0;
 
     await tester.pumpWidget(

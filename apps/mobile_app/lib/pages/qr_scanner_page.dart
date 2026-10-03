@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../models/qr_payment.dart';
-import '../services/afriwallet_qr_decoder.dart';
+import '../services/qr_payment_repository.dart';
 
 class QrScannerPage extends StatefulWidget {
-  const QrScannerPage({super.key, this.decoder = const AfriWalletQrDecoder()});
+  const QrScannerPage({super.key, required this.repository});
 
-  final AfriWalletQrDecoder decoder;
+  final QrPaymentRepository repository;
 
   @override
   State<QrScannerPage> createState() => _QrScannerPageState();
@@ -35,7 +35,7 @@ class _QrScannerPageState extends State<QrScannerPage> {
 
     _handling = true;
     try {
-      final payload = widget.decoder.decode(rawCode);
+      final payload = await widget.repository.decodeAndValidate(rawCode);
       await _controller.stop();
       if (!mounted) return;
       Navigator.of(context).pop<QrPaymentPayload>(payload);

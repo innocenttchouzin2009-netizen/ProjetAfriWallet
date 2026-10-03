@@ -5,12 +5,38 @@ import 'package:mobile_app/pages/qr_payment_page.dart';
 import 'package:mobile_app/services/qr_payment_repository.dart';
 
 class RecordingQrPaymentRepository implements QrPaymentRepository {
+  int decodeCalls = 0;
   int initiateCalls = 0;
   int statusCalls = 0;
 
   @override
-  Future<QrPaymentPayload> decodeAndValidate(String rawCode) {
-    throw UnimplementedError();
+  Future<QrPaymentPayload> decodeAndValidate(String rawCode) async {
+    decodeCalls += 1;
+
+    switch (rawCode.trim()) {
+      case 'valid-static':
+        return const QrPaymentPayload(
+          type: QrPaymentType.static,
+          merchantId: 'merchant-001',
+          amountMinor: 1550,
+          currencyCode: 'XAF',
+          merchantName: 'Afri Shop',
+          description: 'Coffee purchase',
+          qrId: 'qr-001',
+        );
+      case 'valid-dynamic':
+        return const QrPaymentPayload(
+          type: QrPaymentType.dynamic,
+          merchantId: 'merchant-002',
+          amountMinor: 0,
+          currencyCode: 'EUR',
+          merchantName: 'Afri Market',
+          description: 'Open amount',
+          qrId: 'qr-002',
+        );
+      default:
+        throw const InvalidQrPaymentException('QR backend invalide.');
+    }
   }
 
   @override
@@ -35,7 +61,7 @@ class RecordingQrPaymentRepository implements QrPaymentRepository {
 }
 
 void main() {
-  testWidgets('valid QR opens review without initiating payment', (
+  testWidgets('repository-validated QR opens review without initiating payment', (
     tester,
   ) async {
     final repository = RecordingQrPaymentRepository();
@@ -52,11 +78,12 @@ void main() {
 
     await tester.enterText(
       find.byKey(const Key('qr-test-input')),
-      'AFW|Static|merchant-001|15.50|XAF|Afri Shop|Coffee purchase',
+      'valid-static',
     );
     await tester.tap(find.byKey(const Key('validate-qr-test-input')));
     await tester.pumpAndSettle();
 
+    expect(repository.decodeCalls, 1);
     expect(find.text('Vérifiez avant de payer'), findsOneWidget);
     expect(find.text('Afri Shop'), findsOneWidget);
     expect(find.text('15.50 XAF'), findsOneWidget);
@@ -66,7 +93,7 @@ void main() {
     expect(repository.statusCalls, 0);
   });
 
-  testWidgets('invalid QR never reaches review or payment initiation', (
+  testWidgets('repository rejection never reaches review or payment initiation', (
     tester,
   ) async {
     final repository = RecordingQrPaymentRepository();
@@ -83,11 +110,12 @@ void main() {
 
     await tester.enterText(
       find.byKey(const Key('qr-test-input')),
-      'OTHER|Static|merchant-001|15.50|XAF',
+      'invalid',
     );
     await tester.tap(find.byKey(const Key('validate-qr-test-input')));
     await tester.pumpAndSettle();
 
+    expect(repository.decodeCalls, 1);
     expect(find.byKey(const Key('qr-validation-error')), findsOneWidget);
     expect(find.text('Vérifiez avant de payer'), findsNothing);
     expect(repository.initiateCalls, 0);
@@ -111,11 +139,12 @@ void main() {
 
       await tester.enterText(
         find.byKey(const Key('qr-test-input')),
-        'AFW|Dynamic|merchant-002|0|EUR|Afri Market|Open amount',
+        'valid-dynamic',
       );
       await tester.tap(find.byKey(const Key('validate-qr-test-input')));
       await tester.pumpAndSettle();
 
+      expect(repository.decodeCalls, 1);
       expect(find.text('Vérifiez avant de payer'), findsOneWidget);
       expect(
         find.byKey(const Key('qr-dynamic-amount-required')),

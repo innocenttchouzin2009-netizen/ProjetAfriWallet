@@ -23,5 +23,8 @@ public static class QrPaymentContractValues
         public const string NotActive = "QR_PAYMENT_NOT_ACTIVE";
         public const string Expired = "QR_PAYMENT_EXPIRED";
         public const string IdempotencyConflict = "QR_PAYMENT_IDEMPOTENCY_CONFLICT";
+        public const string Unauthorized = "QR_PAYMENT_UNAUTHORIZED";
+        public const string PayerWalletNotFound = "QR_PAYMENT_PAYER_WALLET_NOT_FOUND";
+        public const string PayerWalletUnavailable = "QR_PAYMENT_PAYER_WALLET_UNAVAILABLE";
     }
 }

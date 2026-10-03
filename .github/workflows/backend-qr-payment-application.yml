@@ -71,16 +71,16 @@ jobs:
         run: dotnet restore
 
       - name: Build Merchant API
-        run: dotnet build backend/src/Merchant/Merchant.Api/Merchant.Api.csproj --no-restore
+        run: dotnet build backend/src/Merchant/Merchant.Api/Merchant.Api.csproj
 
       - name: Run QR payment contract scenarios
-        run: dotnet run --project backend/tests/QrPayment.Contract.Scenarios --no-restore
+        run: dotnet run --project backend/tests/QrPayment.Contract.Scenarios
 
       - name: Run QR payment application scenarios
-        run: dotnet run --project backend/tests/QrPayment.Application.Scenarios --no-restore
+        run: dotnet run --project backend/tests/QrPayment.Application.Scenarios
 
       - name: Run QR payment HTTP scenarios
-        run: dotnet run --project backend/tests/QrPayment.Http.Scenarios --no-restore
+        run: dotnet run --project backend/tests/QrPayment.Http.Scenarios
 
       - name: Verify diff cleanliness
         run: git diff --check

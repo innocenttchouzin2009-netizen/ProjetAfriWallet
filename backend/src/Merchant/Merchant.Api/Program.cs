@@ -1,3 +1,11 @@
+using System.Text;
+using AfriWallet.Merchant.Api.QrPayments;
+using AfriWallet.Merchant.Application.QrPayments;
+using AfriWallet.Wallet.Application;
+using AfriWallet.Wallet.Persistence;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using AfriWallet.Merchant.Api.Production;
 using AfriWallet.Merchant.Application.Services;
 using Microsoft.Extensions.Options;
@@ -10,6 +18,7 @@ builder.Services.AddSingleton(sp => sp.GetRequiredService<IOptions<MerchantProdu
 builder.Services.AddSingleton<MerchantProductionConfigurationService>();
 builder.Services.AddSingleton<MerchantRegistryService>();
 builder.Services.AddSingleton<QrPaymentService>();
+builder.Services.AddSingleton<QrPaymentContractService>();
 builder.Services.AddSingleton<SettlementService>();
 builder.Services.AddSingleton<MerchantOnboardingService>();
 builder.Services.AddSingleton<MerchantOnboardingValidator>();
@@ -22,10 +31,46 @@ builder.Services.AddMerchantResilience();
 builder.Services.AddMerchantRateLimiting();
 builder.Services.AddMerchantOpenTelemetry();
 
+var walletConnectionString = builder.Configuration.GetConnectionString("WalletDatabase") ??
+    Environment.GetEnvironmentVariable("AFW_WALLET_DB_CONNECTION_STRING") ??
+    "Data Source=wallet-registry.db";
+
+var jwtIssuer = builder.Configuration["Auth:Jwt:Issuer"] ?? "https://identity.afrikawallet.local";
+var jwtAudience = builder.Configuration["Auth:Jwt:Audience"] ?? "afrikawallet-mobile";
+var jwtSigningKey = builder.Configuration["Auth:Jwt:SigningKey"] ??
+    Environment.GetEnvironmentVariable("AFW_AUTH_JWT_SIGNING_KEY") ??
+    throw new InvalidOperationException("Auth JWT signing key is not configured for Merchant API.");
+
+builder.Services.AddDbContext<WalletDbContext>(options =>
+    options.UseSqlite(walletConnectionString));
+builder.Services.AddScoped<IWalletRepository, EfWalletRepository>();
+
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.MapInboundClaims = false;
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSigningKey)),
+            ValidateIssuer = true,
+            ValidIssuer = jwtIssuer,
+            ValidateAudience = true,
+            ValidAudience = jwtAudience,
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.Zero
+        };
+    });
+
+builder.Services.AddAuthorization();
+
 var app = builder.Build();
 
 app.UseMiddleware<MerchantCorrelationMiddleware>();
 app.UseRateLimiter();
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapGet("/health/live", (MerchantHealthProbe probe) => Results.Ok(new { status = "live", checks = probe.Check() }));
 app.MapGet("/health/ready", (MerchantHealthProbe probe) => Results.Ok(new { status = "ready", checks = probe.Check() }));
@@ -112,29 +157,7 @@ app.MapPost("/api/v1/qr-payments/generate", (GenerateQrCommand command, QrPaymen
     return Results.Created($"/api/v1/qr-payments/{payment.PaymentId}", payment);
 });
 
-app.MapPost("/api/v1/qr-payments/decode", (string code, QrPaymentService service) =>
-{
-    var payload = service.DecodeQr(code);
-    return Results.Ok(payload);
-});
-
-app.MapPost("/api/v1/qr-payments/initiate", (InitiateQrPaymentCommand command, QrPaymentService service) =>
-{
-    var payment = service.InitiatePayment(command);
-    return Results.Ok(payment);
-});
-
-app.MapPost("/api/v1/qr-payments/receipts", (string transferIntentId, QrPaymentService service) =>
-{
-    var receipt = service.GenerateReceipt(transferIntentId);
-    return Results.Ok(receipt);
-});
-
-app.MapGet("/api/v1/qr-payments/{transferIntentId}/timeline", (string transferIntentId, QrPaymentService service) =>
-{
-    var timeline = service.GetTimeline(transferIntentId);
-    return Results.Ok(new { transferIntentId, items = timeline });
-});
+app.MapQrPaymentContractEndpoints();
 
 app.MapGet("/api/v1/settlements", async (SettlementService service, CancellationToken cancellationToken) =>
 {

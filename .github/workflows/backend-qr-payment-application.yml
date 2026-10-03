@@ -1,21 +1,25 @@
-name: AFW-BE-QR-PAYMENT-APPLICATION-1
+name: AFW-BE-QR-PAYMENT-CONTRACT-2
 
 on:
   push:
     branches:
-      - feature/backend-qr-payment-contract-1
+      - feature/backend-qr-payment-contract-2
     paths:
       - 'backend/src/Merchant/Merchant.Application/**'
+      - 'backend/src/Merchant/Merchant.Api/**'
       - 'backend/tests/QrPayment.Contract.Scenarios/**'
       - 'backend/tests/QrPayment.Application.Scenarios/**'
+      - 'backend/tests/QrPayment.Http.Scenarios/**'
       - '.github/workflows/backend-qr-payment-application.yml'
   pull_request:
     branches:
       - main
     paths:
       - 'backend/src/Merchant/Merchant.Application/**'
+      - 'backend/src/Merchant/Merchant.Api/**'
       - 'backend/tests/QrPayment.Contract.Scenarios/**'
       - 'backend/tests/QrPayment.Application.Scenarios/**'
+      - 'backend/tests/QrPayment.Http.Scenarios/**'
   workflow_dispatch:
     inputs:
       candidate_sha:
@@ -28,7 +32,7 @@ permissions:
 
 jobs:
   validate:
-    name: Validate QR Payment Application Commit 2
+    name: Certify QR Payment backend contract
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
@@ -66,14 +70,17 @@ jobs:
       - name: Restore
         run: dotnet restore
 
-      - name: Build Merchant.Application
-        run: dotnet build backend/src/Merchant/Merchant.Application/Merchant.Application.csproj
+      - name: Build Merchant API
+        run: dotnet build backend/src/Merchant/Merchant.Api/Merchant.Api.csproj
 
       - name: Run QR payment contract scenarios
         run: dotnet run --project backend/tests/QrPayment.Contract.Scenarios
 
       - name: Run QR payment application scenarios
         run: dotnet run --project backend/tests/QrPayment.Application.Scenarios
+
+      - name: Run QR payment HTTP scenarios
+        run: dotnet run --project backend/tests/QrPayment.Http.Scenarios
 
       - name: Verify diff cleanliness
         run: git diff --check

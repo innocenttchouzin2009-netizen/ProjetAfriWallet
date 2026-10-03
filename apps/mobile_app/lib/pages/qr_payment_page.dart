@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../models/qr_payment.dart';
-import '../services/afriwallet_qr_decoder.dart';
 import '../services/qr_payment_repository.dart';
 import 'qr_payment_review_page.dart';
 import 'qr_scanner_page.dart';
@@ -12,12 +11,10 @@ class QrPaymentPage extends StatefulWidget {
     required this.repository,
     this.onContinue,
     this.onReturnToWallet,
-    this.decoder = const AfriWalletQrDecoder(),
     this.payerWalletId = 'CURRENT-AUTHENTICATED-WALLET',
   });
 
   final QrPaymentRepository repository;
-  final AfriWalletQrDecoder decoder;
   final VoidCallback? onContinue;
   final VoidCallback? onReturnToWallet;
   final String payerWalletId;
@@ -52,7 +49,7 @@ class _QrPaymentPageState extends State<QrPaymentPage> {
   Future<void> _openScanner() async {
     final payload = await Navigator.of(context).push<QrPaymentPayload>(
       MaterialPageRoute<QrPaymentPayload>(
-        builder: (_) => QrScannerPage(decoder: widget.decoder),
+        builder: (_) => QrScannerPage(repository: widget.repository),
       ),
     );
     if (!mounted || payload == null) return;
@@ -67,7 +64,9 @@ class _QrPaymentPageState extends State<QrPaymentPage> {
     });
 
     try {
-      final payload = widget.decoder.decode(_controller.text);
+      final payload = await widget.repository.decodeAndValidate(
+        _controller.text,
+      );
       if (!mounted) return;
       await _openReview(payload);
     } on InvalidQrPaymentException catch (error) {

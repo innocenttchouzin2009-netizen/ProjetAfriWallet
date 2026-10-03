@@ -76,6 +76,7 @@ class _AfriWalletAppState extends State<AfriWalletApp> {
   late final WalletRepository _walletRepository;
   late final TransferRepository _transferRepository;
   late final TransactionHistoryRepository _transactionHistoryRepository;
+  late final QrPaymentRepository _qrPaymentRepository;
 
   @override
   void initState() {
@@ -96,6 +97,8 @@ class _AfriWalletAppState extends State<AfriWalletApp> {
           widget.transferRepository ?? wiring.transferRepository;
       _transactionHistoryRepository = widget.transactionHistoryRepository ??
           wiring.transactionHistoryRepository;
+      _qrPaymentRepository =
+          widget.qrPaymentRepository ?? wiring.qrPaymentRepository;
       return;
     }
 
@@ -107,6 +110,8 @@ class _AfriWalletAppState extends State<AfriWalletApp> {
         widget.transferRepository ?? const UnavailableTransferRepository();
     _transactionHistoryRepository = widget.transactionHistoryRepository ??
         const UnavailableTransactionHistoryRepository();
+    _qrPaymentRepository =
+        widget.qrPaymentRepository ?? const UnavailableQrPaymentRepository();
   }
 
   void _wireAuthProduction() {
@@ -181,8 +186,7 @@ class _AfriWalletAppState extends State<AfriWalletApp> {
       return WalletHomePage(
         repository: _walletRepository,
         transactionHistoryRepository: _transactionHistoryRepository,
-        qrPaymentRepository:
-            widget.qrPaymentRepository ?? const UnavailableQrPaymentRepository(),
+        qrPaymentRepository: _qrPaymentRepository,
         subscriptionRepository: widget.repository,
         onSend: () => _openSendReceive(SendReceiveMode.send),
         onReceive: () => _openSendReceive(SendReceiveMode.receive),
@@ -206,8 +210,7 @@ class _AfriWalletAppState extends State<AfriWalletApp> {
     }
     if (!_hasVisitedQrPayments) {
       return QrPaymentPage(
-        repository:
-            widget.qrPaymentRepository ?? const UnavailableQrPaymentRepository(),
+        repository: _qrPaymentRepository,
         onContinue: () => setState(() => _hasVisitedQrPayments = true),
       );
     }

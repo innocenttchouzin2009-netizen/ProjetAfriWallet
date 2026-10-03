@@ -70,6 +70,24 @@ Objectif : crédit du bénéficiaire en quelques secondes lorsque les conditions
 Répartition du code : prévoir les capacités de délai dans le lot 1 ; estimation affichable dans le lot 2 ; horodatages et mesures dans les lots 3–4 ; statut/estimation dans Flutter ; validation des performances de bout en bout au pilote.
 Le pilote fixe les objectifs chiffrés et seuils d'alerte après essais représentatifs ; tester également retard opérateur, callback tardif et résultat inconnu.
 
+## Numéro et opérateur du bénéficiaire — exigence acceptée le 3 octobre 2026
+
+À l'ajout du bénéficiaire, AfWal demande le pays et le numéro Mobile Money, normalise le numéro au format international et vérifie sa structure selon le pays.
+AfWal tente de reconnaître l'opérateur Mobile Money local parmi les opérateurs pris en charge : au Cameroun, MTN MoMo ou Orange Money selon les capacités activées.
+
+- Afficher un champ opérateur obligatoire. Une détection peut le préremplir, mais l'utilisateur doit confirmer ou corriger le choix ; sans détection fiable, demander une sélection explicite.
+- Distinguer opérateur téléphonique et opérateur du wallet Mobile Money. La reconnaissance du numéro ou du réseau ne prouve pas qu'un wallet existe, est actif ou appartient à la personne attendue.
+- Privilégier une vérification autorisée du partenaire lorsqu'elle existe. Une table de préfixes ne fournit qu'une suggestion ; ne pas la traiter comme une preuve actuelle de l'opérateur.
+- Conserver la source et la date de détection/vérification, ainsi que le niveau de certitude. Présenter clairement « suggéré », « confirmé par vous » ou « vérifié par le partenaire », selon les preuves disponibles.
+- Enregistrer pays, numéro normalisé et opérateur explicitement confirmé avec le bénéficiaire ; protéger ces données dans les logs et le stockage.
+- Avant CHAQUE transaction, afficher et demander la confirmation de l'opérateur local avec le numéro et le bénéficiaire, même pour un bénéficiaire déjà enregistré. Ne jamais le déduire silencieusement.
+- Si une nouvelle vérification contredit le choix ou le bénéficiaire enregistré, bloquer l'envoi et demander une correction/confirmation cohérente ; aucun basculement automatique MTN ↔ Orange.
+- Lier pays, numéro et opérateur au devis accepté. Toute modification de destination invalide le devis et exige un nouveau devis et une nouvelle confirmation.
+- Revalider l'éligibilité du corridor et de l'opérateur avant exécution ; un opérateur reconnu mais non activé reste indisponible.
+
+Code : inclure modèle/normalisation et contrat de reconnaissance dans AFW-BE-MOMO-PAYOUT-1 ; validation de destination et devis dans le lot 2 ; vérification avant exécution dans les lots 3–4 ; détection, choix et confirmation obligatoire à chaque envoi dans AFW-MOB-MOMO-PAYOUT-1.
+Tests ciblés : numéro local/international, pays incohérent, numéro invalide, détection indisponible/ambiguë, suggestion corrigée, désaccord partenaire, opérateur non activé, bénéficiaire enregistré nécessitant confirmation à chaque envoi, changement de destination invalidant le devis et absence de substitution silencieuse.
+
 ## Activation en production
 
 Préconditions : capacité outbound vérifiée du partenaire, contrats et autorisations du corridor, conformité, liquidité/préfinancement, frais/FX, limites, monitoring et procédure de support.

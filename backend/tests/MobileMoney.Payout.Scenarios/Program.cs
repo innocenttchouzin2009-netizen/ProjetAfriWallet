@@ -23,6 +23,8 @@ foreach (var scenario in scenarios)
 
 Console.WriteLine($"MobileMoney payout domain/contracts scenarios: {scenarios.Length}/{scenarios.Length} passed.");
 
+PayoutOrchestrationScenarios.RunAll();
+
 static void ValidCreation()
 {
     var now = Utc(2026, 10, 3, 12, 0);

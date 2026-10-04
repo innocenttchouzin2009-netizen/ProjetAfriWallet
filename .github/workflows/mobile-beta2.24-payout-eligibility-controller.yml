@@ -18,7 +18,7 @@ jobs:
     timeout-minutes: 30
 
     env:
-      CANDIDATE_SHA: 530b079a7c81c705a55e8318c0ac034f34904b68
+      CANDIDATE_SHA: 23c62fea46a0e4a653d2aea98d1db3b1902454d6
       BASE_SHA: 4757c86837145e1740309781e53c8cfc0603dab5
       STATUS_CONTEXT: mobile-beta2.24/payout-eligibility-controller
 
@@ -44,7 +44,7 @@ jobs:
           git cat-file -e "${CANDIDATE_SHA}^{commit}"
           git cat-file -e "${BASE_SHA}^{commit}"
           test "$(git merge-base "${BASE_SHA}" "${CANDIDATE_SHA}")" = "${BASE_SHA}"
-          test "$(git rev-list --count "${BASE_SHA}..${CANDIDATE_SHA}")" = "8"
+          test "$(git rev-list --count "${BASE_SHA}..${CANDIDATE_SHA}")" = "9"
 
       - name: Mark certification pending
         uses: actions/github-script@v7
@@ -101,7 +101,7 @@ jobs:
             echo
             echo "- Candidate: `${CANDIDATE_SHA}`"
             echo "- Parent/base: `${BASE_SHA}`"
-            echo "- Lineage count: `8`"
+            echo "- Lineage count: `9`"
             echo "- Analyze: `flutter analyze`"
             echo "- Targeted test: `mobile_money_payout_eligibility_controller_test.dart`"
             echo "- Full suite: `flutter test`"

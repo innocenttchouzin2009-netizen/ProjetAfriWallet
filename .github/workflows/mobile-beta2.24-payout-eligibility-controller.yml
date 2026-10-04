@@ -44,7 +44,7 @@ jobs:
           git cat-file -e "${CANDIDATE_SHA}^{commit}"
           git cat-file -e "${BASE_SHA}^{commit}"
           test "$(git merge-base "${BASE_SHA}" "${CANDIDATE_SHA}")" = "${BASE_SHA}"
-          test "$(git rev-list --count "${BASE_SHA}..${CANDIDATE_SHA}")" = "2"
+          test "$(git rev-list --count "${BASE_SHA}..${CANDIDATE_SHA}")" = "3"
 
       - name: Mark certification pending
         uses: actions/github-script@v7

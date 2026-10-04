@@ -110,11 +110,12 @@ void main() {
   testWidgets('renders failed state and retry re-checks eligibility',
       (tester) async {
     var shouldFail = true;
+    final retryCompleter = Completer<MobileMoneyPayoutEligibility>();
     final repository = _FakeRepository(() async {
       if (shouldFail) {
         throw StateError('temporarily unavailable');
       }
-      return const MobileMoneyPayoutEligibility(isEligible: true);
+      return retryCompleter.future;
     });
     final controller =
         MobileMoneyPayoutEligibilityController(repository: repository);
@@ -130,6 +131,9 @@ void main() {
     await tester.pump();
     expect(find.byKey(const Key('momo-eligibility-checking')), findsOneWidget);
 
+    retryCompleter.complete(
+      const MobileMoneyPayoutEligibility(isEligible: true),
+    );
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('momo-eligibility-eligible')), findsOneWidget);
     expect(repository.callCount, 2);

@@ -18,7 +18,7 @@ jobs:
     timeout-minutes: 30
 
     env:
-      CANDIDATE_SHA: f2d218e01b0e791e309234fb8dddc6577aa2a260
+      CANDIDATE_SHA: d55b78248dad236a0a63fb6861ea84fe24ab807b
       BASE_SHA: 4757c86837145e1740309781e53c8cfc0603dab5
       STATUS_CONTEXT: mobile-beta2.24/payout-eligibility-controller
 
@@ -43,7 +43,8 @@ jobs:
           test "${actual_sha}" = "${CANDIDATE_SHA}"
           git cat-file -e "${CANDIDATE_SHA}^{commit}"
           git cat-file -e "${BASE_SHA}^{commit}"
-          test "$(git rev-parse "${CANDIDATE_SHA}^")" = "${BASE_SHA}"
+          test "$(git merge-base "${BASE_SHA}" "${CANDIDATE_SHA}")" = "${BASE_SHA}"
+          test "$(git rev-list --count "${BASE_SHA}..${CANDIDATE_SHA}")" = "2"
 
       - name: Mark certification pending
         uses: actions/github-script@v7

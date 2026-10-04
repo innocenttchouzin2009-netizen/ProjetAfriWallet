@@ -18,7 +18,7 @@ jobs:
     timeout-minutes: 30
 
     env:
-      CANDIDATE_SHA: 5fc496baaed63f387f1c8d25897e212554264363
+      CANDIDATE_SHA: 4806ffd9175e184aaa02a014b2bc1752a2ff5c3b
       BASE_SHA: 22fae1c49af9debc955c71a6a1f8b79038f75b55
       STATUS_CONTEXT: mobile-beta2.24/payout-eligibility-ui
 

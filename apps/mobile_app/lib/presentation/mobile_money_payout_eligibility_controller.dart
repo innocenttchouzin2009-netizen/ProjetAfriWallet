@@ -13,8 +13,8 @@ enum MobileMoneyPayoutEligibilityPresentationStatus {
 
 class MobileMoneyPayoutEligibilityController extends ChangeNotifier {
   MobileMoneyPayoutEligibilityController({
-    required MobileMoneyPayoutRepository repository,
-  }) : _repository = repository;
+    required this._repository,
+  });
 
   final MobileMoneyPayoutRepository _repository;
 

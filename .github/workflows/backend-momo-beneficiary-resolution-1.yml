@@ -1,0 +1,115 @@
+name: AFW-BE Beneficiary Resolution Certification
+
+on:
+  push:
+    branches:
+      - feature/backend-momo-beneficiary-resolution-1
+    paths:
+      - '.github/workflows/backend-momo-beneficiary-resolution-1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  statuses: write
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    env:
+      BASE_SHA: 0e4343e832e8b55f5be10cc4906177acfe22b03a
+      CANDIDATE_SHA: bada71a8ef1d3dd127ccca50b653a18098e4add5
+      STATUS_CONTEXT: backend-momo/beneficiary-resolution
+
+    steps:
+      - name: Checkout exact beneficiary resolution candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.CANDIDATE_SHA }}
+          fetch-depth: 0
+
+      - name: Assert exact candidate lineage
+        id: candidate_assertion
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual_sha="$(git rev-parse HEAD)"
+          test "${actual_sha}" = "${CANDIDATE_SHA}"
+          git cat-file -e "${BASE_SHA}^{commit}"
+          git cat-file -e "${CANDIDATE_SHA}^{commit}"
+          test "$(git merge-base "${BASE_SHA}" "${CANDIDATE_SHA}")" = "${BASE_SHA}"
+          test "$(git rev-list --count "${BASE_SHA}..${CANDIDATE_SHA}")" = "3"
+
+      - name: Mark certification pending
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: process.env.CANDIDATE_SHA,
+              state: 'pending',
+              context: process.env.STATUS_CONTEXT,
+              description: 'Beneficiary Resolution certification in progress',
+              target_url: `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+            });
+
+      - name: Set up .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: .NET info
+        run: dotnet --info
+
+      - name: Restore
+        run: dotnet restore backend/tests/MobileMoney.BeneficiaryResolution.Scenarios/MobileMoney.BeneficiaryResolution.Scenarios.csproj
+
+      - name: Build MobileMoney API
+        run: dotnet build backend/src/MobileMoney/MobileMoney.Api/MobileMoney.Api.csproj --configuration Release --no-restore
+
+      - name: Run Beneficiary Resolution scenarios
+        run: dotnet run --project backend/tests/MobileMoney.BeneficiaryResolution.Scenarios/MobileMoney.BeneficiaryResolution.Scenarios.csproj --configuration Release --no-restore
+
+      - name: Verify candidate diff
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check "${BASE_SHA}..${CANDIDATE_SHA}"
+
+      - name: Write certification summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "## AFW-BE Beneficiary Resolution certification"
+            echo
+            echo "- Base: \`${BASE_SHA}\`"
+            echo "- Candidate: \`${CANDIDATE_SHA}\`"
+            echo "- Restore: MobileMoney Beneficiary Resolution scenarios"
+            echo "- Build: MobileMoney.Api (Release)"
+            echo "- Scenarios: MobileMoney.BeneficiaryResolution.Scenarios"
+            echo "- Diff check: \`git diff --check ${BASE_SHA}..${CANDIDATE_SHA}\`"
+            echo "- Job status: **${{ job.status }}**"
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Report certification status
+        if: always() && steps.candidate_assertion.outcome == 'success'
+        uses: actions/github-script@v7
+        env:
+          CERTIFICATION_JOB_STATUS: ${{ job.status }}
+        with:
+          script: |
+            const succeeded = process.env.CERTIFICATION_JOB_STATUS === 'success';
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: process.env.CANDIDATE_SHA,
+              state: succeeded ? 'success' : 'failure',
+              context: process.env.STATUS_CONTEXT,
+              description: succeeded
+                ? 'Beneficiary Resolution certified'
+                : 'Beneficiary Resolution certification failed',
+              target_url: `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+            });

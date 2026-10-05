@@ -1,3 +1,5 @@
+using MobileMoney.Production.Payout.BeneficiaryLookup.Contracts;
+
 using MobileMoney.Production.Payout.BeneficiaryLookup.Application;
 using MobileMoney.Production.Payout.BeneficiaryLookup.Domain;
 
@@ -108,4 +110,80 @@ static void AssertEqual<T>(T expected, T actual)
     if (!EqualityComparer<T>.Default.Equals(expected, actual))
         throw new InvalidOperationException(
             $"Expected '{expected}', got '{actual}'.");
+}
+
+
+var holderLookupScenarios = new (string Name, Func<Task> Run)[]
+{
+    ("resolves beneficiary holder from normalized number and operator", ResolveBeneficiaryHolder),
+    ("returns unresolved when operator lookup has no holder", HolderLookupUnavailable),
+    ("rejects non-normalized input before provider lookup", RejectsNonNormalizedHolderLookupInput)
+};
+
+foreach (var scenario in holderLookupScenarios)
+{
+    await scenario.Run();
+    Console.WriteLine($"PASS: {scenario.Name}");
+}
+
+static async Task ResolveBeneficiaryHolder()
+{
+    var resolver = new FakeBeneficiaryAccountHolderResolver(
+        (phoneNumber, @operator) =>
+        {
+            AssertEqual("+237670123456", phoneNumber);
+            AssertEqual(CameroonMobileOperator.Mtn, @operator);
+            return new BeneficiaryAccountHolderResolution("  Ada N.  ");
+        });
+
+    var service = new BeneficiaryAccountHolderLookupService(resolver);
+    var result = await service.LookupAsync(
+        new BeneficiaryAccountHolderLookupRequest(
+            "+237670123456",
+            CameroonMobileOperator.Mtn));
+
+    AssertEqual("+237670123456", result.NormalizedPhoneNumber);
+    AssertEqual("CM", result.CountryCode);
+    AssertEqual(CameroonMobileOperator.Mtn, result.Operator);
+    AssertEqual("Ada N.", result.AccountHolderName);
+    Assert(result.BeneficiaryResolved, "Holder lookup must be resolved.");
+    AssertEqual(1, resolver.CallCount);
+}
+
+static async Task HolderLookupUnavailable()
+{
+    var resolver = new FakeBeneficiaryAccountHolderResolver((_, _) => null);
+    var service = new BeneficiaryAccountHolderLookupService(resolver);
+
+    var result = await service.LookupAsync(
+        new BeneficiaryAccountHolderLookupRequest(
+            "+237699123456",
+            CameroonMobileOperator.Orange));
+
+    AssertEqual(CameroonMobileOperator.Orange, result.Operator);
+    Assert(result.AccountHolderName is null, "Unavailable holder name must remain null.");
+    Assert(!result.BeneficiaryResolved, "Unavailable holder lookup must remain unresolved.");
+    AssertEqual(1, resolver.CallCount);
+}
+
+static async Task RejectsNonNormalizedHolderLookupInput()
+{
+    var resolver = new FakeBeneficiaryAccountHolderResolver(
+        (_, _) => throw new InvalidOperationException(
+            "Provider lookup must not run for non-normalized input."));
+    var service = new BeneficiaryAccountHolderLookupService(resolver);
+
+    try
+    {
+        await service.LookupAsync(
+            new BeneficiaryAccountHolderLookupRequest(
+                "670123456",
+                CameroonMobileOperator.Mtn));
+        throw new InvalidOperationException("Expected non-normalized input to be rejected.");
+    }
+    catch (ArgumentException)
+    {
+    }
+
+    AssertEqual(0, resolver.CallCount);
 }

@@ -1,6 +1,8 @@
-using System.Text;
+using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting.Server;
+using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
@@ -37,55 +39,59 @@ Assert(
     httpMethods!.HttpMethods.SequenceEqual(new[] { HttpMethods.Post }),
     "Beneficiary lookup endpoint must be POST-only.");
 
-var resolved = await InvokeAsync(endpoint, app.Services, "670123456");
-AssertEqual(StatusCodes.Status200OK, resolved.StatusCode);
-AssertEqual("+237670123456", GetString(resolved.Json, "normalizedPhoneNumber"));
-AssertEqual("CM", GetString(resolved.Json, "countryCode"));
-AssertEqual("MTN", GetString(resolved.Json, "operator"));
-Assert(GetBoolean(resolved.Json, "operatorResolved"), "Operator must be resolved.");
-AssertEqual("Ada N.", GetString(resolved.Json, "accountHolderName"));
-Assert(GetBoolean(resolved.Json, "beneficiaryResolved"), "Beneficiary holder must be resolved.");
-AssertEqual(1, fakeResolver.CallCount);
+app.Urls.Add("http://127.0.0.1:0");
+await app.StartAsync();
 
-var unsupported = await InvokeAsync(endpoint, app.Services, "660123456");
-AssertEqual(StatusCodes.Status200OK, unsupported.StatusCode);
-AssertEqual("+237660123456", GetString(unsupported.Json, "normalizedPhoneNumber"));
-AssertNull(GetNullableString(unsupported.Json, "operator"));
-Assert(!GetBoolean(unsupported.Json, "operatorResolved"), "Unsupported operator must remain unresolved.");
-AssertNull(GetNullableString(unsupported.Json, "accountHolderName"));
-Assert(!GetBoolean(unsupported.Json, "beneficiaryResolved"), "Unsupported beneficiary must remain unresolved.");
-AssertEqual(1, fakeResolver.CallCount);
+try
+{
+    var server = app.Services.GetRequiredService<IServer>();
+    var addresses = server.Features.Get<IServerAddressesFeature>()
+        ?? throw new InvalidOperationException("Server addresses feature is unavailable.");
+    var address = addresses.Addresses.Single();
 
-var invalid = await InvokeAsync(endpoint, app.Services, "67012345");
-AssertEqual(StatusCodes.Status400BadRequest, invalid.StatusCode);
-AssertEqual("BENEFICIARY_LOOKUP_INVALID_PHONE", GetString(invalid.Json, "code"));
-AssertEqual(1, fakeResolver.CallCount);
+    using var client = new HttpClient { BaseAddress = new Uri(address) };
 
-Console.WriteLine("MobileMoney beneficiary lookup API contract scenarios: 4/4 passed.");
+    var resolved = await InvokeAsync(client, "670123456");
+    AssertEqual(StatusCodes.Status200OK, resolved.StatusCode);
+    AssertEqual("+237670123456", GetString(resolved.Json, "normalizedPhoneNumber"));
+    AssertEqual("CM", GetString(resolved.Json, "countryCode"));
+    AssertEqual("MTN", GetString(resolved.Json, "operator"));
+    Assert(GetBoolean(resolved.Json, "operatorResolved"), "Operator must be resolved.");
+    AssertEqual("Ada N.", GetString(resolved.Json, "accountHolderName"));
+    Assert(GetBoolean(resolved.Json, "beneficiaryResolved"), "Beneficiary holder must be resolved.");
+    AssertEqual(1, fakeResolver.CallCount);
+
+    var unsupported = await InvokeAsync(client, "660123456");
+    AssertEqual(StatusCodes.Status200OK, unsupported.StatusCode);
+    AssertEqual("+237660123456", GetString(unsupported.Json, "normalizedPhoneNumber"));
+    AssertNull(GetNullableString(unsupported.Json, "operator"));
+    Assert(!GetBoolean(unsupported.Json, "operatorResolved"), "Unsupported operator must remain unresolved.");
+    AssertNull(GetNullableString(unsupported.Json, "accountHolderName"));
+    Assert(!GetBoolean(unsupported.Json, "beneficiaryResolved"), "Unsupported beneficiary must remain unresolved.");
+    AssertEqual(1, fakeResolver.CallCount);
+
+    var invalid = await InvokeAsync(client, "67012345");
+    AssertEqual(StatusCodes.Status400BadRequest, invalid.StatusCode);
+    AssertEqual("BENEFICIARY_LOOKUP_INVALID_PHONE", GetString(invalid.Json, "code"));
+    AssertEqual(1, fakeResolver.CallCount);
+
+    Console.WriteLine("MobileMoney beneficiary lookup API contract scenarios: 4/4 passed.");
+}
+finally
+{
+    await app.StopAsync();
+}
 
 static async Task<(int StatusCode, JsonDocument Json)> InvokeAsync(
-    RouteEndpoint endpoint,
-    IServiceProvider services,
+    HttpClient client,
     string phoneNumber)
 {
-    var context = new DefaultHttpContext
-    {
-        RequestServices = services
-    };
+    using var response = await client.PostAsJsonAsync(
+        MobileMoneyBeneficiaryLookupEndpointExtensions.Route,
+        new { phoneNumber });
 
-    context.Request.Method = HttpMethods.Post;
-    context.Request.ContentType = "application/json";
-    context.Request.Body = new MemoryStream(
-        Encoding.UTF8.GetBytes(
-            JsonSerializer.Serialize(new { phoneNumber })));
-    context.Response.Body = new MemoryStream();
-
-    await endpoint.RequestDelegate!(context);
-
-    context.Response.Body.Position = 0;
-    var json = await JsonDocument.ParseAsync(context.Response.Body);
-
-    return (context.Response.StatusCode, json);
+    var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+    return ((int)response.StatusCode, json);
 }
 
 static string GetString(JsonDocument json, string property) =>

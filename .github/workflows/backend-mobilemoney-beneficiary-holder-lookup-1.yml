@@ -1,0 +1,56 @@
+name: AFW-BE-MOBILEMONEY-BENEFICIARY-HOLDER-LOOKUP-1
+
+on:
+  push:
+    branches:
+      - feature/backend-momo-beneficiary-holder-lookup-1
+    paths:
+      - 'backend/src/MobileMoney/**'
+      - 'backend/tests/MobileMoney.BeneficiaryLookup.Scenarios/**'
+      - '.github/workflows/backend-mobilemoney-beneficiary-holder-lookup-1.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'backend/src/MobileMoney/**'
+      - 'backend/tests/MobileMoney.BeneficiaryLookup.Scenarios/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    env:
+      BASE_SHA: 074cd060d495bd2f533d22c108a08472b9196116
+
+    steps:
+      - name: Checkout candidate
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore
+        run: dotnet restore backend/tests/MobileMoney.BeneficiaryLookup.Scenarios/MobileMoney.BeneficiaryLookup.Scenarios.csproj
+
+      - name: Build MobileMoney.Api
+        run: dotnet build backend/src/MobileMoney/MobileMoney.Api/MobileMoney.Api.csproj --configuration Release --no-restore
+
+      - name: Run Beneficiary Lookup scenarios
+        run: dotnet run --project backend/tests/MobileMoney.BeneficiaryLookup.Scenarios/MobileMoney.BeneficiaryLookup.Scenarios.csproj --configuration Release --no-restore
+
+      - name: Verify scoped diff
+        shell: bash
+        run: |
+          set -euo pipefail
+          git cat-file -e "${BASE_SHA}^{commit}"
+          test "$(git merge-base "${BASE_SHA}" HEAD)" = "${BASE_SHA}"
+          git diff --check "${BASE_SHA}..HEAD"

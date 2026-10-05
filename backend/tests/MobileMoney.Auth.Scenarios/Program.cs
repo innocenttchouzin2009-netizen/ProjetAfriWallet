@@ -1,17 +1,33 @@
+using System.Net;
+using System.Net.Http.Json;
+using System.Security.Claims;
 using System.Text;
+using System.Text.Encodings.Web;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using MobileMoney.Production.Authentication;
+using MobileMoney.Production.Payout.Abstractions;
+using MobileMoney.Production.Payout.Application;
+using MobileMoney.Production.Payout.Domain;
+using MobileMoney.Production.Payout.Extensions;
 
-var tests = new (string Name, Action Run)[]
+var tests = new (string Name, Func<Task> Run)[]
 {
-    ("configured issuer, audience and signing key are reused", ConfiguredValuesAreReused),
-    ("JWT validation is strict and claim mapping stays disabled", ValidationIsStrict),
-    ("AFW_AUTH_JWT_SIGNING_KEY is supported as fallback", EnvironmentSigningKeyIsSupported),
-    ("missing signing key fails closed", MissingSigningKeyFailsClosed)
+    ("configured issuer, audience and signing key are reused", RunSync(ConfiguredValuesAreReused)),
+    ("JWT validation is strict and claim mapping stays disabled", RunSync(ValidationIsStrict)),
+    ("AFW_AUTH_JWT_SIGNING_KEY is supported as fallback", RunSync(EnvironmentSigningKeyIsSupported)),
+    ("missing signing key fails closed", RunSync(MissingSigningKeyFailsClosed)),
+    ("payout route rejects unauthenticated requests with 401", PayoutRouteRejectsUnauthenticatedAsync),
+    ("payout route accepts authenticated subject", PayoutRouteAcceptsAuthenticatedSubjectAsync),
+    ("payout route rejects malformed sub with 401", PayoutRouteRejectsMalformedSubjectAsync)
 };
 
 var failures = new List<string>();
@@ -20,7 +36,7 @@ foreach (var test in tests)
 {
     try
     {
-        test.Run();
+        await test.Run();
         Console.WriteLine($"PASS: {test.Name}");
     }
     catch (Exception ex)
@@ -37,6 +53,12 @@ if (failures.Count > 0)
 }
 
 Console.WriteLine("MobileMoney JWT resource server scenarios passed.");
+
+static Func<Task> RunSync(Action action) => () =>
+{
+    action();
+    return Task.CompletedTask;
+};
 
 static void ConfiguredValuesAreReused()
 {
@@ -125,6 +147,80 @@ static void MissingSigningKeyFailsClosed()
     }
 }
 
+static async Task PayoutRouteRejectsUnauthenticatedAsync()
+{
+    await using var app = await BuildPayoutTestAppAsync();
+    using var client = app.GetTestClient();
+
+    var response = await client.PostAsJsonAsync(
+        "/api/v1/mobile-money/payouts/eligibility",
+        ValidEligibilityRequest());
+
+    AssertEqual(HttpStatusCode.Unauthorized, response.StatusCode, "unauthenticated payout status");
+}
+
+static async Task PayoutRouteAcceptsAuthenticatedSubjectAsync()
+{
+    await using var app = await BuildPayoutTestAppAsync();
+    using var client = app.GetTestClient();
+    client.DefaultRequestHeaders.Add(TestAuthenticationHandler.SubjectHeader, Guid.NewGuid().ToString());
+
+    var response = await client.PostAsJsonAsync(
+        "/api/v1/mobile-money/payouts/eligibility",
+        ValidEligibilityRequest());
+
+    AssertEqual(HttpStatusCode.OK, response.StatusCode, "authenticated payout status");
+}
+
+static async Task PayoutRouteRejectsMalformedSubjectAsync()
+{
+    await using var app = await BuildPayoutTestAppAsync();
+    using var client = app.GetTestClient();
+    client.DefaultRequestHeaders.Add(TestAuthenticationHandler.SubjectHeader, "not-a-guid");
+
+    var response = await client.PostAsJsonAsync(
+        "/api/v1/mobile-money/payouts/eligibility",
+        ValidEligibilityRequest());
+
+    AssertEqual(HttpStatusCode.Unauthorized, response.StatusCode, "malformed-sub payout status");
+}
+
+static object ValidEligibilityRequest() => new
+{
+    sourceCountryCode = "DE",
+    sourceCurrency = "EUR",
+    destinationCountryCode = "CM",
+    destinationCurrency = "XAF",
+    operatorCode = "MTN"
+};
+
+static async Task<WebApplication> BuildPayoutTestAppAsync()
+{
+    var builder = WebApplication.CreateBuilder();
+    builder.WebHost.UseTestServer();
+
+    builder.Services
+        .AddAuthentication(options =>
+        {
+            options.DefaultAuthenticateScheme = TestAuthenticationHandler.Scheme;
+            options.DefaultChallengeScheme = TestAuthenticationHandler.Scheme;
+        })
+        .AddScheme<AuthenticationSchemeOptions, TestAuthenticationHandler>(
+            TestAuthenticationHandler.Scheme,
+            _ => { });
+
+    builder.Services.AddAuthorization();
+    builder.Services.AddSingleton<IMobileMoneyPayoutEligibilityPolicy, AlwaysEligiblePolicy>();
+
+    var app = builder.Build();
+    app.UseAuthentication();
+    app.UseAuthorization();
+    app.MapMobileMoneyPayoutEligibility();
+
+    await app.StartAsync();
+    return app;
+}
+
 static JwtBearerOptions BuildOptions(Dictionary<string, string?> values)
 {
     var configuration = new ConfigurationBuilder()
@@ -160,5 +256,45 @@ static void AssertEqual<T>(T expected, T actual, string name)
     if (!EqualityComparer<T>.Default.Equals(expected, actual))
     {
         throw new InvalidOperationException($"{name} expected '{expected}' but was '{actual}'");
+    }
+}
+
+sealed class AlwaysEligiblePolicy : IMobileMoneyPayoutEligibilityPolicy
+{
+    public Task<MobileMoneyPayoutEligibilityResult> EvaluateAsync(
+        MobileMoneyPayoutCorridor corridor,
+        CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(MobileMoneyPayoutEligibilityResult.Eligible());
+    }
+}
+
+sealed class TestAuthenticationHandler : AuthenticationHandler<AuthenticationSchemeOptions>
+{
+    public const string Scheme = "TestMobileMoney";
+    public const string SubjectHeader = "X-Test-Subject";
+
+    public TestAuthenticationHandler(
+        IOptionsMonitor<AuthenticationSchemeOptions> options,
+        ILoggerFactory logger,
+        UrlEncoder encoder)
+        : base(options, logger, encoder)
+    {
+    }
+
+    protected override Task<AuthenticateResult> HandleAuthenticateAsync()
+    {
+        if (!Request.Headers.TryGetValue(SubjectHeader, out var subject))
+        {
+            return Task.FromResult(AuthenticateResult.NoResult());
+        }
+
+        var identity = new ClaimsIdentity(
+            new[] { new Claim("sub", subject.ToString()) },
+            Scheme);
+        var principal = new ClaimsPrincipal(identity);
+        var ticket = new AuthenticationTicket(principal, Scheme);
+
+        return Task.FromResult(AuthenticateResult.Success(ticket));
     }
 }

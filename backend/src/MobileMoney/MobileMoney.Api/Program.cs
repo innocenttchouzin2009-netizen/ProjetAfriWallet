@@ -14,6 +14,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddMtnMomoProductionConfiguration(builder.Configuration);
 builder.Services.AddMobileMoneyPayoutEligibility(builder.Configuration);
+builder.Services.AddMobileMoneyBeneficiaryLookup();
 builder.Services.AddSingleton<StructuredOperationLogger>();
 
 if (builder.Environment.IsEnvironment("Staging") || builder.Environment.IsEnvironment("Production"))
@@ -35,6 +36,7 @@ app.UseMiddleware<FeatureGateMiddleware>();
 app.UseRateLimiter();
 
 app.MapMobileMoneyPayoutEligibility();
+app.MapMobileMoneyBeneficiaryLookup();
 
 app.MapGet("/health/live", async (HealthProbeRegistry registry, CancellationToken cancellationToken) =>
 {

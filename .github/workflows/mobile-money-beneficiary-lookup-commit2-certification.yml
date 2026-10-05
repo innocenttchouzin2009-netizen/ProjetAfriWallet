@@ -1,0 +1,66 @@
+name: Mobile Money Beneficiary Lookup Commit 2 Certification
+
+on:
+  push:
+    branches:
+      - ci/mobile-money-beneficiary-lookup-commit2-certification
+    paths:
+      - '.github/workflows/mobile-money-beneficiary-lookup-commit2-certification.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      BASE_SHA: bc1984d0bb165ef348546366c50ddd61d0d351ee
+      CANDIDATE_SHA: d78b6ece4867b37c921246a6829862b46bfdfaa8
+
+    defaults:
+      run:
+        working-directory: apps/mobile_app
+
+    steps:
+      - name: Checkout exact Commit 2 candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.CANDIDATE_SHA }}
+          fetch-depth: 0
+
+      - name: Assert exact candidate lineage
+        working-directory: .
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${CANDIDATE_SHA}"
+          git cat-file -e "${BASE_SHA}^{commit}"
+          git cat-file -e "${CANDIDATE_SHA}^{commit}"
+          test "$(git merge-base "${BASE_SHA}" "${CANDIDATE_SHA}")" = "${BASE_SHA}"
+          test "$(git rev-list --count "${BASE_SHA}..${CANDIDATE_SHA}")" = "1"
+
+      - name: Set up Flutter 3.47.2
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.2'
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Generate localizations
+        run: flutter gen-l10n
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test Mobile Money beneficiary lookup remote data source
+        run: flutter test test/mobile_money_beneficiary_lookup_remote_data_source_test.dart
+
+      - name: Verify Commit 2 diff cleanliness
+        working-directory: .
+        shell: bash
+        run: git diff --check "${BASE_SHA}..${CANDIDATE_SHA}"

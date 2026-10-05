@@ -1,4 +1,4 @@
-name: Mobile Beta2.25 Beneficiary Lookup Contract Certification
+name: Mobile Beta2.25 Beneficiary Lookup Certification
 
 on:
   push:
@@ -18,16 +18,17 @@ jobs:
     timeout-minutes: 30
 
     env:
-      CANDIDATE_SHA: a3692809b8758e88f13bd219cb18286753f6766d
+      CANDIDATE_SHA: d78b6ece4867b37c921246a6829862b46bfdfaa8
       BASE_SHA: 3cfff22f32909dc12d125620900d365337c0b767
-      STATUS_CONTEXT: mobile-beta2.25/beneficiary-lookup-contract
+      EXPECTED_COMMITS: '3'
+      STATUS_CONTEXT: mobile-beta2.25/beneficiary-lookup
 
     defaults:
       run:
         working-directory: apps/mobile_app
 
     steps:
-      - name: Checkout exact beneficiary lookup contract candidate
+      - name: Checkout exact Beta2.25 candidate
         uses: actions/checkout@v4
         with:
           ref: ${{ env.CANDIDATE_SHA }}
@@ -44,7 +45,7 @@ jobs:
           git cat-file -e "${CANDIDATE_SHA}^{commit}"
           git cat-file -e "${BASE_SHA}^{commit}"
           test "$(git merge-base "${BASE_SHA}" "${CANDIDATE_SHA}")" = "${BASE_SHA}"
-          test "$(git rev-list --count "${BASE_SHA}..${CANDIDATE_SHA}")" = "1"
+          test "$(git rev-list --count "${BASE_SHA}..${CANDIDATE_SHA}")" = "${EXPECTED_COMMITS}"
 
       - name: Mark certification pending
         uses: actions/github-script@v7
@@ -56,7 +57,7 @@ jobs:
               sha: process.env.CANDIDATE_SHA,
               state: 'pending',
               context: process.env.STATUS_CONTEXT,
-              description: 'Beta2.25 beneficiary lookup contract certification in progress',
+              description: 'Beta2.25 beneficiary lookup certification in progress',
               target_url: `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
             });
 
@@ -78,7 +79,13 @@ jobs:
       - name: Test beneficiary lookup contract
         run: flutter test test/mobile_money_beneficiary_lookup_contract_test.dart
 
-      - name: Verify Commit 1 diff
+      - name: Test beneficiary lookup remote data source
+        run: flutter test test/mobile_money_beneficiary_lookup_remote_data_source_test.dart
+
+      - name: Run Flutter test suite
+        run: flutter test
+
+      - name: Verify Beta2.25 candidate diff
         working-directory: .
         shell: bash
         run: |
@@ -91,12 +98,15 @@ jobs:
         shell: bash
         run: |
           {
-            echo "## Mobile Beta2.25 beneficiary lookup contract certification"
+            echo "## Mobile Beta2.25 beneficiary lookup certification"
             echo
             echo "- Candidate: `${CANDIDATE_SHA}`"
-            echo "- Parent/base: `${BASE_SHA}`"
+            echo "- Base: `${BASE_SHA}`"
+            echo "- Expected commits: `${EXPECTED_COMMITS}`"
             echo "- Analyze: `flutter analyze`"
             echo "- Contract test: `mobile_money_beneficiary_lookup_contract_test.dart`"
+            echo "- Remote data source test: `mobile_money_beneficiary_lookup_remote_data_source_test.dart`"
+            echo "- Flutter suite: `flutter test`"
             echo "- Diff check: `git diff --check ${BASE_SHA}..${CANDIDATE_SHA}`"
             echo "- Job status: **${{ job.status }}**"
           } >> "${GITHUB_STEP_SUMMARY}"
@@ -116,7 +126,7 @@ jobs:
               state: succeeded ? 'success' : 'failure',
               context: process.env.STATUS_CONTEXT,
               description: succeeded
-                ? 'Beta2.25 beneficiary lookup contract certified'
-                : 'Beta2.25 beneficiary lookup contract certification failed',
+                ? 'Beta2.25 beneficiary lookup certified'
+                : 'Beta2.25 beneficiary lookup certification failed',
               target_url: `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
             });

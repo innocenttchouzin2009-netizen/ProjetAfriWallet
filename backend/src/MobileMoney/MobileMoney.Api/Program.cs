@@ -1,4 +1,5 @@
 using MobileMoney.Production.Audit;
+using MobileMoney.Production.Authentication;
 using MobileMoney.Production.Correlation;
 using MobileMoney.Production.Diagnostics;
 using MobileMoney.Production.Errors;
@@ -14,6 +15,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddMtnMomoProductionConfiguration(builder.Configuration);
 builder.Services.AddMobileMoneyPayoutEligibility(builder.Configuration);
+builder.Services.AddMobileMoneyJwtAuthentication(builder.Configuration);
 builder.Services.AddSingleton<StructuredOperationLogger>();
 
 if (builder.Environment.IsEnvironment("Staging") || builder.Environment.IsEnvironment("Production"))
@@ -33,6 +35,8 @@ app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseMiddleware<MobileMoneyExceptionMiddleware>();
 app.UseMiddleware<FeatureGateMiddleware>();
 app.UseRateLimiter();
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapMobileMoneyPayoutEligibility();
 

@@ -1,0 +1,55 @@
+name: AFW-BE-MOBILEMONEY-AUTH-1
+
+on:
+  push:
+    branches:
+      - feature/backend-momo-payout-auth-1
+    paths:
+      - 'backend/src/MobileMoney/**'
+      - 'backend/tests/MobileMoney.Auth.Scenarios/**'
+      - '.github/workflows/backend-mobilemoney-auth-1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate MobileMoney Auth Commit 1
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    env:
+      CANDIDATE_SHA: fb2c749cd59294c1e5377271cae8677876fe5c3e
+      BASE_SHA: e043ca86085584e383d945a37e4525b1db59eb6e
+
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.CANDIDATE_SHA }}
+          fetch-depth: 0
+
+      - name: Assert exact candidate checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${CANDIDATE_SHA}"
+          test "$(git rev-parse HEAD^)" = "${BASE_SHA}"
+
+      - name: Set up .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build MobileMoney.Api
+        run: dotnet build backend/src/MobileMoney/MobileMoney.Api/MobileMoney.Api.csproj --no-restore
+
+      - name: Run MobileMoney auth scenarios
+        run: dotnet run --project backend/tests/MobileMoney.Auth.Scenarios
+
+      - name: Verify scoped diff cleanliness
+        run: git diff --check ${BASE_SHA}..HEAD

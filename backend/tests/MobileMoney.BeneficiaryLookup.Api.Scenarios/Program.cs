@@ -21,7 +21,7 @@ builder.Services.AddMobileMoneyBeneficiaryLookup();
 var app = builder.Build();
 app.MapMobileMoneyBeneficiaryLookup();
 
-var endpoint = app.DataSources
+var endpoint = ((IEndpointRouteBuilder)app).DataSources
     .SelectMany(source => source.Endpoints)
     .OfType<RouteEndpoint>()
     .Single(candidate =>

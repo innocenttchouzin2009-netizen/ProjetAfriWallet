@@ -15,13 +15,13 @@ permissions:
 
 jobs:
   validate:
-    name: Validate MobileMoney Auth Commit 1
+    name: Validate MobileMoney Auth Commit 2
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
     env:
-      CANDIDATE_SHA: fb2c749cd59294c1e5377271cae8677876fe5c3e
-      BASE_SHA: e043ca86085584e383d945a37e4525b1db59eb6e
+      CANDIDATE_SHA: c0c6998541b62dcbcd5b652ca2915d94639d11ae
+      BASE_SHA: d2e3d5dcaa367ca32eeded03e7292403879a9301
 
     steps:
       - name: Checkout exact candidate

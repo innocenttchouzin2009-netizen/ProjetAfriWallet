@@ -6,6 +6,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../../Fx/Fx.Application/Fx.Application.csproj" />
+    <ProjectReference Include="../../Fx/Fx.Infrastructure/Fx.Infrastructure.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Using Include="Microsoft.Extensions.Logging" />

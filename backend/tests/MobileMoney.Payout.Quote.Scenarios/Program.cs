@@ -29,7 +29,12 @@ var scenarios = new (string Name, Func<Task> Run)[]
     ("quote orchestrator composes eligibility fx fees and domain", OrchestrationScenarios.ComposesQuote),
     ("quote orchestrator rejects ineligible corridor before pricing", OrchestrationScenarios.RejectsIneligibleCorridorBeforePricing),
     ("quote orchestrator rejects unavailable fx before fees", OrchestrationScenarios.RejectsUnavailableFxBeforeFees),
-    ("quote orchestrator rejects non-positive lifetime", OrchestrationScenarios.RejectsNonPositiveLifetime)
+    ("quote orchestrator rejects non-positive lifetime", OrchestrationScenarios.RejectsNonPositiveLifetime),
+    ("quote API route is stable", ApiScenarios.RouteIsStable),
+    ("quote API returns orchestrated quote", ApiScenarios.ReturnsQuote),
+    ("quote API maps invalid request", ApiScenarios.MapsInvalidRequest),
+    ("quote API maps ineligible corridor", ApiScenarios.MapsIneligibleCorridor),
+    ("quote API maps unavailable pricing", ApiScenarios.MapsUnavailablePricing)
 };
 
 foreach (var scenario in scenarios)

@@ -5,6 +5,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="../../Fx/Fx.Application/Fx.Application.csproj" />
+  </ItemGroup>
+  <ItemGroup>
     <Using Include="Microsoft.Extensions.Logging" />
   </ItemGroup>
 </Project>

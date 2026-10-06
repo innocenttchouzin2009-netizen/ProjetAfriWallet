@@ -9,11 +9,13 @@ using MobileMoney.Production.RateLimiting;
 using MobileMoney.Production.FeatureFlags;
 using MobileMoney.Production.Telemetry;
 using MobileMoney.Production.Payout.Extensions;
+using MobileMoney.Production.Payout.Quote.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddMtnMomoProductionConfiguration(builder.Configuration);
 builder.Services.AddMobileMoneyPayoutEligibility(builder.Configuration);
+builder.Services.AddMobileMoneyPayoutQuote(builder.Configuration);
 builder.Services.AddMobileMoneyBeneficiaryLookup();
 builder.Services.AddSingleton<StructuredOperationLogger>();
 
@@ -36,6 +38,7 @@ app.UseMiddleware<FeatureGateMiddleware>();
 app.UseRateLimiter();
 
 app.MapMobileMoneyPayoutEligibility();
+app.MapMobileMoneyPayoutQuote();
 app.MapMobileMoneyBeneficiaryLookup();
 
 app.MapGet("/health/live", async (HealthProbeRegistry registry, CancellationToken cancellationToken) =>

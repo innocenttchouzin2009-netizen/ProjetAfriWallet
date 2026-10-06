@@ -14,6 +14,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddMtnMomoProductionConfiguration(builder.Configuration);
 builder.Services.AddMobileMoneyPayoutEligibility(builder.Configuration);
+builder.Services.AddMobileMoneyPayoutRuntimeFoundation(builder.Configuration);
 builder.Services.AddMobileMoneyBeneficiaryLookup();
 builder.Services.AddSingleton<StructuredOperationLogger>();
 

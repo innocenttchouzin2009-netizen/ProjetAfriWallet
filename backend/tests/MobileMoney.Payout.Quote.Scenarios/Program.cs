@@ -12,7 +12,11 @@ var scenarios = new (string Name, Func<Task> Run)[]
     ("quote rejects fee currency mismatch", QuoteRejectsFeeCurrencyMismatch),
     ("quote rejects null fee entries", QuoteRejectsNullFeeEntries),
     ("quote detects total debit overflow", QuoteDetectsOverflow),
-    ("fee policy contract receives corridor and source amount", FeePolicyContract)
+    ("fee policy contract receives corridor and source amount", FeePolicyContract),
+    ("quote orchestrator composes eligibility fx fees and domain", OrchestrationScenarios.ComposesQuote),
+    ("quote orchestrator rejects ineligible corridor before pricing", OrchestrationScenarios.RejectsIneligibleCorridorBeforePricing),
+    ("quote orchestrator rejects unavailable fx before fees", OrchestrationScenarios.RejectsUnavailableFxBeforeFees),
+    ("quote orchestrator rejects non-positive lifetime", OrchestrationScenarios.RejectsNonPositiveLifetime)
 };
 
 foreach (var scenario in scenarios)
@@ -22,7 +26,7 @@ foreach (var scenario in scenarios)
 }
 
 Console.WriteLine(
-    $"MobileMoney payout quote domain/fee-policy scenarios: {scenarios.Length}/{scenarios.Length} passed.");
+    $"MobileMoney payout quote domain/fee-policy/orchestration scenarios: {scenarios.Length}/{scenarios.Length} passed.");
 
 static Task FeeNormalizes()
 {

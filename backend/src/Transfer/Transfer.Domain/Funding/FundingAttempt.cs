@@ -5,8 +5,10 @@ public sealed record FundingAttempt
     public Guid Id { get; }
     public Guid CorrelationId { get; }
     public FundingAllocation Allocation { get; }
-    public FundingAttemptStatus Status { get; }
+    public FundingAttemptStatus Status { get; private set; }
     public DateTimeOffset CreatedAtUtc { get; }
+    public DateTimeOffset UpdatedAtUtc { get; private set; }
+    public string? StatusReason { get; private set; }
 
     private FundingAttempt(
         Guid id,
@@ -20,6 +22,7 @@ public sealed record FundingAttempt
         Allocation = allocation;
         Status = status;
         CreatedAtUtc = createdAtUtc;
+        UpdatedAtUtc = createdAtUtc;
     }
 
     public static FundingAttempt Create(
@@ -39,11 +42,7 @@ public sealed record FundingAttempt
         }
 
         ArgumentNullException.ThrowIfNull(allocation);
-
-        if (createdAtUtc.Offset != TimeSpan.Zero)
-        {
-            throw new ArgumentException("Funding attempt timestamp must be UTC.", nameof(createdAtUtc));
-        }
+        ValidateUtcTimestamp(createdAtUtc, nameof(createdAtUtc));
 
         return new FundingAttempt(
             id,
@@ -51,5 +50,87 @@ public sealed record FundingAttempt
             allocation,
             FundingAttemptStatus.Planned,
             createdAtUtc);
+    }
+
+    public void MarkProcessing(DateTimeOffset occurredAtUtc)
+    {
+        TransitionTo(
+            FundingAttemptStatus.Processing,
+            occurredAtUtc,
+            reason: null,
+            FundingAttemptStatus.Planned);
+    }
+
+    public void MarkSucceeded(DateTimeOffset occurredAtUtc)
+    {
+        TransitionTo(
+            FundingAttemptStatus.Succeeded,
+            occurredAtUtc,
+            reason: null,
+            FundingAttemptStatus.Processing);
+    }
+
+    public void MarkFailed(DateTimeOffset occurredAtUtc, string reason)
+    {
+        TransitionTo(
+            FundingAttemptStatus.Failed,
+            occurredAtUtc,
+            NormalizeReason(reason),
+            FundingAttemptStatus.Processing);
+    }
+
+    public void Cancel(DateTimeOffset occurredAtUtc, string reason)
+    {
+        TransitionTo(
+            FundingAttemptStatus.Cancelled,
+            occurredAtUtc,
+            NormalizeReason(reason),
+            FundingAttemptStatus.Planned,
+            FundingAttemptStatus.Processing);
+    }
+
+    private void TransitionTo(
+        FundingAttemptStatus nextStatus,
+        DateTimeOffset occurredAtUtc,
+        string? reason,
+        params FundingAttemptStatus[] allowedCurrentStatuses)
+    {
+        ValidateUtcTimestamp(occurredAtUtc, nameof(occurredAtUtc));
+
+        if (occurredAtUtc < UpdatedAtUtc)
+        {
+            throw new InvalidOperationException(
+                "Funding attempt transitions cannot move backwards in time.");
+        }
+
+        if (!allowedCurrentStatuses.Contains(Status))
+        {
+            throw new InvalidOperationException(
+                $"Funding attempt cannot transition from {Status} to {nextStatus}.");
+        }
+
+        Status = nextStatus;
+        UpdatedAtUtc = occurredAtUtc;
+        StatusReason = reason;
+    }
+
+    private static string NormalizeReason(string reason)
+    {
+        if (string.IsNullOrWhiteSpace(reason))
+        {
+            throw new ArgumentException("Funding attempt reason is required.", nameof(reason));
+        }
+
+        return reason.Trim();
+    }
+
+    private static void ValidateUtcTimestamp(DateTimeOffset timestamp, string parameterName)
+    {
+        if (timestamp.Offset != TimeSpan.Zero)
+        {
+            throw new ArgumentException(
+                "Funding attempt timestamp must be UTC.",
+                parameterName);
+        }
     }
 }

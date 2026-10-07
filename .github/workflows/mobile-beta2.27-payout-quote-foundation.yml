@@ -1,0 +1,135 @@
+name: Mobile Beta2.27 Payout Quote Certification
+
+on:
+  push:
+    branches:
+      - feature/mobile-beta2.27
+    paths:
+      - '.github/workflows/mobile-beta2.27-payout-quote-foundation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  statuses: write
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      CANDIDATE_SHA: 509d4cbed1944b242743ed1c5593e4b9df6a87a6
+      BASE_SHA: bc13f70a13b0b79a7d1007f6b28b7afcfee66dfa
+      EXPECTED_COMMITS: '2'
+      STATUS_CONTEXT: mobile-beta2.27/payout-quote
+
+    defaults:
+      run:
+        working-directory: apps/mobile_app
+
+    steps:
+      - name: Checkout exact Beta2.27 candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.CANDIDATE_SHA }}
+          fetch-depth: 0
+
+      - name: Assert exact candidate lineage
+        id: candidate_assertion
+        working-directory: .
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual_sha="$(git rev-parse HEAD)"
+          test "${actual_sha}" = "${CANDIDATE_SHA}"
+          git cat-file -e "${CANDIDATE_SHA}^{commit}"
+          git cat-file -e "${BASE_SHA}^{commit}"
+          test "$(git merge-base "${BASE_SHA}" "${CANDIDATE_SHA}")" = "${BASE_SHA}"
+          test "$(git rev-list --count "${BASE_SHA}..${CANDIDATE_SHA}")" = "${EXPECTED_COMMITS}"
+
+      - name: Mark certification pending
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: process.env.CANDIDATE_SHA,
+              state: 'pending',
+              context: process.env.STATUS_CONTEXT,
+              description: 'Beta2.27 payout quote certification in progress',
+              target_url: `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+            });
+
+      - name: Set up Flutter 3.47.2
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.2'
+          cache: true
+
+      - name: Flutter version
+        run: flutter --version
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Generate localizations
+        run: flutter gen-l10n
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test payout quote mapper
+        run: flutter test test/mobile_money_payout_quote_mapper_test.dart
+
+      - name: Test payout quote remote data source
+        run: flutter test test/mobile_money_payout_quote_remote_data_source_test.dart
+
+      - name: Run complete Flutter test suite
+        run: flutter test
+
+      - name: Verify Beta2.27 candidate diff
+        working-directory: .
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check "${BASE_SHA}..${CANDIDATE_SHA}"
+
+      - name: Write certification summary
+        if: always()
+        working-directory: .
+        shell: bash
+        run: |
+          {
+            echo "## Mobile Beta2.27 payout quote certification"
+            echo
+            echo "- Candidate: \`${CANDIDATE_SHA}\`"
+            echo "- Base: \`${BASE_SHA}\`"
+            echo "- Expected commits: \`${EXPECTED_COMMITS}\`"
+            echo "- Analyze: \`flutter analyze\`"
+            echo "- Mapper test: \`mobile_money_payout_quote_mapper_test.dart\`"
+            echo "- Remote data source test: \`mobile_money_payout_quote_remote_data_source_test.dart\`"
+            echo "- Flutter suite: \`flutter test\`"
+            echo "- Diff check: \`git diff --check ${BASE_SHA}..${CANDIDATE_SHA}\`"
+            echo "- Job status: **${{ job.status }}**"
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Report certification status
+        if: always() && steps.candidate_assertion.outcome == 'success'
+        uses: actions/github-script@v7
+        env:
+          CERTIFICATION_JOB_STATUS: ${{ job.status }}
+        with:
+          script: |
+            const succeeded = process.env.CERTIFICATION_JOB_STATUS === 'success';
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: process.env.CANDIDATE_SHA,
+              state: succeeded ? 'success' : 'failure',
+              context: process.env.STATUS_CONTEXT,
+              description: succeeded
+                ? 'Beta2.27 payout quote certified'
+                : 'Beta2.27 payout quote certification failed',
+              target_url: `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+            });

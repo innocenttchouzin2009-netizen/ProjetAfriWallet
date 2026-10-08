@@ -129,4 +129,3 @@ jobs:
                 : 'Beta2.32 payout quote intent repository certification failed',
               target_url: `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
             });
-

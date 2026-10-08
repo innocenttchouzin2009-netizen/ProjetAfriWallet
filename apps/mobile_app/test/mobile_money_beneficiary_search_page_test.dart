@@ -122,9 +122,11 @@ void main() {
     expect(find.text('+237670123456'), findsOneWidget);
     expect(continuedResult, isNull);
 
-    await tester.tap(
-      find.byKey(const Key('momo-beneficiary-search-continue')),
-    );
+    final continueButton =
+        find.byKey(const Key('momo-beneficiary-search-continue'));
+    await tester.ensureVisible(continueButton);
+    await tester.pump();
+    await tester.tap(continueButton);
 
     expect(continuedResult, same(resolved));
   });
@@ -163,11 +165,12 @@ void main() {
     expect(repository.callCount, 1);
     expect(manualPhoneNumber, isNull);
 
-    await tester.tap(
-      find.byKey(
-        const Key('momo-beneficiary-search-manual-required-action'),
-      ),
+    final manualRequiredButton = find.byKey(
+      const Key('momo-beneficiary-search-manual-required-action'),
     );
+    await tester.ensureVisible(manualRequiredButton);
+    await tester.pump();
+    await tester.tap(manualRequiredButton);
 
     expect(manualPhoneNumber, '+237660123456');
   });

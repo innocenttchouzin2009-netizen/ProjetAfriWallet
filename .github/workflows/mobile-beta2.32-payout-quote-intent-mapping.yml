@@ -18,9 +18,8 @@ jobs:
     timeout-minutes: 30
 
     env:
-      CANDIDATE_SHA: 2d69ac166bd752af432b810301289872dc5c3131
+      CANDIDATE_SHA: ${{ github.sha }}
       BASE_SHA: cad432255bbc200914e3d7b2e60f9dbe538844c6
-      EXPECTED_COMMITS: '1'
       STATUS_CONTEXT: mobile-beta2.32/payout-quote-intent-repository
 
     defaults:
@@ -31,7 +30,7 @@ jobs:
       - name: Checkout exact Beta2.32 candidate
         uses: actions/checkout@v4
         with:
-          ref: ${{ env.CANDIDATE_SHA }}
+          ref: ${{ github.sha }}
           fetch-depth: 0
 
       - name: Assert exact candidate lineage
@@ -42,10 +41,10 @@ jobs:
           set -euo pipefail
           actual_sha="$(git rev-parse HEAD)"
           test "${actual_sha}" = "${CANDIDATE_SHA}"
+          test "${CANDIDATE_SHA}" = "${GITHUB_SHA}"
           git cat-file -e "${CANDIDATE_SHA}^{commit}"
           git cat-file -e "${BASE_SHA}^{commit}"
           test "$(git merge-base "${BASE_SHA}" "${CANDIDATE_SHA}")" = "${BASE_SHA}"
-          test "$(git rev-list --count "${BASE_SHA}..${CANDIDATE_SHA}")" = "${EXPECTED_COMMITS}"
 
       - name: Mark certification pending
         uses: actions/github-script@v7
@@ -100,13 +99,13 @@ jobs:
           {
             echo "## Mobile Beta2.32 payout quote intent repository certification"
             echo
-            echo "- Candidate: `${CANDIDATE_SHA}`"
-            echo "- Base: `${BASE_SHA}`"
-            echo "- Expected commits: `${EXPECTED_COMMITS}`"
-            echo "- Analyze: `flutter analyze`"
-            echo "- Repository test: `mobile_money_payout_quote_repository_test.dart`"
-            echo "- Flutter suite: `flutter test`"
-            echo "- Diff check: `git diff --check ${BASE_SHA}..${CANDIDATE_SHA}`"
+            echo "- Candidate: \`${CANDIDATE_SHA}\`"
+            echo "- Base: \`${BASE_SHA}\`"
+            echo "- Commit count: \`$(git rev-list --count "${BASE_SHA}..${CANDIDATE_SHA}")\`"
+            echo "- Analyze: \`flutter analyze\`"
+            echo "- Repository test: \`mobile_money_payout_quote_repository_test.dart\`"
+            echo "- Flutter suite: \`flutter test\`"
+            echo "- Diff check: \`git diff --check ${BASE_SHA}..${CANDIDATE_SHA}\`"
             echo "- Job status: **${{ job.status }}**"
           } >> "${GITHUB_STEP_SUMMARY}"
 

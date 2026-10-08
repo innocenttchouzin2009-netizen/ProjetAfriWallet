@@ -18,9 +18,9 @@ jobs:
     timeout-minutes: 35
 
     env:
-      CANDIDATE_SHA: e364792f07445d9430521904ba8473135d714e1c
+      CANDIDATE_SHA: f44b6e1e610b5141704c9ae98a6eee984a19276b
       BASE_SHA: 77a87328ca9660f220e745b974379063510e4e00
-      EXPECTED_COMMITS: '2'
+      EXPECTED_COMMITS: '3'
       STATUS_CONTEXT: mobile-beta2.31/beneficiary-search-page
 
     defaults:

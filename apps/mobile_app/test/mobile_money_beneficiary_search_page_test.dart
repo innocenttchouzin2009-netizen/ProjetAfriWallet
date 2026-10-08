@@ -95,6 +95,7 @@ void main() {
       find.byKey(const Key('momo-beneficiary-search-input')),
       ' +237670123456 ',
     );
+    await tester.pump();
     await tester.tap(
       find.byKey(const Key('momo-beneficiary-search-submit')),
     );
@@ -149,6 +150,7 @@ void main() {
       find.byKey(const Key('momo-beneficiary-search-input')),
       '+237660123456',
     );
+    await tester.pump();
     await tester.tap(
       find.byKey(const Key('momo-beneficiary-search-submit')),
     );
@@ -189,6 +191,7 @@ void main() {
       find.byKey(const Key('momo-beneficiary-search-input')),
       '+237670123456',
     );
+    await tester.pump();
     await tester.tap(
       find.byKey(const Key('momo-beneficiary-search-submit')),
     );

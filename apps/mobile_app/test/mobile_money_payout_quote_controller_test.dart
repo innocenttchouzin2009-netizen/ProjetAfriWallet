@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile_app/models/mobile_money_payout_quote.dart';
+import 'package:mobile_app/models/mobile_money_payout_quote_intent.dart';
 import 'package:mobile_app/presentation/mobile_money_payout_quote_controller.dart';
 import 'package:mobile_app/services/mobile_money_payout_quote_repository.dart';
 
@@ -20,6 +21,13 @@ class _FakeMobileMoneyPayoutQuoteRepository
 
   final _QuoteLoader _loader;
   int callCount = 0;
+
+  @override
+  Future<MobileMoneyPayoutQuote> createQuoteFromIntent(
+    MobileMoneyPayoutQuoteIntent intent,
+  ) {
+    throw StateError('createQuoteFromIntent is not used by controller tests.');
+  }
 
   @override
   Future<MobileMoneyPayoutQuote> createQuote({

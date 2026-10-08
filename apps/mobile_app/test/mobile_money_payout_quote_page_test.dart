@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile_app/models/mobile_money_payout.dart';
 import 'package:mobile_app/models/mobile_money_payout_quote.dart';
+import 'package:mobile_app/models/mobile_money_payout_quote_intent.dart';
 import 'package:mobile_app/pages/mobile_money_payout_quote_page.dart';
 import 'package:mobile_app/presentation/mobile_money_payout_quote_controller.dart';
 import 'package:mobile_app/services/mobile_money_payout_quote_repository.dart';
@@ -15,6 +16,13 @@ class _FakeQuoteRepository implements MobileMoneyPayoutQuoteRepository {
 
   final _QuoteLoader loader;
   int callCount = 0;
+
+  @override
+  Future<MobileMoneyPayoutQuote> createQuoteFromIntent(
+    MobileMoneyPayoutQuoteIntent intent,
+  ) {
+    throw StateError('createQuoteFromIntent is not used by page tests.');
+  }
 
   @override
   Future<MobileMoneyPayoutQuote> createQuote({

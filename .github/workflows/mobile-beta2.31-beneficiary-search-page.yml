@@ -3,7 +3,7 @@ name: Mobile Beta2.31 Beneficiary Search Page Certification
 on:
   push:
     branches:
-      - feature/mobile-beta2.31
+      - ci/mobile-beta2.31-candidate-certification
     paths:
       - '.github/workflows/mobile-beta2.31-beneficiary-search-page.yml'
   workflow_dispatch:
@@ -18,9 +18,9 @@ jobs:
     timeout-minutes: 35
 
     env:
-      CANDIDATE_SHA: df8dcb0a100c8af5b7b4c5d3af48c489cc3e4566
+      CANDIDATE_SHA: e364792f07445d9430521904ba8473135d714e1c
       BASE_SHA: 77a87328ca9660f220e745b974379063510e4e00
-      EXPECTED_COMMITS: '1'
+      EXPECTED_COMMITS: '2'
       STATUS_CONTEXT: mobile-beta2.31/beneficiary-search-page
 
     defaults:

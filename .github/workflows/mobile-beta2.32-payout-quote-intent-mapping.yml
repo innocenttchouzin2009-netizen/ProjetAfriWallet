@@ -1,4 +1,4 @@
-name: Mobile Beta2.32 Payout Quote Intent Mapping Certification
+name: Mobile Beta2.32 Payout Quote Intent Repository Certification
 
 on:
   push:
@@ -18,10 +18,10 @@ jobs:
     timeout-minutes: 30
 
     env:
-      CANDIDATE_SHA: b0274c9b94e39b2cc5ea65e2c07684094d0271e3
-      BASE_SHA: 5ff8a546ae290142318ca03bf7cea7be1842c80d
+      CANDIDATE_SHA: 2d69ac166bd752af432b810301289872dc5c3131
+      BASE_SHA: cad432255bbc200914e3d7b2e60f9dbe538844c6
       EXPECTED_COMMITS: '1'
-      STATUS_CONTEXT: mobile-beta2.32/payout-quote-intent-mapping
+      STATUS_CONTEXT: mobile-beta2.32/payout-quote-intent-repository
 
     defaults:
       run:
@@ -57,7 +57,7 @@ jobs:
               sha: process.env.CANDIDATE_SHA,
               state: 'pending',
               context: process.env.STATUS_CONTEXT,
-              description: 'Beta2.32 payout quote intent mapping certification in progress',
+              description: 'Beta2.32 payout quote intent repository certification in progress',
               target_url: `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
             });
 
@@ -79,8 +79,8 @@ jobs:
       - name: Analyze
         run: flutter analyze
 
-      - name: Test payout quote intent mapper
-        run: flutter test test/mobile_money_payout_quote_intent_mapper_test.dart
+      - name: Test payout quote intent repository
+        run: flutter test test/mobile_money_payout_quote_repository_test.dart
 
       - name: Run complete Flutter test suite
         run: flutter test
@@ -98,13 +98,13 @@ jobs:
         shell: bash
         run: |
           {
-            echo "## Mobile Beta2.32 payout quote intent mapping certification"
+            echo "## Mobile Beta2.32 payout quote intent repository certification"
             echo
             echo "- Candidate: `${CANDIDATE_SHA}`"
             echo "- Base: `${BASE_SHA}`"
             echo "- Expected commits: `${EXPECTED_COMMITS}`"
             echo "- Analyze: `flutter analyze`"
-            echo "- Mapper test: `mobile_money_payout_quote_intent_mapper_test.dart`"
+            echo "- Repository test: `mobile_money_payout_quote_repository_test.dart`"
             echo "- Flutter suite: `flutter test`"
             echo "- Diff check: `git diff --check ${BASE_SHA}..${CANDIDATE_SHA}`"
             echo "- Job status: **${{ job.status }}**"
@@ -125,8 +125,8 @@ jobs:
               state: succeeded ? 'success' : 'failure',
               context: process.env.STATUS_CONTEXT,
               description: succeeded
-                ? 'Beta2.32 payout quote intent mapping certified'
-                : 'Beta2.32 payout quote intent mapping certification failed',
+                ? 'Beta2.32 payout quote intent repository certified'
+                : 'Beta2.32 payout quote intent repository certification failed',
               target_url: `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
             });
 

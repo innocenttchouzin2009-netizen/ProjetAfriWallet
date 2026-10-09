@@ -1,0 +1,159 @@
+name: Mobile Beta2.34 Funding Allocation Planner Commit 2 Certification
+
+on:
+  push:
+    branches:
+      - feature/mobile-beta2.34
+    paths:
+      - '.github/workflows/mobile-beta2.34-funding-allocation-planner.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  statuses: write
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      BASE_SHA: 9dd34d530a122b68788df2f28eed42a7b9bc9892
+      COMMIT1_SHA: 125c5f4c37dcfe03d6d45d0426799d2e288959c8
+      COMMIT1_CERT_SHA: 773db95f5a7b5e88cc682badbb9b330656fafec1
+      COMMIT2_SHA: f8630e41e16b2c36b0a305ee5519abd7d10ddaf4
+      STATUS_CONTEXT: mobile-beta2.34/funding-allocation-planner-commit2
+      WORKFLOW_PATH: .github/workflows/mobile-beta2.34-funding-allocation-planner.yml
+
+    defaults:
+      run:
+        working-directory: apps/mobile_app
+
+    steps:
+      - name: Checkout certification commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Assert Commit 2 lineage and CI-only scope
+        id: candidate_assertion
+        working-directory: .
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          actual_sha="$(git rev-parse HEAD)"
+          test "${actual_sha}" = "${GITHUB_SHA}"
+
+          git cat-file -e "${BASE_SHA}^{commit}"
+          git cat-file -e "${COMMIT1_SHA}^{commit}"
+          git cat-file -e "${COMMIT1_CERT_SHA}^{commit}"
+          git cat-file -e "${COMMIT2_SHA}^{commit}"
+          git cat-file -e "${GITHUB_SHA}^{commit}"
+
+          test "$(git merge-base "${BASE_SHA}" "${COMMIT1_SHA}")" = "${BASE_SHA}"
+          test "$(git rev-parse "${COMMIT1_SHA}^")" = "${BASE_SHA}"
+          test "$(git rev-parse "${COMMIT1_CERT_SHA}^")" = "${COMMIT1_SHA}"
+          test "$(git rev-parse "${COMMIT2_SHA}^")" = "${COMMIT1_CERT_SHA}"
+          test "$(git rev-parse "${GITHUB_SHA}^")" = "${COMMIT2_SHA}"
+
+          commit2_files="$(git diff-tree --no-commit-id --name-only -r "${COMMIT2_SHA}")"
+          expected_commit2_files="$(
+            printf '%s\n' \
+              'apps/mobile_app/lib/services/mobile_money_payout_funding_allocation_planner.dart' \
+              'apps/mobile_app/test/mobile_money_payout_funding_allocation_planner_test.dart'
+          )"
+          test "${commit2_files}" = "${expected_commit2_files}"
+
+          ci_files="$(git diff-tree --no-commit-id --name-only -r "${GITHUB_SHA}")"
+          test "${ci_files}" = "${WORKFLOW_PATH}"
+
+      - name: Mark Commit 2 certification pending
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: process.env.COMMIT2_SHA,
+              state: 'pending',
+              context: process.env.STATUS_CONTEXT,
+              description: 'Beta2.34 Funding Allocation Planner Commit 2 certification in progress',
+              target_url: `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+            });
+
+      - name: Set up Flutter 3.47.2
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.2'
+          cache: true
+
+      - name: Flutter version
+        run: flutter --version
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Generate localizations
+        run: flutter gen-l10n
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test Funding Allocation Planner
+        run: flutter test test/mobile_money_payout_funding_allocation_planner_test.dart
+
+      - name: Run Mobile Money payout regression suite
+        shell: bash
+        run: flutter test test/mobile_money_payout_*.dart
+
+      - name: Verify Beta2.34 Commit 2 diff
+        working-directory: .
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check "${COMMIT1_CERT_SHA}..${COMMIT2_SHA}"
+
+      - name: Write certification summary
+        if: always()
+        working-directory: .
+        shell: bash
+        run: |
+          {
+            echo "## Mobile Beta2.34 Funding Allocation Planner Commit 2 certification"
+            echo
+            echo "- Base: `${BASE_SHA}`"
+            echo "- Functional Commit 1: `${COMMIT1_SHA}`"
+            echo "- Commit 1 certification: `${COMMIT1_CERT_SHA}`"
+            echo "- Functional Commit 2: `${COMMIT2_SHA}`"
+            echo "- CI-only commit: `${GITHUB_SHA}`"
+            echo "- Flutter: `3.47.2`"
+            echo "- Analyze: `flutter analyze`"
+            echo "- Planner test: `mobile_money_payout_funding_allocation_planner_test.dart`"
+            echo "- Regression suite: `mobile_money_payout_*.dart`"
+            echo "- Diff check: `git diff --check ${COMMIT1_CERT_SHA}..${COMMIT2_SHA}`"
+            echo "- Functional Commit 2 is required to contain exactly two files."
+            echo "- CI-only commit is certification infrastructure and not product code."
+            echo "- Job status: **${{ job.status }}**"
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Report Commit 2 certification status
+        if: always() && steps.candidate_assertion.outcome == 'success'
+        uses: actions/github-script@v7
+        env:
+          CERTIFICATION_JOB_STATUS: ${{ job.status }}
+        with:
+          script: |
+            const succeeded = process.env.CERTIFICATION_JOB_STATUS === 'success';
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: process.env.COMMIT2_SHA,
+              state: succeeded ? 'success' : 'failure',
+              context: process.env.STATUS_CONTEXT,
+              description: succeeded
+                ? 'Beta2.34 Funding Allocation Planner Commit 2 certified'
+                : 'Beta2.34 Funding Allocation Planner Commit 2 certification failed',
+              target_url: `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+            });

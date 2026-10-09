@@ -84,24 +84,41 @@ void main() {
       find.byKey(const Key('momo-funding-split-apple-pay')),
       findsOneWidget,
     );
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('momo-funding-no-payout')),
+      150,
+    );
     expect(find.byKey(const Key('momo-funding-no-payout')), findsOneWidget);
 
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('momo-funding-continue')),
+      150,
+    );
     final continueButton = tester.widget<FilledButton>(
       find.byKey(const Key('momo-funding-continue')),
     );
     expect(continueButton.onPressed, isNull);
 
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('momo-funding-split-apple-pay')),
+      -150,
+    );
     await tester.tap(
       find.byKey(const Key('momo-funding-split-apple-pay')),
     );
     await tester.pump();
 
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('momo-funding-selected')),
+      150,
+    );
     expect(find.byKey(const Key('momo-funding-selected')), findsOneWidget);
     expect(controller.selectedIntent, isNotNull);
     expect(controller.selectedIntent!.fundingAllocations, hasLength(2));
 
-    await tester.ensureVisible(
+    await tester.scrollUntilVisible(
       find.byKey(const Key('momo-funding-continue')),
+      150,
     );
     await tester.tap(find.byKey(const Key('momo-funding-continue')));
 
@@ -162,6 +179,10 @@ void main() {
       MobileMoneyPayoutFundingSelectionMode.externalOnly,
     );
     expect(controller.selectedIntent!.fundingAllocations, hasLength(1));
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('momo-funding-no-payout')),
+      150,
+    );
     expect(find.byKey(const Key('momo-funding-no-payout')), findsOneWidget);
   });
 }

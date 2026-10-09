@@ -6,6 +6,7 @@ on:
       - feature/mobile-beta2.34
     paths:
       - '.github/workflows/mobile-beta2.34-funding-selection-presentation.yml'
+      - 'apps/mobile_app/test/mobile_money_payout_funding_selection_page_test.dart'
   workflow_dispatch:
 
 permissions:
@@ -28,13 +29,13 @@ jobs:
         working-directory: apps/mobile_app
 
     steps:
-      - name: Checkout exact Commit 3 candidate
+      - name: Checkout exact branch head
         uses: actions/checkout@v4
         with:
-          ref: ${{ env.COMMIT3_SHA }}
+          ref: ${{ github.sha }}
           fetch-depth: 0
 
-      - name: Assert exact Commit 3 lineage and four-file scope
+      - name: Assert original Commit 3 and scoped follow-up lineage
         id: candidate_assertion
         working-directory: .
         shell: bash
@@ -42,7 +43,7 @@ jobs:
           set -euo pipefail
 
           actual_sha="$(git rev-parse HEAD)"
-          test "${actual_sha}" = "${COMMIT3_SHA}"
+          test "${actual_sha}" = "${GITHUB_SHA}"
 
           git cat-file -e "${BASE_SHA}^{commit}"
           git cat-file -e "${COMMIT3_SHA}^{commit}"
@@ -60,6 +61,17 @@ jobs:
           } | sort)"
           test "$(printf '%s\n' "${changed_files}" | sort)" = "${expected_files}"
 
+          git merge-base --is-ancestor "${COMMIT3_SHA}" "${actual_sha}"
+          for follow_up_sha in $(git rev-list "${COMMIT3_SHA}..${actual_sha}"); do
+            while IFS= read -r changed_path; do
+              case "${changed_path}" in
+                '.github/workflows/mobile-beta2.34-funding-selection-presentation.yml'|\
+                'apps/mobile_app/test/mobile_money_payout_funding_selection_page_test.dart') ;;
+                *) echo "::error::Out-of-scope follow-up file: ${changed_path}"; exit 1 ;;
+              esac
+            done < <(git diff-tree --no-commit-id --name-only -r "${follow_up_sha}")
+          done
+
       - name: Mark Commit 3 certification pending
         uses: actions/github-script@v7
         with:
@@ -67,7 +79,7 @@ jobs:
             await github.rest.repos.createCommitStatus({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              sha: process.env.COMMIT3_SHA,
+              sha: context.sha,
               state: 'pending',
               context: process.env.STATUS_CONTEXT,
               description: 'Beta2.34 Funding Selection Commit 3 certification in progress',
@@ -99,12 +111,12 @@ jobs:
         shell: bash
         run: flutter test test/mobile_money_payout_*.dart
 
-      - name: Verify exact Commit 3 diff
+      - name: Verify exact branch-head diff
         working-directory: .
         shell: bash
         run: |
           set -euo pipefail
-          git diff --check "${BASE_SHA}..${COMMIT3_SHA}"
+          git diff --check "${BASE_SHA}..${GITHUB_SHA}"
 
       - name: Write certification summary
         if: always()
@@ -121,7 +133,7 @@ jobs:
             echo "- Controller test: `mobile_money_payout_funding_selection_controller_test.dart`"
             echo "- Page test: `mobile_money_payout_funding_selection_page_test.dart`"
             echo "- Regression suite: `mobile_money_payout_*.dart`"
-            echo "- Diff check: `git diff --check ${BASE_SHA}..${COMMIT3_SHA}`"
+            echo "- Diff check: `git diff --check ${BASE_SHA}..${GITHUB_SHA}`"
             echo "- Job status: **${{ job.status }}**"
           } >> "${GITHUB_STEP_SUMMARY}"
 
@@ -136,7 +148,7 @@ jobs:
             await github.rest.repos.createCommitStatus({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              sha: process.env.COMMIT3_SHA,
+              sha: context.sha,
               state: succeeded ? 'success' : 'failure',
               context: process.env.STATUS_CONTEXT,
               description: succeeded

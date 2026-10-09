@@ -54,6 +54,9 @@ jobs:
       - name: Restore
         run: dotnet restore
 
+      - name: Restore MobileMoney.Api
+        run: dotnet restore backend/src/MobileMoney/MobileMoney.Api/MobileMoney.Api.csproj
+
       - name: Build MobileMoney.Api
         run: dotnet build backend/src/MobileMoney/MobileMoney.Api/MobileMoney.Api.csproj --no-restore
 

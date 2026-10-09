@@ -18,11 +18,13 @@ jobs:
     timeout-minutes: 30
 
     env:
-      CANDIDATE_SHA: 93768c16339a4f55785bc86312f75603a4bbe0e2
+      CANDIDATE_SHA: f791f5e0d5e7b29cc2220f2329a06254775c1583
       BASE_SHA: 4b444deb432474ed8d2357af1a81277dfc38f285
       COMMIT1_SHA: f36ce70a4b7b7cf512448129198a55f0f9c446b2
       CI_ONLY_SHA: 083a65c3816fb996de62ac995da15c621d5e5b28
-      EXPECTED_TOTAL_COMMITS: '3'
+      COMMIT2_SHA: 93768c16339a4f55785bc86312f75603a4bbe0e2
+      RECERT_CI_SHA: 5a889ac75289a764da62559490aca7924b54913f
+      EXPECTED_TOTAL_COMMITS: '5'
       EXPECTED_FUNCTIONAL_COMMITS: '2'
       STATUS_CONTEXT: mobile-beta2.33/payout-quote-intent-presentation
 
@@ -50,6 +52,8 @@ jobs:
           git cat-file -e "${BASE_SHA}^{commit}"
           git cat-file -e "${COMMIT1_SHA}^{commit}"
           git cat-file -e "${CI_ONLY_SHA}^{commit}"
+          git cat-file -e "${COMMIT2_SHA}^{commit}"
+          git cat-file -e "${RECERT_CI_SHA}^{commit}"
           git cat-file -e "${CANDIDATE_SHA}^{commit}"
 
           test "$(git merge-base "${BASE_SHA}" "${CANDIDATE_SHA}")" = "${BASE_SHA}"
@@ -57,10 +61,18 @@ jobs:
 
           test "$(git rev-parse "${COMMIT1_SHA}^")" = "${BASE_SHA}"
           test "$(git rev-parse "${CI_ONLY_SHA}^")" = "${COMMIT1_SHA}"
-          test "$(git rev-parse "${CANDIDATE_SHA}^")" = "${CI_ONLY_SHA}"
+          test "$(git rev-parse "${COMMIT2_SHA}^")" = "${CI_ONLY_SHA}"
+          test "$(git rev-parse "${RECERT_CI_SHA}^")" = "${COMMIT2_SHA}"
+          test "$(git rev-parse "${CANDIDATE_SHA}^")" = "${RECERT_CI_SHA}"
 
           ci_changed_files="$(git diff-tree --no-commit-id --name-only -r "${CI_ONLY_SHA}")"
           test "${ci_changed_files}" = ".github/workflows/mobile-beta2.33-payout-quote-intent-presentation.yml"
+
+          recert_ci_changed_files="$(git diff-tree --no-commit-id --name-only -r "${RECERT_CI_SHA}")"
+          test "${recert_ci_changed_files}" = ".github/workflows/mobile-beta2.33-payout-quote-intent-presentation.yml"
+
+          candidate_changed_files="$(git diff-tree --no-commit-id --name-only -r "${CANDIDATE_SHA}")"
+          test "${candidate_changed_files}" = "apps/mobile_app/test/mobile_money_payout_quote_page_test.dart"
 
           test "${EXPECTED_FUNCTIONAL_COMMITS}" = "2"
 
@@ -124,6 +136,9 @@ jobs:
             echo "- Beta2.32 frozen base: \`${BASE_SHA}\`"
             echo "- Functional Commit 1: \`${COMMIT1_SHA}\`"
             echo "- Historical CI-only commit: \`${CI_ONLY_SHA}\`"
+            echo "- Functional Commit 2: \`${COMMIT2_SHA}\`"
+            echo "- Commit 2 recertification CI-only commit: \`${RECERT_CI_SHA}\`"
+            echo "- Commit 2 certification/test-fix candidate: \`${CANDIDATE_SHA}\`"
             echo "- Functional commits: \`${EXPECTED_FUNCTIONAL_COMMITS}\`"
             echo "- Git commits in candidate lineage: \`${EXPECTED_TOTAL_COMMITS}\`"
             echo "- Analyze: \`flutter analyze\`"

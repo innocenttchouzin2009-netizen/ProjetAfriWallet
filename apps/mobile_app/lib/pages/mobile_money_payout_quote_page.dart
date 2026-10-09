@@ -101,6 +101,7 @@ class _MobileMoneyPayoutQuotePageState
         }
         return _QuoteView(
           quote: quote,
+          intent: widget.intent,
           onContinue: widget.onContinue,
         );
       case MobileMoneyPayoutQuotePresentationStatus.failed:
@@ -134,10 +135,12 @@ class _LoadingView extends StatelessWidget {
 class _QuoteView extends StatelessWidget {
   const _QuoteView({
     required this.quote,
+    required this.intent,
     required this.onContinue,
   });
 
   final MobileMoneyPayoutQuote quote;
+  final MobileMoneyPayoutQuoteIntent intent;
   final ValueChanged<MobileMoneyPayoutQuote>? onContinue;
 
   @override
@@ -153,7 +156,9 @@ class _QuoteView extends StatelessWidget {
         const Text(
           'Vérifiez le montant, les frais et le montant reçu avant de continuer.',
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 20),
+        _BeneficiarySummary(beneficiary: intent.beneficiary),
+        const SizedBox(height: 20),
         _QuoteRow(
           key: const Key('momo-quote-source-amount'),
           label: 'Vous envoyez',
@@ -213,6 +218,54 @@ class _QuoteView extends StatelessWidget {
           ),
         ],
       ],
+    );
+  }
+}
+
+class _BeneficiarySummary extends StatelessWidget {
+  const _BeneficiarySummary({
+    required this.beneficiary,
+  });
+
+  final BeneficiaryQuoteDraft beneficiary;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      key: const Key('momo-quote-beneficiary'),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Bénéficiaire',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 12),
+            _QuoteRow(
+              key: const Key('momo-quote-beneficiary-name'),
+              label: 'Nom',
+              value: beneficiary.accountHolderName,
+            ),
+            _QuoteRow(
+              key: const Key('momo-quote-beneficiary-phone'),
+              label: 'Numéro',
+              value: beneficiary.normalizedPhoneNumber,
+            ),
+            _QuoteRow(
+              key: const Key('momo-quote-beneficiary-country'),
+              label: 'Pays',
+              value: beneficiary.countryCode,
+            ),
+            _QuoteRow(
+              key: const Key('momo-quote-beneficiary-operator'),
+              label: 'Opérateur',
+              value: beneficiary.operatorCode.replaceAll('_', ' '),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

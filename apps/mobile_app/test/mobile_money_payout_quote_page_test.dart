@@ -119,6 +119,27 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('momo-quote-ready')), findsOneWidget);
+    expect(find.byKey(const Key('momo-quote-beneficiary')), findsOneWidget);
+    expect(
+      find.byKey(const Key('momo-quote-beneficiary-name')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('momo-quote-beneficiary-phone')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('momo-quote-beneficiary-country')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('momo-quote-beneficiary-operator')),
+      findsOneWidget,
+    );
+    expect(find.text('Beneficiary'), findsOneWidget);
+    expect(find.text('+237650000000'), findsOneWidget);
+    expect(find.text('CM'), findsOneWidget);
+    expect(find.text('MTN CM'), findsOneWidget);
     expect(find.byKey(const Key('momo-quote-source-amount')), findsOneWidget);
     expect(
       find.byKey(const Key('momo-quote-destination-amount')),

@@ -2,6 +2,8 @@ import '../data/remote/mobile_money_payout_quote_dto.dart';
 import '../data/remote/mobile_money_payout_quote_mapper.dart';
 import '../data/remote/mobile_money_payout_quote_remote_data_source.dart';
 import '../models/mobile_money_payout_quote.dart';
+import '../models/mobile_money_payout_quote_intent.dart';
+import 'mobile_money_payout_quote_intent_mapper.dart';
 
 abstract interface class MobileMoneyPayoutQuoteRepository {
   Future<MobileMoneyPayoutQuote> createQuote({
@@ -12,6 +14,10 @@ abstract interface class MobileMoneyPayoutQuoteRepository {
     required String operatorCode,
     required int sourceAmountMinor,
   });
+
+  Future<MobileMoneyPayoutQuote> createQuoteFromIntent(
+    MobileMoneyPayoutQuoteIntent intent,
+  );
 }
 
 class RemoteMobileMoneyPayoutQuoteRepository
@@ -19,6 +25,17 @@ class RemoteMobileMoneyPayoutQuoteRepository
   const RemoteMobileMoneyPayoutQuoteRepository(this._remoteDataSource);
 
   final MobileMoneyPayoutQuoteRemoteDataSource _remoteDataSource;
+
+  @override
+  Future<MobileMoneyPayoutQuote> createQuoteFromIntent(
+    MobileMoneyPayoutQuoteIntent intent,
+  ) async {
+    final response = await _remoteDataSource.createQuote(
+      MobileMoneyPayoutQuoteIntentMapper.toRequestDto(intent),
+    );
+
+    return MobileMoneyPayoutQuoteMapper.toDomain(response);
+  }
 
   @override
   Future<MobileMoneyPayoutQuote> createQuote({

@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:mobile_app/data/remote/mobile_money_payout_quote_remote_data_source.dart';
 import 'package:mobile_app/network/api_client.dart';
+import 'package:mobile_app/models/mobile_money_payout_quote_intent.dart';
 import 'package:mobile_app/network/api_exception.dart';
 import 'package:mobile_app/services/mobile_money_payout_quote_repository.dart';
 
@@ -64,6 +65,80 @@ void main() {
       expect(quote.fxRate, 655.957);
       expect(quote.createdAtUtc.isUtc, isTrue);
       expect(quote.expiresAtUtc.isUtc, isTrue);
+    });
+
+    test('creates a quote from the certified payout quote intent', () async {
+      late http.Request capturedRequest;
+      final repository = _repository(
+        MockClient((request) async {
+          capturedRequest = request;
+          return http.Response(
+            jsonEncode(_validPayload()),
+            200,
+            headers: <String, String>{'content-type': 'application/json'},
+          );
+        }),
+      );
+
+      final quote = await repository.createQuoteFromIntent(
+        const MobileMoneyPayoutQuoteIntent(
+          sourceCountryCode: 'DE',
+          sourceCurrencyCode: 'EUR',
+          destinationCurrencyCode: 'XAF',
+          sourceAmountMinor: 10000,
+          beneficiary: BeneficiaryQuoteDraft(
+            normalizedPhoneNumber: '+237650000000',
+            countryCode: 'CM',
+            operatorCode: 'MTN_CM',
+            accountHolderName: 'Jane Doe',
+          ),
+        ),
+      );
+
+      expect(capturedRequest.method, 'POST');
+      expect(capturedRequest.url.path, '/api/v1/mobile-money/payouts/quote');
+      expect(
+        jsonDecode(capturedRequest.body),
+        <String, Object?>{
+          'sourceCountryCode': 'DE',
+          'sourceCurrency': 'EUR',
+          'destinationCountryCode': 'CM',
+          'destinationCurrency': 'XAF',
+          'operatorCode': 'MTN-CM',
+          'sourceAmountMinor': 10000,
+        },
+      );
+      expect(quote.quoteId, 'dd5d65b9-83ba-463a-87f8-d4b8513c8595');
+    });
+
+    test('rejects an invalid payout quote intent before the network call',
+        () async {
+      var called = false;
+      final repository = _repository(
+        MockClient((_) async {
+          called = true;
+          return http.Response('{}', 200);
+        }),
+      );
+
+      await expectLater(
+        repository.createQuoteFromIntent(
+          const MobileMoneyPayoutQuoteIntent(
+            sourceCountryCode: 'DE',
+            sourceCurrencyCode: 'EUR',
+            destinationCurrencyCode: 'XAF',
+            sourceAmountMinor: 0,
+            beneficiary: BeneficiaryQuoteDraft(
+              normalizedPhoneNumber: '+237650000000',
+              countryCode: 'CM',
+              operatorCode: 'MTN_CM',
+              accountHolderName: 'Jane Doe',
+            ),
+          ),
+        ),
+        throwsArgumentError,
+      );
+      expect(called, isFalse);
     });
 
     test('rejects invalid country and currency codes before the network call',

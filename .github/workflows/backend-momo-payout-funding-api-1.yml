@@ -1,0 +1,115 @@
+name: AFW-BE-MOMO-PAYOUT-FUNDING-API-1
+
+on:
+  push:
+    branches:
+      - feature/backend-momo-payout-funding-api-1
+    paths:
+      - 'backend/src/MobileMoney/MobileMoney.Api/MobileMoney.Api.csproj'
+      - 'backend/src/MobileMoney/MobileMoney.Api/Program.cs'
+      - 'backend/src/MobileMoney/MobileMoney.Api/Payout/Funding/**'
+      - 'backend/tests/MobileMoney.Payout.Funding.Scenarios/**'
+      - '.github/workflows/backend-momo-payout-funding-api-1.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'backend/src/MobileMoney/MobileMoney.Api/MobileMoney.Api.csproj'
+      - 'backend/src/MobileMoney/MobileMoney.Api/Program.cs'
+      - 'backend/src/MobileMoney/MobileMoney.Api/Payout/Funding/**'
+      - 'backend/tests/MobileMoney.Payout.Funding.Scenarios/**'
+  workflow_dispatch:
+    inputs:
+      candidate_sha:
+        description: Full commit SHA to certify
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate payout funding API
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    env:
+      BASE_SHA: 16a3fd27ec44fc056e7bea0d66685a076769a0ee
+
+    steps:
+      - name: Checkout workflow revision
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve exact candidate SHA
+        id: candidate
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          CURRENT_SHA: ${{ github.sha }}
+          PUSH_BEFORE_SHA: ${{ github.event.before }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          DISPATCH_SHA: ${{ inputs.candidate_sha }}
+        run: |
+          set -euo pipefail
+
+          candidate=""
+
+          if [[ "${EVENT_NAME}" == "workflow_dispatch" ]]; then
+            candidate="${DISPATCH_SHA}"
+          elif [[ "${EVENT_NAME}" == "pull_request" ]]; then
+            candidate="${PR_HEAD_SHA}"
+          elif [[ "${EVENT_NAME}" == "push" ]]; then
+            mapfile -t changed < <(git diff --name-only "${PUSH_BEFORE_SHA}" "${CURRENT_SHA}")
+
+            if [[ "${#changed[@]}" -eq 1 && "${changed[0]}" == ".github/workflows/backend-momo-payout-funding-api-1.yml" ]]; then
+              candidate="${PUSH_BEFORE_SHA}"
+            else
+              candidate="${CURRENT_SHA}"
+            fi
+          fi
+
+          if [[ ! "${candidate}" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "candidate SHA must be a full lowercase 40-character Git SHA."
+            exit 1
+          fi
+
+          echo "sha=${candidate}" >> "${GITHUB_OUTPUT}"
+          echo "CANDIDATE_SHA=${candidate}" >> "${GITHUB_ENV}"
+
+      - name: Checkout exact candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          git cat-file -e "${CANDIDATE_SHA}^{commit}"
+          git checkout --detach "${CANDIDATE_SHA}"
+
+      - name: Assert locked base lineage
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${CANDIDATE_SHA}"
+          git cat-file -e "${BASE_SHA}^{commit}"
+          test "$(git merge-base "${BASE_SHA}" HEAD)" = "${BASE_SHA}"
+
+      - name: Set up .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore payout funding scenarios
+        run: dotnet restore backend/tests/MobileMoney.Payout.Funding.Scenarios/MobileMoney.Payout.Funding.Scenarios.csproj
+
+      - name: Build MobileMoney.Api
+        run: dotnet build backend/src/MobileMoney/MobileMoney.Api/MobileMoney.Api.csproj --configuration Release --no-restore
+
+      - name: Run payout funding API scenarios
+        run: dotnet run --project backend/tests/MobileMoney.Payout.Funding.Scenarios/MobileMoney.Payout.Funding.Scenarios.csproj --configuration Release --no-restore
+
+      - name: Verify diff cleanliness
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check "${BASE_SHA}..${CANDIDATE_SHA}"

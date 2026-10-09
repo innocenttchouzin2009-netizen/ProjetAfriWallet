@@ -1,0 +1,67 @@
+name: AFW-BE-MOMO-PAYOUT-FUNDING-EXECUTION-1
+
+on:
+  push:
+    branches:
+      - feature/backend-momo-payout-funding-execution-1
+    paths:
+      - 'backend/src/MobileMoney/**'
+      - 'backend/tests/MobileMoney.Payout.Funding.Scenarios/**'
+      - '.github/workflows/backend-momo-payout-funding-execution-1.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'backend/src/MobileMoney/**'
+      - 'backend/tests/MobileMoney.Payout.Funding.Scenarios/**'
+      - '.github/workflows/backend-momo-payout-funding-execution-1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    name: Certify Funding Execution candidate
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    env:
+      BASE_SHA: 3f9afe7385dd770492ffe494e3bb66048ee64786
+      CANDIDATE_SHA: 9cf0c941825c39ba53ce79c6c0ee2a0dc49d0213
+
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          ref: 9cf0c941825c39ba53ce79c6c0ee2a0dc49d0213
+          fetch-depth: 0
+
+      - name: Assert certification lineage
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${CANDIDATE_SHA}"
+          git cat-file -e "${BASE_SHA}^{commit}"
+          git cat-file -e "${CANDIDATE_SHA}^{commit}"
+          git merge-base --is-ancestor "${BASE_SHA}" "${CANDIDATE_SHA}"
+
+      - name: Set up .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build MobileMoney.Api
+        run: dotnet build backend/src/MobileMoney/MobileMoney.Api/MobileMoney.Api.csproj --no-restore
+
+      - name: Run MobileMoney payout funding scenarios
+        run: dotnet run --project backend/tests/MobileMoney.Payout.Funding.Scenarios
+
+      - name: Verify exact candidate diff cleanliness
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check "${BASE_SHA}" "${CANDIDATE_SHA}"

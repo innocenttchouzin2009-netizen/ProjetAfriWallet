@@ -1,0 +1,142 @@
+name: Mobile Auth Session R2 Certification
+
+on:
+  push:
+    branches:
+      - feature/mobile-auth-session-r2
+    paths:
+      - '.github/workflows/mobile-auth-session-r2.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  statuses: write
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+
+    env:
+      CANDIDATE_SHA: fe8cf4a21962da8aeaad0e82ea407de94fa83560
+      BASE_SHA: e351587ca61f9bb933e8cd4a8da576a3a26b141f
+      STATUS_CONTEXT: mobile-auth-session-r2/certification
+
+    defaults:
+      run:
+        working-directory: apps/mobile_app
+
+    steps:
+      - name: Checkout exact Auth Session R2 functional commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.CANDIDATE_SHA }}
+          fetch-depth: 0
+
+      - name: Assert exact candidate lineage
+        id: candidate_assertion
+        working-directory: .
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual_sha="$(git rev-parse HEAD)"
+          echo "candidate_sha=${CANDIDATE_SHA}"
+          echo "checked_out_sha=${actual_sha}"
+
+          test "${actual_sha}" = "${CANDIDATE_SHA}"
+          git cat-file -e "${CANDIDATE_SHA}^{commit}"
+          git cat-file -e "${BASE_SHA}^{commit}"
+          git merge-base --is-ancestor "${BASE_SHA}" "${CANDIDATE_SHA}"
+
+      - name: Mark certification pending
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: process.env.CANDIDATE_SHA,
+              state: 'pending',
+              context: process.env.STATUS_CONTEXT,
+              description: 'Auth/Session R2 certification in progress',
+              target_url: `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+            });
+
+      - name: Set up Flutter 3.47.2
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.2'
+          cache: true
+
+      - name: Flutter version
+        run: flutter --version
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Generate localizations
+        run: flutter gen-l10n
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test authenticated session request executor
+        run: flutter test test/authenticated_session_request_executor_test.dart
+
+      - name: Test existing Auth Session surface
+        run: |
+          flutter test \
+            test/auth_contract_test.dart \
+            test/auth_production_wiring_test.dart \
+            test/auth_repository_remote_data_source_test.dart \
+            test/auth_session_coordinator_test.dart \
+            test/auth_session_gate_test.dart \
+            test/auth_session_store_test.dart \
+            test/auth_state_controller_test.dart \
+            test/authenticated_production_wiring_test.dart \
+            test/flutter_secure_storage_adapter_test.dart \
+            test/secure_session_store_test.dart
+
+      - name: Run complete Flutter test suite
+        run: flutter test
+
+      - name: Verify Auth Session R2 functional diff
+        working-directory: .
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check "${BASE_SHA}...${CANDIDATE_SHA}"
+
+      - name: Write certification summary
+        if: always()
+        working-directory: .
+        shell: bash
+        run: |
+          {
+            echo "## Mobile Auth/Session R2 certification"
+            echo
+            echo "- Candidate: `${CANDIDATE_SHA}`"
+            echo "- Base: `${BASE_SHA}`"
+            echo "- Job status: **${{ job.status }}**"
+            echo "- Wallet/P2P/Identity migration: **not in scope**"
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Report certification status
+        if: always() && steps.candidate_assertion.outcome == 'success'
+        uses: actions/github-script@v7
+        env:
+          CERTIFICATION_JOB_STATUS: ${{ job.status }}
+        with:
+          script: |
+            const succeeded = process.env.CERTIFICATION_JOB_STATUS === 'success';
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: process.env.CANDIDATE_SHA,
+              state: succeeded ? 'success' : 'failure',
+              context: process.env.STATUS_CONTEXT,
+              description: succeeded
+                ? 'Auth/Session R2 certified'
+                : 'Auth/Session R2 certification failed',
+              target_url: `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+            });

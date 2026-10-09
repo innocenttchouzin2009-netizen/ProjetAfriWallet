@@ -1,0 +1,75 @@
+name: AFW-BE-MOMO-PAYOUT-EXECUTION-1
+
+on:
+  push:
+    branches:
+      - feature/backend-momo-payout-execution-1
+    paths:
+      - 'backend/src/MobileMoney/**'
+      - 'backend/tests/MobileMoney.Payout.Scenarios/**'
+      - '.github/workflows/backend-momo-payout-execution-1.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'backend/src/MobileMoney/**'
+      - 'backend/tests/MobileMoney.Payout.Scenarios/**'
+      - '.github/workflows/backend-momo-payout-execution-1.yml'
+  workflow_dispatch:
+    inputs:
+      candidate_sha:
+        description: Full commit SHA to certify
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate MoMo payout execution
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    env:
+      CANDIDATE_SHA: ${{ inputs.candidate_sha || github.sha }}
+
+    steps:
+      - name: Validate candidate SHA
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ ! "${CANDIDATE_SHA}" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "candidate SHA must be a full lowercase 40-character Git SHA."
+            exit 1
+          fi
+
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.candidate_sha || github.sha }}
+          fetch-depth: 0
+
+      - name: Assert exact candidate checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${CANDIDATE_SHA}"
+          git cat-file -e "${CANDIDATE_SHA}^{commit}"
+
+      - name: Set up .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore MobileMoney payout scenarios
+        run: dotnet restore backend/tests/MobileMoney.Payout.Scenarios/MobileMoney.Payout.Scenarios.csproj
+
+      - name: Build MobileMoney.Api
+        run: dotnet build backend/src/MobileMoney/MobileMoney.Api/MobileMoney.Api.csproj --no-restore
+
+      - name: Run MobileMoney payout scenarios
+        run: dotnet run --project backend/tests/MobileMoney.Payout.Scenarios
+
+      - name: Verify diff cleanliness
+        run: git diff --check

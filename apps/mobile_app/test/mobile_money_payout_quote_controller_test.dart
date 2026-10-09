@@ -6,27 +6,23 @@ import 'package:mobile_app/models/mobile_money_payout_quote_intent.dart';
 import 'package:mobile_app/presentation/mobile_money_payout_quote_controller.dart';
 import 'package:mobile_app/services/mobile_money_payout_quote_repository.dart';
 
-typedef _QuoteLoader = Future<MobileMoneyPayoutQuote> Function({
-  required String sourceCountryCode,
-  required String sourceCurrencyCode,
-  required String destinationCountryCode,
-  required String destinationCurrencyCode,
-  required String operatorCode,
-  required int sourceAmountMinor,
-});
+typedef _IntentQuoteLoader = Future<MobileMoneyPayoutQuote> Function(
+  MobileMoneyPayoutQuoteIntent intent,
+);
 
 class _FakeMobileMoneyPayoutQuoteRepository
     implements MobileMoneyPayoutQuoteRepository {
   _FakeMobileMoneyPayoutQuoteRepository(this._loader);
 
-  final _QuoteLoader _loader;
+  final _IntentQuoteLoader _loader;
   int callCount = 0;
 
   @override
   Future<MobileMoneyPayoutQuote> createQuoteFromIntent(
     MobileMoneyPayoutQuoteIntent intent,
   ) {
-    throw StateError('createQuoteFromIntent is not used by controller tests.');
+    callCount++;
+    return _loader(intent);
   }
 
   @override
@@ -38,17 +34,23 @@ class _FakeMobileMoneyPayoutQuoteRepository
     required String operatorCode,
     required int sourceAmountMinor,
   }) {
-    callCount++;
-    return _loader(
-      sourceCountryCode: sourceCountryCode,
-      sourceCurrencyCode: sourceCurrencyCode,
-      destinationCountryCode: destinationCountryCode,
-      destinationCurrencyCode: destinationCurrencyCode,
-      operatorCode: operatorCode,
-      sourceAmountMinor: sourceAmountMinor,
-    );
+    throw StateError('The intent path is required by these tests.');
   }
 }
+
+MobileMoneyPayoutQuoteIntent _intent() =>
+    const MobileMoneyPayoutQuoteIntent(
+      sourceCountryCode: 'DE',
+      sourceCurrencyCode: 'EUR',
+      destinationCurrencyCode: 'XAF',
+      sourceAmountMinor: 1000,
+      beneficiary: BeneficiaryQuoteDraft(
+        normalizedPhoneNumber: '+237650000000',
+        countryCode: 'CM',
+        operatorCode: 'MTN_CM',
+        accountHolderName: 'Beneficiary',
+      ),
+    );
 
 MobileMoneyPayoutQuote _quote() => MobileMoneyPayoutQuote(
       quoteId: 'quote-1',
@@ -70,35 +72,23 @@ MobileMoneyPayoutQuote _quote() => MobileMoneyPayoutQuote(
       expiresAtUtc: DateTime.utc(2026, 10, 7, 16, 10),
     );
 
-Future<void> _createQuote(MobileMoneyPayoutQuoteController controller) {
-  return controller.createQuote(
-    sourceCountryCode: 'DE',
-    sourceCurrencyCode: 'EUR',
-    destinationCountryCode: 'CM',
-    destinationCurrencyCode: 'XAF',
-    operatorCode: 'MTN_CM',
-    sourceAmountMinor: 1000,
-  );
+Future<void> _createQuote(
+  MobileMoneyPayoutQuoteController controller,
+) {
+  return controller.createQuoteFromIntent(_intent());
 }
 
 void main() {
-  test('successful quote exposes ready state and backend quote', () async {
+  test('successful intent quote exposes ready state and backend quote', () async {
     final expected = _quote();
     final repository = _FakeMobileMoneyPayoutQuoteRepository(
-      ({
-        required String sourceCountryCode,
-        required String sourceCurrencyCode,
-        required String destinationCountryCode,
-        required String destinationCurrencyCode,
-        required String operatorCode,
-        required int sourceAmountMinor,
-      }) async {
-        expect(sourceCountryCode, 'DE');
-        expect(sourceCurrencyCode, 'EUR');
-        expect(destinationCountryCode, 'CM');
-        expect(destinationCurrencyCode, 'XAF');
-        expect(operatorCode, 'MTN_CM');
-        expect(sourceAmountMinor, 1000);
+      (intent) async {
+        expect(intent.sourceCountryCode, 'DE');
+        expect(intent.sourceCurrencyCode, 'EUR');
+        expect(intent.destinationCurrencyCode, 'XAF');
+        expect(intent.sourceAmountMinor, 1000);
+        expect(intent.beneficiary.countryCode, 'CM');
+        expect(intent.beneficiary.operatorCode, 'MTN_CM');
         return expected;
       },
     );
@@ -119,19 +109,11 @@ void main() {
     expect(repository.callCount, 1);
   });
 
-  test('repository failure exposes failed state without inventing a quote',
+  test('intent quote failure exposes failed state without inventing a quote',
       () async {
     final failure = StateError('quote unavailable');
     final repository = _FakeMobileMoneyPayoutQuoteRepository(
-      ({
-        required String sourceCountryCode,
-        required String sourceCurrencyCode,
-        required String destinationCountryCode,
-        required String destinationCurrencyCode,
-        required String operatorCode,
-        required int sourceAmountMinor,
-      }) async =>
-          throw failure,
+      (intent) async => throw failure,
     );
     final controller = MobileMoneyPayoutQuoteController(
       repository: repository,
@@ -149,19 +131,11 @@ void main() {
     expect(controller.error, same(failure));
   });
 
-  test('duplicate concurrent quote requests are ignored while loading',
+  test('duplicate concurrent intent quote requests are ignored while loading',
       () async {
     final completer = Completer<MobileMoneyPayoutQuote>();
     final repository = _FakeMobileMoneyPayoutQuoteRepository(
-      ({
-        required String sourceCountryCode,
-        required String sourceCurrencyCode,
-        required String destinationCountryCode,
-        required String destinationCurrencyCode,
-        required String operatorCode,
-        required int sourceAmountMinor,
-      }) =>
-          completer.future,
+      (intent) => completer.future,
     );
     final controller = MobileMoneyPayoutQuoteController(
       repository: repository,
@@ -180,17 +154,9 @@ void main() {
     expect(controller.hasQuote, isTrue);
   });
 
-  test('reset clears quote and failure state', () async {
+  test('reset clears intent quote and failure state', () async {
     final repository = _FakeMobileMoneyPayoutQuoteRepository(
-      ({
-        required String sourceCountryCode,
-        required String sourceCurrencyCode,
-        required String destinationCountryCode,
-        required String destinationCurrencyCode,
-        required String operatorCode,
-        required int sourceAmountMinor,
-      }) async =>
-          _quote(),
+      (intent) async => _quote(),
     );
     final controller = MobileMoneyPayoutQuoteController(
       repository: repository,

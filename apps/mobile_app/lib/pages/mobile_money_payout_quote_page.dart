@@ -3,23 +3,21 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import '../models/mobile_money_payout.dart';
 import '../models/mobile_money_payout_quote.dart';
+import '../models/mobile_money_payout_quote_intent.dart';
 import '../presentation/mobile_money_payout_quote_controller.dart';
 
 class MobileMoneyPayoutQuotePage extends StatefulWidget {
   const MobileMoneyPayoutQuotePage({
     super.key,
     required this.controller,
-    required this.sourceCountryCode,
-    required this.payout,
+    required this.intent,
     this.onContinue,
     this.onBack,
   });
 
   final MobileMoneyPayoutQuoteController controller;
-  final String sourceCountryCode;
-  final MobileMoneyPayoutRequest payout;
+  final MobileMoneyPayoutQuoteIntent intent;
   final ValueChanged<MobileMoneyPayoutQuote>? onContinue;
   final VoidCallback? onBack;
 
@@ -40,9 +38,15 @@ class _MobileMoneyPayoutQuotePageState
   @override
   void didUpdateWidget(covariant MobileMoneyPayoutQuotePage oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.controller != widget.controller) {
+    final controllerChanged = oldWidget.controller != widget.controller;
+    final intentChanged = oldWidget.intent != widget.intent;
+
+    if (controllerChanged) {
       oldWidget.controller.removeListener(_onControllerChanged);
       widget.controller.addListener(_onControllerChanged);
+    }
+
+    if (controllerChanged || intentChanged) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _createQuote());
     }
   }
@@ -60,14 +64,7 @@ class _MobileMoneyPayoutQuotePageState
   }
 
   Future<void> _createQuote() {
-    return widget.controller.createQuote(
-      sourceCountryCode: widget.sourceCountryCode,
-      sourceCurrencyCode: widget.payout.sendCurrencyCode,
-      destinationCountryCode: widget.payout.beneficiary.countryCode,
-      destinationCurrencyCode: widget.payout.payoutCurrencyCode,
-      operatorCode: widget.payout.beneficiary.operatorCode,
-      sourceAmountMinor: widget.payout.sendAmountMinor,
-    );
+    return widget.controller.createQuoteFromIntent(widget.intent);
   }
 
   @override
@@ -104,6 +101,7 @@ class _MobileMoneyPayoutQuotePageState
         }
         return _QuoteView(
           quote: quote,
+          intent: widget.intent,
           onContinue: widget.onContinue,
         );
       case MobileMoneyPayoutQuotePresentationStatus.failed:
@@ -137,10 +135,12 @@ class _LoadingView extends StatelessWidget {
 class _QuoteView extends StatelessWidget {
   const _QuoteView({
     required this.quote,
+    required this.intent,
     required this.onContinue,
   });
 
   final MobileMoneyPayoutQuote quote;
+  final MobileMoneyPayoutQuoteIntent intent;
   final ValueChanged<MobileMoneyPayoutQuote>? onContinue;
 
   @override
@@ -156,7 +156,9 @@ class _QuoteView extends StatelessWidget {
         const Text(
           'Vérifiez le montant, les frais et le montant reçu avant de continuer.',
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 20),
+        _BeneficiarySummary(beneficiary: intent.beneficiary),
+        const SizedBox(height: 20),
         _QuoteRow(
           key: const Key('momo-quote-source-amount'),
           label: 'Vous envoyez',
@@ -216,6 +218,54 @@ class _QuoteView extends StatelessWidget {
           ),
         ],
       ],
+    );
+  }
+}
+
+class _BeneficiarySummary extends StatelessWidget {
+  const _BeneficiarySummary({
+    required this.beneficiary,
+  });
+
+  final BeneficiaryQuoteDraft beneficiary;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      key: const Key('momo-quote-beneficiary'),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Bénéficiaire',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 12),
+            _QuoteRow(
+              key: const Key('momo-quote-beneficiary-name'),
+              label: 'Nom',
+              value: beneficiary.accountHolderName,
+            ),
+            _QuoteRow(
+              key: const Key('momo-quote-beneficiary-phone'),
+              label: 'Numéro',
+              value: beneficiary.normalizedPhoneNumber,
+            ),
+            _QuoteRow(
+              key: const Key('momo-quote-beneficiary-country'),
+              label: 'Pays',
+              value: beneficiary.countryCode,
+            ),
+            _QuoteRow(
+              key: const Key('momo-quote-beneficiary-operator'),
+              label: 'Opérateur',
+              value: beneficiary.operatorCode.replaceAll('_', ' '),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

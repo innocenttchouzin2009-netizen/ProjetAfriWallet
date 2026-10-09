@@ -324,6 +324,11 @@ await RunAsync(
         "Cancellation token must reach attempt store.");
 });
 
+await RunAsync("funding API route is stable", ApiScenarios.RouteIsStable);
+await RunAsync("funding API returns planned funding", ApiScenarios.ReturnsFundingPlan);
+await RunAsync("funding API maps invalid request", ApiScenarios.MapsInvalidRequest);
+await RunAsync("funding API maps rejected funding", ApiScenarios.MapsRejectedFunding);
+
 Console.WriteLine("Mobile Money payout funding scenarios passed.");
 
 static MobileMoneyPayoutFundingPlanningService CreateService(

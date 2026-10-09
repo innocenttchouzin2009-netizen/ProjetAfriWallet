@@ -3,23 +3,21 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import '../models/mobile_money_payout.dart';
 import '../models/mobile_money_payout_quote.dart';
+import '../models/mobile_money_payout_quote_intent.dart';
 import '../presentation/mobile_money_payout_quote_controller.dart';
 
 class MobileMoneyPayoutQuotePage extends StatefulWidget {
   const MobileMoneyPayoutQuotePage({
     super.key,
     required this.controller,
-    required this.sourceCountryCode,
-    required this.payout,
+    required this.intent,
     this.onContinue,
     this.onBack,
   });
 
   final MobileMoneyPayoutQuoteController controller;
-  final String sourceCountryCode;
-  final MobileMoneyPayoutRequest payout;
+  final MobileMoneyPayoutQuoteIntent intent;
   final ValueChanged<MobileMoneyPayoutQuote>? onContinue;
   final VoidCallback? onBack;
 
@@ -40,9 +38,15 @@ class _MobileMoneyPayoutQuotePageState
   @override
   void didUpdateWidget(covariant MobileMoneyPayoutQuotePage oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.controller != widget.controller) {
+    final controllerChanged = oldWidget.controller != widget.controller;
+    final intentChanged = oldWidget.intent != widget.intent;
+
+    if (controllerChanged) {
       oldWidget.controller.removeListener(_onControllerChanged);
       widget.controller.addListener(_onControllerChanged);
+    }
+
+    if (controllerChanged || intentChanged) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _createQuote());
     }
   }
@@ -60,14 +64,7 @@ class _MobileMoneyPayoutQuotePageState
   }
 
   Future<void> _createQuote() {
-    return widget.controller.createQuote(
-      sourceCountryCode: widget.sourceCountryCode,
-      sourceCurrencyCode: widget.payout.sendCurrencyCode,
-      destinationCountryCode: widget.payout.beneficiary.countryCode,
-      destinationCurrencyCode: widget.payout.payoutCurrencyCode,
-      operatorCode: widget.payout.beneficiary.operatorCode,
-      sourceAmountMinor: widget.payout.sendAmountMinor,
-    );
+    return widget.controller.createQuoteFromIntent(widget.intent);
   }
 
   @override

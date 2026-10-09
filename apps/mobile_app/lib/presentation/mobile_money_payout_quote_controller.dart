@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../models/mobile_money_payout_quote.dart';
+import '../models/mobile_money_payout_quote_intent.dart';
 import '../services/mobile_money_payout_quote_repository.dart';
 
 enum MobileMoneyPayoutQuotePresentationStatus {
@@ -41,7 +42,28 @@ class MobileMoneyPayoutQuoteController extends ChangeNotifier {
     required String destinationCurrencyCode,
     required String operatorCode,
     required int sourceAmountMinor,
-  }) async {
+  }) {
+    return _loadQuote(
+      () => _repository.createQuote(
+        sourceCountryCode: sourceCountryCode,
+        sourceCurrencyCode: sourceCurrencyCode,
+        destinationCountryCode: destinationCountryCode,
+        destinationCurrencyCode: destinationCurrencyCode,
+        operatorCode: operatorCode,
+        sourceAmountMinor: sourceAmountMinor,
+      ),
+    );
+  }
+
+  Future<void> createQuoteFromIntent(
+    MobileMoneyPayoutQuoteIntent intent,
+  ) {
+    return _loadQuote(() => _repository.createQuoteFromIntent(intent));
+  }
+
+  Future<void> _loadQuote(
+    Future<MobileMoneyPayoutQuote> Function() loader,
+  ) async {
     if (isLoading) {
       return;
     }
@@ -52,14 +74,7 @@ class MobileMoneyPayoutQuoteController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      _quote = await _repository.createQuote(
-        sourceCountryCode: sourceCountryCode,
-        sourceCurrencyCode: sourceCurrencyCode,
-        destinationCountryCode: destinationCountryCode,
-        destinationCurrencyCode: destinationCurrencyCode,
-        operatorCode: operatorCode,
-        sourceAmountMinor: sourceAmountMinor,
-      );
+      _quote = await loader();
       _status = MobileMoneyPayoutQuotePresentationStatus.ready;
     } catch (error) {
       _status = MobileMoneyPayoutQuotePresentationStatus.failed;

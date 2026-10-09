@@ -2,14 +2,15 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mobile_app/models/mobile_money_payout.dart';
 import 'package:mobile_app/models/mobile_money_payout_quote.dart';
 import 'package:mobile_app/models/mobile_money_payout_quote_intent.dart';
 import 'package:mobile_app/pages/mobile_money_payout_quote_page.dart';
 import 'package:mobile_app/presentation/mobile_money_payout_quote_controller.dart';
 import 'package:mobile_app/services/mobile_money_payout_quote_repository.dart';
 
-typedef _QuoteLoader = Future<MobileMoneyPayoutQuote> Function();
+typedef _QuoteLoader = Future<MobileMoneyPayoutQuote> Function(
+  MobileMoneyPayoutQuoteIntent intent,
+);
 
 class _FakeQuoteRepository implements MobileMoneyPayoutQuoteRepository {
   _FakeQuoteRepository(this.loader);
@@ -21,7 +22,8 @@ class _FakeQuoteRepository implements MobileMoneyPayoutQuoteRepository {
   Future<MobileMoneyPayoutQuote> createQuoteFromIntent(
     MobileMoneyPayoutQuoteIntent intent,
   ) {
-    throw StateError('createQuoteFromIntent is not used by page tests.');
+    callCount++;
+    return loader(intent);
   }
 
   @override
@@ -33,31 +35,22 @@ class _FakeQuoteRepository implements MobileMoneyPayoutQuoteRepository {
     required String operatorCode,
     required int sourceAmountMinor,
   }) {
-    expect(sourceCountryCode, 'DE');
-    expect(sourceCurrencyCode, 'EUR');
-    expect(destinationCountryCode, 'CM');
-    expect(destinationCurrencyCode, 'XAF');
-    expect(operatorCode, 'MTN_CM');
-    expect(sourceAmountMinor, 1000);
-    callCount++;
-    return loader();
+    throw StateError('The presentation must use the payout quote intent.');
   }
 }
 
-MobileMoneyPayoutRequest _payout() => const MobileMoneyPayoutRequest(
-      beneficiary: MobileMoneyBeneficiary(
-        displayName: 'Beneficiary',
-        phoneNumberE164: '+237650000000',
+MobileMoneyPayoutQuoteIntent _intent() =>
+    const MobileMoneyPayoutQuoteIntent(
+      sourceCountryCode: 'DE',
+      sourceCurrencyCode: 'EUR',
+      destinationCurrencyCode: 'XAF',
+      sourceAmountMinor: 1000,
+      beneficiary: BeneficiaryQuoteDraft(
+        normalizedPhoneNumber: '+237650000000',
         countryCode: 'CM',
         operatorCode: 'MTN_CM',
-        currencyCode: 'XAF',
+        accountHolderName: 'Beneficiary',
       ),
-      sendAmountMinor: 1000,
-      sendCurrencyCode: 'EUR',
-      payoutAmountMinor: 650000,
-      payoutCurrencyCode: 'XAF',
-      fundingAllocations: <FundingAllocation>[],
-      idempotencyKey: 'quote-ui-test',
     );
 
 MobileMoneyPayoutQuote _quote() => MobileMoneyPayoutQuote(
@@ -87,18 +80,27 @@ Widget _app(
   return MaterialApp(
     home: MobileMoneyPayoutQuotePage(
       controller: controller,
-      sourceCountryCode: 'DE',
-      payout: _payout(),
+      intent: _intent(),
       onContinue: onContinue,
     ),
   );
 }
 
 void main() {
-  testWidgets('shows loading then backend quote without executing a payout',
+  testWidgets('loads the backend quote from the payout quote intent',
       (tester) async {
     final completer = Completer<MobileMoneyPayoutQuote>();
-    final repository = _FakeQuoteRepository(() => completer.future);
+    final repository = _FakeQuoteRepository((intent) {
+      expect(intent.sourceCountryCode, 'DE');
+      expect(intent.sourceCurrencyCode, 'EUR');
+      expect(intent.destinationCurrencyCode, 'XAF');
+      expect(intent.sourceAmountMinor, 1000);
+      expect(intent.beneficiary.countryCode, 'CM');
+      expect(intent.beneficiary.operatorCode, 'MTN_CM');
+      expect(intent.beneficiary.normalizedPhoneNumber, '+237650000000');
+      expect(intent.beneficiary.accountHolderName, 'Beneficiary');
+      return completer.future;
+    });
     final controller = MobileMoneyPayoutQuoteController(
       repository: repository,
     );
@@ -132,11 +134,17 @@ void main() {
     expect(repository.callCount, 1);
   });
 
-  testWidgets('renders failure and retry requests a fresh quote',
+  testWidgets('retry requests the same intent without launching a payout',
       (tester) async {
     var shouldFail = true;
     final retryCompleter = Completer<MobileMoneyPayoutQuote>();
-    final repository = _FakeQuoteRepository(() {
+    final expectedIntent = _intent();
+    final repository = _FakeQuoteRepository((intent) {
+      expect(intent.sourceCountryCode, expectedIntent.sourceCountryCode);
+      expect(
+        intent.beneficiary.normalizedPhoneNumber,
+        expectedIntent.beneficiary.normalizedPhoneNumber,
+      );
       if (shouldFail) {
         return Future<MobileMoneyPayoutQuote>.error(
           StateError('quote unavailable'),

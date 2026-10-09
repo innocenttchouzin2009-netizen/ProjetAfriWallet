@@ -12,6 +12,8 @@ internal static class PayoutOrchestrationScenarios
             ("orchestrator persists and submits accepted payout", AcceptedPayout),
             ("provider rejection marks payout failed", RejectedPayout),
             ("idempotent replay avoids duplicate provider submission", IdempotentReplay),
+            ("conflicting replay is rejected deterministically", ConflictingReplayIsRejected),
+            ("concurrent identical orchestration creates and submits once", ConcurrentIdenticalOrchestration),
             ("request fingerprint is deterministic and payload-sensitive", RequestFingerprintIsDeterministic),
             ("create-or-get is atomic under concurrent identical requests", ConcurrentCreateOrGet),
             ("create-or-get preserves stored fingerprint for conflict detection", ConflictingFingerprintIsObservable),
@@ -51,6 +53,7 @@ internal static class PayoutOrchestrationScenarios
         AssertEqual("provider-ref-001", response.ProviderReference);
         Assert(response.FailureCode is null, "Accepted payout must not have a failure code.");
         AssertEqual(1, provider.SubmissionCount);
+        AssertEqual(1, store.CreateOrGetCreatedCount);
         AssertEqual(3, store.SavedStatuses.Count);
         AssertEqual(MobileMoneyPayoutStatus.Created, store.SavedStatuses[0]);
         AssertEqual(MobileMoneyPayoutStatus.Processing, store.SavedStatuses[1]);
@@ -82,6 +85,7 @@ internal static class PayoutOrchestrationScenarios
         AssertEqual("PROVIDER_REJECTED", response.FailureCode);
         Assert(response.ProviderReference is null, "Rejected payout must not have a provider reference.");
         AssertEqual(1, provider.SubmissionCount);
+        AssertEqual(1, store.CreateOrGetCreatedCount);
         AssertEqual(MobileMoneyPayoutStatus.Failed, store.SavedStatuses[^1]);
     }
 
@@ -103,7 +107,9 @@ internal static class PayoutOrchestrationScenarios
         existing.Start(Utc(14, 1));
         existing.MarkSubmitted("provider-existing", Utc(14, 2));
 
-        var store = new ScenarioPayoutStore(existing);
+        var fingerprint = RequestFingerprint.FromCanonicalPayload(
+            "wallet-001|DE|EUR|25000|XAF|+237690000001|CM|MTN-CM");
+        var store = new ScenarioPayoutStore(existing, fingerprint);
         var provider = new ScenarioPayoutProvider(
             MobileMoneyPayoutSubmissionResult.Success("should-not-be-used"));
         var orchestrator = CreateOrchestrator(
@@ -119,6 +125,80 @@ internal static class PayoutOrchestrationScenarios
         AssertEqual("provider-existing", response.ProviderReference);
         AssertEqual(0, provider.SubmissionCount);
         AssertEqual(0, store.SavedStatuses.Count);
+        AssertEqual(0, store.CreateOrGetCreatedCount);
+    }
+
+    private static void ConflictingReplayIsRejected()
+    {
+        var createdAt = Utc(14, 10);
+        var existing = Candidate(
+            "key-conflicting-replay",
+            25_000,
+            createdAt);
+        var storedFingerprint = RequestFingerprint.FromCanonicalPayload(
+            "wallet-001|DE|EUR|25000|XAF|+237690000001|CM|MTN-CM");
+        var store = new ScenarioPayoutStore(existing, storedFingerprint);
+        var provider = new ScenarioPayoutProvider(
+            MobileMoneyPayoutSubmissionResult.Success("must-not-submit"));
+        var orchestrator = CreateOrchestrator(
+            store,
+            provider,
+            new ConfiguredMobileMoneyPayoutEligibilityPolicy([]));
+
+        try
+        {
+            orchestrator.CreateAndSubmitAsync(
+                ValidRequest(
+                    "key-conflicting-replay",
+                    amountMinor: 30_000)).GetAwaiter().GetResult();
+        }
+        catch (MobileMoneyPayoutIdempotencyConflictException exception)
+        {
+            AssertEqual(
+                MobileMoneyPayoutIdempotencyConflictException.ConflictCode,
+                exception.Code);
+            AssertEqual(0, provider.SubmissionCount);
+            AssertEqual(0, store.SavedStatuses.Count);
+            AssertEqual(0, store.CreateOrGetCreatedCount);
+            return;
+        }
+
+        throw new InvalidOperationException(
+            "Expected deterministic idempotency conflict.");
+    }
+
+    private static void ConcurrentIdenticalOrchestration()
+    {
+        var store = new ScenarioPayoutStore();
+        var provider = new ScenarioPayoutProvider(
+            MobileMoneyPayoutSubmissionResult.Success("provider-concurrent"));
+        var orchestrator = CreateOrchestrator(
+            store,
+            provider,
+            EligiblePolicy(),
+            new IncrementingPayoutClock(Utc(14, 20)));
+
+        using var start = new ManualResetEventSlim(false);
+
+        var tasks = Enumerable.Range(0, 32)
+            .Select(_ => Task.Run(async () =>
+            {
+                start.Wait();
+                return await orchestrator.CreateAndSubmitAsync(
+                    ValidRequest("key-orchestrator-concurrent"));
+            }))
+            .ToArray();
+
+        start.Set();
+        var responses = Task.WhenAll(tasks).GetAwaiter().GetResult();
+
+        AssertEqual(1, store.CreateOrGetCreatedCount);
+        AssertEqual(1, provider.SubmissionCount);
+
+        var payoutId = responses[0].PayoutId;
+        Assert(
+            responses.All(response => response.PayoutId == payoutId),
+            "Concurrent identical requests must resolve to one payout.");
     }
 
     private static void RequestFingerprintIsDeterministic()
@@ -268,6 +348,7 @@ internal static class PayoutOrchestrationScenarios
             AssertEqual(expectedCode, exception.Code);
             AssertEqual(0, provider.SubmissionCount);
             AssertEqual(0, store.SavedStatuses.Count);
+            AssertEqual(0, store.CreateOrGetCreatedCount);
             return;
         }
 
@@ -280,10 +361,21 @@ internal static class PayoutOrchestrationScenarios
         ScenarioPayoutProvider provider,
         IMobileMoneyPayoutEligibilityPolicy policy,
         params DateTimeOffset[] times) =>
+        CreateOrchestrator(
+            store,
+            provider,
+            policy,
+            new ScenarioPayoutClock(times));
+
+    private static MobileMoneyPayoutOrchestrator CreateOrchestrator(
+        ScenarioPayoutStore store,
+        ScenarioPayoutProvider provider,
+        IMobileMoneyPayoutEligibilityPolicy policy,
+        IMobileMoneyPayoutClock clock) =>
         new(
             store,
             provider,
-            new ScenarioPayoutClock(times),
+            clock,
             policy);
 
     private static IMobileMoneyPayoutEligibilityPolicy EligiblePolicy() =>
@@ -312,12 +404,13 @@ internal static class PayoutOrchestrationScenarios
         string sourceCountryCode = "DE",
         string sourceCurrency = "EUR",
         string destinationCountryCode = "CM",
-        string operatorCode = "MTN-CM") =>
+        string operatorCode = "MTN-CM",
+        long amountMinor = 25_000) =>
         new(
             "wallet-001",
             sourceCountryCode,
             sourceCurrency,
-            25_000,
+            amountMinor,
             "xaf",
             new MobileMoneyBeneficiaryRequest(
                 "+237690000001",
@@ -356,6 +449,14 @@ internal static class PayoutOrchestrationScenarios
         {
             foreach (var payout in payouts)
                 _byIdempotency[payout.IdempotencyKey] = payout;
+        }
+
+        public ScenarioPayoutStore(
+            MobileMoneyPayout payout,
+            RequestFingerprint fingerprint)
+            : this(payout)
+        {
+            _fingerprints[payout.IdempotencyKey] = fingerprint;
         }
 
         public List<MobileMoneyPayoutStatus> SavedStatuses { get; } = [];
@@ -406,6 +507,7 @@ internal static class PayoutOrchestrationScenarios
                 _byIdempotency[candidate.IdempotencyKey] = candidate;
                 _fingerprints[candidate.IdempotencyKey] = requestFingerprint;
                 CreateOrGetCreatedCount++;
+                SavedStatuses.Add(candidate.Status);
 
                 return Task.FromResult(
                     new MobileMoneyPayoutCreateOrGetResult(
@@ -434,6 +536,7 @@ internal static class PayoutOrchestrationScenarios
     private sealed class ScenarioPayoutProvider : IMobileMoneyPayoutProvider
     {
         private readonly MobileMoneyPayoutSubmissionResult _result;
+        private int _submissionCount;
 
         public ScenarioPayoutProvider(
             MobileMoneyPayoutSubmissionResult result)
@@ -441,7 +544,7 @@ internal static class PayoutOrchestrationScenarios
             _result = result;
         }
 
-        public int SubmissionCount { get; private set; }
+        public int SubmissionCount => Volatile.Read(ref _submissionCount);
         public MobileMoneyPayoutSubmission? LastSubmission { get; private set; }
 
         public Task<MobileMoneyPayoutSubmissionResult> SubmitAsync(
@@ -449,7 +552,7 @@ internal static class PayoutOrchestrationScenarios
             CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            SubmissionCount++;
+            Interlocked.Increment(ref _submissionCount);
             LastSubmission = submission;
             return Task.FromResult(_result);
         }
@@ -469,5 +572,19 @@ internal static class PayoutOrchestrationScenarios
                 ? _times.Dequeue()
                 : throw new InvalidOperationException(
                     "No clock value was expected for this scenario.");
+    }
+
+    private sealed class IncrementingPayoutClock : IMobileMoneyPayoutClock
+    {
+        private readonly DateTimeOffset _origin;
+        private long _ticks;
+
+        public IncrementingPayoutClock(DateTimeOffset origin)
+        {
+            _origin = origin;
+        }
+
+        public DateTimeOffset UtcNow =>
+            _origin.AddTicks(Interlocked.Increment(ref _ticks) - 1);
     }
 }

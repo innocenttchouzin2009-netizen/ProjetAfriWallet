@@ -1,3 +1,4 @@
+using System.Globalization;
 using MobileMoney.Production.Payout.Abstractions;
 using MobileMoney.Production.Payout.Contracts;
 using MobileMoney.Production.Payout.Domain;
@@ -34,19 +35,12 @@ public sealed class MobileMoneyPayoutOrchestrator
                 "Idempotency key is required.",
                 nameof(request));
 
-        var idempotencyKey = request.IdempotencyKey.Trim();
-        var existing = await _store.FindByIdempotencyKeyAsync(
-            idempotencyKey,
-            cancellationToken);
-
-        if (existing is not null)
-            return ToResponse(existing);
-
         if (request.Beneficiary is null)
             throw new ArgumentException(
                 "Beneficiary is required.",
                 nameof(request));
 
+        var idempotencyKey = request.IdempotencyKey.Trim();
         var beneficiary = new MobileMoneyBeneficiary(
             request.Beneficiary.Msisdn,
             request.Beneficiary.CountryCode,
@@ -60,6 +54,32 @@ public sealed class MobileMoneyPayoutOrchestrator
             request.Currency,
             beneficiary.OperatorCode);
 
+        var requestFingerprint = CreateRequestFingerprint(
+            request,
+            beneficiary,
+            corridor);
+
+        var existing = await _store.FindByIdempotencyKeyAsync(
+            idempotencyKey,
+            cancellationToken);
+
+        if (existing is not null)
+        {
+            var replayCandidate = CreateCandidate(
+                request,
+                beneficiary,
+                idempotencyKey,
+                existing.CreatedAtUtc);
+
+            var replay = await _store.CreateOrGetAsync(
+                replayCandidate,
+                requestFingerprint,
+                cancellationToken);
+
+            EnsureFingerprintMatches(replay, requestFingerprint);
+            return ToResponse(replay.Payout);
+        }
+
         var eligibility = await _eligibilityPolicy.EvaluateAsync(
             corridor,
             cancellationToken);
@@ -71,15 +91,23 @@ public sealed class MobileMoneyPayoutOrchestrator
                 MobileMoneyPayoutEligibilityCodes.CorridorNotSupported);
         }
 
-        var payout = MobileMoneyPayout.Create(
-            request.SourceWalletId,
-            request.AmountMinor,
-            request.Currency,
+        var candidate = CreateCandidate(
+            request,
             beneficiary,
             idempotencyKey,
             _clock.UtcNow);
 
-        await _store.SaveAsync(payout, cancellationToken);
+        var createOrGet = await _store.CreateOrGetAsync(
+            candidate,
+            requestFingerprint,
+            cancellationToken);
+
+        EnsureFingerprintMatches(createOrGet, requestFingerprint);
+
+        if (createOrGet.IsReplay)
+            return ToResponse(createOrGet.Payout);
+
+        var payout = createOrGet.Payout;
 
         payout.Start(_clock.UtcNow);
         await _store.SaveAsync(payout, cancellationToken);
@@ -113,6 +141,51 @@ public sealed class MobileMoneyPayoutOrchestrator
 
         await _store.SaveAsync(payout, cancellationToken);
         return ToResponse(payout);
+    }
+
+    private static MobileMoneyPayout CreateCandidate(
+        CreateMobileMoneyPayoutRequest request,
+        MobileMoneyBeneficiary beneficiary,
+        string idempotencyKey,
+        DateTimeOffset createdAtUtc) =>
+        MobileMoneyPayout.Create(
+            request.SourceWalletId,
+            request.AmountMinor,
+            request.Currency,
+            beneficiary,
+            idempotencyKey,
+            createdAtUtc);
+
+    private static RequestFingerprint CreateRequestFingerprint(
+        CreateMobileMoneyPayoutRequest request,
+        MobileMoneyBeneficiary beneficiary,
+        MobileMoneyPayoutCorridor corridor)
+    {
+        if (string.IsNullOrWhiteSpace(request.SourceWalletId))
+            throw new ArgumentException(
+                "Source wallet id is required.",
+                nameof(request));
+
+        var canonicalPayload = string.Join(
+            "|",
+            request.SourceWalletId.Trim(),
+            corridor.SourceCountryCode,
+            corridor.SourceCurrency,
+            request.AmountMinor.ToString(CultureInfo.InvariantCulture),
+            corridor.DestinationCurrency,
+            beneficiary.Msisdn,
+            beneficiary.CountryCode,
+            beneficiary.OperatorCode);
+
+        return RequestFingerprint.FromCanonicalPayload(canonicalPayload);
+    }
+
+    private static void EnsureFingerprintMatches(
+        MobileMoneyPayoutCreateOrGetResult result,
+        RequestFingerprint requestedFingerprint)
+    {
+        if (!result.Matches(requestedFingerprint))
+            throw new MobileMoneyPayoutIdempotencyConflictException();
     }
 
     private static MobileMoneyPayoutResponse ToResponse(

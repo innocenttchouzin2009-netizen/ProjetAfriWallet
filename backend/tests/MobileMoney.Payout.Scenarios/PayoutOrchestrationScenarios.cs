@@ -12,6 +12,9 @@ internal static class PayoutOrchestrationScenarios
             ("orchestrator persists and submits accepted payout", AcceptedPayout),
             ("provider rejection marks payout failed", RejectedPayout),
             ("idempotent replay avoids duplicate provider submission", IdempotentReplay),
+            ("request fingerprint is deterministic and payload-sensitive", RequestFingerprintIsDeterministic),
+            ("create-or-get is atomic under concurrent identical requests", ConcurrentCreateOrGet),
+            ("create-or-get preserves stored fingerprint for conflict detection", ConflictingFingerprintIsObservable),
             ("unsupported corridor is rejected before provider submission", UnsupportedCorridor),
             ("unsupported operator is rejected without silent substitution", UnsupportedOperator),
             ("disabled corridor is rejected before provider submission", DisabledCorridor),
@@ -117,6 +120,102 @@ internal static class PayoutOrchestrationScenarios
         AssertEqual(0, provider.SubmissionCount);
         AssertEqual(0, store.SavedStatuses.Count);
     }
+
+    private static void RequestFingerprintIsDeterministic()
+    {
+        var first = RequestFingerprint.FromCanonicalPayload(
+            "wallet-001|DE|EUR|25000|XAF|+237690000001|CM|MTN-CM");
+        var replay = RequestFingerprint.FromCanonicalPayload(
+            "wallet-001|DE|EUR|25000|XAF|+237690000001|CM|MTN-CM");
+        var changedAmount = RequestFingerprint.FromCanonicalPayload(
+            "wallet-001|DE|EUR|30000|XAF|+237690000001|CM|MTN-CM");
+
+        AssertEqual(first, replay);
+        Assert(first != changedAmount, "Different canonical payloads must have different fingerprints.");
+        AssertEqual(64, first.Value.Length);
+        AssertEqual(first, RequestFingerprint.Parse(first.Value.ToUpperInvariant()));
+    }
+
+    private static void ConcurrentCreateOrGet()
+    {
+        var store = new ScenarioPayoutStore();
+        var fingerprint = RequestFingerprint.FromCanonicalPayload(
+            "wallet-001|DE|EUR|25000|XAF|+237690000001|CM|MTN-CM");
+        using var start = new ManualResetEventSlim(false);
+
+        var tasks = Enumerable.Range(0, 32)
+            .Select(index => Task.Run(async () =>
+            {
+                start.Wait();
+                return await store.CreateOrGetAsync(
+                    Candidate(
+                        "key-concurrent",
+                        25_000,
+                        Utc(15, index % 10)),
+                    fingerprint);
+            }))
+            .ToArray();
+
+        start.Set();
+        var results = Task.WhenAll(tasks).GetAwaiter().GetResult();
+
+        var created = results.Where(result => result.Created).ToArray();
+        AssertEqual(1, created.Length);
+        AssertEqual(1, store.CreateOrGetCreatedCount);
+
+        var winner = created[0].Payout;
+        Assert(
+            results.All(result => result.Payout.PayoutId == winner.PayoutId),
+            "Concurrent create-or-get must return the same stored payout.");
+        Assert(
+            results.All(result => result.StoredFingerprint == fingerprint),
+            "Concurrent replays must return the stored request fingerprint.");
+        Assert(
+            results.Count(result => result.IsReplay) == 31,
+            "All losing concurrent requests must be classified as replays.");
+    }
+
+    private static void ConflictingFingerprintIsObservable()
+    {
+        var store = new ScenarioPayoutStore();
+        var firstFingerprint = RequestFingerprint.FromCanonicalPayload(
+            "wallet-001|DE|EUR|25000|XAF|+237690000001|CM|MTN-CM");
+        var conflictingFingerprint = RequestFingerprint.FromCanonicalPayload(
+            "wallet-001|DE|EUR|30000|XAF|+237690000001|CM|MTN-CM");
+
+        var first = store.CreateOrGetAsync(
+            Candidate("key-conflict", 25_000, Utc(16, 0)),
+            firstFingerprint).GetAwaiter().GetResult();
+
+        var replay = store.CreateOrGetAsync(
+            Candidate("key-conflict", 30_000, Utc(16, 1)),
+            conflictingFingerprint).GetAwaiter().GetResult();
+
+        Assert(first.Created, "First create-or-get must create the payout.");
+        Assert(replay.IsReplay, "Second create-or-get must return the stored payout.");
+        AssertEqual(first.Payout.PayoutId, replay.Payout.PayoutId);
+        AssertEqual(firstFingerprint, replay.StoredFingerprint);
+        Assert(
+            !replay.Matches(conflictingFingerprint),
+            "Stored fingerprint mismatch must remain observable to the caller.");
+        AssertEqual(1, store.CreateOrGetCreatedCount);
+    }
+
+    private static MobileMoneyPayout Candidate(
+        string idempotencyKey,
+        long amountMinor,
+        DateTimeOffset now) =>
+        MobileMoneyPayout.Create(
+            "wallet-001",
+            amountMinor,
+            "XAF",
+            new MobileMoneyBeneficiary(
+                "+237690000001",
+                "CM",
+                "MTN-CM",
+                "Ada"),
+            idempotencyKey,
+            now);
 
     private static void UnsupportedCorridor()
     {
@@ -249,6 +348,9 @@ internal static class PayoutOrchestrationScenarios
     {
         private readonly Dictionary<string, MobileMoneyPayout> _byIdempotency =
             new(StringComparer.Ordinal);
+        private readonly Dictionary<string, RequestFingerprint> _fingerprints =
+            new(StringComparer.Ordinal);
+        private readonly object _gate = new();
 
         public ScenarioPayoutStore(params MobileMoneyPayout[] payouts)
         {
@@ -257,14 +359,60 @@ internal static class PayoutOrchestrationScenarios
         }
 
         public List<MobileMoneyPayoutStatus> SavedStatuses { get; } = [];
+        public int CreateOrGetCreatedCount { get; private set; }
 
         public Task<MobileMoneyPayout?> FindByIdempotencyKeyAsync(
             string idempotencyKey,
             CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            _byIdempotency.TryGetValue(idempotencyKey, out var payout);
-            return Task.FromResult(payout);
+
+            lock (_gate)
+            {
+                _byIdempotency.TryGetValue(idempotencyKey, out var payout);
+                return Task.FromResult(payout);
+            }
+        }
+
+        public Task<MobileMoneyPayoutCreateOrGetResult> CreateOrGetAsync(
+            MobileMoneyPayout candidate,
+            RequestFingerprint requestFingerprint,
+            CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(candidate);
+            cancellationToken.ThrowIfCancellationRequested();
+
+            lock (_gate)
+            {
+                if (_byIdempotency.TryGetValue(
+                    candidate.IdempotencyKey,
+                    out var existing))
+                {
+                    if (!_fingerprints.TryGetValue(
+                        candidate.IdempotencyKey,
+                        out var storedFingerprint))
+                    {
+                        storedFingerprint = requestFingerprint;
+                        _fingerprints[candidate.IdempotencyKey] = storedFingerprint;
+                    }
+
+                    return Task.FromResult(
+                        new MobileMoneyPayoutCreateOrGetResult(
+                            existing,
+                            storedFingerprint,
+                            Created: false));
+                }
+
+                _byIdempotency[candidate.IdempotencyKey] = candidate;
+                _fingerprints[candidate.IdempotencyKey] = requestFingerprint;
+                CreateOrGetCreatedCount++;
+
+                return Task.FromResult(
+                    new MobileMoneyPayoutCreateOrGetResult(
+                        candidate,
+                        requestFingerprint,
+                        Created: true));
+            }
         }
 
         public Task SaveAsync(
@@ -272,8 +420,13 @@ internal static class PayoutOrchestrationScenarios
             CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            _byIdempotency[payout.IdempotencyKey] = payout;
-            SavedStatuses.Add(payout.Status);
+
+            lock (_gate)
+            {
+                _byIdempotency[payout.IdempotencyKey] = payout;
+                SavedStatuses.Add(payout.Status);
+            }
+
             return Task.CompletedTask;
         }
     }

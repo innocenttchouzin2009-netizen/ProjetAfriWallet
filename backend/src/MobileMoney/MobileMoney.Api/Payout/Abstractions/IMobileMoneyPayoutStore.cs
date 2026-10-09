@@ -8,6 +8,11 @@ public interface IMobileMoneyPayoutStore
         string idempotencyKey,
         CancellationToken cancellationToken = default);
 
+    Task<MobileMoneyPayoutCreateOrGetResult> CreateOrGetAsync(
+        MobileMoneyPayout candidate,
+        RequestFingerprint requestFingerprint,
+        CancellationToken cancellationToken = default);
+
     Task SaveAsync(
         MobileMoneyPayout payout,
         CancellationToken cancellationToken = default);

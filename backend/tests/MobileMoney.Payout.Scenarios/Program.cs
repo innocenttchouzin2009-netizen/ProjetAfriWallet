@@ -26,6 +26,7 @@ Console.WriteLine($"MobileMoney payout domain/contracts scenarios: {scenarios.Le
 
 PayoutOrchestrationScenarios.RunAll();
 PayoutExecutionContractScenarios.RunAll();
+PayoutExecutionResolutionScenarios.RunAll();
 
 static void ValidCreation()
 {

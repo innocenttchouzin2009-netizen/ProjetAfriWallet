@@ -8,7 +8,7 @@ public interface IMobileMoneyPayoutExecutionIdempotencyStore
         string idempotencyKey,
         CancellationToken cancellationToken = default);
 
-    Task SaveAsync(
+    Task<bool> TryCreateAsync(
         MobileMoneyPayoutExecutionIdempotencyEntry entry,
         CancellationToken cancellationToken = default);
 }

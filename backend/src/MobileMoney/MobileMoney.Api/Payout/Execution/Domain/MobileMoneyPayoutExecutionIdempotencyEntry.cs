@@ -45,7 +45,8 @@ public sealed record MobileMoneyPayoutExecutionIdempotencyEntry
     {
         ArgumentNullException.ThrowIfNull(intent);
 
-        return string.Equals(
+        return QuoteId == intent.QuoteId
+            && string.Equals(
                 IdempotencyKey,
                 intent.IdempotencyKey,
                 StringComparison.Ordinal)

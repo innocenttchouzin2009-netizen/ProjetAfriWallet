@@ -25,6 +25,7 @@ foreach (var scenario in scenarios)
 Console.WriteLine($"MobileMoney payout domain/contracts scenarios: {scenarios.Length}/{scenarios.Length} passed.");
 
 PayoutOrchestrationScenarios.RunAll();
+PayoutExecutionContractScenarios.RunAll();
 
 static void ValidCreation()
 {

@@ -28,13 +28,13 @@ jobs:
 
     env:
       BASE_SHA: 3f9afe7385dd770492ffe494e3bb66048ee64786
-      CANDIDATE_SHA: 9cf0c941825c39ba53ce79c6c0ee2a0dc49d0213
+      CANDIDATE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
 
     steps:
       - name: Checkout exact candidate
         uses: actions/checkout@v4
         with:
-          ref: 9cf0c941825c39ba53ce79c6c0ee2a0dc49d0213
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
 
       - name: Assert certification lineage

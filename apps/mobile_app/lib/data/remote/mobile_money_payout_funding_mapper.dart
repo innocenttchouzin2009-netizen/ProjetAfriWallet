@@ -289,31 +289,7 @@ class MobileMoneyPayoutFundingMapper {
   }
 
   static final RegExp _guidPattern = RegExp(
-    r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}
-
-  static void _requireCurrency(String value, String name) {
-    if (!RegExp(r'^[A-Z]{3}$').hasMatch(value)) {
-      throw ArgumentError.value(
-        value,
-        name,
-        'must be an uppercase ISO-4217 code',
-      );
-    }
-  }
-
-  static void _requireNonEmpty(String value, String name) {
-    if (value.trim().isEmpty) {
-      throw ArgumentError.value(value, name, 'must not be empty');
-    }
-  }
-
-  static void _requireUtc(DateTime value, String name) {
-    if (!value.isUtc) {
-      throw ArgumentError.value(value, name, 'must be UTC');
-    }
-  }
-}
-,
+    r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
   );
 
   static void _requireGuid(String value, String name) {

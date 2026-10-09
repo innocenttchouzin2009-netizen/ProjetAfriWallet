@@ -145,6 +145,12 @@ void main() {
       find.byKey(const Key('momo-quote-destination-amount')),
       findsOneWidget,
     );
+    await tester.drag(
+      find.byKey(const Key('momo-quote-ready')),
+      const Offset(0, -600),
+    );
+    await tester.pumpAndSettle();
+
     expect(find.byKey(const Key('momo-quote-no-payout')), findsOneWidget);
     expect(find.byKey(const Key('momo-quote-continue')), findsOneWidget);
     expect(continuedQuote, isNull);

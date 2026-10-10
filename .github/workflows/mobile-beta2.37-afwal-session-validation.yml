@@ -1,0 +1,76 @@
+name: Mobile Beta2.37 AfWal Session Validation
+
+on:
+  push:
+    branches:
+      - feature/mobile-beta2.37
+    paths:
+      - 'backend/src/MobileMoney/**'
+      - 'backend/tests/MobileMoney.AfWalSessionValidation.Scenarios/**'
+      - '.github/workflows/mobile-beta2.37-afwal-session-validation.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'backend/src/MobileMoney/**'
+      - 'backend/tests/MobileMoney.AfWalSessionValidation.Scenarios/**'
+  workflow_dispatch:
+    inputs:
+      candidate_sha:
+        description: Full commit SHA to certify
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    name: Certify Beta2.37 Commit 1 - AfWal session validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    env:
+      CANDIDATE_SHA: ${{ inputs.candidate_sha || github.sha }}
+      BASE_SHA: a531b9ad7650e5a646e2953f7cf6af5b6a31f5e9
+
+    steps:
+      - name: Validate candidate SHA
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ ! "${CANDIDATE_SHA}" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "candidate SHA must be a full lowercase 40-character Git SHA."
+            exit 1
+          fi
+
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.candidate_sha || github.sha }}
+          fetch-depth: 0
+
+      - name: Assert candidate lineage
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${CANDIDATE_SHA}"
+          git cat-file -e "${BASE_SHA}^{commit}"
+          git merge-base --is-ancestor "${BASE_SHA}" "${CANDIDATE_SHA}"
+
+      - name: Set up .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build MobileMoney.Api
+        run: dotnet build backend/src/MobileMoney/MobileMoney.Api/MobileMoney.Api.csproj --configuration Release
+
+      - name: Run AfWal Session Validation scenarios
+        run: dotnet run --project backend/tests/MobileMoney.AfWalSessionValidation.Scenarios
+
+      - name: Verify candidate diff cleanliness
+        run: git diff --check a531b9ad7650e5a646e2953f7cf6af5b6a31f5e9...HEAD

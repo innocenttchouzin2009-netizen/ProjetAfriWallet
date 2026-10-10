@@ -17,6 +17,7 @@ internal static class EndpointCertification
         CertifyRoutes();
         CertifyAccessTokenValidation();
         await CertifyApplicationFlowAsync();
+        await CertifyExpiredSessionStatusPersistsAsync();
         Console.WriteLine("IdentityService.Auth endpoint and API certification scenarios passed.");
     }
 
@@ -103,6 +104,44 @@ internal static class EndpointCertification
         Assert(!revokedSession.Succeeded && revokedSession.ErrorCode == AuthErrorCode.SessionRevoked, "Reuse detection must revoke the compromised session.");
     }
 
+    private static async Task CertifyExpiredSessionStatusPersistsAsync()
+    {
+        var now = new DateTimeOffset(2026, 10, 10, 20, 0, 0, TimeSpan.Zero);
+        var clock = new MutableCertificationClock(now);
+        var refreshTokens = new CryptographicRefreshTokenService();
+        var sessions = new InMemoryAuthSessionStore();
+        var users = new InMemoryAuthUserStore();
+        var jwtOptions = new JwtAccessTokenOptions(
+            "https://identity.afrikawallet.test",
+            "afrikawallet-mobile",
+            "0123456789abcdef0123456789abcdef");
+        var lifecycle = new AuthSessionLifecycleService(
+            sessions,
+            refreshTokens,
+            clock,
+            new AuthSessionOptions(TimeSpan.FromMinutes(5)));
+        var auth = new AuthApplicationService(
+            users,
+            sessions,
+            new AspNetPasswordHasher(),
+            new JwtAccessTokenIssuer(jwtOptions, clock),
+            lifecycle,
+            clock,
+            AuthApplicationOptions.Default);
+        var userId = Guid.NewGuid();
+        var grant = await lifecycle.CreateAsync(userId, "expiry-certification-device");
+
+        clock.Advance(TimeSpan.FromMinutes(5));
+        var expired = await auth.GetSessionAsync(userId, grant.Session.Id);
+
+        Assert(!expired.Succeeded && expired.ErrorCode == AuthErrorCode.SessionExpired,
+            "Session lookup at the expiry instant must be rejected as expired.");
+
+        var persisted = await sessions.GetByIdAsync(grant.Session.Id);
+        Assert(persisted?.Status == AuthSessionStatus.Expired,
+            "Session expiration detected by GetSessionAsync must persist the Expired status.");
+    }
+
     private static void Assert(bool condition, string message)
     {
         if (!condition)
@@ -114,5 +153,12 @@ internal static class EndpointCertification
     private sealed class CertificationClock(DateTimeOffset utcNow) : IClock
     {
         public DateTimeOffset UtcNow { get; } = utcNow;
+    }
+
+    private sealed class MutableCertificationClock(DateTimeOffset utcNow) : IClock
+    {
+        public DateTimeOffset UtcNow { get; private set; } = utcNow;
+
+        public void Advance(TimeSpan delta) => UtcNow = UtcNow.Add(delta);
     }
 }

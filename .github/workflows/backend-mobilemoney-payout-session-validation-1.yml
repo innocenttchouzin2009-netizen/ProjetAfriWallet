@@ -1,0 +1,109 @@
+name: AFW-BE-MOMO-PAYOUT-SESSION-VALIDATION-1
+
+on:
+  push:
+    branches:
+      - feature/backend-momo-payout-session-validation-1
+    paths:
+      - 'backend/src/MobileMoney/**'
+      - 'backend/tests/MobileMoney.SessionValidation.Scenarios/**'
+      - '.github/workflows/backend-mobilemoney-payout-session-validation-1.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'backend/src/MobileMoney/**'
+      - 'backend/tests/MobileMoney.SessionValidation.Scenarios/**'
+      - '.github/workflows/backend-mobilemoney-payout-session-validation-1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate MobileMoney payout session validation Commit 2
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      CANDIDATE_SHA: 5699c3638e4612e2da0b7939b1bebf86fb92dcd6
+      BASE_SHA: 7a22a07f2e5fbe42f5e322a9cfa44706135692ae
+
+    steps:
+      - name: Checkout certification branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate locked SHAs
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "${CANDIDATE_SHA}" =~ ^[0-9a-f]{40}$ ]]
+          [[ "${BASE_SHA}" =~ ^[0-9a-f]{40}$ ]]
+          git cat-file -e "${CANDIDATE_SHA}^{commit}"
+          git cat-file -e "${BASE_SHA}^{commit}"
+
+      - name: Checkout exact candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout --detach "${CANDIDATE_SHA}"
+          test "$(git rev-parse HEAD)" = "${CANDIDATE_SHA}"
+
+      - name: Assert scoped payout/funding diff
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t files < <(git diff --name-only "${BASE_SHA}...${CANDIDATE_SHA}")
+
+          test "${#files[@]}" -gt 0
+
+          for file in "${files[@]}"; do
+            case "${file}" in
+              backend/src/MobileMoney/MobileMoney.Api/Authentication/*|              backend/src/MobileMoney/MobileMoney.Api/Payout/Extensions/MobileMoneyPayoutEndpointExtensions.cs|              backend/src/MobileMoney/MobileMoney.Api/Payout/Quote/Extensions/MobileMoneyPayoutQuoteEndpointExtensions.cs|              backend/src/MobileMoney/MobileMoney.Api/Payout/Funding/Extensions/MobileMoneyPayoutFundingEndpointExtensions.cs|              backend/src/MobileMoney/MobileMoney.Api/Program.cs|              backend/tests/MobileMoney.SessionValidation.Scenarios/*)
+                ;;
+              *)
+                echo "Out-of-scope file in Commit 2: ${file}"
+                exit 1
+                ;;
+            esac
+
+            if [[ "${file}" == *Beneficiary* || "${file}" == *beneficiary* ]]; then
+              echo "Beneficiary lookup must remain untouched: ${file}"
+              exit 1
+            fi
+          done
+
+      - name: Set up .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore session validation scenarios
+        run: dotnet restore backend/tests/MobileMoney.SessionValidation.Scenarios/MobileMoney.SessionValidation.Scenarios.csproj
+
+      - name: Restore payout quote scenarios
+        run: dotnet restore backend/tests/MobileMoney.Payout.Quote.Scenarios/MobileMoney.Payout.Quote.Scenarios.csproj
+
+      - name: Restore payout funding scenarios
+        run: dotnet restore backend/tests/MobileMoney.Payout.Funding.Scenarios/MobileMoney.Payout.Funding.Scenarios.csproj
+
+      - name: Build MobileMoney.Api
+        run: dotnet build backend/src/MobileMoney/MobileMoney.Api/MobileMoney.Api.csproj --configuration Release --no-restore
+
+      - name: Run session validation scenarios
+        run: dotnet run --project backend/tests/MobileMoney.SessionValidation.Scenarios/MobileMoney.SessionValidation.Scenarios.csproj --configuration Release --no-restore
+
+      - name: Run payout quote scenarios
+        run: dotnet run --project backend/tests/MobileMoney.Payout.Quote.Scenarios/MobileMoney.Payout.Quote.Scenarios.csproj --configuration Release --no-restore
+
+      - name: Run payout funding scenarios
+        run: dotnet run --project backend/tests/MobileMoney.Payout.Funding.Scenarios/MobileMoney.Payout.Funding.Scenarios.csproj --configuration Release --no-restore
+
+      - name: Verify exact diff cleanliness
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check "${BASE_SHA}...${CANDIDATE_SHA}"

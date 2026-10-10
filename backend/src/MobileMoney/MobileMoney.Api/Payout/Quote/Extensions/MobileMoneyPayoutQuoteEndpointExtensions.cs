@@ -1,3 +1,4 @@
+using MobileMoney.Production.Authentication;
 using MobileMoney.Production.Correlation;
 using MobileMoney.Production.Payout.Application;
 using MobileMoney.Production.Payout.Contracts;
@@ -15,7 +16,8 @@ public static class MobileMoneyPayoutQuoteEndpointExtensions
     {
         ArgumentNullException.ThrowIfNull(endpoints);
 
-        endpoints.MapPost(Route, HandleAsync);
+        endpoints.MapPost(Route, HandleAsync)
+            .RequireAfWalSession();
 
         return endpoints;
     }

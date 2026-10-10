@@ -1,0 +1,157 @@
+name: Mobile Beta2.35 Funding API Contract Candidate Certification
+
+on:
+  push:
+    branches:
+      - feature/mobile-beta2.35
+    paths:
+      - '.github/workflows/mobile-beta2.35-funding-api-contract.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  statuses: write
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      BASE_SHA: e351587ca61f9bb933e8cd4a8da576a3a26b141f
+      FUNCTIONAL_SHA: 745e47536849bdc8e4e97dc45d851d1b2e675e6a
+      PREVIOUS_CI_SHA: 5da7e74ee43c80041c364c9dd2d4d83dc18d7c11
+      CANDIDATE_SHA: b0292e7f54d73670e02045e0379115558141ebbb
+      STATUS_CONTEXT: mobile-beta2.35/candidate-certification
+      WORKFLOW_PATH: .github/workflows/mobile-beta2.35-funding-api-contract.yml
+
+    defaults:
+      run:
+        working-directory: apps/mobile_app
+
+    steps:
+      - name: Checkout exact Beta2.35 candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.CANDIDATE_SHA }}
+          fetch-depth: 0
+
+      - name: Assert candidate lineage and scoped history
+        id: candidate_assertion
+        working-directory: .
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          actual_sha="$(git rev-parse HEAD)"
+          test "${actual_sha}" = "${CANDIDATE_SHA}"
+
+          git cat-file -e "${BASE_SHA}^{commit}"
+          git cat-file -e "${FUNCTIONAL_SHA}^{commit}"
+          git cat-file -e "${PREVIOUS_CI_SHA}^{commit}"
+          git cat-file -e "${CANDIDATE_SHA}^{commit}"
+
+          test "$(git merge-base "${BASE_SHA}" "${CANDIDATE_SHA}")" = "${BASE_SHA}"
+          test "$(git rev-parse "${FUNCTIONAL_SHA}^")" = "${BASE_SHA}"
+          test "$(git rev-parse "${PREVIOUS_CI_SHA}^")" = "${FUNCTIONAL_SHA}"
+          test "$(git rev-parse "${CANDIDATE_SHA}^")" = "${PREVIOUS_CI_SHA}"
+
+          functional_files="$(git diff-tree --no-commit-id --name-only -r "${FUNCTIONAL_SHA}")"
+          expected_functional_files="$(
+            printf '%s\n' \
+              'apps/mobile_app/lib/data/remote/mobile_money_payout_funding_dto.dart' \
+              'apps/mobile_app/lib/data/remote/mobile_money_payout_funding_mapper.dart' \
+              'apps/mobile_app/test/mobile_money_payout_funding_contract_test.dart'
+          )"
+          test "${functional_files}" = "${expected_functional_files}"
+
+          previous_ci_files="$(git diff-tree --no-commit-id --name-only -r "${PREVIOUS_CI_SHA}")"
+          test "${previous_ci_files}" = "${WORKFLOW_PATH}"
+
+          fix_files="$(git diff-tree --no-commit-id --name-only -r "${CANDIDATE_SHA}")"
+          test "${fix_files}" = 'apps/mobile_app/lib/data/remote/mobile_money_payout_funding_mapper.dart'
+
+      - name: Mark candidate certification pending
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: process.env.CANDIDATE_SHA,
+              state: 'pending',
+              context: process.env.STATUS_CONTEXT,
+              description: 'Beta2.35 Funding API Contract candidate certification in progress',
+              target_url: `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+            });
+
+      - name: Set up Flutter 3.47.2
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.2'
+          cache: true
+
+      - name: Flutter version
+        run: flutter --version
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Generate localizations
+        run: flutter gen-l10n
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test Mobile Money payout funding contract
+        run: flutter test test/mobile_money_payout_funding_contract_test.dart
+
+      - name: Run complete Flutter test suite
+        run: flutter test
+
+      - name: Verify Beta2.35 candidate diff
+        working-directory: .
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check "${BASE_SHA}..${CANDIDATE_SHA}"
+
+      - name: Write certification summary
+        if: always()
+        working-directory: .
+        shell: bash
+        run: |
+          {
+            echo "## Mobile Beta2.35 Funding API Contract candidate certification"
+            echo
+            echo "- Base: \`${BASE_SHA}\`"
+            echo "- Initial functional commit: \`${FUNCTIONAL_SHA}\`"
+            echo "- Previous CI-only commit: \`${PREVIOUS_CI_SHA}\`"
+            echo "- Certified candidate: \`${CANDIDATE_SHA}\`"
+            echo "- Flutter: \`3.47.2\`"
+            echo "- Analyze: \`flutter analyze\`"
+            echo "- Targeted test: \`mobile_money_payout_funding_contract_test.dart\`"
+            echo "- Full suite: \`flutter test\`"
+            echo "- Diff check: \`git diff --check ${BASE_SHA}..${CANDIDATE_SHA}\`"
+            echo "- Job status: **${{ job.status }}**"
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Report candidate certification status
+        if: always() && steps.candidate_assertion.outcome == 'success'
+        uses: actions/github-script@v7
+        env:
+          CERTIFICATION_JOB_STATUS: ${{ job.status }}
+        with:
+          script: |
+            const succeeded = process.env.CERTIFICATION_JOB_STATUS === 'success';
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: process.env.CANDIDATE_SHA,
+              state: succeeded ? 'success' : 'failure',
+              context: process.env.STATUS_CONTEXT,
+              description: succeeded
+                ? 'Beta2.35 Funding API Contract candidate certified'
+                : 'Beta2.35 Funding API Contract candidate certification failed',
+              target_url: `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+            });

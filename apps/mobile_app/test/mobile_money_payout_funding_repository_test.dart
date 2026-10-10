@@ -4,14 +4,17 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:mobile_app/data/remote/mobile_money_payout_funding_remote_data_source.dart';
+import 'package:mobile_app/models/auth_session.dart';
 import 'package:mobile_app/models/mobile_money_payout.dart';
 import 'package:mobile_app/models/mobile_money_payout_funding_intent.dart';
 import 'package:mobile_app/network/api_client.dart';
 import 'package:mobile_app/services/mobile_money_payout_funding_repository.dart';
+import 'package:mobile_app/services/secure_session_store.dart';
 
 void main() {
   group('RemoteMobileMoneyPayoutFundingRepository', () {
-    test('maps a certified funding intent to a domain funding plan', () async {
+    test('uses the authenticated session to load a domain funding plan',
+        () async {
       late http.Request capturedRequest;
       final repository = _repository(
         MockClient((request) async {
@@ -33,6 +36,10 @@ void main() {
       expect(
         capturedRequest.url.path,
         '/api/v1/mobile-money/payouts/funding/plan',
+      );
+      expect(
+        capturedRequest.headers['Authorization'],
+        'Bearer funding-access-token',
       );
       expect(plan.correlationId, '7d8fba6d-d06f-4bd5-98da-cb71d07bfef4');
       expect(plan.requiredAmountMinor, 10250);
@@ -94,10 +101,34 @@ void main() {
       );
       expect(called, isFalse);
     });
+
+    test('requires an authenticated session before the network call', () async {
+      var called = false;
+      final repository = _repository(
+        MockClient((_) async {
+          called = true;
+          return http.Response('{}', 200);
+        }),
+        authenticated: false,
+      );
+
+      await expectLater(
+        repository.planFunding(
+          correlationId: '7d8fba6d-d06f-4bd5-98da-cb71d07bfef4',
+          intent: _intent(),
+          requestedAtUtc: DateTime.utc(2026, 10, 10, 10, 30),
+        ),
+        throwsA(isA<MobileMoneyPayoutFundingUnavailableException>()),
+      );
+      expect(called, isFalse);
+    });
   });
 }
 
-RemoteMobileMoneyPayoutFundingRepository _repository(http.Client client) {
+RemoteMobileMoneyPayoutFundingRepository _repository(
+  http.Client client, {
+  bool authenticated = true,
+}) {
   return RemoteMobileMoneyPayoutFundingRepository(
     MobileMoneyPayoutFundingRemoteDataSource(
       ApiClient(
@@ -105,6 +136,20 @@ RemoteMobileMoneyPayoutFundingRepository _repository(http.Client client) {
         httpClient: client,
       ),
     ),
+    _MemoryAuthSessionStore(
+      authenticated ? _authenticatedSession() : null,
+    ),
+  );
+}
+
+StoredAuthSession _authenticatedSession() {
+  return StoredAuthSession(
+    accessToken: 'funding-access-token',
+    refreshToken: 'refresh-token',
+    tokenType: 'Bearer',
+    sessionId: 'session-1',
+    userId: 'user-1',
+    accessTokenExpiresAtUtc: DateTime.utc(2026, 10, 10, 12),
   );
 }
 
@@ -150,3 +195,22 @@ Map<String, dynamic> _validResponse() => <String, dynamic>{
       ],
       'plannedAtUtc': '2026-10-10T10:30:01Z',
     };
+
+class _MemoryAuthSessionStore implements AuthSessionStore {
+  _MemoryAuthSessionStore(this._session);
+
+  StoredAuthSession? _session;
+
+  @override
+  Future<void> save(StoredAuthSession session) async {
+    _session = session;
+  }
+
+  @override
+  Future<StoredAuthSession?> read() async => _session;
+
+  @override
+  Future<void> clear() async {
+    _session = null;
+  }
+}

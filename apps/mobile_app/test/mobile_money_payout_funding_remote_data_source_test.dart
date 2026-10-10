@@ -10,7 +10,7 @@ import 'package:mobile_app/network/api_exception.dart';
 
 void main() {
   group('MobileMoneyPayoutFundingRemoteDataSource', () {
-    test('posts the certified funding contract and parses the response',
+    test('posts the authenticated funding contract and parses the response',
         () async {
       late http.Request capturedRequest;
       final dataSource = _dataSource(
@@ -24,12 +24,19 @@ void main() {
         }),
       );
 
-      final response = await dataSource.planFunding(_request());
+      final response = await dataSource.planFunding(
+        'funding-access-token',
+        _request(),
+      );
 
       expect(capturedRequest.method, 'POST');
       expect(
         capturedRequest.url.path,
         '/api/v1/mobile-money/payouts/funding/plan',
+      );
+      expect(
+        capturedRequest.headers['Authorization'],
+        'Bearer funding-access-token',
       );
       expect(
         jsonDecode(capturedRequest.body),
@@ -71,7 +78,7 @@ void main() {
       );
 
       await expectLater(
-        dataSource.planFunding(_request()),
+        dataSource.planFunding('funding-access-token', _request()),
         throwsA(isA<ApiMalformedResponseException>()),
       );
     });
@@ -91,7 +98,7 @@ void main() {
       );
 
       await expectLater(
-        dataSource.planFunding(_request()),
+        dataSource.planFunding('funding-access-token', _request()),
         throwsA(isA<ApiValidationException>()),
       );
     });

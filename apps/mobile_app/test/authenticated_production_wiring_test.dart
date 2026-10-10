@@ -4,13 +4,15 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:mobile_app/models/auth_session.dart';
+import 'package:mobile_app/models/mobile_money_payout.dart';
+import 'package:mobile_app/models/mobile_money_payout_funding_intent.dart';
 import 'package:mobile_app/network/api_client.dart';
 import 'package:mobile_app/services/authenticated_production_wiring.dart';
 import 'package:mobile_app/services/secure_storage_adapter.dart';
 
 void main() {
   test(
-    'authenticated production wiring shares one secure session across wallet, P2P, and transaction history',
+    'authenticated production wiring shares one secure session across wallet, P2P, transaction history, and payout funding',
     () async {
       final requests = <http.Request>[];
       final apiClient = ApiClient(
@@ -73,6 +75,36 @@ void main() {
             );
           }
 
+          if (request.method == 'POST' &&
+              request.url.path ==
+                  '/api/v1/mobile-money/payouts/funding/plan') {
+            return http.Response(
+              jsonEncode(<String, Object?>{
+                'correlationId':
+                    '7d8fba6d-d06f-4bd5-98da-cb71d07bfef4',
+                'requiredAmountMinor': 10250,
+                'currencyCode': 'EUR',
+                'allocations': <Object?>[
+                  <String, Object?>{
+                    'sourceId': 'wallet-1',
+                    'sourceType': 0,
+                    'amountMinor': 2500,
+                    'currencyCode': 'EUR',
+                  },
+                  <String, Object?>{
+                    'sourceId': 'google-pay-1',
+                    'sourceType': 2,
+                    'amountMinor': 7750,
+                    'currencyCode': 'EUR',
+                  },
+                ],
+                'plannedAtUtc': '2026-10-10T10:30:01Z',
+              }),
+              200,
+              headers: <String, String>{'content-type': 'application/json'},
+            );
+          }
+
           return http.Response('', 404);
         }),
       );
@@ -102,12 +134,37 @@ void main() {
           await wiring.transferRepository.loadReceiveIdentity();
       final transactions =
           await wiring.transactionHistoryRepository.listTransactions();
+      final fundingPlan =
+          await wiring.mobileMoneyPayoutFundingRepository.planFunding(
+        correlationId: '7d8fba6d-d06f-4bd5-98da-cb71d07bfef4',
+        intent: MobileMoneyPayoutFundingIntent(
+          quoteId: 'quote-1',
+          sourceCurrencyCode: 'EUR',
+          totalSourceDebitMinor: 10250,
+          fundingAllocations: const <FundingAllocation>[
+            FundingAllocation(
+              sourceId: 'wallet-1',
+              sourceType: FundingSourceType.wallet,
+              amountMinor: 2500,
+              currencyCode: 'EUR',
+            ),
+            FundingAllocation(
+              sourceId: 'google-pay-1',
+              sourceType: FundingSourceType.googlePay,
+              amountMinor: 7750,
+              currencyCode: 'EUR',
+            ),
+          ],
+        ),
+        requestedAtUtc: DateTime.utc(2026, 10, 10, 10, 30),
+      );
 
       expect(wallets, hasLength(1));
       expect(receiveIdentity.qrToken, 'qr-token');
       expect(transactions, hasLength(1));
       expect(transactions.single.transactionId, 'txn-wiring-1');
-      expect(requests, hasLength(3));
+      expect(fundingPlan.requiredAmountMinor, 10250);
+      expect(requests, hasLength(4));
       expect(
         requests.every(
           (request) =>

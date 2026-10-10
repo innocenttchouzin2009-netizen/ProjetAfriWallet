@@ -324,6 +324,8 @@ await RunAsync(
         "Cancellation token must reach attempt store.");
 });
 
+await FundingExecutionApplicationScenarios.RunAllAsync();
+
 Console.WriteLine("Mobile Money payout funding scenarios passed.");
 
 static MobileMoneyPayoutFundingPlanningService CreateService(

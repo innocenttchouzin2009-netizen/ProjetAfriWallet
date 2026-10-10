@@ -328,6 +328,8 @@ await RunAsync("funding API route is stable", ApiScenarios.RouteIsStable);
 await RunAsync("funding API returns planned funding", ApiScenarios.ReturnsFundingPlan);
 await RunAsync("funding API maps invalid request", ApiScenarios.MapsInvalidRequest);
 await RunAsync("funding API maps rejected funding", ApiScenarios.MapsRejectedFunding);
+await RunAsync("durable funding attempts survive store restart", DurabilityScenarios.RestartRoundTrip);
+await RunAsync("durable funding lifecycle survives repeated restarts", DurabilityScenarios.LifecycleRoundTrip);
 
 Console.WriteLine("Mobile Money payout funding scenarios passed.");
 

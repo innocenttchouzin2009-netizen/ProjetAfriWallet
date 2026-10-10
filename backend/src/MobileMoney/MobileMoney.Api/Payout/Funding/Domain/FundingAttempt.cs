@@ -56,6 +56,78 @@ public sealed record FundingAttempt
             createdAtUtc);
     }
 
+
+    public static FundingAttempt Restore(
+        Guid id,
+        Guid correlationId,
+        FundingAllocation allocation,
+        FundingAttemptStatus status,
+        DateTimeOffset createdAtUtc,
+        DateTimeOffset updatedAtUtc,
+        string? statusReason)
+    {
+        if (id == Guid.Empty)
+        {
+            throw new ArgumentException(
+                "Funding attempt id cannot be empty.",
+                nameof(id));
+        }
+
+        if (correlationId == Guid.Empty)
+        {
+            throw new ArgumentException(
+                "Correlation id cannot be empty.",
+                nameof(correlationId));
+        }
+
+        ArgumentNullException.ThrowIfNull(allocation);
+
+        if (!Enum.IsDefined(typeof(FundingAttemptStatus), status))
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(status),
+                "Funding attempt status is not supported.");
+        }
+
+        ValidateUtcTimestamp(createdAtUtc, nameof(createdAtUtc));
+        ValidateUtcTimestamp(updatedAtUtc, nameof(updatedAtUtc));
+
+        if (updatedAtUtc < createdAtUtc)
+        {
+            throw new ArgumentException(
+                "Funding attempt updated timestamp cannot precede creation.",
+                nameof(updatedAtUtc));
+        }
+
+        string? normalizedReason;
+        if (status is FundingAttemptStatus.Failed or FundingAttemptStatus.Cancelled)
+        {
+            normalizedReason = NormalizeReason(statusReason!);
+        }
+        else
+        {
+            if (!string.IsNullOrWhiteSpace(statusReason))
+            {
+                throw new ArgumentException(
+                    "Only failed or cancelled funding attempts may carry a status reason.",
+                    nameof(statusReason));
+            }
+
+            normalizedReason = null;
+        }
+
+        return new FundingAttempt(
+            id,
+            correlationId,
+            allocation,
+            status,
+            createdAtUtc)
+        {
+            UpdatedAtUtc = updatedAtUtc,
+            StatusReason = normalizedReason
+        };
+    }
+
     public void MarkProcessing(DateTimeOffset occurredAtUtc)
     {
         TransitionTo(

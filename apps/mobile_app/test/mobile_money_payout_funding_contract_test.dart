@@ -1,5 +1,4 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mobile_app/data/remote/mobile_money_payout_funding_dto.dart';
 import 'package:mobile_app/data/remote/mobile_money_payout_funding_mapper.dart';
 import 'package:mobile_app/models/mobile_money_payout.dart';
 import 'package:mobile_app/models/mobile_money_payout_funding_intent.dart';

@@ -1,0 +1,96 @@
+name: Mobile Beta2.36 Funding Planning Presentation Commit 3 Certification
+
+on:
+  push:
+    branches:
+      - feature/mobile-beta2.36
+    paths:
+      - '.github/workflows/mobile-beta2.36-funding-planning-presentation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+
+    env:
+      COMMIT3_BASE_SHA: cb30bf429cf79eeba811857e5b69eb1aa42216f4
+      COMMIT3_SHA: fa0c105bef34eced1cda99b6b9c9b455e653c62a
+      WORKFLOW_PATH: .github/workflows/mobile-beta2.36-funding-planning-presentation.yml
+
+    defaults:
+      run:
+        working-directory: apps/mobile_app
+
+    steps:
+      - name: Checkout exact branch head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Assert Commit 3 lineage and exact two-file scope
+        working-directory: .
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual_sha="$(git rev-parse HEAD)"
+          test "${actual_sha}" = "${GITHUB_SHA}"
+
+          git cat-file -e "${COMMIT3_BASE_SHA}^{commit}"
+          git cat-file -e "${COMMIT3_SHA}^{commit}"
+          test "$(git rev-parse "${COMMIT3_SHA}^")" = "${COMMIT3_BASE_SHA}"
+          test "$(git merge-base "${COMMIT3_BASE_SHA}" "${COMMIT3_SHA}")" = "${COMMIT3_BASE_SHA}"
+          test "$(git rev-list --count "${COMMIT3_BASE_SHA}..${COMMIT3_SHA}")" = "1"
+
+          changed_files="$(git diff --name-only "${COMMIT3_BASE_SHA}..${COMMIT3_SHA}" | sort)"
+          expected_files="$(
+            printf '%s\n' \
+              'apps/mobile_app/lib/pages/mobile_money_payout_funding_planning_page.dart' \
+              'apps/mobile_app/test/mobile_money_payout_funding_planning_page_test.dart' | sort
+          )"
+          test "${changed_files}" = "${expected_files}"
+
+          git merge-base --is-ancestor "${COMMIT3_SHA}" "${actual_sha}"
+          for follow_up_sha in $(git rev-list "${COMMIT3_SHA}..${actual_sha}"); do
+            while IFS= read -r changed_path; do
+              test "${changed_path}" = "${WORKFLOW_PATH}" || {
+                echo "::error::Out-of-scope follow-up file: ${changed_path}"
+                exit 1
+              }
+            done < <(git diff-tree --no-commit-id --name-only -r "${follow_up_sha}")
+          done
+
+      - name: Set up Flutter 3.47.2
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.2'
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Generate localizations
+        run: flutter gen-l10n
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test funding planning presentation
+        run: flutter test test/mobile_money_payout_funding_planning_page_test.dart
+
+      - name: Run funding regression suite
+        run: flutter test test/mobile_money_payout_funding_*.dart
+
+      - name: Run complete Flutter test suite
+        run: flutter test
+
+      - name: Verify exact Commit 3 diff
+        working-directory: .
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check "${COMMIT3_BASE_SHA}..${COMMIT3_SHA}"

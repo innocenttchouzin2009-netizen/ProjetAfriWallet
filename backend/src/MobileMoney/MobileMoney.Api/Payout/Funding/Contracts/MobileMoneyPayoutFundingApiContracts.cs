@@ -27,3 +27,21 @@ public sealed record MobileMoneyPayoutFundingAllocationResponse(
     FundingSourceType SourceType,
     long AmountMinor,
     string CurrencyCode);
+
+public sealed record ExecuteMobileMoneyPayoutFundingRequest(
+    Guid CorrelationId);
+
+public sealed record MobileMoneyPayoutFundingExecutionResponse(
+    Guid CorrelationId,
+    IReadOnlyList<MobileMoneyPayoutFundingAttemptResponse> Attempts);
+
+public sealed record MobileMoneyPayoutFundingAttemptResponse(
+    Guid AttemptId,
+    string SourceId,
+    FundingSourceType SourceType,
+    long AmountMinor,
+    string CurrencyCode,
+    FundingAttemptStatus Status,
+    string? StatusReason,
+    DateTimeOffset CreatedAtUtc,
+    DateTimeOffset UpdatedAtUtc);

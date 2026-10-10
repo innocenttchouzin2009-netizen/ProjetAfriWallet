@@ -325,6 +325,7 @@ await RunAsync(
 });
 
 await FundingExecutionApplicationScenarios.RunAllAsync();
+await FundingExecutionRecoveryScenarios.RunAllAsync();
 
 Console.WriteLine("Mobile Money payout funding scenarios passed.");
 

@@ -161,6 +161,13 @@ public sealed class AuthApplicationService(
 
         if (session.Status == AuthSessionStatus.Expired || clock.UtcNow >= session.ExpiresAtUtc)
         {
+            if (session.Status != AuthSessionStatus.Expired)
+            {
+                await sessionStore.SaveAsync(
+                    session with { Status = AuthSessionStatus.Expired },
+                    cancellationToken);
+            }
+
             return AuthOperationResult<CurrentSessionResponse>.Failure(
                 AuthErrorCode.SessionExpired,
                 "Session expired.");

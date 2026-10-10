@@ -1,4 +1,3 @@
-import '../models/auth_session.dart';
 import '../network/api_exception.dart';
 import 'auth_session_coordinator.dart';
 

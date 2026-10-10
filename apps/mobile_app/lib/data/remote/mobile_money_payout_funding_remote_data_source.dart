@@ -12,11 +12,15 @@ class MobileMoneyPayoutFundingRemoteDataSource {
   final ApiClient _apiClient;
 
   Future<MobileMoneyPayoutFundingPlanResponseDto> planFunding(
+    String accessToken,
     MobileMoneyPayoutFundingRequestDto request,
   ) async {
     final payload = await _apiClient.postJson(
       _planPath,
       body: MobileMoneyPayoutFundingMapper.requestToJson(request),
+      headers: <String, String>{
+        'Authorization': 'Bearer $accessToken',
+      },
     );
 
     try {

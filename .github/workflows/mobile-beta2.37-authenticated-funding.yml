@@ -1,0 +1,121 @@
+name: Mobile Beta2.37 Authenticated Payout Funding Certification
+
+on:
+  push:
+    branches:
+      - feature/mobile-beta2.37-authenticated-funding
+    paths:
+      - 'apps/mobile_app/lib/data/remote/mobile_money_payout_funding_remote_data_source.dart'
+      - 'apps/mobile_app/lib/services/authenticated_production_wiring.dart'
+      - 'apps/mobile_app/lib/services/mobile_money_payout_funding_repository.dart'
+      - 'apps/mobile_app/test/authenticated_production_wiring_test.dart'
+      - 'apps/mobile_app/test/mobile_money_payout_funding_remote_data_source_test.dart'
+      - 'apps/mobile_app/test/mobile_money_payout_funding_repository_test.dart'
+      - '.github/workflows/mobile-beta2.37-authenticated-funding.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'apps/mobile_app/lib/data/remote/mobile_money_payout_funding_remote_data_source.dart'
+      - 'apps/mobile_app/lib/services/authenticated_production_wiring.dart'
+      - 'apps/mobile_app/lib/services/mobile_money_payout_funding_repository.dart'
+      - 'apps/mobile_app/test/authenticated_production_wiring_test.dart'
+      - 'apps/mobile_app/test/mobile_money_payout_funding_remote_data_source_test.dart'
+      - 'apps/mobile_app/test/mobile_money_payout_funding_repository_test.dart'
+      - '.github/workflows/mobile-beta2.37-authenticated-funding.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    if: ${{ github.event_name != 'pull_request' || github.head_ref == 'feature/mobile-beta2.37-authenticated-funding' }}
+    name: Certify Beta2.37 authenticated payout funding
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+
+    env:
+      BASE_SHA: 846c14a660a4149a85c18d73ff54df6dcb28ef78
+      COMMIT1_SHA: d895100991f387dc81c417cd0065f5a18012cb02
+      WORKFLOW_PATH: .github/workflows/mobile-beta2.37-authenticated-funding.yml
+
+    defaults:
+      run:
+        working-directory: apps/mobile_app
+
+    steps:
+      - name: Checkout exact branch head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Assert Beta2.37 lineage and exact six-file scope
+        working-directory: .
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual_sha="$(git rev-parse HEAD)"
+          test "${actual_sha}" = "${GITHUB_SHA}"
+          git cat-file -e "${BASE_SHA}^{commit}"
+          git cat-file -e "${COMMIT1_SHA}^{commit}"
+          test "$(git rev-parse "${COMMIT1_SHA}^")" = "${BASE_SHA}"
+          test "$(git merge-base "${BASE_SHA}" "${COMMIT1_SHA}")" = "${BASE_SHA}"
+          test "$(git rev-list --count "${BASE_SHA}..${COMMIT1_SHA}")" = "1"
+
+          changed_files="$(git diff --name-only "${BASE_SHA}..${COMMIT1_SHA}" | sort)"
+          expected_files="$(
+            printf '%s\n' \
+              'apps/mobile_app/lib/data/remote/mobile_money_payout_funding_remote_data_source.dart' \
+              'apps/mobile_app/lib/services/authenticated_production_wiring.dart' \
+              'apps/mobile_app/lib/services/mobile_money_payout_funding_repository.dart' \
+              'apps/mobile_app/test/authenticated_production_wiring_test.dart' \
+              'apps/mobile_app/test/mobile_money_payout_funding_remote_data_source_test.dart' \
+              'apps/mobile_app/test/mobile_money_payout_funding_repository_test.dart' | sort
+          )"
+          test "${changed_files}" = "${expected_files}"
+
+          git merge-base --is-ancestor "${COMMIT1_SHA}" "${actual_sha}"
+          for follow_up_sha in $(git rev-list "${COMMIT1_SHA}..${actual_sha}"); do
+            while IFS= read -r changed_path; do
+              test "${changed_path}" = "${WORKFLOW_PATH}" || {
+                echo "::error::Out-of-scope follow-up file: ${changed_path}"
+                exit 1
+              }
+            done < <(git diff-tree --no-commit-id --name-only -r "${follow_up_sha}")
+          done
+
+      - name: Set up Flutter 3.47.2
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.2'
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Generate localizations
+        run: flutter gen-l10n
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test authenticated production wiring
+        run: flutter test test/authenticated_production_wiring_test.dart
+
+      - name: Test authenticated payout funding remote data source
+        run: flutter test test/mobile_money_payout_funding_remote_data_source_test.dart
+
+      - name: Test authenticated payout funding repository
+        run: flutter test test/mobile_money_payout_funding_repository_test.dart
+
+      - name: Run complete Flutter test suite
+        run: flutter test
+
+      - name: Verify exact Beta2.37 code diff
+        working-directory: .
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check "${BASE_SHA}..${COMMIT1_SHA}"

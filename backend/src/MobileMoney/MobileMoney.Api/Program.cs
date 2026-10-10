@@ -1,4 +1,5 @@
 using MobileMoney.Production.Audit;
+using MobileMoney.Production.Authentication;
 using MobileMoney.Production.Correlation;
 using MobileMoney.Production.Diagnostics;
 using MobileMoney.Production.Errors;
@@ -15,6 +16,7 @@ using MobileMoney.Production.Payout.Funding.Extensions;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddMtnMomoProductionConfiguration(builder.Configuration);
+builder.Services.AddAfWalSessionValidation(builder.Configuration);
 builder.Services.AddMobileMoneyPayoutEligibility(builder.Configuration);
 builder.Services.AddMobileMoneyPayoutQuote(builder.Configuration);
 builder.Services.AddMobileMoneyPayoutFundingApi(builder.Configuration);

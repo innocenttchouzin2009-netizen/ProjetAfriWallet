@@ -1,3 +1,4 @@
+using MobileMoney.Production.Authentication;
 using MobileMoney.Production.Payout.Abstractions;
 using MobileMoney.Production.Payout.Contracts;
 using MobileMoney.Production.Payout.Domain;
@@ -44,7 +45,8 @@ public static class MobileMoneyPayoutEndpointExtensions
                             "The payout destination or corridor is invalid.",
                             null));
                 }
-            });
+            })
+            .RequireAfWalSession();
 
         return endpoints;
     }

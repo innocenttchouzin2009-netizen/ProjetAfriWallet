@@ -1,0 +1,86 @@
+name: AFW Auth Frozen Contract Certification
+
+on:
+  push:
+    branches:
+      - cert/auth-frozen-contract-matrix-1
+    paths:
+      - 'backend/src/IdentityService/IdentityService.Api/Auth/**'
+      - 'backend/tests/IdentityService.Auth.Scenarios/**'
+      - 'apps/mobile_app/lib/models/auth_error.dart'
+      - 'apps/mobile_app/lib/models/auth_requests.dart'
+      - 'apps/mobile_app/lib/models/auth_session.dart'
+      - 'apps/mobile_app/lib/models/current_auth_session.dart'
+      - 'apps/mobile_app/lib/services/auth_remote_data_source.dart'
+      - 'apps/mobile_app/test/auth_frozen_contract_certification_test.dart'
+      - '.github/workflows/auth-frozen-contract-certification.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'backend/src/IdentityService/IdentityService.Api/Auth/**'
+      - 'backend/tests/IdentityService.Auth.Scenarios/**'
+      - 'apps/mobile_app/lib/models/auth_error.dart'
+      - 'apps/mobile_app/lib/models/auth_requests.dart'
+      - 'apps/mobile_app/lib/models/auth_session.dart'
+      - 'apps/mobile_app/lib/models/current_auth_session.dart'
+      - 'apps/mobile_app/lib/services/auth_remote_data_source.dart'
+      - 'apps/mobile_app/test/auth_frozen_contract_certification_test.dart'
+      - '.github/workflows/auth-frozen-contract-certification.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backend-contract:
+    name: Backend frozen contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore
+        run: dotnet restore backend/tests/IdentityService.Auth.Scenarios/IdentityService.Auth.Scenarios.csproj
+
+      - name: Build IdentityService.Api
+        run: dotnet build backend/src/IdentityService/IdentityService.Api/IdentityService.Api.csproj --no-restore
+
+      - name: Certify AFW-BE-AUTH-1 frozen contract
+        run: dotnet run --project backend/tests/IdentityService.Auth.Scenarios --no-restore
+
+      - name: Diff check
+        run: git diff --check
+
+  mobile-contract:
+    name: Mobile frozen contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter 3.47.2
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.2'
+          cache: true
+
+      - name: Install dependencies
+        working-directory: apps/mobile_app
+        run: flutter pub get
+
+      - name: Certify AFW-MOB-BETA2.13 frozen contract
+        working-directory: apps/mobile_app
+        run: flutter test test/auth_frozen_contract_certification_test.dart
+
+      - name: Diff check
+        run: git diff --check

@@ -1,4 +1,4 @@
-name: Mobile Beta2.35 Funding API Contract Commit 1 Certification
+name: Mobile Beta2.35 Funding API Contract Candidate Certification
 
 on:
   push:
@@ -19,8 +19,10 @@ jobs:
 
     env:
       BASE_SHA: e351587ca61f9bb933e8cd4a8da576a3a26b141f
-      COMMIT1_SHA: 745e47536849bdc8e4e97dc45d851d1b2e675e6a
-      STATUS_CONTEXT: mobile-beta2.35/funding-api-contract-commit1
+      FUNCTIONAL_SHA: 745e47536849bdc8e4e97dc45d851d1b2e675e6a
+      PREVIOUS_CI_SHA: 5da7e74ee43c80041c364c9dd2d4d83dc18d7c11
+      CANDIDATE_SHA: b0292e7f54d73670e02045e0379115558141ebbb
+      STATUS_CONTEXT: mobile-beta2.35/candidate-certification
       WORKFLOW_PATH: .github/workflows/mobile-beta2.35-funding-api-contract.yml
 
     defaults:
@@ -28,13 +30,13 @@ jobs:
         working-directory: apps/mobile_app
 
     steps:
-      - name: Checkout certification commit
+      - name: Checkout exact Beta2.35 candidate
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.sha }}
+          ref: ${{ env.CANDIDATE_SHA }}
           fetch-depth: 0
 
-      - name: Assert Commit 1 lineage and CI-only scope
+      - name: Assert candidate lineage and scoped history
         id: candidate_assertion
         working-directory: .
         shell: bash
@@ -42,39 +44,44 @@ jobs:
           set -euo pipefail
 
           actual_sha="$(git rev-parse HEAD)"
-          test "${actual_sha}" = "${GITHUB_SHA}"
+          test "${actual_sha}" = "${CANDIDATE_SHA}"
 
           git cat-file -e "${BASE_SHA}^{commit}"
-          git cat-file -e "${COMMIT1_SHA}^{commit}"
-          git cat-file -e "${GITHUB_SHA}^{commit}"
+          git cat-file -e "${FUNCTIONAL_SHA}^{commit}"
+          git cat-file -e "${PREVIOUS_CI_SHA}^{commit}"
+          git cat-file -e "${CANDIDATE_SHA}^{commit}"
 
-          test "$(git merge-base "${BASE_SHA}" "${COMMIT1_SHA}")" = "${BASE_SHA}"
-          test "$(git rev-parse "${COMMIT1_SHA}^")" = "${BASE_SHA}"
-          test "$(git rev-parse "${GITHUB_SHA}^")" = "${COMMIT1_SHA}"
+          test "$(git merge-base "${BASE_SHA}" "${CANDIDATE_SHA}")" = "${BASE_SHA}"
+          test "$(git rev-parse "${FUNCTIONAL_SHA}^")" = "${BASE_SHA}"
+          test "$(git rev-parse "${PREVIOUS_CI_SHA}^")" = "${FUNCTIONAL_SHA}"
+          test "$(git rev-parse "${CANDIDATE_SHA}^")" = "${PREVIOUS_CI_SHA}"
 
-          commit1_files="$(git diff-tree --no-commit-id --name-only -r "${COMMIT1_SHA}")"
-          expected_commit1_files="$(
+          functional_files="$(git diff-tree --no-commit-id --name-only -r "${FUNCTIONAL_SHA}")"
+          expected_functional_files="$(
             printf '%s\n' \
               'apps/mobile_app/lib/data/remote/mobile_money_payout_funding_dto.dart' \
               'apps/mobile_app/lib/data/remote/mobile_money_payout_funding_mapper.dart' \
               'apps/mobile_app/test/mobile_money_payout_funding_contract_test.dart'
           )"
-          test "${commit1_files}" = "${expected_commit1_files}"
+          test "${functional_files}" = "${expected_functional_files}"
 
-          ci_files="$(git diff-tree --no-commit-id --name-only -r "${GITHUB_SHA}")"
-          test "${ci_files}" = "${WORKFLOW_PATH}"
+          previous_ci_files="$(git diff-tree --no-commit-id --name-only -r "${PREVIOUS_CI_SHA}")"
+          test "${previous_ci_files}" = "${WORKFLOW_PATH}"
 
-      - name: Mark Commit 1 certification pending
+          fix_files="$(git diff-tree --no-commit-id --name-only -r "${CANDIDATE_SHA}")"
+          test "${fix_files}" = 'apps/mobile_app/lib/data/remote/mobile_money_payout_funding_mapper.dart'
+
+      - name: Mark candidate certification pending
         uses: actions/github-script@v7
         with:
           script: |
             await github.rest.repos.createCommitStatus({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              sha: process.env.COMMIT1_SHA,
+              sha: process.env.CANDIDATE_SHA,
               state: 'pending',
               context: process.env.STATUS_CONTEXT,
-              description: 'Beta2.35 Funding API Contract Commit 1 certification in progress',
+              description: 'Beta2.35 Funding API Contract candidate certification in progress',
               target_url: `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
             });
 
@@ -102,12 +109,12 @@ jobs:
       - name: Run complete Flutter test suite
         run: flutter test
 
-      - name: Verify Beta2.35 Commit 1 diff
+      - name: Verify Beta2.35 candidate diff
         working-directory: .
         shell: bash
         run: |
           set -euo pipefail
-          git diff --check "${BASE_SHA}..${COMMIT1_SHA}"
+          git diff --check "${BASE_SHA}..${CANDIDATE_SHA}"
 
       - name: Write certification summary
         if: always()
@@ -115,21 +122,21 @@ jobs:
         shell: bash
         run: |
           {
-            echo "## Mobile Beta2.35 Funding API Contract Commit 1 certification"
+            echo "## Mobile Beta2.35 Funding API Contract candidate certification"
             echo
             echo "- Base: \`${BASE_SHA}\`"
-            echo "- Functional Commit 1: \`${COMMIT1_SHA}\`"
-            echo "- CI-only commit: \`${GITHUB_SHA}\`"
+            echo "- Initial functional commit: \`${FUNCTIONAL_SHA}\`"
+            echo "- Previous CI-only commit: \`${PREVIOUS_CI_SHA}\`"
+            echo "- Certified candidate: \`${CANDIDATE_SHA}\`"
             echo "- Flutter: \`3.47.2\`"
             echo "- Analyze: \`flutter analyze\`"
             echo "- Targeted test: \`mobile_money_payout_funding_contract_test.dart\`"
             echo "- Full suite: \`flutter test\`"
-            echo "- Diff check: \`git diff --check ${BASE_SHA}..${COMMIT1_SHA}\`"
-            echo "- CI-only commit is certification infrastructure and is not functional Commit 2."
+            echo "- Diff check: \`git diff --check ${BASE_SHA}..${CANDIDATE_SHA}\`"
             echo "- Job status: **${{ job.status }}**"
           } >> "${GITHUB_STEP_SUMMARY}"
 
-      - name: Report Commit 1 certification status
+      - name: Report candidate certification status
         if: always() && steps.candidate_assertion.outcome == 'success'
         uses: actions/github-script@v7
         env:
@@ -140,11 +147,11 @@ jobs:
             await github.rest.repos.createCommitStatus({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              sha: process.env.COMMIT1_SHA,
+              sha: process.env.CANDIDATE_SHA,
               state: succeeded ? 'success' : 'failure',
               context: process.env.STATUS_CONTEXT,
               description: succeeded
-                ? 'Beta2.35 Funding API Contract Commit 1 certified'
-                : 'Beta2.35 Funding API Contract Commit 1 certification failed',
+                ? 'Beta2.35 Funding API Contract candidate certified'
+                : 'Beta2.35 Funding API Contract candidate certification failed',
               target_url: `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
             });

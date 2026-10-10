@@ -13,6 +13,7 @@ public sealed class MobileMoneyPayoutQuoteOrchestrator
     private readonly IMobileMoneyPayoutFxQuoteProvider _fxQuoteProvider;
     private readonly IMobileMoneyPayoutFeePolicy _feePolicy;
     private readonly IMobileMoneyPayoutClock _clock;
+    private readonly IMobileMoneyPayoutQuoteStore _quoteStore;
     private readonly TimeSpan _quoteLifetime;
 
     public MobileMoneyPayoutQuoteOrchestrator(
@@ -20,6 +21,7 @@ public sealed class MobileMoneyPayoutQuoteOrchestrator
         IMobileMoneyPayoutFxQuoteProvider fxQuoteProvider,
         IMobileMoneyPayoutFeePolicy feePolicy,
         IMobileMoneyPayoutClock clock,
+        IMobileMoneyPayoutQuoteStore quoteStore,
         TimeSpan quoteLifetime)
     {
         _eligibilityPolicy = eligibilityPolicy
@@ -30,6 +32,8 @@ public sealed class MobileMoneyPayoutQuoteOrchestrator
             ?? throw new ArgumentNullException(nameof(feePolicy));
         _clock = clock
             ?? throw new ArgumentNullException(nameof(clock));
+        _quoteStore = quoteStore
+            ?? throw new ArgumentNullException(nameof(quoteStore));
 
         if (quoteLifetime <= TimeSpan.Zero)
             throw new ArgumentOutOfRangeException(nameof(quoteLifetime));
@@ -97,6 +101,8 @@ public sealed class MobileMoneyPayoutQuoteOrchestrator
             fees,
             createdAtUtc,
             createdAtUtc.Add(_quoteLifetime));
+
+        await _quoteStore.SaveAsync(quote, cancellationToken);
 
         return ToResponse(quote);
     }

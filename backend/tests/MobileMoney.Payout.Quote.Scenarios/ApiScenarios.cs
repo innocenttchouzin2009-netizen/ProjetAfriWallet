@@ -127,6 +127,7 @@ internal static class ApiScenarios
                     0,
                     0,
                     TimeSpan.Zero)),
+            new StubQuoteStore(),
             TimeSpan.FromMinutes(10));
     }
 
@@ -225,5 +226,34 @@ internal static class ApiScenarios
         : IMobileMoneyPayoutClock
     {
         public DateTimeOffset UtcNow { get; } = utcNow;
+    }
+
+    private sealed class StubQuoteStore : IMobileMoneyPayoutQuoteStore
+    {
+        public Task SaveAsync(
+            MobileMoneyPayoutQuote quote,
+            CancellationToken cancellationToken = default) =>
+            Task.CompletedTask;
+
+        public Task<MobileMoneyPayoutQuote?> FindByIdAsync(
+            Guid quoteId,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult<MobileMoneyPayoutQuote?>(null);
+
+        public Task LinkFundingCorrelationAsync(
+            Guid quoteId,
+            Guid fundingCorrelationId,
+            CancellationToken cancellationToken = default) =>
+            Task.CompletedTask;
+
+        public Task<Guid?> FindFundingCorrelationIdAsync(
+            Guid quoteId,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult<Guid?>(null);
+
+        public Task<Guid?> FindQuoteIdByFundingCorrelationIdAsync(
+            Guid fundingCorrelationId,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult<Guid?>(null);
     }
 }

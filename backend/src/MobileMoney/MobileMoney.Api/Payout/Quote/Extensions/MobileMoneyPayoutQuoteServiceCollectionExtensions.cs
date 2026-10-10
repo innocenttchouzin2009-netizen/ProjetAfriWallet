@@ -1,6 +1,7 @@
 using System.Globalization;
 using AfriWallet.Fx.Application;
 using AfriWallet.Fx.Infrastructure;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using MobileMoney.Production.Payout.Abstractions;
 using MobileMoney.Production.Payout.Domain;
@@ -9,6 +10,7 @@ using MobileMoney.Production.Payout.Quote.Application;
 using MobileMoney.Production.Payout.Quote.Configuration;
 using MobileMoney.Production.Payout.Quote.Domain;
 using MobileMoney.Production.Payout.Quote.Infrastructure;
+using MobileMoney.Production.Payout.Quote.Infrastructure.Persistence;
 
 namespace MobileMoney.Production.Payout.Quote.Extensions;
 
@@ -35,6 +37,10 @@ public static class MobileMoneyPayoutQuoteServiceCollectionExtensions
         var configuredFxRates = LoadFxRates(configuration);
         var configuredFeeTiers = BuildFeeTiers(options);
 
+        var quoteConnectionString =
+            configuration.GetConnectionString("MobileMoneyPayoutQuote")
+            ?? "Data Source=mobile-money-payout-quotes.db";
+
         services.TryAddSingleton<TimeProvider>(TimeProvider.System);
         services.TryAddSingleton<IFxQuoteProvider>(serviceProvider =>
             new ConfiguredFxQuoteProvider(
@@ -57,13 +63,21 @@ public static class MobileMoneyPayoutQuoteServiceCollectionExtensions
             IMobileMoneyPayoutClock,
             SystemMobileMoneyPayoutClock>();
 
-        services.TryAddSingleton<MobileMoneyPayoutQuoteOrchestrator>(
+        services.AddDbContext<MobileMoneyPayoutQuoteDbContext>(dbOptions =>
+            dbOptions.UseSqlite(quoteConnectionString));
+
+        services.TryAddScoped<
+            IMobileMoneyPayoutQuoteStore,
+            EfMobileMoneyPayoutQuoteStore>();
+
+        services.TryAddScoped<MobileMoneyPayoutQuoteOrchestrator>(
             serviceProvider =>
                 new MobileMoneyPayoutQuoteOrchestrator(
                     serviceProvider.GetRequiredService<IMobileMoneyPayoutEligibilityPolicy>(),
                     serviceProvider.GetRequiredService<IMobileMoneyPayoutFxQuoteProvider>(),
                     serviceProvider.GetRequiredService<IMobileMoneyPayoutFeePolicy>(),
                     serviceProvider.GetRequiredService<IMobileMoneyPayoutClock>(),
+                    serviceProvider.GetRequiredService<IMobileMoneyPayoutQuoteStore>(),
                     TimeSpan.FromSeconds(options.LifetimeSeconds)));
 
         return services;

@@ -1,3 +1,4 @@
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using MobileMoney.Production.Payout.Funding.Domain;
 using MobileMoney.Production.Payout.Funding.Persistence;
@@ -200,6 +201,8 @@ internal static class DurabilityScenarios
 
     private static void DeleteDatabase(string databasePath)
     {
+        SqliteConnection.ClearAllPools();
+
         if (File.Exists(databasePath))
         {
             File.Delete(databasePath);

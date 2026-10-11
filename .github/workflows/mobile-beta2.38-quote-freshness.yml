@@ -1,0 +1,108 @@
+name: Mobile Beta2.38 Quote Freshness Certification
+
+on:
+  push:
+    branches:
+      - feature/mobile-beta2.38
+    paths:
+      - 'apps/mobile_app/lib/models/mobile_money_payout_quote_freshness.dart'
+      - 'apps/mobile_app/lib/services/mobile_money_payout_quote_freshness_policy.dart'
+      - 'apps/mobile_app/test/mobile_money_payout_quote_freshness_policy_test.dart'
+      - '.github/workflows/mobile-beta2.38-quote-freshness.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'apps/mobile_app/lib/models/mobile_money_payout_quote_freshness.dart'
+      - 'apps/mobile_app/lib/services/mobile_money_payout_quote_freshness_policy.dart'
+      - 'apps/mobile_app/test/mobile_money_payout_quote_freshness_policy_test.dart'
+      - '.github/workflows/mobile-beta2.38-quote-freshness.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    if: ${{ github.event_name != 'pull_request' || github.head_ref == 'feature/mobile-beta2.38' }}
+    name: Certify Beta2.38 quote freshness foundation
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+
+    env:
+      BASE_SHA: cae4e981372a72d0e50492d36bf00e2644fcb9d0
+      COMMIT1_SHA: 22523fcce7ad80db42656f2feb4f3c13621877c5
+      WORKFLOW_PATH: .github/workflows/mobile-beta2.38-quote-freshness.yml
+
+    defaults:
+      run:
+        working-directory: apps/mobile_app
+
+    steps:
+      - name: Checkout exact branch head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Assert Beta2.38 lineage and exact three-file Commit 1 scope
+        working-directory: .
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          actual_sha="$(git rev-parse HEAD)"
+          test "${actual_sha}" = "${GITHUB_SHA}"
+
+          git cat-file -e "${BASE_SHA}^{commit}"
+          git cat-file -e "${COMMIT1_SHA}^{commit}"
+          test "$(git rev-parse "${COMMIT1_SHA}^")" = "${BASE_SHA}"
+          test "$(git merge-base "${BASE_SHA}" "${COMMIT1_SHA}")" = "${BASE_SHA}"
+          test "$(git rev-list --count "${BASE_SHA}..${COMMIT1_SHA}")" = "1"
+
+          changed_files="$(git diff --name-only "${BASE_SHA}..${COMMIT1_SHA}" | sort)"
+          expected_files="$(
+            printf '%s\n' \
+              'apps/mobile_app/lib/models/mobile_money_payout_quote_freshness.dart' \
+              'apps/mobile_app/lib/services/mobile_money_payout_quote_freshness_policy.dart' \
+              'apps/mobile_app/test/mobile_money_payout_quote_freshness_policy_test.dart' | sort
+          )"
+          test "${changed_files}" = "${expected_files}"
+
+          git merge-base --is-ancestor "${COMMIT1_SHA}" "${actual_sha}"
+          for follow_up_sha in $(git rev-list "${COMMIT1_SHA}..${actual_sha}"); do
+            while IFS= read -r changed_path; do
+              test "${changed_path}" = "${WORKFLOW_PATH}" || {
+                echo "::error::Out-of-scope follow-up file: ${changed_path}"
+                exit 1
+              }
+            done < <(git diff-tree --no-commit-id --name-only -r "${follow_up_sha}")
+          done
+
+      - name: Set up Flutter 3.47.2
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.2'
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Generate localizations
+        run: flutter gen-l10n
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test quote freshness policy
+        run: flutter test test/mobile_money_payout_quote_freshness_policy_test.dart
+
+      - name: Run complete Flutter test suite
+        run: flutter test
+
+      - name: Verify exact Beta2.38 Commit 1 diff
+        working-directory: .
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check "${BASE_SHA}..${COMMIT1_SHA}"

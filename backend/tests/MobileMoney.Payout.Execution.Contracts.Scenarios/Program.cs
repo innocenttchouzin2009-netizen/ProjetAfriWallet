@@ -125,7 +125,7 @@ await RunAsync("execution binding rejects funding amount mismatch", async () =>
     });
 });
 
-Console.WriteLine("Mobile Money payout execution contract scenarios passed.");
+await BindingAdapterScenarios.RunAsync();\n\nConsole.WriteLine("Mobile Money payout execution contract scenarios passed.");
 
 static MobileMoneyPayoutExecutionQuoteBinding CreateQuote(DateTimeOffset expiresAtUtc) =>
     MobileMoneyPayoutExecutionQuoteBinding.Create(

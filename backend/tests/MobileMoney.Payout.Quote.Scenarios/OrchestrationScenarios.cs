@@ -18,11 +18,13 @@ internal static class OrchestrationScenarios
         var fees = new RecordingFeePolicy(
             new MobileMoneyPayoutFee("SERVICE_FEE", 250, "EUR"),
             new MobileMoneyPayoutFee("RAIL_FEE", 50, "EUR"));
+        var store = new RecordingQuoteStore();
         var orchestrator = new MobileMoneyPayoutQuoteOrchestrator(
             eligibility,
             fx,
             fees,
             clock,
+            store,
             TimeSpan.FromMinutes(10));
 
         using var cancellation = new CancellationTokenSource();
@@ -51,6 +53,9 @@ internal static class OrchestrationScenarios
         AssertEqual(1, eligibility.CallCount);
         AssertEqual(1, fx.CallCount);
         AssertEqual(1, fees.CallCount);
+        AssertEqual(1, store.SaveCount);
+        AssertEqual(response.QuoteId, store.LastSavedQuote!.QuoteId);
+        AssertEqual(cancellation.Token, store.LastCancellationToken);
         AssertEqual(cancellation.Token, eligibility.LastCancellationToken);
         AssertEqual(cancellation.Token, fx.LastCancellationToken);
         AssertEqual(cancellation.Token, fees.LastCancellationToken);
@@ -66,6 +71,7 @@ internal static class OrchestrationScenarios
 
     public static async Task RejectsIneligibleCorridorBeforePricing()
     {
+        var store = new RecordingQuoteStore();
         var eligibility = new RecordingEligibilityPolicy(
             MobileMoneyPayoutEligibilityResult.Ineligible(
                 MobileMoneyPayoutEligibilityCodes.CorridorDisabled));
@@ -78,6 +84,7 @@ internal static class OrchestrationScenarios
             fx,
             fees,
             new FixedClock(Utc(2026, 10, 6, 10, 0)),
+            store,
             TimeSpan.FromMinutes(10));
 
         var exception = await AssertThrowsAsync<MobileMoneyPayoutEligibilityException>(
@@ -89,10 +96,12 @@ internal static class OrchestrationScenarios
         AssertEqual(1, eligibility.CallCount);
         AssertEqual(0, fx.CallCount);
         AssertEqual(0, fees.CallCount);
+        AssertEqual(0, store.SaveCount);
     }
 
     public static async Task RejectsUnavailableFxBeforeFees()
     {
+        var store = new RecordingQuoteStore();
         var eligibility = new RecordingEligibilityPolicy(
             MobileMoneyPayoutEligibilityResult.Eligible());
         var fx = new RecordingFxQuoteProvider(null);
@@ -103,6 +112,7 @@ internal static class OrchestrationScenarios
             fx,
             fees,
             new FixedClock(Utc(2026, 10, 6, 10, 0)),
+            store,
             TimeSpan.FromMinutes(10));
 
         var exception = await AssertThrowsAsync<MobileMoneyPayoutQuoteUnavailableException>(
@@ -114,6 +124,7 @@ internal static class OrchestrationScenarios
         AssertEqual(1, eligibility.CallCount);
         AssertEqual(1, fx.CallCount);
         AssertEqual(0, fees.CallCount);
+        AssertEqual(0, store.SaveCount);
     }
 
     public static Task RejectsNonPositiveLifetime()
@@ -126,6 +137,7 @@ internal static class OrchestrationScenarios
                     new MobileMoneyPayoutFxQuote(650m, 6_500_000)),
                 new RecordingFeePolicy(),
                 new FixedClock(Utc(2026, 10, 6, 10, 0)),
+                new RecordingQuoteStore(),
                 TimeSpan.Zero));
 
         return Task.CompletedTask;
@@ -248,5 +260,43 @@ internal static class OrchestrationScenarios
             return ValueTask.FromResult<IReadOnlyList<MobileMoneyPayoutFee>>(
                 Array.AsReadOnly(fees));
         }
+    }
+
+    private sealed class RecordingQuoteStore : IMobileMoneyPayoutQuoteStore
+    {
+        public int SaveCount { get; private set; }
+        public MobileMoneyPayoutQuote? LastSavedQuote { get; private set; }
+        public CancellationToken LastCancellationToken { get; private set; }
+
+        public Task SaveAsync(
+            MobileMoneyPayoutQuote quote,
+            CancellationToken cancellationToken = default)
+        {
+            SaveCount++;
+            LastSavedQuote = quote;
+            LastCancellationToken = cancellationToken;
+            return Task.CompletedTask;
+        }
+
+        public Task<MobileMoneyPayoutQuote?> FindByIdAsync(
+            Guid quoteId,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult<MobileMoneyPayoutQuote?>(null);
+
+        public Task LinkFundingCorrelationAsync(
+            Guid quoteId,
+            Guid fundingCorrelationId,
+            CancellationToken cancellationToken = default) =>
+            Task.CompletedTask;
+
+        public Task<Guid?> FindFundingCorrelationIdAsync(
+            Guid quoteId,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult<Guid?>(null);
+
+        public Task<Guid?> FindQuoteIdByFundingCorrelationIdAsync(
+            Guid fundingCorrelationId,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult<Guid?>(null);
     }
 }

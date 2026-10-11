@@ -46,8 +46,48 @@ public sealed class MobileMoneyPayoutQuote
         decimal fxRate,
         IEnumerable<MobileMoneyPayoutFee> fees,
         DateTimeOffset createdAtUtc,
+        DateTimeOffset expiresAtUtc) =>
+        CreateCore(
+            Guid.NewGuid(),
+            corridor,
+            sourceAmountMinor,
+            destinationAmountMinor,
+            fxRate,
+            fees,
+            createdAtUtc,
+            expiresAtUtc);
+
+    public static MobileMoneyPayoutQuote Restore(
+        Guid quoteId,
+        MobileMoneyPayoutCorridor corridor,
+        long sourceAmountMinor,
+        long destinationAmountMinor,
+        decimal fxRate,
+        IEnumerable<MobileMoneyPayoutFee> fees,
+        DateTimeOffset createdAtUtc,
+        DateTimeOffset expiresAtUtc) =>
+        CreateCore(
+            quoteId,
+            corridor,
+            sourceAmountMinor,
+            destinationAmountMinor,
+            fxRate,
+            fees,
+            createdAtUtc,
+            expiresAtUtc);
+
+    private static MobileMoneyPayoutQuote CreateCore(
+        Guid quoteId,
+        MobileMoneyPayoutCorridor corridor,
+        long sourceAmountMinor,
+        long destinationAmountMinor,
+        decimal fxRate,
+        IEnumerable<MobileMoneyPayoutFee> fees,
+        DateTimeOffset createdAtUtc,
         DateTimeOffset expiresAtUtc)
     {
+        if (quoteId == Guid.Empty)
+            throw new ArgumentException("Quote id cannot be empty.", nameof(quoteId));
         if (corridor is null)
             throw new ArgumentNullException(nameof(corridor));
         if (sourceAmountMinor <= 0)
@@ -84,7 +124,7 @@ public sealed class MobileMoneyPayoutQuote
         var totalSourceDebitMinor = checked(sourceAmountMinor + totalFeeMinor);
 
         return new MobileMoneyPayoutQuote(
-            Guid.NewGuid(),
+            quoteId,
             corridor,
             sourceAmountMinor,
             destinationAmountMinor,

@@ -8,6 +8,8 @@ on:
       - 'apps/mobile_app/lib/models/mobile_money_payout_quote_freshness.dart'
       - 'apps/mobile_app/lib/services/mobile_money_payout_quote_freshness_policy.dart'
       - 'apps/mobile_app/test/mobile_money_payout_quote_freshness_policy_test.dart'
+      - 'apps/mobile_app/lib/pages/mobile_money_payout_quote_page.dart'
+      - 'apps/mobile_app/test/mobile_money_payout_quote_page_test.dart'
       - '.github/workflows/mobile-beta2.38-quote-freshness.yml'
   pull_request:
     branches:
@@ -16,6 +18,8 @@ on:
       - 'apps/mobile_app/lib/models/mobile_money_payout_quote_freshness.dart'
       - 'apps/mobile_app/lib/services/mobile_money_payout_quote_freshness_policy.dart'
       - 'apps/mobile_app/test/mobile_money_payout_quote_freshness_policy_test.dart'
+      - 'apps/mobile_app/lib/pages/mobile_money_payout_quote_page.dart'
+      - 'apps/mobile_app/test/mobile_money_payout_quote_page_test.dart'
       - '.github/workflows/mobile-beta2.38-quote-freshness.yml'
   workflow_dispatch:
 
@@ -70,9 +74,14 @@ jobs:
           test "${changed_files}" = "${expected_files}"
 
           git merge-base --is-ancestor "${COMMIT1_SHA}" "${actual_sha}"
+          allowed_follow_up_paths="$(printf '%s\n' \
+            '.github/workflows/mobile-beta2.38-quote-freshness.yml' \
+            'apps/mobile_app/lib/pages/mobile_money_payout_quote_page.dart' \
+            'apps/mobile_app/test/mobile_money_payout_quote_page_test.dart' | sort)"
+
           for follow_up_sha in $(git rev-list "${COMMIT1_SHA}..${actual_sha}"); do
             while IFS= read -r changed_path; do
-              test "${changed_path}" = "${WORKFLOW_PATH}" || {
+              grep -Fxq "${changed_path}" <<< "${allowed_follow_up_paths}" || {
                 echo "::error::Out-of-scope follow-up file: ${changed_path}"
                 exit 1
               }
@@ -97,6 +106,9 @@ jobs:
       - name: Test quote freshness policy
         run: flutter test test/mobile_money_payout_quote_freshness_policy_test.dart
 
+      - name: Test quote freshness presentation guard
+        run: flutter test test/mobile_money_payout_quote_page_test.dart
+
       - name: Run complete Flutter test suite
         run: flutter test
 
@@ -105,4 +117,4 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          git diff --check "${BASE_SHA}..${COMMIT1_SHA}"
+          git diff --check "${BASE_SHA}..${actual_sha}"

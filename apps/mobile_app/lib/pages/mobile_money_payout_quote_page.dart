@@ -6,18 +6,21 @@ import 'package:intl/intl.dart';
 import '../models/mobile_money_payout_quote.dart';
 import '../models/mobile_money_payout_quote_intent.dart';
 import '../presentation/mobile_money_payout_quote_controller.dart';
+import '../services/mobile_money_payout_quote_freshness_policy.dart';
 
 class MobileMoneyPayoutQuotePage extends StatefulWidget {
   const MobileMoneyPayoutQuotePage({
     super.key,
     required this.controller,
     required this.intent,
+    this.nowUtc,
     this.onContinue,
     this.onBack,
   });
 
   final MobileMoneyPayoutQuoteController controller;
   final MobileMoneyPayoutQuoteIntent intent;
+  final DateTime Function()? nowUtc;
   final ValueChanged<MobileMoneyPayoutQuote>? onContinue;
   final VoidCallback? onBack;
 
@@ -102,6 +105,8 @@ class _MobileMoneyPayoutQuotePageState
         return _QuoteView(
           quote: quote,
           intent: widget.intent,
+          nowUtc: widget.nowUtc ?? DateTime.now,
+          onRefresh: _createQuote,
           onContinue: widget.onContinue,
         );
       case MobileMoneyPayoutQuotePresentationStatus.failed:
@@ -136,15 +141,26 @@ class _QuoteView extends StatelessWidget {
   const _QuoteView({
     required this.quote,
     required this.intent,
+    required this.nowUtc,
+    required this.onRefresh,
     required this.onContinue,
   });
 
   final MobileMoneyPayoutQuote quote;
   final MobileMoneyPayoutQuoteIntent intent;
+  final DateTime Function() nowUtc;
+  final Future<void> Function() onRefresh;
   final ValueChanged<MobileMoneyPayoutQuote>? onContinue;
 
   @override
   Widget build(BuildContext context) {
+    const freshnessPolicy = MobileMoneyPayoutQuoteFreshnessPolicy();
+    final freshness = freshnessPolicy.evaluate(
+      quote: quote,
+      atUtc: nowUtc().toUtc(),
+    );
+    final isExpired = freshness.isExpired;
+
     return ListView(
       key: const Key('momo-quote-ready'),
       children: [
@@ -205,6 +221,31 @@ class _QuoteView extends StatelessWidget {
           key: const Key('momo-quote-expiry'),
         ),
         const SizedBox(height: 12),
+        if (isExpired) ...[
+          Card(
+            key: const Key('momo-quote-expired'),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Text(
+                    'Cette estimation a expiré. Demandez une nouvelle estimation avant de continuer.',
+                  ),
+                  const SizedBox(height: 12),
+                  OutlinedButton(
+                    key: const Key('momo-quote-refresh'),
+                    onPressed: () {
+                      onRefresh();
+                    },
+                    child: const Text('Actualiser l’estimation'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+        ],
         const Text(
           'Aucun transfert n’a encore été lancé.',
           key: Key('momo-quote-no-payout'),
@@ -213,7 +254,26 @@ class _QuoteView extends StatelessWidget {
           const SizedBox(height: 24),
           FilledButton(
             key: const Key('momo-quote-continue'),
-            onPressed: () => onContinue!(quote),
+            onPressed: isExpired
+                ? null
+                : () {
+                    final currentFreshness = freshnessPolicy.evaluate(
+                      quote: quote,
+                      atUtc: nowUtc().toUtc(),
+                    );
+                    if (currentFreshness.isExpired) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Cette estimation a expiré. Actualisez-la avant de continuer.',
+                            key: Key('momo-quote-expired-snackbar'),
+                          ),
+                        ),
+                      );
+                      return;
+                    }
+                    onContinue!(quote);
+                  },
             child: const Text('Continuer'),
           ),
         ],

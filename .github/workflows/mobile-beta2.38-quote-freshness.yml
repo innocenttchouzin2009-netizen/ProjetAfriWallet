@@ -117,4 +117,6 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          actual_sha="$(git rev-parse HEAD)"
+          test "${actual_sha}" = "${GITHUB_SHA}"
           git diff --check "${BASE_SHA}..${actual_sha}"

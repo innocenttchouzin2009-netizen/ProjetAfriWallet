@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile_app/models/mobile_money_payout.dart';
-import 'package:mobile_app/models/mobile_money_payout_execution_handoff.dart';
 import 'package:mobile_app/models/mobile_money_payout_funding_intent.dart';
 import 'package:mobile_app/models/mobile_money_payout_quote.dart';
 import 'package:mobile_app/services/mobile_money_payout_execution_handoff_policy.dart';

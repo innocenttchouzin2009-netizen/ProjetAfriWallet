@@ -75,12 +75,14 @@ MobileMoneyPayoutQuote _quote() => MobileMoneyPayoutQuote(
 
 Widget _app(
   MobileMoneyPayoutQuoteController controller, {
+  DateTime Function()? nowUtc,
   ValueChanged<MobileMoneyPayoutQuote>? onContinue,
 }) {
   return MaterialApp(
     home: MobileMoneyPayoutQuotePage(
       controller: controller,
       intent: _intent(),
+      nowUtc: nowUtc,
       onContinue: onContinue,
     ),
   );
@@ -107,7 +109,11 @@ void main() {
     MobileMoneyPayoutQuote? continuedQuote;
 
     await tester.pumpWidget(
-      _app(controller, onContinue: (quote) => continuedQuote = quote),
+      _app(
+        controller,
+        nowUtc: () => DateTime.utc(2026, 10, 7, 16, 5),
+        onContinue: (quote) => continuedQuote = quote,
+      ),
     );
     await tester.pump();
 
@@ -159,6 +165,81 @@ void main() {
 
     expect(continuedQuote, same(quote));
     expect(repository.callCount, 1);
+  });
+
+  testWidgets('blocks an expired quote and offers a refresh action',
+      (tester) async {
+    final repository = _FakeQuoteRepository((intent) async => _quote());
+    final controller = MobileMoneyPayoutQuoteController(
+      repository: repository,
+    );
+    MobileMoneyPayoutQuote? continuedQuote;
+
+    await tester.pumpWidget(
+      _app(
+        controller,
+        nowUtc: () => DateTime.utc(2026, 10, 7, 16, 10),
+        onContinue: (quote) => continuedQuote = quote,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.drag(
+      find.byKey(const Key('momo-quote-ready')),
+      const Offset(0, -600),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('momo-quote-expired')), findsOneWidget);
+    expect(find.byKey(const Key('momo-quote-refresh')), findsOneWidget);
+
+    final continueButton = tester.widget<FilledButton>(
+      find.byKey(const Key('momo-quote-continue')),
+    );
+    expect(continueButton.onPressed, isNull);
+    expect(continuedQuote, isNull);
+  });
+
+  testWidgets('rechecks freshness when continue is tapped',
+      (tester) async {
+    var nowUtc = DateTime.utc(2026, 10, 7, 16, 5);
+    final repository = _FakeQuoteRepository((intent) async => _quote());
+    final controller = MobileMoneyPayoutQuoteController(
+      repository: repository,
+    );
+    MobileMoneyPayoutQuote? continuedQuote;
+
+    await tester.pumpWidget(
+      _app(
+        controller,
+        nowUtc: () => nowUtc,
+        onContinue: (quote) => continuedQuote = quote,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.drag(
+      find.byKey(const Key('momo-quote-ready')),
+      const Offset(0, -600),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      tester.widget<FilledButton>(
+        find.byKey(const Key('momo-quote-continue')),
+      ).onPressed,
+      isNotNull,
+    );
+
+    nowUtc = DateTime.utc(2026, 10, 7, 16, 10);
+    await tester.tap(find.byKey(const Key('momo-quote-continue')));
+    await tester.pump();
+
+    expect(continuedQuote, isNull);
+    expect(
+      find.byKey(const Key('momo-quote-expired-snackbar')),
+      findsOneWidget,
+    );
   });
 
   testWidgets('retry requests the same intent without launching a payout',

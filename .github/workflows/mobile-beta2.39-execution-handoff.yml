@@ -79,38 +79,9 @@ jobs:
 
           lint_fix_files="$(git diff --name-only "${CERT_WORKFLOW_SHA}..${LINT_FIX_SHA}")"
           test "${lint_fix_files}" = "${TEST_PATH}"
-          test "$(git diff --numstat "${CERT_WORKFLOW_SHA}..${LINT_FIX_SHA}" -- "${TEST_PATH}")" = 
-
-      - name: Set up Flutter 3.47.2
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.47.2'
-          cache: true
-
-      - name: Install dependencies
-        run: flutter pub get
-
-      - name: Generate localizations
-        run: flutter gen-l10n
-
-      - name: Analyze
-        run: flutter analyze
-
-      - name: Test execution handoff policy
-        run: flutter test test/mobile_money_payout_execution_handoff_policy_test.dart
-
-      - name: Run complete Flutter test suite
-        run: flutter test
-
-      - name: Verify Beta2.39 diff
-        working-directory: .
-        shell: bash
-        run: |
-          set -euo pipefail
-          actual_sha="$(git rev-parse HEAD)"
-          test "${actual_sha}" = "${GITHUB_SHA}"
-          git diff --check "${BASE_SHA}..${actual_sha}"
-0\t1\t'"${TEST_PATH}"
+          lint_fix_numstat="$(git diff --numstat "${CERT_WORKFLOW_SHA}..${LINT_FIX_SHA}" -- "${TEST_PATH}")"
+          expected_numstat="$(printf '0\t1\t%s' "${TEST_PATH}")"
+          test "${lint_fix_numstat}" = "${expected_numstat}"
 
           git merge-base --is-ancestor "${LINT_FIX_SHA}" "${actual_sha}"
 

@@ -32,6 +32,9 @@ jobs:
     env:
       BASE_SHA: 9a4cf712c5118d27a2b8d27e4b6c895462e12947
       COMMIT1_SHA: fe2052f0475f94af61d59edc31cb87d54ba588ed
+      CERT_WORKFLOW_SHA: 6f7f64bc830dd55e31f1bc965e8218230956c466
+      LINT_FIX_SHA: 556d38c9b44c6e682827d0b8903ed6e7f1dd2802
+      TEST_PATH: apps/mobile_app/test/mobile_money_payout_execution_handoff_policy_test.dart
       WORKFLOW_PATH: .github/workflows/mobile-beta2.39-execution-handoff.yml
 
     defaults:
@@ -69,12 +72,52 @@ jobs:
           )"
           test "${changed_files}" = "${expected_files}"
 
-          git merge-base --is-ancestor "${COMMIT1_SHA}" "${actual_sha}"
+          git cat-file -e "${CERT_WORKFLOW_SHA}^{commit}"
+          git cat-file -e "${LINT_FIX_SHA}^{commit}"
+          test "$(git rev-parse "${CERT_WORKFLOW_SHA}^")" = "${COMMIT1_SHA}"
+          test "$(git rev-parse "${LINT_FIX_SHA}^")" = "${CERT_WORKFLOW_SHA}"
 
-          for follow_up_sha in $(git rev-list "${COMMIT1_SHA}..${actual_sha}"); do
+          lint_fix_files="$(git diff --name-only "${CERT_WORKFLOW_SHA}..${LINT_FIX_SHA}")"
+          test "${lint_fix_files}" = "${TEST_PATH}"
+          test "$(git diff --numstat "${CERT_WORKFLOW_SHA}..${LINT_FIX_SHA}" -- "${TEST_PATH}")" = 
+
+      - name: Set up Flutter 3.47.2
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.2'
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Generate localizations
+        run: flutter gen-l10n
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test execution handoff policy
+        run: flutter test test/mobile_money_payout_execution_handoff_policy_test.dart
+
+      - name: Run complete Flutter test suite
+        run: flutter test
+
+      - name: Verify Beta2.39 diff
+        working-directory: .
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual_sha="$(git rev-parse HEAD)"
+          test "${actual_sha}" = "${GITHUB_SHA}"
+          git diff --check "${BASE_SHA}..${actual_sha}"
+0\t1\t'"${TEST_PATH}"
+
+          git merge-base --is-ancestor "${LINT_FIX_SHA}" "${actual_sha}"
+
+          for follow_up_sha in $(git rev-list "${LINT_FIX_SHA}..${actual_sha}"); do
             while IFS= read -r changed_path; do
               test "${changed_path}" = "${WORKFLOW_PATH}" || {
-                echo "::error::Out-of-scope pre-Commit-2 file: ${changed_path}"
+                echo "::error::Out-of-scope post-lint-fix file: ${changed_path}"
                 exit 1
               }
             done < <(git diff-tree --no-commit-id --name-only -r "${follow_up_sha}")

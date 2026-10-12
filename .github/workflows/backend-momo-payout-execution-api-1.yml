@@ -1,0 +1,52 @@
+name: AFW-BE-MOMO-PAYOUT-EXECUTION-API-1
+
+on:
+  push:
+    branches:
+      - feature/backend-momo-payout-execution-api-1
+    paths:
+      - 'AfriWallet.sln'
+      - 'backend/src/MobileMoney/**'
+      - 'backend/tests/MobileMoney.Payout.Execution.Contracts.Scenarios/**'
+      - '.github/workflows/backend-momo-payout-execution-api-1.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'AfriWallet.sln'
+      - 'backend/src/MobileMoney/**'
+      - 'backend/tests/MobileMoney.Payout.Execution.Contracts.Scenarios/**'
+      - '.github/workflows/backend-momo-payout-execution-api-1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    name: Certify payout execution API contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build MobileMoney.Api
+        run: dotnet build backend/src/MobileMoney/MobileMoney.Api/MobileMoney.Api.csproj
+
+      - name: Run payout execution API scenarios
+        run: dotnet run --project backend/tests/MobileMoney.Payout.Execution.Contracts.Scenarios
+
+      - name: Verify diff cleanliness
+        run: git diff --check

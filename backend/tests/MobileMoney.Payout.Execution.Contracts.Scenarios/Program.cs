@@ -126,6 +126,8 @@ await RunAsync("execution binding rejects funding amount mismatch", async () =>
 });
 
 await BindingAdapterScenarios.RunAsync();
+await ApplicationOrchestrationScenarios.RunAsync();
+await HttpEndpointScenarios.RunAsync();
 
 Console.WriteLine("Mobile Money payout execution contract scenarios passed.");
 

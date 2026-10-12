@@ -1,0 +1,102 @@
+name: Mobile Beta2.42 Authenticated Production Wiring Certification
+
+on:
+  push:
+    branches:
+      - feature/mobile-beta2.42
+    paths:
+      - 'apps/mobile_app/lib/services/authenticated_production_wiring.dart'
+      - 'apps/mobile_app/test/authenticated_production_wiring_test.dart'
+      - '.github/workflows/mobile-beta2.42-authenticated-production-wiring.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'apps/mobile_app/lib/services/authenticated_production_wiring.dart'
+      - 'apps/mobile_app/test/authenticated_production_wiring_test.dart'
+      - '.github/workflows/mobile-beta2.42-authenticated-production-wiring.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    if: ${{ github.event_name != 'pull_request' || github.head_ref == 'feature/mobile-beta2.42' }}
+    name: Certify Beta2.42 authenticated production wiring
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+
+    env:
+      BASE_SHA: 953728d1636732de3adf3e4d611068935a2cc028
+      COMMIT1_SHA: 317a885e20060d98e1e3f884af96714774957542
+      TEST_PATH: apps/mobile_app/test/authenticated_production_wiring_test.dart
+
+    defaults:
+      run:
+        working-directory: apps/mobile_app
+
+    steps:
+      - name: Checkout exact branch head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Assert Beta2.42 lineage and Commit 1 scope
+        working-directory: .
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          actual_sha="$(git rev-parse HEAD)"
+          test "${actual_sha}" = "${GITHUB_SHA}"
+
+          git cat-file -e "${BASE_SHA}^{commit}"
+          git cat-file -e "${COMMIT1_SHA}^{commit}"
+          test "$(git rev-parse "${COMMIT1_SHA}^")" = "${BASE_SHA}"
+          test "$(git merge-base "${BASE_SHA}" "${COMMIT1_SHA}")" = "${BASE_SHA}"
+          test "$(git rev-list --count "${BASE_SHA}..${COMMIT1_SHA}")" = "1"
+
+          changed_files="$(git diff --name-only "${BASE_SHA}..${COMMIT1_SHA}" | sort)"
+          expected_files="$(
+            printf '%s\n' \
+              'apps/mobile_app/lib/services/authenticated_production_wiring.dart' \
+              'apps/mobile_app/test/authenticated_production_wiring_test.dart' | sort
+          )"
+          test "${changed_files}" = "${expected_files}"
+
+          git merge-base --is-ancestor "${COMMIT1_SHA}" "${actual_sha}"
+
+      - name: Set up Flutter 3.47.2
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.2'
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Verify lockfile is synchronized
+        run: git diff --exit-code -- pubspec.lock
+
+      - name: Generate localizations
+        run: flutter gen-l10n
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test authenticated production wiring
+        run: flutter test ${TEST_PATH#apps/mobile_app/}
+
+      - name: Run complete Flutter test suite
+        run: flutter test
+
+      - name: Verify Beta2.42 diff
+        working-directory: .
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual_sha="$(git rev-parse HEAD)"
+          test "${actual_sha}" = "${GITHUB_SHA}"
+          git diff --check "${BASE_SHA}..${actual_sha}"

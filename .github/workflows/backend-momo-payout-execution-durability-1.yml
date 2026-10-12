@@ -1,0 +1,43 @@
+name: AFW-BE-MOMO-PAYOUT-EXECUTION-DURABILITY-1
+
+on:
+  push:
+    branches: [feature/backend-momo-payout-execution-durability-1]
+    paths:
+      - 'backend/src/MobileMoney/**'
+      - 'backend/tests/MobileMoney.Payout.Execution.Durability.Scenarios/**'
+      - '.github/workflows/backend-momo-payout-execution-durability-1.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'backend/src/MobileMoney/**'
+      - 'backend/tests/MobileMoney.Payout.Execution.Durability.Scenarios/**'
+      - '.github/workflows/backend-momo-payout-execution-durability-1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore Mobile Money API
+        run: dotnet restore backend/src/MobileMoney/MobileMoney.Api/MobileMoney.Api.csproj
+
+      - name: Build Mobile Money API
+        run: dotnet build backend/src/MobileMoney/MobileMoney.Api/MobileMoney.Api.csproj --no-restore
+
+      - name: Run payout execution durability scenarios
+        run: dotnet run --project backend/tests/MobileMoney.Payout.Execution.Durability.Scenarios
+
+      - name: Verify clean diff
+        run: git diff --check

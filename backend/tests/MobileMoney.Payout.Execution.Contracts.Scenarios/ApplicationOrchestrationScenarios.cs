@@ -160,12 +160,15 @@ internal static class ApplicationOrchestrationScenarios
         DateTimeOffset expiresAtUtc) =>
         MobileMoneyPayoutExecutionQuoteBinding.Create(
             Guid.NewGuid(),
+            "DE",
             "EUR",
             9_500,
             500,
             10_000,
+            "CM",
             "XAF",
             6_200_000,
+            "MTN_CM",
             expiresAtUtc);
 
     private static MobileMoneyPayoutExecutionFundingBinding CreateFunding(

@@ -110,12 +110,15 @@ internal static class HttpEndpointScenarios
         var now = new DateTimeOffset(2026, 10, 12, 6, 0, 0, TimeSpan.Zero);
         var quote = MobileMoneyPayoutExecutionQuoteBinding.Create(
             Guid.NewGuid(),
+            "DE",
             "EUR",
             9_500,
             500,
             10_000,
+            "CM",
             "XAF",
             6_200_000,
+            "MTN_CM",
             now.AddMinutes(5));
 
         var funding = MobileMoneyPayoutExecutionFundingBinding.Create(

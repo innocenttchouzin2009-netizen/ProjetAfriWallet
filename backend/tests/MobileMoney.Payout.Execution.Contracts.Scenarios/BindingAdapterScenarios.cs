@@ -46,12 +46,15 @@ internal static class BindingAdapterScenarios
 
         Assert(binding is not null, "Stored quote must bind for execution.");
         Assert(binding!.QuoteId == quote.QuoteId, "Quote id mapping mismatch.");
+        Assert(binding.SourceCountryCode == "DE", "Source country mapping mismatch.");
         Assert(binding.SourceCurrency == "EUR", "Source currency mapping mismatch.");
         Assert(binding.SourceAmountMinor == 9_500, "Source amount mapping mismatch.");
         Assert(binding.TotalFeeMinor == 500, "Fee mapping mismatch.");
         Assert(binding.TotalSourceDebitMinor == 10_000, "Debit mapping mismatch.");
+        Assert(binding.DestinationCountryCode == "CM", "Destination country mapping mismatch.");
         Assert(binding.DestinationCurrency == "XAF", "Destination currency mapping mismatch.");
         Assert(binding.DestinationAmountMinor == 6_200_000, "Destination amount mapping mismatch.");
+        Assert(binding.OperatorCode == "MTN_CM", "Operator mapping mismatch.");
         Assert(binding.ExpiresAtUtc == quote.ExpiresAtUtc, "Expiry mapping mismatch.");
     }
 

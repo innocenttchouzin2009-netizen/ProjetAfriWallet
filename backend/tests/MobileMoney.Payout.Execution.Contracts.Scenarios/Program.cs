@@ -1,3 +1,4 @@
+using MobileMoney.Production.Payout.Domain;
 using MobileMoney.Production.Payout.Execution.Abstractions;
 using MobileMoney.Production.Payout.Execution.Domain;
 using MobileMoney.Production.Payout.Funding.Domain;
@@ -125,6 +126,103 @@ await RunAsync("execution binding rejects funding amount mismatch", async () =>
     });
 });
 
+await RunAsync("beneficiary binding preserves normalized payout beneficiary identity", () =>
+{
+    var beneficiary = new MobileMoneyBeneficiary(
+        "+237650000000",
+        "cm",
+        "mtn_cm",
+        "  Jane Doe  ");
+
+    var binding = MobileMoneyPayoutExecutionBeneficiaryBinding.Create(beneficiary);
+
+    Assert(binding.Msisdn == "+237650000000", "Beneficiary MSISDN mismatch.");
+    Assert(binding.CountryCode == "CM", "Beneficiary country mismatch.");
+    Assert(binding.OperatorCode == "MTN_CM", "Beneficiary operator mismatch.");
+    Assert(binding.DisplayName == "Jane Doe", "Beneficiary display name mismatch.");
+    return Task.CompletedTask;
+});
+
+await RunAsync("dispatch context binds execution and beneficiary without dispatching", () =>
+{
+    var now = new DateTimeOffset(2026, 10, 11, 15, 30, 0, TimeSpan.Zero);
+    var quote = CreateQuote(now.AddMinutes(5));
+    var funding = CreateFunding(quote.TotalSourceDebitMinor, quote.SourceCurrency);
+    var execution = MobileMoneyPayoutExecutionBinding.Create(
+        quote,
+        funding,
+        MobileMoneyPayoutExecutionIdempotencyKey.Create("dispatch-context-1"),
+        now);
+    var beneficiary = MobileMoneyPayoutExecutionBeneficiaryBinding.Create(
+        new MobileMoneyBeneficiary(
+            "+237650000000",
+            "CM",
+            "MTN_CM",
+            "Jane Doe"));
+
+    var context = MobileMoneyPayoutExecutionDispatchContext.Create(
+        execution,
+        beneficiary);
+
+    Assert(context.Binding == execution, "Dispatch context execution binding mismatch.");
+    Assert(context.Beneficiary == beneficiary, "Dispatch context beneficiary mismatch.");
+    Assert(
+        context.Binding.Quote.DestinationCountryCode == "CM",
+        "Dispatch quote destination country mismatch.");
+    Assert(
+        context.Binding.Quote.OperatorCode == "MTN_CM",
+        "Dispatch quote operator mismatch.");
+    return Task.CompletedTask;
+});
+
+await RunAsync("dispatch context rejects beneficiary country mismatch", async () =>
+{
+    var now = new DateTimeOffset(2026, 10, 11, 15, 35, 0, TimeSpan.Zero);
+    var quote = CreateQuote(now.AddMinutes(5));
+    var execution = MobileMoneyPayoutExecutionBinding.Create(
+        quote,
+        CreateFunding(quote.TotalSourceDebitMinor, quote.SourceCurrency),
+        MobileMoneyPayoutExecutionIdempotencyKey.Create("dispatch-country"),
+        now);
+    var beneficiary = MobileMoneyPayoutExecutionBeneficiaryBinding.Create(
+        new MobileMoneyBeneficiary(
+            "+2250700000000",
+            "CI",
+            "MTN_CM"));
+
+    await ExpectAsync<InvalidOperationException>(() =>
+    {
+        _ = MobileMoneyPayoutExecutionDispatchContext.Create(
+            execution,
+            beneficiary);
+        return Task.CompletedTask;
+    });
+});
+
+await RunAsync("dispatch context rejects beneficiary operator mismatch", async () =>
+{
+    var now = new DateTimeOffset(2026, 10, 11, 15, 40, 0, TimeSpan.Zero);
+    var quote = CreateQuote(now.AddMinutes(5));
+    var execution = MobileMoneyPayoutExecutionBinding.Create(
+        quote,
+        CreateFunding(quote.TotalSourceDebitMinor, quote.SourceCurrency),
+        MobileMoneyPayoutExecutionIdempotencyKey.Create("dispatch-operator"),
+        now);
+    var beneficiary = MobileMoneyPayoutExecutionBeneficiaryBinding.Create(
+        new MobileMoneyBeneficiary(
+            "+237650000000",
+            "CM",
+            "ORANGE_CM"));
+
+    await ExpectAsync<InvalidOperationException>(() =>
+    {
+        _ = MobileMoneyPayoutExecutionDispatchContext.Create(
+            execution,
+            beneficiary);
+        return Task.CompletedTask;
+    });
+});
+
 await BindingAdapterScenarios.RunAsync();
 await ApplicationOrchestrationScenarios.RunAsync();
 await HttpEndpointScenarios.RunAsync();
@@ -134,12 +232,15 @@ Console.WriteLine("Mobile Money payout execution contract scenarios passed.");
 static MobileMoneyPayoutExecutionQuoteBinding CreateQuote(DateTimeOffset expiresAtUtc) =>
     MobileMoneyPayoutExecutionQuoteBinding.Create(
         Guid.NewGuid(),
+        "de",
         "eur",
         9_500,
         500,
         10_000,
+        "cm",
         "xaf",
         6_200_000,
+        "mtn_cm",
         expiresAtUtc);
 
 static MobileMoneyPayoutExecutionFundingBinding CreateFunding(

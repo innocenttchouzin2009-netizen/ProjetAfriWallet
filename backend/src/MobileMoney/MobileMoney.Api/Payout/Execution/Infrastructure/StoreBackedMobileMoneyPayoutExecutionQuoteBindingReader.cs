@@ -29,12 +29,15 @@ public sealed class StoreBackedMobileMoneyPayoutExecutionQuoteBindingReader
 
         return MobileMoneyPayoutExecutionQuoteBinding.Create(
             quote.QuoteId,
+            quote.Corridor.SourceCountryCode,
             quote.Corridor.SourceCurrency,
             quote.SourceAmountMinor,
             quote.TotalFeeMinor,
             quote.TotalSourceDebitMinor,
+            quote.Corridor.DestinationCountryCode,
             quote.Corridor.DestinationCurrency,
             quote.DestinationAmountMinor,
+            quote.Corridor.OperatorCode,
             quote.ExpiresAtUtc);
     }
 }

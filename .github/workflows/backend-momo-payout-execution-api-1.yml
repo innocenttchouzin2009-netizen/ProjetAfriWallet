@@ -43,10 +43,10 @@ jobs:
         run: dotnet restore
 
       - name: Build MobileMoney.Api
-        run: dotnet build backend/src/MobileMoney/MobileMoney.Api/MobileMoney.Api.csproj --no-restore
+        run: dotnet build backend/src/MobileMoney/MobileMoney.Api/MobileMoney.Api.csproj
 
       - name: Run payout execution API scenarios
-        run: dotnet run --project backend/tests/MobileMoney.Payout.Execution.Contracts.Scenarios --no-restore
+        run: dotnet run --project backend/tests/MobileMoney.Payout.Execution.Contracts.Scenarios
 
       - name: Verify diff cleanliness
         run: git diff --check

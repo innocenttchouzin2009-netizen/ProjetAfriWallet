@@ -18,7 +18,7 @@ jobs:
     timeout-minutes: 30
 
     env:
-      CANDIDATE_SHA: 1ec78da8a854756bc0a97bdbf337ddfa6586fe43
+      CANDIDATE_SHA: ${{ github.sha }}
       BASE_SHA: 66f93db80759a89ca42a184c9e48cdc83e0c8d80
       STATUS_CONTEXT: mobile-beta2.47/auth-state-controller-certification
 
@@ -27,13 +27,13 @@ jobs:
         working-directory: apps/mobile_app
 
     steps:
-      - name: Checkout locked Beta2.47 candidate
+      - name: Checkout exact Beta2.47 triggering head
         uses: actions/checkout@v4
         with:
           ref: ${{ env.CANDIDATE_SHA }}
           fetch-depth: 0
 
-      - name: Assert exact locked candidate
+      - name: Assert exact triggering head
         working-directory: .
         shell: bash
         run: |

@@ -61,7 +61,10 @@ class AuthStateController extends ChangeNotifier {
   AuthStateController(
     this._sessionLifecycle, {
     AuthLogin? login,
-  }) : _login = login;
+  })
+      // The public named parameter intentionally differs from the private field.
+      // ignore: prefer_initializing_formals
+      : _login = login;
 
   final AuthSessionLifecycle _sessionLifecycle;
   final AuthLogin? _login;

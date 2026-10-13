@@ -1,6 +1,7 @@
 import '../data/remote/wallet_remote_data_source.dart';
 import '../models/wallet_balance.dart';
-import 'secure_session_store.dart';
+import '../network/api_exception.dart';
+import 'authenticated_request_executor.dart';
 
 abstract interface class WalletRepository {
   Future<List<WalletBalance>> loadWalletBalances();
@@ -22,19 +23,20 @@ class UnavailableWalletRepository implements WalletRepository {
 class AuthenticatedWalletRepository implements WalletRepository {
   const AuthenticatedWalletRepository(
     this._remoteDataSource,
-    this._sessionStore,
+    this._requestExecutor,
   );
 
   final WalletRemoteDataSource _remoteDataSource;
-  final AuthSessionStore _sessionStore;
+  final AuthenticatedRequestExecutor _requestExecutor;
 
   @override
   Future<List<WalletBalance>> loadWalletBalances() async {
-    final session = await _sessionStore.read();
-    if (session == null) {
+    try {
+      return await _requestExecutor.execute(
+        _remoteDataSource.loadWalletBalances,
+      );
+    } on ApiUnauthorizedException {
       throw const WalletUnavailableException();
     }
-
-    return _remoteDataSource.loadWalletBalances(session.accessToken);
   }
 }

@@ -33,7 +33,7 @@ class AuthenticatedProductionWiring {
       auth.requestExecutor,
     );
     wallet = WalletProductionWiring(
-      sessionStore: auth.sessionStore,
+      requestExecutor: auth.requestExecutor,
       apiClient: _apiClient,
     );
     transferRepository = AuthenticatedTransferRepository(

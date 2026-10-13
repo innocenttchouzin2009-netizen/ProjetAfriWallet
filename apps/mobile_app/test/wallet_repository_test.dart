@@ -6,13 +6,13 @@ import 'package:http/testing.dart';
 import 'package:mobile_app/data/remote/wallet_remote_data_source.dart';
 import 'package:mobile_app/models/auth_session.dart';
 import 'package:mobile_app/network/api_client.dart';
-import 'package:mobile_app/network/api_exception.dart';
-import 'package:mobile_app/services/secure_session_store.dart';
+import 'package:mobile_app/services/auth_session_coordinator.dart';
+import 'package:mobile_app/services/authenticated_request_executor.dart';
 import 'package:mobile_app/services/wallet_repository.dart';
 
 void main() {
   group('AuthenticatedWalletRepository', () {
-    test('loads wallets with the access token from the stored session', () async {
+    test('loads wallets with the current authenticated access token', () async {
       late http.Request captured;
       final apiClient = ApiClient(
         baseUrl: 'https://api.afwal.test',
@@ -35,9 +35,12 @@ void main() {
           );
         }),
       );
+      final lifecycle = _FakeAuthSessionLifecycle(
+        restoredSession: _storedSession('access-secret'),
+      );
       final repository = AuthenticatedWalletRepository(
         WalletRemoteDataSource(apiClient),
-        _FakeAuthSessionStore(_storedSession()),
+        AuthenticatedRequestExecutor(lifecycle),
       );
 
       final wallets = await repository.loadWalletBalances();
@@ -46,6 +49,8 @@ void main() {
       expect(wallets, hasLength(1));
       expect(wallets.single.currency, 'XAF');
       expect(wallets.single.availableMinor, 125000);
+      expect(lifecycle.restoreCalls, 1);
+      expect(lifecycle.refreshCalls, 0);
       apiClient.close();
     });
 
@@ -58,9 +63,10 @@ void main() {
           return http.Response('{"wallets":[]}', 200);
         }),
       );
+      final lifecycle = _FakeAuthSessionLifecycle();
       final repository = AuthenticatedWalletRepository(
         WalletRemoteDataSource(apiClient),
-        _FakeAuthSessionStore(null),
+        AuthenticatedRequestExecutor(lifecycle),
       );
 
       await expectLater(
@@ -68,52 +74,91 @@ void main() {
         throwsA(isA<WalletUnavailableException>()),
       );
       expect(remoteCalled, isFalse);
+      expect(lifecycle.restoreCalls, 1);
+      expect(lifecycle.refreshCalls, 0);
       apiClient.close();
     });
 
-    test('preserves unauthorized responses from the wallet endpoint', () async {
+    test('refreshes once after 401 and retries wallet read', () async {
+      final authorizationHeaders = <String?>[];
       final apiClient = ApiClient(
         baseUrl: 'https://api.afwal.test',
-        httpClient: MockClient((_) async => http.Response('', 401)),
+        httpClient: MockClient((request) async {
+          final authorization = request.headers['Authorization'];
+          authorizationHeaders.add(authorization);
+
+          if (authorization == 'Bearer access-secret') {
+            return http.Response('', 401);
+          }
+
+          return http.Response(
+            '{"wallets":[]}',
+            200,
+            headers: <String, String>{'content-type': 'application/json'},
+          );
+        }),
+      );
+      final lifecycle = _FakeAuthSessionLifecycle(
+        restoredSession: _storedSession('access-secret'),
+        refreshedSession: _storedSession('refreshed-access-secret'),
       );
       final repository = AuthenticatedWalletRepository(
         WalletRemoteDataSource(apiClient),
-        _FakeAuthSessionStore(_storedSession()),
+        AuthenticatedRequestExecutor(lifecycle),
       );
 
-      await expectLater(
-        repository.loadWalletBalances(),
-        throwsA(isA<ApiUnauthorizedException>()),
+      final wallets = await repository.loadWalletBalances();
+
+      expect(wallets, isEmpty);
+      expect(
+        authorizationHeaders,
+        <String?>[
+          'Bearer access-secret',
+          'Bearer refreshed-access-secret',
+        ],
       );
+      expect(lifecycle.restoreCalls, 1);
+      expect(lifecycle.refreshCalls, 1);
       apiClient.close();
     });
   });
 }
 
-StoredAuthSession _storedSession() => StoredAuthSession(
-      accessToken: 'access-secret',
+StoredAuthSession _storedSession(String accessToken) => StoredAuthSession(
+      accessToken: accessToken,
       refreshToken: 'refresh-secret',
       tokenType: 'Bearer',
       sessionId: 'session-1',
       userId: 'user-1',
-      accessTokenExpiresAtUtc: DateTime.utc(2026, 9, 27, 12),
+      accessTokenExpiresAtUtc: DateTime.utc(2026, 10, 13, 18),
     );
 
-class _FakeAuthSessionStore implements AuthSessionStore {
-  _FakeAuthSessionStore(this.session);
+class _FakeAuthSessionLifecycle implements AuthSessionLifecycle {
+  _FakeAuthSessionLifecycle({
+    this.restoredSession,
+    this.refreshedSession,
+  });
 
-  StoredAuthSession? session;
+  StoredAuthSession? restoredSession;
+  StoredAuthSession? refreshedSession;
+  int restoreCalls = 0;
+  int refreshCalls = 0;
+  int clearCalls = 0;
 
   @override
-  Future<StoredAuthSession?> read() async => session;
-
-  @override
-  Future<void> save(StoredAuthSession session) async {
-    this.session = session;
+  Future<StoredAuthSession?> restoreValidSession() async {
+    restoreCalls += 1;
+    return restoredSession;
   }
 
   @override
-  Future<void> clear() async {
-    session = null;
+  Future<StoredAuthSession?> refreshSession() async {
+    refreshCalls += 1;
+    return refreshedSession;
+  }
+
+  @override
+  Future<void> clearLocalSession() async {
+    clearCalls += 1;
   }
 }

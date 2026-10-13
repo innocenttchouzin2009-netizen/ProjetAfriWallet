@@ -30,7 +30,7 @@ class AuthenticatedProductionWiring {
     );
     identityReadRepository = RemoteIdentityReadRepository(
       IdentityRemoteDataSource(_apiClient),
-      auth.sessionStore,
+      auth.requestExecutor,
     );
     wallet = WalletProductionWiring(
       sessionStore: auth.sessionStore,

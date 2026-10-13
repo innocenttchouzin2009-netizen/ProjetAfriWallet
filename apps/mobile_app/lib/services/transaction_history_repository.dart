@@ -1,7 +1,8 @@
 import '../data/remote/transaction_history_contracts.dart';
 import '../data/remote/transaction_history_remote_data_source.dart';
 import '../models/transaction_history.dart';
-import 'secure_session_store.dart';
+import '../network/api_exception.dart';
+import 'authenticated_request_executor.dart';
 
 class TransactionHistoryPageResult {
   const TransactionHistoryPageResult({
@@ -63,11 +64,11 @@ class AuthenticatedTransactionHistoryRepository
     implements PaginatedTransactionHistoryRepository {
   const AuthenticatedTransactionHistoryRepository(
     this._remoteDataSource,
-    this._sessionStore,
+    this._requestExecutor,
   );
 
   final TransactionHistoryRemoteDataSource _remoteDataSource;
-  final AuthSessionStore _sessionStore;
+  final AuthenticatedRequestExecutor _requestExecutor;
 
   @override
   Future<List<TransactionHistoryItem>> listTransactions() async {
@@ -80,22 +81,24 @@ class AuthenticatedTransactionHistoryRepository
     int? limit,
     String? cursor,
   }) async {
-    final session = await _sessionStore.read();
-    if (session == null) {
+    try {
+      final page = await _requestExecutor.execute(
+        (accessToken) => _remoteDataSource.listTransactions(
+          accessToken,
+          limit: limit,
+          cursor: cursor,
+        ),
+      );
+
+      return TransactionHistoryPageResult(
+        items: page.items.map(_mapItem).toList(growable: false),
+        nextCursor: page.nextCursor,
+      );
+    } on ApiUnauthorizedException {
       throw const TransactionHistoryUnavailableException(
         'An authenticated session is required to load transaction history.',
       );
     }
-
-    final page = await _remoteDataSource.listTransactions(
-      session.accessToken,
-      limit: limit,
-      cursor: cursor,
-    );
-    return TransactionHistoryPageResult(
-      items: page.items.map(_mapItem).toList(growable: false),
-      nextCursor: page.nextCursor,
-    );
   }
 
   TransactionHistoryItem _mapItem(TransactionHistoryRemoteItem item) {

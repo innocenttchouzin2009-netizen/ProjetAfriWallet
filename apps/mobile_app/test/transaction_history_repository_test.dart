@@ -7,14 +7,14 @@ import 'package:mobile_app/data/remote/transaction_history_remote_data_source.da
 import 'package:mobile_app/models/auth_session.dart';
 import 'package:mobile_app/models/transaction_history.dart';
 import 'package:mobile_app/network/api_client.dart';
-import 'package:mobile_app/network/api_exception.dart';
-import 'package:mobile_app/services/secure_session_store.dart';
+import 'package:mobile_app/services/auth_session_coordinator.dart';
+import 'package:mobile_app/services/authenticated_request_executor.dart';
 import 'package:mobile_app/services/transaction_history_repository.dart';
 
 void main() {
   group('AuthenticatedTransactionHistoryRepository', () {
     test(
-      'propagates pagination and maps the remote page with the stored access token',
+      'propagates pagination and maps the remote page with the current access token',
       () async {
         late http.Request captured;
         final apiClient = ApiClient(
@@ -43,9 +43,12 @@ void main() {
             );
           }),
         );
+        final lifecycle = _FakeAuthSessionLifecycle(
+          restoredSession: _storedSession('access-secret'),
+        );
         final repository = AuthenticatedTransactionHistoryRepository(
           TransactionHistoryRemoteDataSource(apiClient),
-          _FakeAuthSessionStore(_storedSession()),
+          AuthenticatedRequestExecutor(lifecycle),
         );
 
         final page = await repository.listTransactionPage(
@@ -69,6 +72,8 @@ void main() {
         expect(transaction.occurredAt, DateTime.utc(2026, 10, 2, 12, 30));
         expect(transaction.reference, 'AFW-REF-1');
         expect(transaction.counterpartyLabel, 'Merchant A');
+        expect(lifecycle.restoreCalls, 1);
+        expect(lifecycle.refreshCalls, 0);
         apiClient.close();
       },
     );
@@ -101,9 +106,12 @@ void main() {
             ),
           ),
         );
+        final lifecycle = _FakeAuthSessionLifecycle(
+          restoredSession: _storedSession('access-secret'),
+        );
         final repository = AuthenticatedTransactionHistoryRepository(
           TransactionHistoryRemoteDataSource(apiClient),
-          _FakeAuthSessionStore(_storedSession()),
+          AuthenticatedRequestExecutor(lifecycle),
         );
 
         final transactions = await repository.listTransactions();
@@ -125,9 +133,10 @@ void main() {
             return http.Response('{"items":[],"nextCursor":null}', 200);
           }),
         );
+        final lifecycle = _FakeAuthSessionLifecycle();
         final repository = AuthenticatedTransactionHistoryRepository(
           TransactionHistoryRemoteDataSource(apiClient),
-          _FakeAuthSessionStore(null),
+          AuthenticatedRequestExecutor(lifecycle),
         );
 
         await expectLater(
@@ -135,56 +144,120 @@ void main() {
           throwsA(isA<TransactionHistoryUnavailableException>()),
         );
         expect(remoteCalled, isFalse);
+        expect(lifecycle.restoreCalls, 1);
+        expect(lifecycle.refreshCalls, 0);
         apiClient.close();
       },
     );
 
     test(
-      'preserves unauthorized responses from the transaction history endpoint',
+      'refreshes once after 401 and retries transaction history read',
+      () async {
+        final authorizationHeaders = <String?>[];
+        final apiClient = ApiClient(
+          baseUrl: 'https://api.afwal.test',
+          httpClient: MockClient((request) async {
+            final authorization = request.headers['Authorization'];
+            authorizationHeaders.add(authorization);
+
+            if (authorization == 'Bearer access-secret') {
+              return http.Response('', 401);
+            }
+
+            return http.Response(
+              '{"items":[],"nextCursor":null}',
+              200,
+              headers: <String, String>{'content-type': 'application/json'},
+            );
+          }),
+        );
+        final lifecycle = _FakeAuthSessionLifecycle(
+          restoredSession: _storedSession('access-secret'),
+          refreshedSession: _storedSession('refreshed-access-secret'),
+        );
+        final repository = AuthenticatedTransactionHistoryRepository(
+          TransactionHistoryRemoteDataSource(apiClient),
+          AuthenticatedRequestExecutor(lifecycle),
+        );
+
+        final page = await repository.listTransactionPage(limit: 25);
+
+        expect(page.items, isEmpty);
+        expect(
+          authorizationHeaders,
+          <String?>[
+            'Bearer access-secret',
+            'Bearer refreshed-access-secret',
+          ],
+        );
+        expect(lifecycle.restoreCalls, 1);
+        expect(lifecycle.refreshCalls, 1);
+        apiClient.close();
+      },
+    );
+
+    test(
+      'maps unrecoverable unauthorized responses to transaction history unavailable',
       () async {
         final apiClient = ApiClient(
           baseUrl: 'https://api.afwal.test',
           httpClient: MockClient((_) async => http.Response('', 401)),
         );
+        final lifecycle = _FakeAuthSessionLifecycle(
+          restoredSession: _storedSession('access-secret'),
+        );
         final repository = AuthenticatedTransactionHistoryRepository(
           TransactionHistoryRemoteDataSource(apiClient),
-          _FakeAuthSessionStore(_storedSession()),
+          AuthenticatedRequestExecutor(lifecycle),
         );
 
         await expectLater(
           repository.listTransactionPage(limit: 25),
-          throwsA(isA<ApiUnauthorizedException>()),
+          throwsA(isA<TransactionHistoryUnavailableException>()),
         );
+        expect(lifecycle.restoreCalls, 1);
+        expect(lifecycle.refreshCalls, 1);
         apiClient.close();
       },
     );
   });
 }
 
-StoredAuthSession _storedSession() => StoredAuthSession(
-      accessToken: 'access-secret',
+StoredAuthSession _storedSession(String accessToken) => StoredAuthSession(
+      accessToken: accessToken,
       refreshToken: 'refresh-secret',
       tokenType: 'Bearer',
       sessionId: 'session-1',
       userId: 'user-1',
-      accessTokenExpiresAtUtc: DateTime.utc(2026, 10, 2, 13),
+      accessTokenExpiresAtUtc: DateTime.utc(2026, 10, 13, 18),
     );
 
-class _FakeAuthSessionStore implements AuthSessionStore {
-  _FakeAuthSessionStore(this.session);
+class _FakeAuthSessionLifecycle implements AuthSessionLifecycle {
+  _FakeAuthSessionLifecycle({
+    this.restoredSession,
+    this.refreshedSession,
+  });
 
-  StoredAuthSession? session;
+  StoredAuthSession? restoredSession;
+  StoredAuthSession? refreshedSession;
+  int restoreCalls = 0;
+  int refreshCalls = 0;
+  int clearCalls = 0;
 
   @override
-  Future<StoredAuthSession?> read() async => session;
-
-  @override
-  Future<void> save(StoredAuthSession session) async {
-    this.session = session;
+  Future<StoredAuthSession?> restoreValidSession() async {
+    restoreCalls += 1;
+    return restoredSession;
   }
 
   @override
-  Future<void> clear() async {
-    session = null;
+  Future<StoredAuthSession?> refreshSession() async {
+    refreshCalls += 1;
+    return refreshedSession;
+  }
+
+  @override
+  Future<void> clearLocalSession() async {
+    clearCalls += 1;
   }
 }

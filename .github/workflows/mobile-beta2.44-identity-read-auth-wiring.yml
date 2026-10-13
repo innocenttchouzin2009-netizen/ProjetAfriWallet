@@ -1,0 +1,109 @@
+name: Mobile Beta2.44 Identity Read Auth Wiring Certification
+
+on:
+  push:
+    branches:
+      - feature/mobile-beta2.44
+    paths:
+      - 'apps/mobile_app/lib/services/authenticated_production_wiring.dart'
+      - 'apps/mobile_app/lib/services/identity_read_repository.dart'
+      - 'apps/mobile_app/test/auth_production_wiring_test.dart'
+      - 'apps/mobile_app/test/identity_read_repository_test.dart'
+      - '.github/workflows/mobile-beta2.44-identity-read-auth-wiring.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'apps/mobile_app/lib/services/authenticated_production_wiring.dart'
+      - 'apps/mobile_app/lib/services/identity_read_repository.dart'
+      - 'apps/mobile_app/test/auth_production_wiring_test.dart'
+      - 'apps/mobile_app/test/identity_read_repository_test.dart'
+      - '.github/workflows/mobile-beta2.44-identity-read-auth-wiring.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    if: ${{ github.event_name != 'pull_request' || github.head_ref == 'feature/mobile-beta2.44' }}
+    name: Certify Beta2.44 identity read auth wiring
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+
+    env:
+      BASE_SHA: e5e7b4a564db7f2ef48446029a29ff4a5b928ea4
+      TARGET_SHA: f0dc89093649ff22698fd8747128b0490f8e18f8
+      AUTH_WIRING_TEST: apps/mobile_app/test/auth_production_wiring_test.dart
+      IDENTITY_READ_TEST: apps/mobile_app/test/identity_read_repository_test.dart
+
+    defaults:
+      run:
+        working-directory: apps/mobile_app
+
+    steps:
+      - name: Checkout exact Beta2.44 functional head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 0
+
+      - name: Assert Beta2.44 lineage and functional scope
+        working-directory: .
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          actual_sha="$(git rev-parse HEAD)"
+          test "${actual_sha}" = "${TARGET_SHA}"
+
+          git cat-file -e "${BASE_SHA}^{commit}"
+          git cat-file -e "${TARGET_SHA}^{commit}"
+          test "$(git rev-parse "${TARGET_SHA}^")" = "${BASE_SHA}"
+          test "$(git merge-base "${BASE_SHA}" "${TARGET_SHA}")" = "${BASE_SHA}"
+          test "$(git rev-list --count "${BASE_SHA}..${TARGET_SHA}")" = "1"
+
+          changed_files="$(git diff --name-only "${BASE_SHA}..${TARGET_SHA}" | sort)"
+          expected_files="$(
+            printf '%s\n' \
+              'apps/mobile_app/lib/services/authenticated_production_wiring.dart' \
+              'apps/mobile_app/lib/services/identity_read_repository.dart' \
+              'apps/mobile_app/test/identity_read_repository_test.dart' | sort
+          )"
+          test "${changed_files}" = "${expected_files}"
+
+      - name: Set up Flutter 3.47.2
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.2'
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Verify lockfile is synchronized
+        run: git diff --exit-code -- pubspec.lock
+
+      - name: Generate localizations
+        run: flutter gen-l10n
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test production auth wiring
+        run: flutter test ${AUTH_WIRING_TEST#apps/mobile_app/}
+
+      - name: Test identity read repository
+        run: flutter test ${IDENTITY_READ_TEST#apps/mobile_app/}
+
+      - name: Run complete Flutter test suite
+        run: flutter test
+
+      - name: Verify Beta2.44 diff
+        working-directory: .
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual_sha="$(git rev-parse HEAD)"
+          test "${actual_sha}" = "${TARGET_SHA}"
+          git diff --check "${BASE_SHA}..${TARGET_SHA}"

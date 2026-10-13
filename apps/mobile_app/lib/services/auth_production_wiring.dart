@@ -24,7 +24,10 @@ class AuthProductionWiring {
     );
     sessionLifecycle = AuthSessionCoordinator(repository, sessionStore);
     requestExecutor = AuthenticatedRequestExecutor(sessionLifecycle);
-    stateController = AuthStateController(sessionLifecycle);
+    stateController = AuthStateController(
+      sessionLifecycle,
+      login: repository.login,
+    );
   }
 
   final ApiClient _apiClient;

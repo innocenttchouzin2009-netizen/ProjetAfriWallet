@@ -133,13 +133,9 @@ class _AfriWalletAppState extends State<AfriWalletApp> {
       return;
     }
 
-    final sessionStore = widget.authSessionStore;
-    if (sessionStore == null) {
-      _walletRepository = const UnavailableWalletRepository();
-      return;
-    }
-
-    final wiring = WalletProductionWiring(sessionStore: sessionStore);
+    final wiring = WalletProductionWiring(
+      requestExecutor: _authProductionWiring.requestExecutor,
+    );
     _walletProductionWiring = wiring;
     _walletRepository = wiring.repository;
   }

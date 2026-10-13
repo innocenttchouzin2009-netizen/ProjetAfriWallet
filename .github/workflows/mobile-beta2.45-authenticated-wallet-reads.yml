@@ -1,0 +1,120 @@
+name: Mobile Beta2.45 Authenticated Wallet Reads Certification
+
+on:
+  push:
+    branches:
+      - feature/mobile-beta2.45
+    paths:
+      - 'apps/mobile_app/lib/main.dart'
+      - 'apps/mobile_app/lib/services/authenticated_production_wiring.dart'
+      - 'apps/mobile_app/lib/services/wallet_production_wiring.dart'
+      - 'apps/mobile_app/lib/services/wallet_repository.dart'
+      - 'apps/mobile_app/test/wallet_production_wiring_test.dart'
+      - 'apps/mobile_app/test/wallet_repository_test.dart'
+      - '.github/workflows/mobile-beta2.45-authenticated-wallet-reads.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'apps/mobile_app/lib/main.dart'
+      - 'apps/mobile_app/lib/services/authenticated_production_wiring.dart'
+      - 'apps/mobile_app/lib/services/wallet_production_wiring.dart'
+      - 'apps/mobile_app/lib/services/wallet_repository.dart'
+      - 'apps/mobile_app/test/wallet_production_wiring_test.dart'
+      - 'apps/mobile_app/test/wallet_repository_test.dart'
+      - '.github/workflows/mobile-beta2.45-authenticated-wallet-reads.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    if: ${{ github.event_name != 'pull_request' || github.head_ref == 'feature/mobile-beta2.45' }}
+    name: Certify Beta2.45 authenticated wallet reads
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+
+    env:
+      BASE_SHA: db5b048bc5c83dce9d04ca99ca502e78a0a28539
+      TARGET_SHA: b5fe727fc71fd8b474c43e518a46db820325c2ac
+      WALLET_REPOSITORY_TEST: apps/mobile_app/test/wallet_repository_test.dart
+      WALLET_WIRING_TEST: apps/mobile_app/test/wallet_production_wiring_test.dart
+      WALLET_REMOTE_TEST: apps/mobile_app/test/wallet_remote_data_source_test.dart
+
+    defaults:
+      run:
+        working-directory: apps/mobile_app
+
+    steps:
+      - name: Checkout exact Beta2.45 functional head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 0
+
+      - name: Assert Beta2.45 lineage and functional scope
+        working-directory: .
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          actual_sha="$(git rev-parse HEAD)"
+          test "${actual_sha}" = "${TARGET_SHA}"
+
+          git cat-file -e "${BASE_SHA}^{commit}"
+          git cat-file -e "${TARGET_SHA}^{commit}"
+          test "$(git rev-parse "${TARGET_SHA}^")" = "${BASE_SHA}"
+          test "$(git merge-base "${BASE_SHA}" "${TARGET_SHA}")" = "${BASE_SHA}"
+          test "$(git rev-list --count "${BASE_SHA}..${TARGET_SHA}")" = "1"
+
+          changed_files="$(git diff --name-only "${BASE_SHA}..${TARGET_SHA}" | sort)"
+          expected_files="$(
+            printf '%s\n' \
+              'apps/mobile_app/lib/main.dart' \
+              'apps/mobile_app/lib/services/authenticated_production_wiring.dart' \
+              'apps/mobile_app/lib/services/wallet_production_wiring.dart' \
+              'apps/mobile_app/lib/services/wallet_repository.dart' \
+              'apps/mobile_app/test/wallet_production_wiring_test.dart' \
+              'apps/mobile_app/test/wallet_repository_test.dart' | sort
+          )"
+          test "${changed_files}" = "${expected_files}"
+
+      - name: Set up Flutter 3.47.2
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.2'
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Verify lockfile is synchronized
+        run: git diff --exit-code -- pubspec.lock
+
+      - name: Generate localizations
+        run: flutter gen-l10n
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test wallet repository
+        run: flutter test ${WALLET_REPOSITORY_TEST#apps/mobile_app/}
+
+      - name: Test wallet production wiring
+        run: flutter test ${WALLET_WIRING_TEST#apps/mobile_app/}
+
+      - name: Test wallet remote data source
+        run: flutter test ${WALLET_REMOTE_TEST#apps/mobile_app/}
+
+      - name: Run complete Flutter test suite
+        run: flutter test
+
+      - name: Verify Beta2.45 diff
+        working-directory: .
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual_sha="$(git rev-parse HEAD)"
+          test "${actual_sha}" = "${TARGET_SHA}"
+          git diff --check "${BASE_SHA}..${TARGET_SHA}"

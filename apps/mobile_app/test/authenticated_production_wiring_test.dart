@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:mobile_app/models/auth_session.dart';
 import 'package:mobile_app/models/mobile_money_payout.dart';
+import 'package:mobile_app/models/mobile_money_payout_execution_handoff.dart';
 import 'package:mobile_app/models/mobile_money_payout_funding_intent.dart';
 import 'package:mobile_app/network/api_client.dart';
 import 'package:mobile_app/services/authenticated_production_wiring.dart';
@@ -12,7 +13,7 @@ import 'package:mobile_app/services/secure_storage_adapter.dart';
 
 void main() {
   test(
-    'authenticated production wiring shares one secure session across wallet, P2P, transaction history, and payout funding',
+    'authenticated production wiring shares one secure session across wallet, P2P, transaction history, payout funding, and payout execution',
     () async {
       final requests = <http.Request>[];
       final apiClient = ApiClient(
@@ -105,6 +106,27 @@ void main() {
             );
           }
 
+          if (request.method == 'POST' &&
+              request.url.path ==
+                  '/api/v1/mobile-money/payouts/execution/prepare') {
+            return http.Response(
+              jsonEncode(<String, Object?>{
+                'bindingId':
+                    '33333333-3333-4333-8333-333333333333',
+                'quoteId':
+                    '11111111-1111-4111-8111-111111111111',
+                'fundingCorrelationId':
+                    '7d8fba6d-d06f-4bd5-98da-cb71d07bfef4',
+                'idempotencyKey': 'wiring-exec-42',
+                'status': 'Prepared',
+                'isReplay': false,
+                'preparedAtUtc': '2026-10-12T14:00:00Z',
+              }),
+              200,
+              headers: <String, String>{'content-type': 'application/json'},
+            );
+          }
+
           return http.Response('', 404);
         }),
       );
@@ -159,12 +181,47 @@ void main() {
         requestedAtUtc: DateTime.utc(2026, 10, 10, 10, 30),
       );
 
+      final executionPreparation =
+          await wiring.mobileMoneyPayoutExecutionRepository.prepareExecution(
+        fundingCorrelationId:
+            '7d8fba6d-d06f-4bd5-98da-cb71d07bfef4',
+        idempotencyKey: 'wiring-exec-42',
+        handoff: MobileMoneyPayoutExecutionHandoff(
+          quoteId: '11111111-1111-4111-8111-111111111111',
+          sourceCurrencyCode: 'EUR',
+          totalSourceDebitMinor: 10250,
+          destinationCurrencyCode: 'XAF',
+          destinationAmountMinor: 6720000,
+          fundingAllocations: const <FundingAllocation>[
+            FundingAllocation(
+              sourceId: 'wallet-1',
+              sourceType: FundingSourceType.wallet,
+              amountMinor: 2500,
+              currencyCode: 'EUR',
+            ),
+            FundingAllocation(
+              sourceId: 'google-pay-1',
+              sourceType: FundingSourceType.googlePay,
+              amountMinor: 7750,
+              currencyCode: 'EUR',
+            ),
+          ],
+          preparedAtUtc: DateTime.utc(2026, 10, 12, 13, 55),
+          quoteExpiresAtUtc: DateTime.utc(2026, 10, 12, 14, 5),
+        ),
+      );
+
       expect(wallets, hasLength(1));
       expect(receiveIdentity.qrToken, 'qr-token');
       expect(transactions, hasLength(1));
       expect(transactions.single.transactionId, 'txn-wiring-1');
       expect(fundingPlan.requiredAmountMinor, 10250);
-      expect(requests, hasLength(4));
+      expect(executionPreparation.status, 'Prepared');
+      expect(
+        executionPreparation.fundingCorrelationId,
+        '7d8fba6d-d06f-4bd5-98da-cb71d07bfef4',
+      );
+      expect(requests, hasLength(5));
       expect(
         requests.every(
           (request) =>

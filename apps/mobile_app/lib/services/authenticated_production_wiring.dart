@@ -1,4 +1,5 @@
 import '../data/remote/identity_remote_data_source.dart';
+import '../data/remote/mobile_money_payout_execution_remote_data_source.dart';
 import '../data/remote/mobile_money_payout_funding_remote_data_source.dart';
 import '../data/remote/p2p_remote_data_source.dart';
 import '../data/remote/qr_payment_remote_data_source.dart';
@@ -7,6 +8,7 @@ import '../network/api_client.dart';
 import 'api_config.dart';
 import 'auth_production_wiring.dart';
 import 'identity_read_repository.dart';
+import 'mobile_money_payout_execution_repository.dart';
 import 'mobile_money_payout_funding_repository.dart';
 import 'qr_payment_repository.dart';
 import 'secure_session_store.dart';
@@ -51,6 +53,11 @@ class AuthenticatedProductionWiring {
       MobileMoneyPayoutFundingRemoteDataSource(_apiClient),
       auth.sessionStore,
     );
+    mobileMoneyPayoutExecutionRepository =
+        RemoteMobileMoneyPayoutExecutionRepository(
+      MobileMoneyPayoutExecutionRemoteDataSource(_apiClient),
+      auth.sessionStore,
+    );
   }
 
   final ApiClient _apiClient;
@@ -64,6 +71,8 @@ class AuthenticatedProductionWiring {
   late final QrPaymentRepository qrPaymentRepository;
   late final MobileMoneyPayoutFundingRepository
       mobileMoneyPayoutFundingRepository;
+  late final MobileMoneyPayoutExecutionRepository
+      mobileMoneyPayoutExecutionRepository;
 
   AuthSessionStore get sessionStore => auth.sessionStore;
   WalletRepository get walletRepository => wallet.repository;

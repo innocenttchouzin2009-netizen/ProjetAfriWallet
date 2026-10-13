@@ -42,7 +42,7 @@ class AuthenticatedProductionWiring {
     );
     transactionHistoryRepository = AuthenticatedTransactionHistoryRepository(
       TransactionHistoryRemoteDataSource(_apiClient),
-      auth.sessionStore,
+      auth.requestExecutor,
     );
     qrPaymentRepository = AuthenticatedQrPaymentRepository(
       QrPaymentRemoteDataSource(_apiClient),

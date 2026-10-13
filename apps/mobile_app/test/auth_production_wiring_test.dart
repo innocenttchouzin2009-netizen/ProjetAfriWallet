@@ -104,6 +104,49 @@ void main() {
     expect(wiring.stateController.state.session?.sessionId, 'session-2');
   });
 
+  test('production wiring exposes executor backed by the shared lifecycle',
+      () async {
+    var networkCalls = 0;
+    final storage = _MemorySecureStorageAdapter();
+    final apiClient = ApiClient(
+      baseUrl: 'https://api.example.test',
+      httpClient: MockClient((request) async {
+        networkCalls += 1;
+        return http.Response('', 500);
+      }),
+    );
+    final wiring = AuthProductionWiring(
+      apiClient: apiClient,
+      secureStorageAdapter: storage,
+    );
+    addTearDown(() {
+      wiring.dispose();
+      apiClient.close();
+    });
+
+    await wiring.sessionStore.save(
+      StoredAuthSession(
+        accessToken: 'wired-access',
+        refreshToken: 'wired-refresh',
+        tokenType: 'Bearer',
+        sessionId: 'session-wired',
+        userId: 'user-wired',
+        accessTokenExpiresAtUtc:
+            DateTime.now().toUtc().add(const Duration(hours: 1)),
+      ),
+    );
+
+    final result = await wiring.requestExecutor.execute<String>(
+      (accessToken) async {
+        expect(accessToken, 'wired-access');
+        return 'ok';
+      },
+    );
+
+    expect(result, 'ok');
+    expect(networkCalls, 0);
+  });
+
   test('clearing auth state clears the shared secure session store', () async {
     final storage = _MemorySecureStorageAdapter();
     final apiClient = ApiClient(

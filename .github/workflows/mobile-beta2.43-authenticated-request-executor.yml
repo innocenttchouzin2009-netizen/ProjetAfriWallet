@@ -1,0 +1,102 @@
+name: Mobile Beta2.43 Authenticated Request Executor Certification
+
+on:
+  push:
+    branches:
+      - feature/mobile-beta2.43
+    paths:
+      - 'apps/mobile_app/lib/services/authenticated_request_executor.dart'
+      - 'apps/mobile_app/test/authenticated_request_executor_test.dart'
+      - '.github/workflows/mobile-beta2.43-authenticated-request-executor.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'apps/mobile_app/lib/services/authenticated_request_executor.dart'
+      - 'apps/mobile_app/test/authenticated_request_executor_test.dart'
+      - '.github/workflows/mobile-beta2.43-authenticated-request-executor.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    if: ${{ github.event_name != 'pull_request' || github.head_ref == 'feature/mobile-beta2.43' }}
+    name: Certify Beta2.43 authenticated request executor
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+
+    env:
+      BASE_SHA: afab5a239083dc312d87f8e10a8fa6813d7e7813
+      COMMIT1_SHA: c1505f5e70597f7906306be2a51d1853eb20e45a
+      TEST_PATH: apps/mobile_app/test/authenticated_request_executor_test.dart
+
+    defaults:
+      run:
+        working-directory: apps/mobile_app
+
+    steps:
+      - name: Checkout exact branch head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Assert Beta2.43 lineage and Commit 1 scope
+        working-directory: .
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          actual_sha="$(git rev-parse HEAD)"
+          test "${actual_sha}" = "${GITHUB_SHA}"
+
+          git cat-file -e "${BASE_SHA}^{commit}"
+          git cat-file -e "${COMMIT1_SHA}^{commit}"
+          test "$(git rev-parse "${COMMIT1_SHA}^")" = "${BASE_SHA}"
+          test "$(git merge-base "${BASE_SHA}" "${COMMIT1_SHA}")" = "${BASE_SHA}"
+          test "$(git rev-list --count "${BASE_SHA}..${COMMIT1_SHA}")" = "1"
+
+          changed_files="$(git diff --name-only "${BASE_SHA}..${COMMIT1_SHA}" | sort)"
+          expected_files="$(
+            printf '%s\n' \
+              'apps/mobile_app/lib/services/authenticated_request_executor.dart' \
+              'apps/mobile_app/test/authenticated_request_executor_test.dart' | sort
+          )"
+          test "${changed_files}" = "${expected_files}"
+
+          git merge-base --is-ancestor "${COMMIT1_SHA}" "${actual_sha}"
+
+      - name: Set up Flutter 3.47.2
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.2'
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Verify lockfile is synchronized
+        run: git diff --exit-code -- pubspec.lock
+
+      - name: Generate localizations
+        run: flutter gen-l10n
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test authenticated request executor
+        run: flutter test ${TEST_PATH#apps/mobile_app/}
+
+      - name: Run complete Flutter test suite
+        run: flutter test
+
+      - name: Verify Beta2.43 diff
+        working-directory: .
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual_sha="$(git rev-parse HEAD)"
+          test "${actual_sha}" = "${GITHUB_SHA}"
+          git diff --check "${BASE_SHA}..${actual_sha}"

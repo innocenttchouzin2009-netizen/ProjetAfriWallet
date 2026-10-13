@@ -1,0 +1,79 @@
+name: Mobile Beta2.43 Identity + Authenticated Request Executor Certification
+
+on:
+  push:
+    branches:
+      - ci/mobile-beta2.43-identity-executor-certification
+    paths:
+      - '.github/workflows/mobile-beta2.43-identity-executor-certification.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    name: Certify Identity + AuthenticatedRequestExecutor
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+
+    env:
+      PRODUCT_SHA: 1b6f7e793f04fe927170635d879d0abaca3281bc
+
+    defaults:
+      run:
+        working-directory: apps/mobile_app
+
+    steps:
+      - name: Checkout certification branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Assert product baseline unchanged
+        working-directory: .
+        shell: bash
+        run: |
+          set -euo pipefail
+          git cat-file -e "${PRODUCT_SHA}^{commit}"
+          test "$(git rev-parse HEAD^)" = "${PRODUCT_SHA}"
+          changed_files="$(git diff --name-only "${PRODUCT_SHA}..HEAD")"
+          test "${changed_files}" = ".github/workflows/mobile-beta2.43-identity-executor-certification.yml"
+
+      - name: Set up Flutter 3.47.2
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.2'
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Verify lockfile is synchronized
+        run: git diff --exit-code -- pubspec.lock
+
+      - name: Generate localizations
+        run: flutter gen-l10n
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test Identity repository
+        run: flutter test test/identity_read_repository_test.dart
+
+      - name: Test Identity remote data source
+        run: flutter test test/identity_remote_data_source_test.dart
+
+      - name: Test AuthenticatedRequestExecutor
+        run: flutter test test/authenticated_request_executor_test.dart
+
+      - name: Run complete Flutter test suite
+        run: flutter test
+
+      - name: Verify certification diff
+        working-directory: .
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check "${PRODUCT_SHA}..HEAD"

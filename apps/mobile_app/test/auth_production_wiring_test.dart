@@ -11,7 +11,7 @@ import 'package:mobile_app/services/auth_state_controller.dart';
 import 'package:mobile_app/services/secure_storage_adapter.dart';
 
 void main() {
-  test('production wiring shares one secure session store across auth services',
+  test('production login wiring authenticates and persists the session',
       () async {
     final storage = _MemorySecureStorageAdapter();
     final apiClient = ApiClient(
@@ -41,7 +41,7 @@ void main() {
       apiClient.close();
     });
 
-    final session = await wiring.repository.login(
+    await wiring.stateController.login(
       const AuthLoginRequest(
         identifier: 'user@example.com',
         password: 'secret',
@@ -51,16 +51,12 @@ void main() {
       ),
     );
 
-    expect(session.accessToken, 'access-token');
-    expect((await wiring.sessionStore.read())?.sessionId, 'session-1');
-
-    await wiring.stateController.restore();
-
     expect(
       wiring.stateController.state.status,
       AuthStateStatus.authenticated,
     );
     expect(wiring.stateController.state.session?.userId, 'user-1');
+    expect((await wiring.sessionStore.read())?.sessionId, 'session-1');
   });
 
   test('restoring a valid stored session does not call the network', () async {

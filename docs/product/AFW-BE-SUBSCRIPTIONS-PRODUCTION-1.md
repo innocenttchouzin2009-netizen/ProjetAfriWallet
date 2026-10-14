@@ -32,6 +32,12 @@ Permettre à un utilisateur africain de découvrir, financer et gérer des abonn
 
 **Ce jalon ne doit pas dupliquer l'existant ni supposer que l'activation commerciale fonctionne déjà.**
 
+## Catalogue commercial envisagé — 45 abonnements
+
+**Le catalogue candidat comprend officiellement 45 services distincts** : **15 prioritaires (vague 1)** et **30 supplémentaires (vagues suivantes)**, avec noms, catégories, priorités et statut initial de qualification détaillés dans [AFW-SUBSCRIPTIONS-CATALOG-45.md](AFW-SUBSCRIPTIONS-CATALOG-45.md).
+
+Les premiers pilotes à étudier sont **ChatGPT, Canva Pro, CapCut Pro, Netflix et YouTube Premium**. L'inscription dans cette feuille de route ne signifie **ni partenariat commercial conclu, ni moyen de paiement compatible, ni disponibilité en production**. Chaque service doit être validé par pays/forfait/PSP avant affichage d'un achat actif.
+
 ## Phases de livraison
 
 ### Phase P0 — Catalogue, conformité et contrats

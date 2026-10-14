@@ -3,22 +3,27 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:mobile_app/models/auth_requests.dart';
+import 'package:mobile_app/models/auth_device_context.dart';
 import 'package:mobile_app/models/auth_session.dart';
 import 'package:mobile_app/network/api_client.dart';
+import 'package:mobile_app/services/auth_device_context_provider.dart';
 import 'package:mobile_app/services/auth_production_wiring.dart';
 import 'package:mobile_app/services/auth_state_controller.dart';
 import 'package:mobile_app/services/secure_storage_adapter.dart';
 
 void main() {
-  test('production login wiring authenticates and persists the session',
+  test('production login wiring loads secure device context and persists session',
       () async {
+    Map<String, Object?>? requestBody;
     final storage = _MemorySecureStorageAdapter();
     final apiClient = ApiClient(
       baseUrl: 'https://api.example.test',
       httpClient: MockClient((request) async {
         expect(request.method, 'POST');
         expect(request.url.path, '/api/v1/auth/login');
+        requestBody = Map<String, Object?>.from(
+          jsonDecode(request.body) as Map<String, dynamic>,
+        );
         return http.Response(
           jsonEncode(<String, Object?>{
             'accessToken': 'access-token',
@@ -35,22 +40,34 @@ void main() {
     final wiring = AuthProductionWiring(
       apiClient: apiClient,
       secureStorageAdapter: storage,
+      authDeviceContextProvider: const _FakeAuthDeviceContextProvider(
+        AuthDeviceContext(
+          deviceId: 'secure-device-1',
+          platform: 'android',
+          deviceName: 'Pixel',
+        ),
+      ),
     );
     addTearDown(() {
       wiring.dispose();
       apiClient.close();
     });
 
-    await wiring.stateController.login(
-      const AuthLoginRequest(
-        identifier: 'user@example.com',
-        password: 'secret',
-        deviceId: 'device-1',
-        platform: 'android',
-        deviceName: 'Pixel',
-      ),
+    await wiring.login(
+      identifier: 'user@example.com',
+      password: 'secret',
     );
 
+    expect(
+      requestBody,
+      <String, Object?>{
+        'identifier': 'user@example.com',
+        'password': 'secret',
+        'deviceId': 'secure-device-1',
+        'platform': 'android',
+        'deviceName': 'Pixel',
+      },
+    );
     expect(
       wiring.stateController.state.status,
       AuthStateStatus.authenticated,
@@ -179,6 +196,15 @@ void main() {
       AuthStateStatus.unauthenticated,
     );
   });
+}
+
+class _FakeAuthDeviceContextProvider implements AuthDeviceContextProvider {
+  const _FakeAuthDeviceContextProvider(this.context);
+
+  final AuthDeviceContext context;
+
+  @override
+  Future<AuthDeviceContext> load() async => context;
 }
 
 class _MemorySecureStorageAdapter implements SecureStorageAdapter {

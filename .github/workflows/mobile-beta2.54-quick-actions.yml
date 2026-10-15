@@ -1,0 +1,190 @@
+name: Mobile Beta2.54 Quick Actions Certification
+
+on:
+  push:
+    branches:
+      - feature/mobile-beta2.54
+    paths:
+      - '.github/workflows/mobile-beta2.54-quick-actions.yml'
+      - 'apps/mobile_app/lib/pages/wallet_home_page.dart'
+      - 'apps/mobile_app/test/wallet_home_page_test.dart'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  statuses: write
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      WORKFLOW_SHA: ${{ github.sha }}
+      PRODUCT_CANDIDATE_SHA: f230f1e01abdd7f314a3c9fbc7680f865aec4e29
+      BASE_SHA: e159a17f1b2f1a8b80f10d201f778b7bba3856f8
+      STATUS_CONTEXT: mobile-beta2.54/quick-actions-certification
+
+    defaults:
+      run:
+        working-directory: apps/mobile_app
+
+    steps:
+      - name: Checkout exact Beta2.54 certification head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.WORKFLOW_SHA }}
+          fetch-depth: 0
+
+      - name: Assert product and certification lineage
+        working-directory: .
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual_sha="$(git rev-parse HEAD)"
+          echo "workflow_sha=${WORKFLOW_SHA}"
+          echo "product_candidate_sha=${PRODUCT_CANDIDATE_SHA}"
+          echo "checked_out_sha=${actual_sha}"
+          echo "base_sha=${BASE_SHA}"
+          test "${actual_sha}" = "${WORKFLOW_SHA}"
+          git cat-file -e "${WORKFLOW_SHA}^{commit}"
+          git cat-file -e "${PRODUCT_CANDIDATE_SHA}^{commit}"
+          git cat-file -e "${BASE_SHA}^{commit}"
+          git merge-base --is-ancestor "${BASE_SHA}" "${PRODUCT_CANDIDATE_SHA}"
+          test "$(git merge-base "${BASE_SHA}" "${PRODUCT_CANDIDATE_SHA}")" = "${BASE_SHA}"
+          git merge-base --is-ancestor "${PRODUCT_CANDIDATE_SHA}" "${WORKFLOW_SHA}"
+
+      - name: Mark product candidate certification pending
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: process.env.PRODUCT_CANDIDATE_SHA,
+              state: 'pending',
+              context: process.env.STATUS_CONTEXT,
+              description: 'Beta2.54 quick actions certification in progress',
+              target_url: `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+            });
+
+      - name: Verify exact Beta2.54 product allowlist
+        working-directory: .
+        shell: bash
+        run: |
+          set -euo pipefail
+          allowed=(
+            "apps/mobile_app/lib/pages/wallet_home_page.dart"
+            "apps/mobile_app/test/wallet_home_page_test.dart"
+          )
+
+          mapfile -t changed_files < <(git diff --name-only "${BASE_SHA}...${PRODUCT_CANDIDATE_SHA}" | sort)
+
+          printf 'Changed product files:\n'
+          printf '  %s\n' "${changed_files[@]}"
+
+          test "${#changed_files[@]}" -eq 2
+
+          for file in "${changed_files[@]}"; do
+            matched=false
+            for expected in "${allowed[@]}"; do
+              if [[ "${file}" == "${expected}" ]]; then
+                matched=true
+                break
+              fi
+            done
+            if [[ "${matched}" != true ]]; then
+              echo "Unexpected file in Beta2.54 product diff: ${file}" >&2
+              exit 1
+            fi
+          done
+
+          for required in "${allowed[@]}"; do
+            printf '%s\n' "${changed_files[@]}" | grep -Fxq "${required}"
+          done
+
+      - name: Verify exact certification harness allowlist
+        working-directory: .
+        shell: bash
+        run: |
+          set -euo pipefail
+          allowed=(
+            ".github/workflows/mobile-beta2.54-quick-actions.yml"
+          )
+
+          mapfile -t changed_files < <(git diff --name-only "${PRODUCT_CANDIDATE_SHA}...${WORKFLOW_SHA}" | sort)
+
+          printf 'Changed certification harness files:\n'
+          printf '  %s\n' "${changed_files[@]}"
+
+          test "${#changed_files[@]}" -eq 1
+          test "${changed_files[0]}" = "${allowed[0]}"
+
+      - name: Set up Flutter 3.47.2
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.2'
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Generate localizations
+        run: flutter gen-l10n
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test Beta2.54 Wallet Home quick actions
+        run: flutter test test/wallet_home_page_test.dart
+
+      - name: Run complete Flutter suite
+        run: flutter test
+
+      - name: Verify Beta2.54 diffs
+        working-directory: .
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check "${BASE_SHA}...${PRODUCT_CANDIDATE_SHA}"
+          git diff --check "${PRODUCT_CANDIDATE_SHA}...${WORKFLOW_SHA}"
+
+      - name: Write certification summary
+        if: always()
+        working-directory: .
+        shell: bash
+        run: |
+          {
+            echo "## Mobile Beta2.54 Quick Actions certification"
+            echo
+            echo "- Workflow commit: `${WORKFLOW_SHA}`"
+            echo "- Product candidate: `${PRODUCT_CANDIDATE_SHA}`"
+            echo "- Base Beta2.53: `${BASE_SHA}`"
+            echo "- Product allowlist: Wallet Home implementation + Wallet Home test only"
+            echo "- Certification harness: workflow only"
+            echo "- flutter analyze: required"
+            echo "- wallet_home_page_test.dart: required"
+            echo "- Full Flutter suite: required"
+            echo "- git diff --check: required for product + harness ranges"
+            echo "- Job status: **${{ job.status }}**"
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Report product candidate certification status
+        if: always()
+        uses: actions/github-script@v7
+        env:
+          CERTIFICATION_JOB_STATUS: ${{ job.status }}
+        with:
+          script: |
+            const succeeded = process.env.CERTIFICATION_JOB_STATUS === 'success';
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: process.env.PRODUCT_CANDIDATE_SHA,
+              state: succeeded ? 'success' : 'failure',
+              context: process.env.STATUS_CONTEXT,
+              description: succeeded
+                ? 'Beta2.54 quick actions candidate certified'
+                : 'Beta2.54 quick actions certification failed',
+              target_url: `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+            });

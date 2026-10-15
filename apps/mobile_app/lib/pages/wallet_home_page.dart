@@ -153,40 +153,11 @@ class _WalletHomePageState extends State<WalletHomePage> {
                   const SizedBox(height: 12),
                 ],
                 const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: widget.onSend ?? widget.onContinue,
-                        icon: const Icon(Icons.north_east),
-                        label: const Text('Envoyer'),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: widget.onReceive ?? widget.onContinue,
-                        icon: const Icon(Icons.south_west),
-                        label: const Text('Recevoir'),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        key: const Key('wallet-quick-action-qr'),
-                        onPressed: widget.onQr ?? _openQrPayments,
-                        icon: const Icon(Icons.qr_code_scanner),
-                        label: const Text('QR'),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                OutlinedButton.icon(
-                  key: const Key('wallet-subscriptions-action'),
-                  onPressed: widget.onSubscriptions ?? _openSubscriptions,
-                  icon: const Icon(Icons.subscriptions_outlined),
-                  label: const Text('Abonnements'),
+                _WalletQuickActions(
+                  onSend: widget.onSend ?? widget.onContinue,
+                  onReceive: widget.onReceive ?? widget.onContinue,
+                  onQr: widget.onQr ?? _openQrPayments,
+                  onSubscriptions: widget.onSubscriptions ?? _openSubscriptions,
                 ),
                 const SizedBox(height: 28),
                 _FinancialTimelineSection(
@@ -202,6 +173,107 @@ class _WalletHomePageState extends State<WalletHomePage> {
             );
           },
         ),
+      ),
+    );
+  }
+}
+
+
+class _WalletQuickActions extends StatelessWidget {
+  const _WalletQuickActions({
+    required this.onSend,
+    required this.onReceive,
+    required this.onQr,
+    required this.onSubscriptions,
+  });
+
+  final VoidCallback? onSend;
+  final VoidCallback? onReceive;
+  final VoidCallback? onQr;
+  final VoidCallback? onSubscriptions;
+
+  @override
+  Widget build(BuildContext context) {
+    return GridView.count(
+      key: const Key('wallet-quick-actions'),
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisCount: 2,
+      mainAxisSpacing: 12,
+      crossAxisSpacing: 12,
+      childAspectRatio: 2.35,
+      children: [
+        _WalletQuickAction(
+          actionKey: const Key('wallet-quick-action-send'),
+          icon: Icons.north_east,
+          label: 'Envoyer',
+          semanticsLabel: 'Envoyer de l’argent',
+          semanticsHint: 'Ouvrir l’envoi depuis votre portefeuille',
+          onPressed: onSend,
+        ),
+        _WalletQuickAction(
+          actionKey: const Key('wallet-quick-action-receive'),
+          icon: Icons.south_west,
+          label: 'Recevoir',
+          semanticsLabel: 'Recevoir de l’argent',
+          semanticsHint: 'Afficher les options pour recevoir',
+          onPressed: onReceive,
+        ),
+        _WalletQuickAction(
+          actionKey: const Key('wallet-quick-action-qr'),
+          icon: Icons.qr_code_scanner,
+          label: 'QR',
+          semanticsLabel: 'Paiements QR',
+          semanticsHint: 'Ouvrir les paiements QR',
+          onPressed: onQr,
+        ),
+        _WalletQuickAction(
+          actionKey: const Key('wallet-quick-action-subscriptions'),
+          legacyButtonKey: const Key('wallet-subscriptions-action'),
+          icon: Icons.subscriptions_outlined,
+          label: 'Abonnements',
+          semanticsLabel: 'Gérer mes abonnements',
+          semanticsHint: 'Ouvrir les abonnements AfrikaWallet',
+          onPressed: onSubscriptions,
+        ),
+      ],
+    );
+  }
+}
+
+class _WalletQuickAction extends StatelessWidget {
+  const _WalletQuickAction({
+    required this.actionKey,
+    required this.icon,
+    required this.label,
+    required this.semanticsLabel,
+    required this.semanticsHint,
+    required this.onPressed,
+    this.legacyButtonKey,
+  });
+
+  final Key actionKey;
+  final Key? legacyButtonKey;
+  final IconData icon;
+  final String label;
+  final String semanticsLabel;
+  final String semanticsHint;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      key: actionKey,
+      button: true,
+      label: semanticsLabel,
+      hint: semanticsHint,
+      onTap: onPressed,
+      excludeSemantics: true,
+      child: OutlinedButton.icon(
+        key: legacyButtonKey,
+        onPressed: onPressed,
+        icon: Icon(icon),
+        label: Text(label),
       ),
     );
   }

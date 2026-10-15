@@ -90,11 +90,65 @@ void main() {
     expect(find.text('123.45 EUR'), findsNWidgets(2));
     expect(find.text('5000.00 XAF'), findsOneWidget);
     expect(find.text('Wallet WALLET-TEST-EUR'), findsOneWidget);
+    expect(find.byKey(const Key('wallet-quick-actions')), findsOneWidget);
+    expect(find.byKey(const Key('wallet-quick-action-send')), findsOneWidget);
     expect(find.text('Envoyer'), findsOneWidget);
+    expect(find.byKey(const Key('wallet-quick-action-receive')), findsOneWidget);
     expect(find.text('Recevoir'), findsOneWidget);
     expect(find.byKey(const Key('wallet-quick-action-qr')), findsOneWidget);
     expect(find.text('QR'), findsOneWidget);
+    expect(
+      find.byKey(const Key('wallet-quick-action-subscriptions')),
+      findsOneWidget,
+    );
+    expect(find.byKey(const Key('wallet-subscriptions-action')), findsOneWidget);
+    expect(find.text('Abonnements'), findsOneWidget);
     expect(find.text('Financial Timeline'), findsOneWidget);
+  });
+
+
+  testWidgets('exposes stable semantics for the four quick actions', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(900, 1400));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(MaterialApp(
+      home: WalletHomePage(
+        repository: _ReadyWalletRepository(),
+        transactionHistoryRepository: _ReadyTimelineRepository(),
+        onSend: () {},
+        onReceive: () {},
+        onQr: () {},
+        onSubscriptions: () {},
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    final expectations = <Key, (String, String)>{
+      const Key('wallet-quick-action-send'): (
+        'Envoyer de l’argent',
+        'Ouvrir l’envoi depuis votre portefeuille',
+      ),
+      const Key('wallet-quick-action-receive'): (
+        'Recevoir de l’argent',
+        'Afficher les options pour recevoir',
+      ),
+      const Key('wallet-quick-action-qr'): (
+        'Paiements QR',
+        'Ouvrir les paiements QR',
+      ),
+      const Key('wallet-quick-action-subscriptions'): (
+        'Gérer mes abonnements',
+        'Ouvrir les abonnements AfrikaWallet',
+      ),
+    };
+
+    for (final entry in expectations.entries) {
+      final semantics = tester.widget<Semantics>(find.byKey(entry.key));
+      expect(semantics.properties.button, isTrue);
+      expect(semantics.properties.label, entry.value.$1);
+      expect(semantics.properties.hint, entry.value.$2);
+      expect(semantics.properties.onTap, isNotNull);
+    }
   });
 
   testWidgets(
@@ -179,12 +233,13 @@ void main() {
     expect(find.byKey(const Key('wallet-home-afwal-id')), findsNothing);
   });
 
-  testWidgets('routes send receive and QR through distinct callbacks', (tester) async {
+  testWidgets('routes all four quick actions through distinct callbacks', (tester) async {
     await tester.binding.setSurfaceSize(const Size(900, 1400));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     var sendCount = 0;
     var receiveCount = 0;
     var qrCount = 0;
+    var subscriptionsCount = 0;
 
     await tester.pumpWidget(MaterialApp(
       home: WalletHomePage(
@@ -193,24 +248,36 @@ void main() {
         onSend: () => sendCount += 1,
         onReceive: () => receiveCount += 1,
         onQr: () => qrCount += 1,
+        onSubscriptions: () => subscriptionsCount += 1,
       ),
     ));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Envoyer'));
+    await tester.tap(find.byKey(const Key('wallet-quick-action-send')));
     expect(sendCount, 1);
     expect(receiveCount, 0);
     expect(qrCount, 0);
+    expect(subscriptionsCount, 0);
 
-    await tester.tap(find.text('Recevoir'));
+    await tester.tap(find.byKey(const Key('wallet-quick-action-receive')));
     expect(sendCount, 1);
     expect(receiveCount, 1);
     expect(qrCount, 0);
+    expect(subscriptionsCount, 0);
 
     await tester.tap(find.byKey(const Key('wallet-quick-action-qr')));
     expect(sendCount, 1);
     expect(receiveCount, 1);
     expect(qrCount, 1);
+    expect(subscriptionsCount, 0);
+
+    await tester.tap(
+      find.byKey(const Key('wallet-quick-action-subscriptions')),
+    );
+    expect(sendCount, 1);
+    expect(receiveCount, 1);
+    expect(qrCount, 1);
+    expect(subscriptionsCount, 1);
   });
 
   testWidgets('opens QR Payments and returns to Wallet Home', (tester) async {

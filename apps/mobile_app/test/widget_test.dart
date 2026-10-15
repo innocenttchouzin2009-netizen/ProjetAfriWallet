@@ -1,13 +1,23 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:mobile_app/main.dart';
 import 'package:mobile_app/models/auth_session.dart';
+import 'package:mobile_app/models/current_identity_profile.dart';
+import 'package:mobile_app/models/payment_transfer.dart';
+import 'package:mobile_app/models/public_afwal_identity.dart';
+import 'package:mobile_app/models/transaction_history.dart';
+import 'package:mobile_app/models/wallet_balance.dart';
 import 'package:mobile_app/models/subscription_models.dart';
 import 'package:mobile_app/network/api_client.dart';
 import 'package:mobile_app/services/auth_production_wiring.dart';
+import 'package:mobile_app/services/identity_read_repository.dart';
 import 'package:mobile_app/services/secure_storage_adapter.dart';
 import 'package:mobile_app/services/subscription_repository.dart';
+import 'package:mobile_app/services/transaction_history_repository.dart';
+import 'package:mobile_app/services/transfer_repository.dart';
+import 'package:mobile_app/services/wallet_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -119,6 +129,54 @@ void main() {
       expect(networkCalls, 0);
     },
   );
+
+  testWidgets(
+    'premium wallet home receives authoritative AfWal ID from identity handoff',
+    (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(900, 1400));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      SharedPreferences.setMockInitialValues({});
+      final wiring = _testAuthWiring();
+      addTearDown(wiring.dispose);
+
+      await wiring.sessionStore.save(
+        StoredAuthSession(
+          accessToken: 'stored-access',
+          refreshToken: 'stored-refresh',
+          tokenType: 'Bearer',
+          sessionId: 'session-1',
+          userId: 'user-1',
+          accessTokenExpiresAtUtc:
+              DateTime.now().toUtc().add(const Duration(hours: 1)),
+        ),
+      );
+
+      await tester.pumpWidget(
+        AfriWalletApp(
+          repository: _FakeSubscriptionRepository(),
+          authProductionWiring: wiring,
+          identityReadRepository: _ReadyIdentityReadRepository(),
+          walletRepository: _ReadyWalletRepository(),
+          transferRepository: _ReadyTransferRepository(),
+          transactionHistoryRepository: _ReadyTimelineRepository(),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Découvrir AfWal'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('@premium-user'), findsOneWidget);
+      await tester.tap(find.text('Continuer'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Wallet Home'), findsOneWidget);
+      expect(find.byKey(const Key('wallet-home-afwal-id')), findsOneWidget);
+      expect(find.text('@premium-user'), findsOneWidget);
+    },
+  );
+
 }
 
 AuthProductionWiring _testAuthWiring({
@@ -136,6 +194,60 @@ AuthProductionWiring _testAuthWiring({
     apiClient: apiClient,
     secureStorageAdapter: storage,
   );
+}
+
+
+class _ReadyIdentityReadRepository implements IdentityReadRepository {
+  @override
+  Future<CurrentIdentityProfile> loadCurrentProfile() async {
+    return CurrentIdentityProfile(
+      userId: 'user-1',
+      identifier: 'user@example.com',
+      createdAtUtc: DateTime.utc(2026, 10, 15, 10),
+    );
+  }
+
+  @override
+  Future<PublicAfWalIdentity> loadPublicAfWalId(String afWalId) async {
+    return PublicAfWalIdentity(afWalId: afWalId);
+  }
+}
+
+class _ReadyTransferRepository implements TransferRepository {
+  @override
+  Future<ReceiveIdentity> loadReceiveIdentity() async {
+    return const ReceiveIdentity(
+      publicLabel: '@premium-user',
+      qrToken: 'premium-qr-token',
+    );
+  }
+
+  @override
+  Future<TransferReceipt> send(SendTransferRequest request) {
+    throw UnimplementedError();
+  }
+}
+
+class _ReadyWalletRepository implements WalletRepository {
+  @override
+  Future<List<WalletBalance>> loadWalletBalances() async {
+    return const <WalletBalance>[
+      WalletBalance(
+        walletId: 'wallet-premium-eur',
+        currency: 'EUR',
+        availableMinor: 12345,
+        status: 'ACTIVE',
+        countryCode: 'DE',
+      ),
+    ];
+  }
+}
+
+class _ReadyTimelineRepository implements TransactionHistoryRepository {
+  @override
+  Future<List<TransactionHistoryItem>> listTransactions() async {
+    return const <TransactionHistoryItem>[];
+  }
 }
 
 class _MemorySecureStorageAdapter implements SecureStorageAdapter {

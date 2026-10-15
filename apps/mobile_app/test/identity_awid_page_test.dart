@@ -69,7 +69,7 @@ void main() {
         home: IdentityAwidPage(
           identityRepository: _ReadyIdentityReadRepository(),
           transferRepository: _ReadyTransferRepository(),
-          onContinue: () {},
+          onContinue: (_) {},
         ),
       ),
     );
@@ -87,14 +87,39 @@ void main() {
     );
   });
 
+  testWidgets('hands authoritative AfWal ID to the authenticated experience',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(900, 1400));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    String? handedOffAfWalId;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: IdentityAwidPage(
+          identityRepository: _ReadyIdentityReadRepository(),
+          transferRepository: _ReadyTransferRepository(),
+          onContinue: (afWalId) => handedOffAfWalId = afWalId,
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Continuer'));
+
+    expect(handedOffAfWalId, '@testuser');
+  });
+
   testWidgets('never fabricates identity when backend data is unavailable',
       (tester) async {
+    String? handedOffAfWalId = '@unexpected';
+
     await tester.pumpWidget(
       MaterialApp(
         home: IdentityAwidPage(
           identityRepository: _UnavailableIdentityReadRepository(),
           transferRepository: _UnavailableTransferRepository(),
-          onContinue: () {},
+          onContinue: (afWalId) => handedOffAfWalId = afWalId,
         ),
       ),
     );
@@ -108,5 +133,8 @@ void main() {
     );
     expect(find.text('Continuer sans afficher mon ID'), findsOneWidget);
     expect(find.text('@testuser'), findsNothing);
+
+    await tester.tap(find.text('Continuer sans afficher mon ID'));
+    expect(handedOffAfWalId, isNull);
   });
 }

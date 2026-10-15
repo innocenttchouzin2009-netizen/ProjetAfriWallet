@@ -36,9 +36,16 @@ void main() {
 
     final dataSource = MobileMoneyPayoutQuoteRemoteDataSource(apiClient);
 
-    final result = await dataSource.createQuote(requestDto);
+    final result = await dataSource.createQuote(
+      requestDto,
+      accessToken: 'quote-access-token',
+    );
 
     expect(capturedRequest.method, 'POST');
+    expect(
+      capturedRequest.headers['Authorization'],
+      'Bearer quote-access-token',
+    );
     expect(capturedRequest.url.path, '/api/v1/mobile-money/payouts/quote');
     expect(
       jsonDecode(capturedRequest.body),

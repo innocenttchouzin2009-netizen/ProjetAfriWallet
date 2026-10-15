@@ -7,6 +7,8 @@ import 'package:mobile_app/models/auth_session.dart';
 import 'package:mobile_app/models/current_identity_profile.dart';
 import 'package:mobile_app/models/mobile_money_beneficiary_lookup.dart';
 import 'package:mobile_app/models/mobile_money_beneficiary_operator.dart';
+import 'package:mobile_app/models/mobile_money_payout_quote.dart';
+import 'package:mobile_app/models/mobile_money_payout_quote_intent.dart';
 import 'package:mobile_app/models/payment_transfer.dart';
 import 'package:mobile_app/models/public_afwal_identity.dart';
 import 'package:mobile_app/models/transaction_history.dart';
@@ -16,6 +18,7 @@ import 'package:mobile_app/network/api_client.dart';
 import 'package:mobile_app/services/auth_production_wiring.dart';
 import 'package:mobile_app/services/identity_read_repository.dart';
 import 'package:mobile_app/services/mobile_money_beneficiary_lookup_repository.dart';
+import 'package:mobile_app/services/mobile_money_payout_quote_repository.dart';
 import 'package:mobile_app/services/secure_storage_adapter.dart';
 import 'package:mobile_app/services/subscription_repository.dart';
 import 'package:mobile_app/services/transaction_history_repository.dart';
@@ -165,6 +168,8 @@ void main() {
           transactionHistoryRepository: _ReadyTimelineRepository(),
           mobileMoneyBeneficiaryLookupRepository:
               _ReadyMobileMoneyBeneficiaryLookupRepository(),
+          mobileMoneyPayoutQuoteRepository:
+              _ReadyMobileMoneyPayoutQuoteRepository(),
         ),
       );
       await tester.pumpAndSettle();
@@ -200,6 +205,40 @@ void main() {
       expect(find.text('Ajouter un bénéficiaire'), findsOneWidget);
       expect(find.text('Rechercher un bénéficiaire Mobile Money'), findsOneWidget);
 
+      await tester.enterText(
+        find.byKey(const Key('momo-beneficiary-search-input')),
+        '+237670123456',
+      );
+      await tester.pump();
+      await tester.tap(
+        find.byKey(const Key('momo-beneficiary-search-submit')),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const Key('momo-beneficiary-search-continue')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const Key('momo-quote-intent-entry-page')),
+        findsOneWidget,
+      );
+      await tester.enterText(
+        find.byKey(const Key('momo-quote-intent-amount')),
+        '10.00',
+      );
+      await tester.tap(
+        find.byKey(const Key('momo-quote-intent-continue')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Votre estimation'), findsOneWidget);
+      expect(find.text('Ada N.'), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('momo-quote-back')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('momo-quote-intent-back')));
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('momo-beneficiary-search-back')));
       await tester.pumpAndSettle();
 
@@ -277,6 +316,40 @@ class _ReadyMobileMoneyBeneficiaryLookupRepository
       ),
       operator: MobileMoneyBeneficiaryOperator.mtnCameroon,
     );
+  }
+}
+
+class _ReadyMobileMoneyPayoutQuoteRepository
+    implements MobileMoneyPayoutQuoteRepository {
+  @override
+  Future<MobileMoneyPayoutQuote> createQuoteFromIntent(
+    MobileMoneyPayoutQuoteIntent intent,
+  ) async {
+    return MobileMoneyPayoutQuote(
+      quoteId: 'quote-widget',
+      sourceCurrencyCode: intent.sourceCurrencyCode,
+      sourceAmountMinor: intent.sourceAmountMinor,
+      fees: const <MobileMoneyPayoutQuoteFee>[],
+      totalFeeMinor: 0,
+      totalSourceDebitMinor: intent.sourceAmountMinor,
+      destinationCurrencyCode: intent.destinationCurrencyCode,
+      destinationAmountMinor: 650000,
+      fxRate: 650,
+      createdAtUtc: DateTime.utc(2026, 10, 16, 10),
+      expiresAtUtc: DateTime.utc(2099),
+    );
+  }
+
+  @override
+  Future<MobileMoneyPayoutQuote> createQuote({
+    required String sourceCountryCode,
+    required String sourceCurrencyCode,
+    required String destinationCountryCode,
+    required String destinationCurrencyCode,
+    required String operatorCode,
+    required int sourceAmountMinor,
+  }) {
+    throw StateError('The integrated handoff must use a quote intent.');
   }
 }
 

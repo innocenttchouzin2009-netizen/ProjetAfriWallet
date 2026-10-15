@@ -19,7 +19,7 @@ jobs:
 
     env:
       WORKFLOW_SHA: ${{ github.sha }}
-      CANDIDATE_SHA: 23e600ea778864da3fb08ac9e3576ae2be7040df
+      PRODUCT_CANDIDATE_SHA: 23e600ea778864da3fb08ac9e3576ae2be7040df
       BASE_SHA: f1018fb2d767ba258b026a16be0d796a006c7108
       STATUS_CONTEXT: mobile-beta2.53/balance-afwal-id-hero-certification
 
@@ -28,38 +28,38 @@ jobs:
         working-directory: apps/mobile_app
 
     steps:
-      - name: Checkout exact Beta2.53 product candidate
+      - name: Checkout exact Beta2.53 certification head
         uses: actions/checkout@v4
         with:
-          ref: ${{ env.CANDIDATE_SHA }}
+          ref: ${{ env.WORKFLOW_SHA }}
           fetch-depth: 0
 
-      - name: Assert workflow handoff and candidate lineage
+      - name: Assert product and certification lineage
         working-directory: .
         shell: bash
         run: |
           set -euo pipefail
           actual_sha="$(git rev-parse HEAD)"
           echo "workflow_sha=${WORKFLOW_SHA}"
-          echo "candidate_sha=${CANDIDATE_SHA}"
+          echo "product_candidate_sha=${PRODUCT_CANDIDATE_SHA}"
           echo "checked_out_sha=${actual_sha}"
           echo "base_sha=${BASE_SHA}"
-          test "${actual_sha}" = "${CANDIDATE_SHA}"
+          test "${actual_sha}" = "${WORKFLOW_SHA}"
           git cat-file -e "${WORKFLOW_SHA}^{commit}"
-          git cat-file -e "${CANDIDATE_SHA}^{commit}"
+          git cat-file -e "${PRODUCT_CANDIDATE_SHA}^{commit}"
           git cat-file -e "${BASE_SHA}^{commit}"
-          test "$(git rev-parse "${WORKFLOW_SHA}^")" = "${CANDIDATE_SHA}"
-          git merge-base --is-ancestor "${BASE_SHA}" "${CANDIDATE_SHA}"
-          test "$(git merge-base "${BASE_SHA}" "${CANDIDATE_SHA}")" = "${BASE_SHA}"
+          git merge-base --is-ancestor "${BASE_SHA}" "${PRODUCT_CANDIDATE_SHA}"
+          test "$(git merge-base "${BASE_SHA}" "${PRODUCT_CANDIDATE_SHA}")" = "${BASE_SHA}"
+          git merge-base --is-ancestor "${PRODUCT_CANDIDATE_SHA}" "${WORKFLOW_SHA}"
 
-      - name: Mark candidate certification pending
+      - name: Mark product candidate certification pending
         uses: actions/github-script@v7
         with:
           script: |
             await github.rest.repos.createCommitStatus({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              sha: process.env.CANDIDATE_SHA,
+              sha: process.env.PRODUCT_CANDIDATE_SHA,
               state: 'pending',
               context: process.env.STATUS_CONTEXT,
               description: 'Beta2.53 balance and AfWal ID hero certification in progress',
@@ -76,7 +76,7 @@ jobs:
             "apps/mobile_app/test/wallet_home_page_test.dart"
           )
 
-          mapfile -t changed_files < <(git diff --name-only "${BASE_SHA}...${CANDIDATE_SHA}" | sort)
+          mapfile -t changed_files < <(git diff --name-only "${BASE_SHA}...${PRODUCT_CANDIDATE_SHA}" | sort)
 
           printf 'Changed product files:\n'
           printf '  %s\n' "${changed_files[@]}"
@@ -93,6 +93,41 @@ jobs:
             done
             if [[ "${matched}" != true ]]; then
               echo "Unexpected file in Beta2.53 product diff: ${file}" >&2
+              exit 1
+            fi
+          done
+
+          for required in "${allowed[@]}"; do
+            printf '%s\n' "${changed_files[@]}" | grep -Fxq "${required}"
+          done
+
+      - name: Verify exact certification harness allowlist
+        working-directory: .
+        shell: bash
+        run: |
+          set -euo pipefail
+          allowed=(
+            ".github/workflows/mobile-beta2.53-balance-afwal-id-hero.yml"
+            "apps/mobile_app/test/widget_test.dart"
+          )
+
+          mapfile -t changed_files < <(git diff --name-only "${PRODUCT_CANDIDATE_SHA}...${WORKFLOW_SHA}" | sort)
+
+          printf 'Changed certification harness files:\n'
+          printf '  %s\n' "${changed_files[@]}"
+
+          test "${#changed_files[@]}" -eq 2
+
+          for file in "${changed_files[@]}"; do
+            matched=false
+            for expected in "${allowed[@]}"; do
+              if [[ "${file}" == "${expected}" ]]; then
+                matched=true
+                break
+              fi
+            done
+            if [[ "${matched}" != true ]]; then
+              echo "Unexpected file in Beta2.53 certification harness diff: ${file}" >&2
               exit 1
             fi
           done
@@ -128,12 +163,13 @@ jobs:
       - name: Run complete Flutter suite
         run: flutter test
 
-      - name: Verify Beta2.53 product diff
+      - name: Verify Beta2.53 diffs
         working-directory: .
         shell: bash
         run: |
           set -euo pipefail
-          git diff --check "${BASE_SHA}...${CANDIDATE_SHA}"
+          git diff --check "${BASE_SHA}...${PRODUCT_CANDIDATE_SHA}"
+          git diff --check "${PRODUCT_CANDIDATE_SHA}...${WORKFLOW_SHA}"
 
       - name: Write certification summary
         if: always()
@@ -144,15 +180,16 @@ jobs:
             echo "## Mobile Beta2.53 Balance ↔ AfWal ID hero certification"
             echo
             echo "- Workflow commit: `${WORKFLOW_SHA}`"
-            echo "- Product candidate: `${CANDIDATE_SHA}`"
+            echo "- Product candidate: `${PRODUCT_CANDIDATE_SHA}`"
             echo "- Base Beta2.52: `${BASE_SHA}`"
             echo "- Product allowlist: Wallet Home implementation + Wallet Home tests only"
+            echo "- Certification harness: workflow + inherited app handoff test only"
             echo "- Targeted tests: Beta2.53 Hero + Beta2.52 identity/app handoff"
             echo "- Full Flutter suite: required"
             echo "- Job status: **${{ job.status }}**"
           } >> "${GITHUB_STEP_SUMMARY}"
 
-      - name: Report candidate certification status
+      - name: Report product candidate certification status
         if: always()
         uses: actions/github-script@v7
         env:
@@ -163,7 +200,7 @@ jobs:
             await github.rest.repos.createCommitStatus({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              sha: process.env.CANDIDATE_SHA,
+              sha: process.env.PRODUCT_CANDIDATE_SHA,
               state: succeeded ? 'success' : 'failure',
               context: process.env.STATUS_CONTEXT,
               description: succeeded

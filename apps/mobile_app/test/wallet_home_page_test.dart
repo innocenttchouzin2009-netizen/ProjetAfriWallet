@@ -83,9 +83,9 @@ void main() {
     expect(find.text('Solde disponible'), findsOneWidget);
     expect(find.byKey(const Key('wallet-home-primary-balance')), findsOneWidget);
     expect(find.byKey(const Key('wallet-home-primary-balance-amount')), findsOneWidget);
-    expect(find.text('AfWal ID'), findsOneWidget);
-    expect(find.byKey(const Key('wallet-home-afwal-id')), findsOneWidget);
-    expect(find.text('@afwal-test'), findsOneWidget);
+    expect(find.byKey(const Key('wallet-home-hero-balance-state')), findsOneWidget);
+    expect(find.byKey(const Key('wallet-home-afwal-id')), findsNothing);
+    expect(find.text('@afwal-test'), findsNothing);
     expect(find.text('Mes wallets'), findsOneWidget);
     expect(find.text('123.45 EUR'), findsNWidgets(2));
     expect(find.text('5000.00 XAF'), findsOneWidget);
@@ -96,6 +96,60 @@ void main() {
     expect(find.text('QR'), findsOneWidget);
     expect(find.text('Financial Timeline'), findsOneWidget);
   });
+
+  testWidgets(
+    'transitions between balance and authoritative AfWal ID hero states',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(900, 1400));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await tester.pumpWidget(MaterialApp(
+        home: WalletHomePage(
+          repository: _ReadyWalletRepository(),
+          transactionHistoryRepository: _ReadyTimelineRepository(),
+          afWalId: '@afwal-test',
+        ),
+      ));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const Key('wallet-home-hero-balance-state')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('wallet-home-primary-balance-amount')),
+        findsOneWidget,
+      );
+      expect(find.byKey(const Key('wallet-home-afwal-id')), findsNothing);
+
+      await tester.tap(find.byKey(const Key('wallet-home-primary-balance')));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const Key('wallet-home-hero-afwal-id-state')),
+        findsOneWidget,
+      );
+      expect(find.byKey(const Key('wallet-home-afwal-id')), findsOneWidget);
+      expect(find.text('@afwal-test'), findsOneWidget);
+      expect(
+        find.byKey(const Key('wallet-home-primary-balance-amount')),
+        findsNothing,
+      );
+
+      await tester.tap(find.byKey(const Key('wallet-home-primary-balance')));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const Key('wallet-home-hero-balance-state')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('wallet-home-primary-balance-amount')),
+        findsOneWidget,
+      );
+      expect(find.byKey(const Key('wallet-home-afwal-id')), findsNothing);
+    },
+  );
 
   testWidgets('does not fabricate AfWal ID when none is supplied', (tester) async {
     await tester.binding.setSurfaceSize(const Size(900, 1400));
@@ -112,6 +166,16 @@ void main() {
     expect(find.byKey(const Key('wallet-home-primary-balance')), findsOneWidget);
     expect(find.text('Solde disponible'), findsOneWidget);
     expect(find.text('AfWal ID'), findsNothing);
+    expect(find.byKey(const Key('wallet-home-afwal-id')), findsNothing);
+
+    await tester.tap(find.byKey(const Key('wallet-home-primary-balance')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Solde disponible'), findsOneWidget);
+    expect(
+      find.byKey(const Key('wallet-home-primary-balance-amount')),
+      findsOneWidget,
+    );
     expect(find.byKey(const Key('wallet-home-afwal-id')), findsNothing);
   });
 

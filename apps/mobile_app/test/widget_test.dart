@@ -133,6 +133,9 @@ void main() {
   testWidgets(
     'premium wallet home receives authoritative AfWal ID from identity handoff',
     (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(900, 1400));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
       SharedPreferences.setMockInitialValues({});
       final wiring = _testAuthWiring();
       addTearDown(wiring.dispose);

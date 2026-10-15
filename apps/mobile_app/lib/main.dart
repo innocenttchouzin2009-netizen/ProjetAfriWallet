@@ -62,6 +62,7 @@ class _AfriWalletAppState extends State<AfriWalletApp> {
   bool _isLocaleLoaded = false;
   bool _hasEnteredBeta = false;
   bool _hasVisitedIdentity = false;
+  String? _currentAfWalId;
   bool _hasVisitedWalletHome = false;
   bool _hasVisitedSendReceive = false;
   bool _hasVisitedTransactions = false;
@@ -156,6 +157,15 @@ class _AfriWalletAppState extends State<AfriWalletApp> {
     setState(() => _locale = locale);
   }
 
+  void _handleIdentityContinue(String? afWalId) {
+    final normalized = afWalId?.trim();
+    setState(() {
+      _currentAfWalId =
+          normalized != null && normalized.isNotEmpty ? normalized : null;
+      _hasVisitedIdentity = true;
+    });
+  }
+
   void _openSendReceive(SendReceiveMode mode) {
     setState(() {
       _sendReceiveInitialMode = mode;
@@ -175,7 +185,7 @@ class _AfriWalletAppState extends State<AfriWalletApp> {
       return IdentityAwidPage(
         identityRepository: _identityReadRepository,
         transferRepository: _transferRepository,
-        onContinue: () => setState(() => _hasVisitedIdentity = true),
+        onContinue: _handleIdentityContinue,
       );
     }
     if (!_hasVisitedWalletHome) {
@@ -184,6 +194,7 @@ class _AfriWalletAppState extends State<AfriWalletApp> {
         transactionHistoryRepository: _transactionHistoryRepository,
         qrPaymentRepository: _qrPaymentRepository,
         subscriptionRepository: widget.repository,
+        afWalId: _currentAfWalId,
         onSend: () => _openSendReceive(SendReceiveMode.send),
         onReceive: () => _openSendReceive(SendReceiveMode.receive),
         onContinue: () => _openSendReceive(SendReceiveMode.send),

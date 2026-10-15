@@ -6,6 +6,8 @@ import '../models/payment_transfer.dart';
 import '../services/identity_read_repository.dart';
 import '../services/transfer_repository.dart';
 
+typedef IdentityContinue = void Function(String? afWalId);
+
 class IdentityAwidPage extends StatefulWidget {
   const IdentityAwidPage({
     super.key,
@@ -16,7 +18,7 @@ class IdentityAwidPage extends StatefulWidget {
 
   final IdentityReadRepository identityRepository;
   final TransferRepository transferRepository;
-  final VoidCallback onContinue;
+  final IdentityContinue onContinue;
 
   @override
   State<IdentityAwidPage> createState() => _IdentityAwidPageState();
@@ -69,7 +71,7 @@ class _IdentityAwidPageState extends State<IdentityAwidPage> {
             if (snapshot.hasError) {
               return _IdentityUnavailable(
                 onRetry: _retry,
-                onContinue: widget.onContinue,
+                onContinue: () => widget.onContinue(null),
               );
             }
 
@@ -77,7 +79,7 @@ class _IdentityAwidPageState extends State<IdentityAwidPage> {
             if (identity == null) {
               return _IdentityUnavailable(
                 onRetry: _retry,
-                onContinue: widget.onContinue,
+                onContinue: () => widget.onContinue(null),
               );
             }
 
@@ -158,7 +160,9 @@ class _IdentityAwidPageState extends State<IdentityAwidPage> {
                 ),
                 const SizedBox(height: 24),
                 FilledButton(
-                  onPressed: widget.onContinue,
+                  onPressed: () => widget.onContinue(
+                    identity.receiveIdentity.publicLabel,
+                  ),
                   child: const Text('Continuer'),
                 ),
               ],

@@ -17,6 +17,7 @@ class WalletHomePage extends StatefulWidget {
     this.transactionHistoryRepository = const UnavailableTransactionHistoryRepository(),
     this.qrPaymentRepository = const UnavailableQrPaymentRepository(),
     this.subscriptionRepository,
+    this.afWalId,
     this.onSend,
     this.onReceive,
     this.onQr,
@@ -28,6 +29,7 @@ class WalletHomePage extends StatefulWidget {
   final TransactionHistoryRepository transactionHistoryRepository;
   final QrPaymentRepository qrPaymentRepository;
   final SubscriptionRepository? subscriptionRepository;
+  final String? afWalId;
   final VoidCallback? onSend;
   final VoidCallback? onReceive;
   final VoidCallback? onQr;
@@ -120,10 +122,32 @@ class _WalletHomePageState extends State<WalletHomePage> {
             return ListView(
               padding: const EdgeInsets.all(20),
               children: [
+                const Text(
+                  'AFRIKAWALLET',
+                  key: Key('wallet-home-brand'),
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  'Bonjour',
+                  key: const Key('wallet-home-greeting'),
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 4),
                 Text('Wallet Home', style: Theme.of(context).textTheme.headlineMedium),
                 const SizedBox(height: 8),
                 const Text('Vos soldes confirmés et votre activité financière récente.'),
                 const SizedBox(height: 20),
+                _PrimaryBalanceCard(
+                  wallet: wallets.first,
+                  afWalId: widget.afWalId,
+                ),
+                const SizedBox(height: 24),
+                Text('Mes wallets', style: Theme.of(context).textTheme.titleLarge),
+                const SizedBox(height: 12),
                 for (final wallet in wallets) ...[
                   _WalletCard(wallet: wallet),
                   const SizedBox(height: 12),
@@ -190,6 +214,53 @@ class _TimelineLoadResult {
   final Object? error;
 
   bool get hasError => error != null;
+}
+
+class _PrimaryBalanceCard extends StatelessWidget {
+  const _PrimaryBalanceCard({
+    required this.wallet,
+    this.afWalId,
+  });
+
+  final WalletBalance wallet;
+  final String? afWalId;
+
+  @override
+  Widget build(BuildContext context) {
+    final normalizedAfWalId = afWalId?.trim();
+    final hasAfWalId = normalizedAfWalId != null && normalizedAfWalId.isNotEmpty;
+
+    return Card(
+      key: const Key('wallet-home-primary-balance'),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Solde disponible'),
+            const SizedBox(height: 8),
+            Text(
+              wallet.formattedAmount,
+              key: const Key('wallet-home-primary-balance-amount'),
+              style: Theme.of(context).textTheme.headlineMedium,
+            ),
+            const SizedBox(height: 4),
+            Text('Wallet ${wallet.currency}'),
+            if (hasAfWalId) ...[
+              const SizedBox(height: 16),
+              const Text('AfWal ID'),
+              const SizedBox(height: 4),
+              Text(
+                normalizedAfWalId,
+                key: const Key('wallet-home-afwal-id'),
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _WalletCard extends StatelessWidget {

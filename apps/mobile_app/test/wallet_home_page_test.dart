@@ -70,13 +70,24 @@ void main() {
       home: WalletHomePage(
         repository: _ReadyWalletRepository(),
         transactionHistoryRepository: _ReadyTimelineRepository(),
+        afWalId: '@afwal-test',
       ),
     ));
 
     await tester.pumpAndSettle();
 
     expect(find.text('Wallet Home'), findsOneWidget);
-    expect(find.text('123.45 EUR'), findsOneWidget);
+    expect(find.byKey(const Key('wallet-home-brand')), findsOneWidget);
+    expect(find.text('AFRIKAWALLET'), findsOneWidget);
+    expect(find.byKey(const Key('wallet-home-greeting')), findsOneWidget);
+    expect(find.text('Solde disponible'), findsOneWidget);
+    expect(find.byKey(const Key('wallet-home-primary-balance')), findsOneWidget);
+    expect(find.byKey(const Key('wallet-home-primary-balance-amount')), findsOneWidget);
+    expect(find.text('AfWal ID'), findsOneWidget);
+    expect(find.byKey(const Key('wallet-home-afwal-id')), findsOneWidget);
+    expect(find.text('@afwal-test'), findsOneWidget);
+    expect(find.text('Mes wallets'), findsOneWidget);
+    expect(find.text('123.45 EUR'), findsNWidgets(2));
     expect(find.text('5000.00 XAF'), findsOneWidget);
     expect(find.text('Wallet WALLET-TEST-EUR'), findsOneWidget);
     expect(find.text('Envoyer'), findsOneWidget);
@@ -84,6 +95,24 @@ void main() {
     expect(find.byKey(const Key('wallet-quick-action-qr')), findsOneWidget);
     expect(find.text('QR'), findsOneWidget);
     expect(find.text('Financial Timeline'), findsOneWidget);
+  });
+
+  testWidgets('does not fabricate AfWal ID when none is supplied', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(900, 1400));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(MaterialApp(
+      home: WalletHomePage(
+        repository: _ReadyWalletRepository(),
+        transactionHistoryRepository: _ReadyTimelineRepository(),
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('wallet-home-primary-balance')), findsOneWidget);
+    expect(find.text('Solde disponible'), findsOneWidget);
+    expect(find.text('AfWal ID'), findsNothing);
+    expect(find.byKey(const Key('wallet-home-afwal-id')), findsNothing);
   });
 
   testWidgets('routes send receive and QR through distinct callbacks', (tester) async {

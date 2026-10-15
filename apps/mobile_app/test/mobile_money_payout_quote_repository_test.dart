@@ -4,9 +4,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:mobile_app/data/remote/mobile_money_payout_quote_remote_data_source.dart';
+import 'package:mobile_app/models/auth_session.dart';
 import 'package:mobile_app/network/api_client.dart';
 import 'package:mobile_app/models/mobile_money_payout_quote_intent.dart';
 import 'package:mobile_app/network/api_exception.dart';
+import 'package:mobile_app/services/auth_session_coordinator.dart';
+import 'package:mobile_app/services/authenticated_request_executor.dart';
 import 'package:mobile_app/services/mobile_money_payout_quote_repository.dart';
 
 void main() {
@@ -215,6 +218,59 @@ void main() {
       expect(called, isFalse);
     });
 
+    test(
+        'authenticated quote repository refreshes once and retries with the refreshed bearer token',
+        () async {
+      final lifecycle = _FakeAuthSessionLifecycle(
+        restoredSession: _session('access-old'),
+        refreshedSession: _session('access-new'),
+      );
+      final authorizations = <String?>[];
+      final apiClient = ApiClient(
+        baseUrl: 'https://api.afrikawallet.test',
+        httpClient: MockClient((request) async {
+          authorizations.add(request.headers['Authorization']);
+          if (authorizations.length == 1) {
+            return http.Response('', 401);
+          }
+          return http.Response(
+            jsonEncode(_validPayload()),
+            200,
+            headers: <String, String>{'content-type': 'application/json'},
+          );
+        }),
+      );
+      addTearDown(apiClient.close);
+
+      final repository = AuthenticatedMobileMoneyPayoutQuoteRepository(
+        MobileMoneyPayoutQuoteRemoteDataSource(apiClient),
+        AuthenticatedRequestExecutor(lifecycle),
+      );
+
+      final quote = await repository.createQuoteFromIntent(
+        const MobileMoneyPayoutQuoteIntent(
+          sourceCountryCode: 'DE',
+          sourceCurrencyCode: 'EUR',
+          destinationCurrencyCode: 'XAF',
+          sourceAmountMinor: 10000,
+          beneficiary: BeneficiaryQuoteDraft(
+            normalizedPhoneNumber: '+237650000000',
+            countryCode: 'CM',
+            operatorCode: 'MTN_CM',
+            accountHolderName: 'Jane Doe',
+          ),
+        ),
+      );
+
+      expect(quote.quoteId, 'dd5d65b9-83ba-463a-87f8-d4b8513c8595');
+      expect(
+        authorizations,
+        <String?>['Bearer access-old', 'Bearer access-new'],
+      );
+      expect(lifecycle.restoreCalls, 1);
+      expect(lifecycle.refreshCalls, 1);
+    });
+
     test('preserves API validation failures from the quote endpoint', () async {
       final repository = _repository(
         MockClient(
@@ -274,3 +330,43 @@ Map<String, dynamic> _validPayload() => <String, dynamic>{
       'createdAtUtc': '2026-10-07T00:00:00+00:00',
       'expiresAtUtc': '2026-10-07T00:10:00+00:00',
     };
+
+
+StoredAuthSession _session(String accessToken) {
+  return StoredAuthSession(
+    accessToken: accessToken,
+    refreshToken: 'refresh-token',
+    tokenType: 'Bearer',
+    sessionId: 'session-1',
+    userId: 'user-1',
+    accessTokenExpiresAtUtc: DateTime.utc(2099),
+  );
+}
+
+class _FakeAuthSessionLifecycle implements AuthSessionLifecycle {
+  _FakeAuthSessionLifecycle({
+    required this.restoredSession,
+    this.refreshedSession,
+  });
+
+  final StoredAuthSession? restoredSession;
+  final StoredAuthSession? refreshedSession;
+
+  int restoreCalls = 0;
+  int refreshCalls = 0;
+
+  @override
+  Future<StoredAuthSession?> restoreValidSession() async {
+    restoreCalls += 1;
+    return restoredSession;
+  }
+
+  @override
+  Future<StoredAuthSession?> refreshSession() async {
+    refreshCalls += 1;
+    return refreshedSession;
+  }
+
+  @override
+  Future<void> clearLocalSession() async {}
+}

@@ -4,11 +4,13 @@ import '../models/transaction_history.dart';
 import '../models/wallet_balance.dart';
 import '../presentation/mobile_money_beneficiary_search_controller.dart';
 import '../services/mobile_money_beneficiary_lookup_repository.dart';
+import '../services/mobile_money_payout_quote_repository.dart';
 import '../services/qr_payment_repository.dart';
 import '../services/subscription_repository.dart';
 import '../services/transaction_history_repository.dart';
 import '../services/wallet_repository.dart';
 import 'mobile_money_beneficiary_search_page.dart';
+import 'mobile_money_payout_quote_intent_entry_page.dart';
 import 'qr_payment_page.dart';
 import 'subscriptions_page.dart';
 import 'transaction_history_page.dart';
@@ -20,6 +22,7 @@ class WalletHomePage extends StatefulWidget {
     this.transactionHistoryRepository = const UnavailableTransactionHistoryRepository(),
     this.qrPaymentRepository = const UnavailableQrPaymentRepository(),
     this.mobileMoneyBeneficiaryLookupRepository,
+    this.mobileMoneyPayoutQuoteRepository,
     this.subscriptionRepository,
     this.afWalId,
     this.onSend,
@@ -35,6 +38,7 @@ class WalletHomePage extends StatefulWidget {
   final QrPaymentRepository qrPaymentRepository;
   final MobileMoneyBeneficiaryLookupRepository?
       mobileMoneyBeneficiaryLookupRepository;
+  final MobileMoneyPayoutQuoteRepository? mobileMoneyPayoutQuoteRepository;
   final SubscriptionRepository? subscriptionRepository;
   final String? afWalId;
   final VoidCallback? onSend;
@@ -87,19 +91,36 @@ class _WalletHomePageState extends State<WalletHomePage> {
     );
   }
 
-  void _openMobileMoney() {
+  void _openMobileMoney(WalletBalance sourceWallet) {
     final repository = widget.mobileMoneyBeneficiaryLookupRepository;
     if (repository == null) return;
 
+    final quoteRepository = widget.mobileMoneyPayoutQuoteRepository;
     final controller = MobileMoneyBeneficiarySearchController(
       repository: repository,
     );
     Navigator.of(context)
         .push<void>(
           MaterialPageRoute<void>(
-            builder: (context) => MobileMoneyBeneficiarySearchPage(
+            builder: (searchContext) => MobileMoneyBeneficiarySearchPage(
               controller: controller,
-              onBack: () => Navigator.of(context).pop(),
+              onContinue: quoteRepository == null
+                  ? null
+                  : (result) {
+                      if (!result.isFullyResolved) return;
+                      Navigator.of(searchContext).push<void>(
+                        MaterialPageRoute<void>(
+                          builder: (entryContext) =>
+                              MobileMoneyPayoutQuoteIntentEntryPage(
+                            sourceWallet: sourceWallet,
+                            beneficiary: result,
+                            quoteRepository: quoteRepository,
+                            onBack: () => Navigator.of(entryContext).pop(),
+                          ),
+                        ),
+                      );
+                    },
+              onBack: () => Navigator.of(searchContext).pop(),
             ),
           ),
         )
@@ -186,7 +207,7 @@ class _WalletHomePageState extends State<WalletHomePage> {
                   onMobileMoney: widget.onMobileMoney ??
                       (widget.mobileMoneyBeneficiaryLookupRepository == null
                           ? null
-                          : _openMobileMoney),
+                          : () => _openMobileMoney(wallets.first)),
                   onQr: widget.onQr ?? _openQrPayments,
                   onSubscriptions: widget.onSubscriptions ?? _openSubscriptions,
                 ),

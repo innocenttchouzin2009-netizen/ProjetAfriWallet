@@ -11,11 +11,18 @@ class MobileMoneyPayoutQuoteRemoteDataSource {
   final ApiClient _apiClient;
 
   Future<MobileMoneyPayoutQuoteResponseDto> createQuote(
-    MobileMoneyPayoutQuoteRequestDto request,
-  ) async {
+    MobileMoneyPayoutQuoteRequestDto request, {
+    String? accessToken,
+  }) async {
+    final normalizedAccessToken = accessToken?.trim();
     final payload = await _apiClient.postJson(
       _quotePath,
       body: MobileMoneyPayoutQuoteMapper.requestToJson(request),
+      headers: normalizedAccessToken == null || normalizedAccessToken.isEmpty
+          ? null
+          : <String, String>{
+              'Authorization': 'Bearer $normalizedAccessToken',
+            },
     );
 
     try {

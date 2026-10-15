@@ -7,6 +7,7 @@ import 'package:mobile_app/models/auth_session.dart';
 import 'package:mobile_app/models/mobile_money_payout.dart';
 import 'package:mobile_app/models/mobile_money_payout_execution_handoff.dart';
 import 'package:mobile_app/models/mobile_money_payout_funding_intent.dart';
+import 'package:mobile_app/models/mobile_money_payout_quote_intent.dart';
 import 'package:mobile_app/network/api_client.dart';
 import 'package:mobile_app/services/authenticated_production_wiring.dart';
 import 'package:mobile_app/services/secure_storage_adapter.dart';
@@ -87,6 +88,33 @@ void main() {
                 'operatorResolved': true,
                 'accountHolderName': 'Ada N.',
                 'beneficiaryResolved': true,
+              }),
+              200,
+              headers: <String, String>{'content-type': 'application/json'},
+            );
+          }
+
+          if (request.method == 'POST' &&
+              request.url.path == '/api/v1/mobile-money/payouts/quote') {
+            return http.Response(
+              jsonEncode(<String, Object?>{
+                'quoteId': 'quote-wiring-1',
+                'sourceCurrency': 'EUR',
+                'sourceAmountMinor': 10000,
+                'fees': <Object?>[
+                  <String, Object?>{
+                    'code': 'SERVICE_FEE',
+                    'amountMinor': 250,
+                    'currency': 'EUR',
+                  },
+                ],
+                'totalFeeMinor': 250,
+                'totalSourceDebitMinor': 10250,
+                'destinationCurrency': 'XAF',
+                'destinationAmountMinor': 6559570,
+                'fxRate': 655.957,
+                'createdAtUtc': '2026-10-16T10:00:00Z',
+                'expiresAtUtc': '2026-10-16T10:10:00Z',
               }),
               200,
               headers: <String, String>{'content-type': 'application/json'},
@@ -177,6 +205,21 @@ void main() {
           await wiring.mobileMoneyBeneficiaryLookupRepository.search(
         phoneNumber: '670123456',
       );
+      final quote =
+          await wiring.mobileMoneyPayoutQuoteRepository.createQuoteFromIntent(
+        const MobileMoneyPayoutQuoteIntent(
+          sourceCountryCode: 'DE',
+          sourceCurrencyCode: 'EUR',
+          destinationCurrencyCode: 'XAF',
+          sourceAmountMinor: 10000,
+          beneficiary: BeneficiaryQuoteDraft(
+            normalizedPhoneNumber: '+237670123456',
+            countryCode: 'CM',
+            operatorCode: 'MTN_CM',
+            accountHolderName: 'Ada N.',
+          ),
+        ),
+      );
       final fundingPlan =
           await wiring.mobileMoneyPayoutFundingRepository.planFunding(
         correlationId: '7d8fba6d-d06f-4bd5-98da-cb71d07bfef4',
@@ -238,13 +281,14 @@ void main() {
       expect(transactions.single.transactionId, 'txn-wiring-1');
       expect(beneficiary.lookup.normalizedPhoneNumber, '+237670123456');
       expect(beneficiary.operatorCode, 'MTN_CM');
+      expect(quote.quoteId, 'quote-wiring-1');
       expect(fundingPlan.requiredAmountMinor, 10250);
       expect(executionPreparation.status, 'Prepared');
       expect(
         executionPreparation.fundingCorrelationId,
         '7d8fba6d-d06f-4bd5-98da-cb71d07bfef4',
       );
-      expect(requests, hasLength(6));
+      expect(requests, hasLength(7));
       final beneficiaryRequest = requests.singleWhere(
         (request) =>
             request.url.path == '/api/v1/mobile-money/beneficiaries/lookup',

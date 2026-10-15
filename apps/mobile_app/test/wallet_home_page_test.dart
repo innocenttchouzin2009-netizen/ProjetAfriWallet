@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile_app/models/mobile_money_beneficiary_lookup.dart';
 import 'package:mobile_app/models/mobile_money_beneficiary_operator.dart';
+import 'package:mobile_app/models/mobile_money_payout_quote.dart';
+import 'package:mobile_app/models/mobile_money_payout_quote_intent.dart';
 import 'package:mobile_app/models/transaction_history.dart';
 import 'package:mobile_app/models/wallet_balance.dart';
 import 'package:mobile_app/pages/wallet_home_page.dart';
 import 'package:mobile_app/services/mobile_money_beneficiary_lookup_repository.dart';
+import 'package:mobile_app/services/mobile_money_payout_quote_repository.dart';
 import 'package:mobile_app/services/transaction_history_repository.dart';
 import 'package:mobile_app/services/wallet_repository.dart';
 
@@ -49,6 +52,43 @@ class _ReadyMobileMoneyBeneficiaryLookupRepository
       ),
       operator: MobileMoneyBeneficiaryOperator.mtnCameroon,
     );
+  }
+}
+
+class _ReadyMobileMoneyPayoutQuoteRepository
+    implements MobileMoneyPayoutQuoteRepository {
+  MobileMoneyPayoutQuoteIntent? lastIntent;
+
+  @override
+  Future<MobileMoneyPayoutQuote> createQuoteFromIntent(
+    MobileMoneyPayoutQuoteIntent intent,
+  ) async {
+    lastIntent = intent;
+    return MobileMoneyPayoutQuote(
+      quoteId: 'quote-wallet-home',
+      sourceCurrencyCode: intent.sourceCurrencyCode,
+      sourceAmountMinor: intent.sourceAmountMinor,
+      fees: const <MobileMoneyPayoutQuoteFee>[],
+      totalFeeMinor: 0,
+      totalSourceDebitMinor: intent.sourceAmountMinor,
+      destinationCurrencyCode: intent.destinationCurrencyCode,
+      destinationAmountMinor: 650000,
+      fxRate: 650,
+      createdAtUtc: DateTime.utc(2026, 10, 16, 10),
+      expiresAtUtc: DateTime.utc(2099),
+    );
+  }
+
+  @override
+  Future<MobileMoneyPayoutQuote> createQuote({
+    required String sourceCountryCode,
+    required String sourceCurrencyCode,
+    required String destinationCountryCode,
+    required String destinationCurrencyCode,
+    required String operatorCode,
+    required int sourceAmountMinor,
+  }) {
+    throw StateError('The Wallet Home handoff must use a quote intent.');
   }
 }
 
@@ -316,12 +356,14 @@ void main() {
       await tester.binding.setSurfaceSize(const Size(900, 1400));
       addTearDown(() => tester.binding.setSurfaceSize(null));
 
+      final quoteRepository = _ReadyMobileMoneyPayoutQuoteRepository();
       await tester.pumpWidget(MaterialApp(
         home: WalletHomePage(
           repository: _ReadyWalletRepository(),
           transactionHistoryRepository: _ReadyTimelineRepository(),
           mobileMoneyBeneficiaryLookupRepository:
               _ReadyMobileMoneyBeneficiaryLookupRepository(),
+          mobileMoneyPayoutQuoteRepository: quoteRepository,
         ),
       ));
       await tester.pumpAndSettle();
@@ -349,6 +391,36 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('Wallet Home'), findsNothing);
+
+      await tester.enterText(
+        find.byKey(const Key('momo-beneficiary-search-input')),
+        '+237670123456',
+      );
+      await tester.pump();
+      await tester.tap(
+        find.byKey(const Key('momo-beneficiary-search-submit')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const Key('momo-beneficiary-search-continue')),
+        findsOneWidget,
+      );
+      await tester.tap(
+        find.byKey(const Key('momo-beneficiary-search-continue')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const Key('momo-quote-intent-entry-page')),
+        findsOneWidget,
+      );
+      expect(find.text('WALLET-TEST-EUR'), findsOneWidget);
+      expect(find.text('DE · EUR'), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('momo-quote-intent-back')));
+      await tester.pumpAndSettle();
+      expect(find.text('Ajouter un bénéficiaire'), findsOneWidget);
 
       await tester.tap(find.byKey(const Key('momo-beneficiary-search-back')));
       await tester.pumpAndSettle();

@@ -89,6 +89,9 @@ void main() {
 
   testWidgets('hands authoritative AfWal ID to the authenticated experience',
       (tester) async {
+    await tester.binding.setSurfaceSize(const Size(900, 1400));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
     String? handedOffAfWalId;
 
     await tester.pumpWidget(

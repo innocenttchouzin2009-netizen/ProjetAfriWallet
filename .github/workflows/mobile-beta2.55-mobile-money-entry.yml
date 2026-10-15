@@ -1,0 +1,191 @@
+name: Mobile Beta2.55 Mobile Money Entry Certification
+
+on:
+  push:
+    branches:
+      - feature/mobile-beta2.55
+    paths:
+      - '.github/workflows/mobile-beta2.55-mobile-money-entry.yml'
+      - 'apps/mobile_app/lib/main.dart'
+      - 'apps/mobile_app/lib/pages/wallet_home_page.dart'
+      - 'apps/mobile_app/lib/services/authenticated_production_wiring.dart'
+      - 'apps/mobile_app/test/wallet_home_page_test.dart'
+      - 'apps/mobile_app/test/widget_test.dart'
+      - 'apps/mobile_app/test/authenticated_production_wiring_test.dart'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  statuses: write
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      WORKFLOW_SHA: ${{ github.sha }}
+      PRODUCT_CANDIDATE_SHA: eb7b17ad25d520f92f0f387a09287c93a3b5da4f
+      BASE_SHA: 87b7cc66531e3903a3fe76c788f55fdd28620784
+      STATUS_CONTEXT: mobile-beta2.55/mobile-money-entry-certification
+
+    defaults:
+      run:
+        working-directory: apps/mobile_app
+
+    steps:
+      - name: Checkout exact Beta2.55 certification head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.WORKFLOW_SHA }}
+          fetch-depth: 0
+
+      - name: Assert exact Beta2.54 baseline and Beta2.55 lineage
+        working-directory: .
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual_sha="$(git rev-parse HEAD)"
+          test "${actual_sha}" = "${WORKFLOW_SHA}"
+          git cat-file -e "${BASE_SHA}^{commit}"
+          git cat-file -e "${PRODUCT_CANDIDATE_SHA}^{commit}"
+          git merge-base --is-ancestor "${BASE_SHA}" "${PRODUCT_CANDIDATE_SHA}"
+          test "$(git merge-base "${BASE_SHA}" "${PRODUCT_CANDIDATE_SHA}")" = "${BASE_SHA}"
+          git merge-base --is-ancestor "${PRODUCT_CANDIDATE_SHA}" "${WORKFLOW_SHA}"
+
+      - name: Mark Beta2.55 product candidate pending
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: process.env.PRODUCT_CANDIDATE_SHA,
+              state: 'pending',
+              context: process.env.STATUS_CONTEXT,
+              description: 'Beta2.55 Mobile Money entry certification in progress',
+              target_url: `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+            });
+
+      - name: Verify exact Beta2.55 product allowlist
+        working-directory: .
+        shell: bash
+        run: |
+          set -euo pipefail
+          allowed=(
+            "apps/mobile_app/lib/main.dart"
+            "apps/mobile_app/lib/pages/wallet_home_page.dart"
+            "apps/mobile_app/lib/services/authenticated_production_wiring.dart"
+            "apps/mobile_app/test/authenticated_production_wiring_test.dart"
+            "apps/mobile_app/test/wallet_home_page_test.dart"
+            "apps/mobile_app/test/widget_test.dart"
+          )
+          mapfile -t changed_files < <(git diff --name-only "${BASE_SHA}...${PRODUCT_CANDIDATE_SHA}" | sort)
+          printf 'Changed product files:\n'
+          printf '  %s\n' "${changed_files[@]}"
+          test "${#changed_files[@]}" -eq 6
+          for file in "${changed_files[@]}"; do
+            matched=false
+            for expected in "${allowed[@]}"; do
+              if [[ "${file}" == "${expected}" ]]; then
+                matched=true
+                break
+              fi
+            done
+            if [[ "${matched}" != true ]]; then
+              echo "Unexpected file in Beta2.55 product diff: ${file}" >&2
+              exit 1
+            fi
+          done
+          for required in "${allowed[@]}"; do
+            printf '%s\n' "${changed_files[@]}" | grep -Fxq "${required}"
+          done
+
+      - name: Verify certification harness allowlist
+        working-directory: .
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t changed_files < <(git diff --name-only "${PRODUCT_CANDIDATE_SHA}...${WORKFLOW_SHA}" | sort)
+          printf 'Changed certification files:\n'
+          printf '  %s\n' "${changed_files[@]}"
+          test "${#changed_files[@]}" -eq 1
+          test "${changed_files[0]}" = ".github/workflows/mobile-beta2.55-mobile-money-entry.yml"
+
+      - name: Set up Flutter 3.47.2
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.2'
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Generate localizations
+        run: flutter gen-l10n
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test Premium Wallet Home Mobile Money entry
+        run: flutter test test/wallet_home_page_test.dart
+
+      - name: Test integrated app handoff
+        run: flutter test test/widget_test.dart
+
+      - name: Test production wiring
+        run: flutter test test/authenticated_production_wiring_test.dart
+
+      - name: Re-test existing beneficiary search contract
+        run: |
+          flutter test test/mobile_money_beneficiary_search_controller_test.dart
+          flutter test test/mobile_money_beneficiary_search_page_test.dart
+
+      - name: Run complete Flutter suite
+        run: flutter test
+
+      - name: Verify Beta2.55 diffs
+        working-directory: .
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check "${BASE_SHA}...${PRODUCT_CANDIDATE_SHA}"
+          git diff --check "${PRODUCT_CANDIDATE_SHA}...${WORKFLOW_SHA}"
+
+      - name: Write certification summary
+        if: always()
+        working-directory: .
+        shell: bash
+        run: |
+          {
+            echo "## Mobile Beta2.55 Premium Wallet Home → Mobile Money Entry"
+            echo
+            echo "- Base Beta2.54: `${BASE_SHA}`"
+            echo "- Product candidate: `${PRODUCT_CANDIDATE_SHA}`"
+            echo "- Certification head: `${WORKFLOW_SHA}`"
+            echo "- Scope: Wallet Home Mobile Money entry → existing beneficiary search"
+            echo "- Existing Beta2.54 quick actions preserved"
+            echo "- Hero + Financial Timeline regressions covered by Wallet Home tests"
+            echo "- Backend/API contracts unchanged"
+            echo "- Job status: **${{ job.status }}**"
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Report Beta2.55 product candidate certification
+        if: always()
+        uses: actions/github-script@v7
+        env:
+          CERTIFICATION_JOB_STATUS: ${{ job.status }}
+        with:
+          script: |
+            const succeeded = process.env.CERTIFICATION_JOB_STATUS === 'success';
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: process.env.PRODUCT_CANDIDATE_SHA,
+              state: succeeded ? 'success' : 'failure',
+              context: process.env.STATUS_CONTEXT,
+              description: succeeded
+                ? 'Beta2.55 Mobile Money entry candidate certified'
+                : 'Beta2.55 Mobile Money entry certification failed',
+              target_url: `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+            });

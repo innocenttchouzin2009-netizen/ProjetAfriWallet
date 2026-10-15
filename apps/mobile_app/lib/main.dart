@@ -17,6 +17,7 @@ import 'pages/wallet_home_page.dart';
 import 'services/auth_production_wiring.dart';
 import 'services/authenticated_production_wiring.dart';
 import 'services/identity_read_repository.dart';
+import 'services/mobile_money_beneficiary_lookup_repository.dart';
 import 'services/qr_payment_repository.dart';
 import 'services/secure_session_store.dart';
 import 'services/subscription_repository.dart';
@@ -42,6 +43,7 @@ class AfriWalletApp extends StatefulWidget {
     this.transferRepository,
     this.transactionHistoryRepository,
     this.qrPaymentRepository,
+    this.mobileMoneyBeneficiaryLookupRepository,
   });
 
   final SubscriptionRepository? repository;
@@ -52,6 +54,8 @@ class AfriWalletApp extends StatefulWidget {
   final TransferRepository? transferRepository;
   final TransactionHistoryRepository? transactionHistoryRepository;
   final QrPaymentRepository? qrPaymentRepository;
+  final MobileMoneyBeneficiaryLookupRepository?
+      mobileMoneyBeneficiaryLookupRepository;
 
   @override
   State<AfriWalletApp> createState() => _AfriWalletAppState();
@@ -78,6 +82,8 @@ class _AfriWalletAppState extends State<AfriWalletApp> {
   late final TransferRepository _transferRepository;
   late final TransactionHistoryRepository _transactionHistoryRepository;
   late final QrPaymentRepository _qrPaymentRepository;
+  late final MobileMoneyBeneficiaryLookupRepository?
+      _mobileMoneyBeneficiaryLookupRepository;
 
   @override
   void initState() {
@@ -100,6 +106,9 @@ class _AfriWalletAppState extends State<AfriWalletApp> {
           wiring.transactionHistoryRepository;
       _qrPaymentRepository =
           widget.qrPaymentRepository ?? wiring.qrPaymentRepository;
+      _mobileMoneyBeneficiaryLookupRepository =
+          widget.mobileMoneyBeneficiaryLookupRepository ??
+              wiring.mobileMoneyBeneficiaryLookupRepository;
       return;
     }
 
@@ -113,6 +122,8 @@ class _AfriWalletAppState extends State<AfriWalletApp> {
         const UnavailableTransactionHistoryRepository();
     _qrPaymentRepository =
         widget.qrPaymentRepository ?? const UnavailableQrPaymentRepository();
+    _mobileMoneyBeneficiaryLookupRepository =
+        widget.mobileMoneyBeneficiaryLookupRepository;
   }
 
   void _wireAuthProduction() {
@@ -193,6 +204,8 @@ class _AfriWalletAppState extends State<AfriWalletApp> {
         repository: _walletRepository,
         transactionHistoryRepository: _transactionHistoryRepository,
         qrPaymentRepository: _qrPaymentRepository,
+        mobileMoneyBeneficiaryLookupRepository:
+            _mobileMoneyBeneficiaryLookupRepository,
         subscriptionRepository: widget.repository,
         afWalId: _currentAfWalId,
         onSend: () => _openSendReceive(SendReceiveMode.send),

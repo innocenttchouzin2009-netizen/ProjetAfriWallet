@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile_app/models/mobile_money_beneficiary_lookup.dart';
+import 'package:mobile_app/models/mobile_money_beneficiary_operator.dart';
 import 'package:mobile_app/models/transaction_history.dart';
 import 'package:mobile_app/models/wallet_balance.dart';
 import 'package:mobile_app/pages/wallet_home_page.dart';
+import 'package:mobile_app/services/mobile_money_beneficiary_lookup_repository.dart';
 import 'package:mobile_app/services/transaction_history_repository.dart';
 import 'package:mobile_app/services/wallet_repository.dart';
 
@@ -25,6 +28,27 @@ class _ReadyWalletRepository implements WalletRepository {
         countryCode: 'CM',
       ),
     ];
+  }
+}
+
+
+class _ReadyMobileMoneyBeneficiaryLookupRepository
+    implements MobileMoneyBeneficiaryLookupRepository {
+  @override
+  Future<MobileMoneyBeneficiarySearchResult> search({
+    required String phoneNumber,
+  }) async {
+    return const MobileMoneyBeneficiarySearchResult(
+      lookup: MobileMoneyBeneficiaryLookup(
+        normalizedPhoneNumber: '+237670123456',
+        countryCode: 'CM',
+        operator: 'MTN',
+        operatorResolved: true,
+        accountHolderName: 'Ada N.',
+        beneficiaryResolved: true,
+      ),
+      operator: MobileMoneyBeneficiaryOperator.mtnCameroon,
+    );
   }
 }
 
@@ -95,6 +119,11 @@ void main() {
     expect(find.text('Envoyer'), findsOneWidget);
     expect(find.byKey(const Key('wallet-quick-action-receive')), findsOneWidget);
     expect(find.text('Recevoir'), findsOneWidget);
+    expect(
+      find.byKey(const Key('wallet-quick-action-mobile-money')),
+      findsOneWidget,
+    );
+    expect(find.text('Mobile Money'), findsOneWidget);
     expect(find.byKey(const Key('wallet-quick-action-qr')), findsOneWidget);
     expect(find.text('QR'), findsOneWidget);
     expect(
@@ -279,6 +308,56 @@ void main() {
     expect(qrCount, 1);
     expect(subscriptionsCount, 1);
   });
+
+
+  testWidgets(
+    'opens Mobile Money beneficiary search and returns to Wallet Home',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(900, 1400));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await tester.pumpWidget(MaterialApp(
+        home: WalletHomePage(
+          repository: _ReadyWalletRepository(),
+          transactionHistoryRepository: _ReadyTimelineRepository(),
+          mobileMoneyBeneficiaryLookupRepository:
+              _ReadyMobileMoneyBeneficiaryLookupRepository(),
+        ),
+      ));
+      await tester.pumpAndSettle();
+
+      final mobileMoneyAction =
+          find.byKey(const Key('wallet-quick-action-mobile-money'));
+      expect(mobileMoneyAction, findsOneWidget);
+      final semantics = tester.widget<Semantics>(mobileMoneyAction);
+      expect(semantics.properties.button, isTrue);
+      expect(semantics.properties.label, 'Mobile Money');
+      expect(
+        semantics.properties.hint,
+        'Rechercher un bénéficiaire Mobile Money',
+      );
+      expect(semantics.properties.onTap, isNotNull);
+
+      await tester.ensureVisible(mobileMoneyAction);
+      await tester.tap(mobileMoneyAction);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Ajouter un bénéficiaire'), findsOneWidget);
+      expect(find.text('Rechercher un bénéficiaire Mobile Money'), findsOneWidget);
+      expect(
+        find.byKey(const Key('momo-beneficiary-search-back')),
+        findsOneWidget,
+      );
+      expect(find.text('Wallet Home'), findsNothing);
+
+      await tester.tap(find.byKey(const Key('momo-beneficiary-search-back')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Mon portefeuille'), findsOneWidget);
+      expect(find.byKey(const Key('wallet-quick-actions')), findsOneWidget);
+      expect(find.text('Ajouter un bénéficiaire'), findsNothing);
+    },
+  );
 
   testWidgets('opens QR Payments and returns to Wallet Home', (tester) async {
     await tester.binding.setSurfaceSize(const Size(900, 1400));

@@ -1,4 +1,5 @@
 import '../data/remote/identity_remote_data_source.dart';
+import '../data/remote/mobile_money_beneficiary_lookup_remote_data_source.dart';
 import '../data/remote/mobile_money_payout_execution_remote_data_source.dart';
 import '../data/remote/mobile_money_payout_funding_remote_data_source.dart';
 import '../data/remote/p2p_remote_data_source.dart';
@@ -8,6 +9,7 @@ import '../network/api_client.dart';
 import 'api_config.dart';
 import 'auth_production_wiring.dart';
 import 'identity_read_repository.dart';
+import 'mobile_money_beneficiary_lookup_repository.dart';
 import 'mobile_money_payout_execution_repository.dart';
 import 'mobile_money_payout_funding_repository.dart';
 import 'qr_payment_repository.dart';
@@ -48,6 +50,10 @@ class AuthenticatedProductionWiring {
       QrPaymentRemoteDataSource(_apiClient),
       auth.sessionStore,
     );
+    mobileMoneyBeneficiaryLookupRepository =
+        RemoteMobileMoneyBeneficiaryLookupRepository(
+      MobileMoneyBeneficiaryLookupRemoteDataSource(_apiClient),
+    );
     mobileMoneyPayoutFundingRepository =
         RemoteMobileMoneyPayoutFundingRepository(
       MobileMoneyPayoutFundingRemoteDataSource(_apiClient),
@@ -69,6 +75,8 @@ class AuthenticatedProductionWiring {
   late final TransferRepository transferRepository;
   late final TransactionHistoryRepository transactionHistoryRepository;
   late final QrPaymentRepository qrPaymentRepository;
+  late final MobileMoneyBeneficiaryLookupRepository
+      mobileMoneyBeneficiaryLookupRepository;
   late final MobileMoneyPayoutFundingRepository
       mobileMoneyPayoutFundingRepository;
   late final MobileMoneyPayoutExecutionRepository

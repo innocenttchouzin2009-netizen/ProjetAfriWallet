@@ -13,7 +13,7 @@ import 'package:mobile_app/services/secure_storage_adapter.dart';
 
 void main() {
   test(
-    'authenticated production wiring shares one secure session across wallet, P2P, transaction history, payout funding, and payout execution',
+    'authenticated production wiring exposes beneficiary lookup alongside authenticated wallet and payout repositories',
     () async {
       final requests = <http.Request>[];
       final apiClient = ApiClient(
@@ -70,6 +70,23 @@ void main() {
               jsonEncode(<String, Object?>{
                 'publicLabel': '@innocent',
                 'qrToken': 'qr-token',
+              }),
+              200,
+              headers: <String, String>{'content-type': 'application/json'},
+            );
+          }
+
+          if (request.method == 'POST' &&
+              request.url.path ==
+                  '/api/v1/mobile-money/beneficiaries/lookup') {
+            return http.Response(
+              jsonEncode(<String, Object?>{
+                'normalizedPhoneNumber': '+237670123456',
+                'countryCode': 'CM',
+                'operator': 'MTN',
+                'operatorResolved': true,
+                'accountHolderName': 'Ada N.',
+                'beneficiaryResolved': true,
               }),
               200,
               headers: <String, String>{'content-type': 'application/json'},
@@ -156,6 +173,10 @@ void main() {
           await wiring.transferRepository.loadReceiveIdentity();
       final transactions =
           await wiring.transactionHistoryRepository.listTransactions();
+      final beneficiary =
+          await wiring.mobileMoneyBeneficiaryLookupRepository.search(
+        phoneNumber: '670123456',
+      );
       final fundingPlan =
           await wiring.mobileMoneyPayoutFundingRepository.planFunding(
         correlationId: '7d8fba6d-d06f-4bd5-98da-cb71d07bfef4',
@@ -215,18 +236,26 @@ void main() {
       expect(receiveIdentity.qrToken, 'qr-token');
       expect(transactions, hasLength(1));
       expect(transactions.single.transactionId, 'txn-wiring-1');
+      expect(beneficiary.lookup.normalizedPhoneNumber, '+237670123456');
+      expect(beneficiary.operatorCode, 'MTN_CM');
       expect(fundingPlan.requiredAmountMinor, 10250);
       expect(executionPreparation.status, 'Prepared');
       expect(
         executionPreparation.fundingCorrelationId,
         '7d8fba6d-d06f-4bd5-98da-cb71d07bfef4',
       );
-      expect(requests, hasLength(5));
+      expect(requests, hasLength(6));
+      final beneficiaryRequest = requests.singleWhere(
+        (request) =>
+            request.url.path == '/api/v1/mobile-money/beneficiaries/lookup',
+      );
+      expect(beneficiaryRequest.headers['Authorization'], isNull);
       expect(
-        requests.every(
-          (request) =>
-              request.headers['Authorization'] == 'Bearer shared-access-token',
-        ),
+        requests.where((request) => request != beneficiaryRequest).every(
+              (request) =>
+                  request.headers['Authorization'] ==
+                  'Bearer shared-access-token',
+            ),
         isTrue,
       );
     },

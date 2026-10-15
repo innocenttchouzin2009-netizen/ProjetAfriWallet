@@ -5,6 +5,8 @@ import 'package:http/testing.dart';
 import 'package:mobile_app/main.dart';
 import 'package:mobile_app/models/auth_session.dart';
 import 'package:mobile_app/models/current_identity_profile.dart';
+import 'package:mobile_app/models/mobile_money_beneficiary_lookup.dart';
+import 'package:mobile_app/models/mobile_money_beneficiary_operator.dart';
 import 'package:mobile_app/models/payment_transfer.dart';
 import 'package:mobile_app/models/public_afwal_identity.dart';
 import 'package:mobile_app/models/transaction_history.dart';
@@ -13,6 +15,7 @@ import 'package:mobile_app/models/subscription_models.dart';
 import 'package:mobile_app/network/api_client.dart';
 import 'package:mobile_app/services/auth_production_wiring.dart';
 import 'package:mobile_app/services/identity_read_repository.dart';
+import 'package:mobile_app/services/mobile_money_beneficiary_lookup_repository.dart';
 import 'package:mobile_app/services/secure_storage_adapter.dart';
 import 'package:mobile_app/services/subscription_repository.dart';
 import 'package:mobile_app/services/transaction_history_repository.dart';
@@ -160,6 +163,8 @@ void main() {
           walletRepository: _ReadyWalletRepository(),
           transferRepository: _ReadyTransferRepository(),
           transactionHistoryRepository: _ReadyTimelineRepository(),
+          mobileMoneyBeneficiaryLookupRepository:
+              _ReadyMobileMoneyBeneficiaryLookupRepository(),
         ),
       );
       await tester.pumpAndSettle();
@@ -185,6 +190,21 @@ void main() {
 
       expect(find.byKey(const Key('wallet-home-afwal-id')), findsOneWidget);
       expect(find.text('@premium-user'), findsOneWidget);
+
+      final mobileMoneyAction =
+          find.byKey(const Key('wallet-quick-action-mobile-money'));
+      await tester.ensureVisible(mobileMoneyAction);
+      await tester.tap(mobileMoneyAction);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Ajouter un bénéficiaire'), findsOneWidget);
+      expect(find.text('Rechercher un bénéficiaire Mobile Money'), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('momo-beneficiary-search-back')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Wallet Home'), findsOneWidget);
+      expect(find.byKey(const Key('wallet-home-primary-balance')), findsOneWidget);
     },
   );
 
@@ -236,6 +256,27 @@ class _ReadyTransferRepository implements TransferRepository {
   @override
   Future<TransferReceipt> send(SendTransferRequest request) {
     throw UnimplementedError();
+  }
+}
+
+
+class _ReadyMobileMoneyBeneficiaryLookupRepository
+    implements MobileMoneyBeneficiaryLookupRepository {
+  @override
+  Future<MobileMoneyBeneficiarySearchResult> search({
+    required String phoneNumber,
+  }) async {
+    return const MobileMoneyBeneficiarySearchResult(
+      lookup: MobileMoneyBeneficiaryLookup(
+        normalizedPhoneNumber: '+237670123456',
+        countryCode: 'CM',
+        operator: 'MTN',
+        operatorResolved: true,
+        accountHolderName: 'Ada N.',
+        beneficiaryResolved: true,
+      ),
+      operator: MobileMoneyBeneficiaryOperator.mtnCameroon,
+    );
   }
 }
 

@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 
 import '../models/transaction_history.dart';
 import '../models/wallet_balance.dart';
+import '../presentation/mobile_money_beneficiary_search_controller.dart';
+import '../services/mobile_money_beneficiary_lookup_repository.dart';
 import '../services/qr_payment_repository.dart';
 import '../services/subscription_repository.dart';
 import '../services/transaction_history_repository.dart';
 import '../services/wallet_repository.dart';
+import 'mobile_money_beneficiary_search_page.dart';
 import 'qr_payment_page.dart';
 import 'subscriptions_page.dart';
 import 'transaction_history_page.dart';
@@ -16,11 +19,13 @@ class WalletHomePage extends StatefulWidget {
     required this.repository,
     this.transactionHistoryRepository = const UnavailableTransactionHistoryRepository(),
     this.qrPaymentRepository = const UnavailableQrPaymentRepository(),
+    this.mobileMoneyBeneficiaryLookupRepository,
     this.subscriptionRepository,
     this.afWalId,
     this.onSend,
     this.onReceive,
     this.onQr,
+    this.onMobileMoney,
     this.onSubscriptions,
     this.onContinue,
   });
@@ -28,11 +33,14 @@ class WalletHomePage extends StatefulWidget {
   final WalletRepository repository;
   final TransactionHistoryRepository transactionHistoryRepository;
   final QrPaymentRepository qrPaymentRepository;
+  final MobileMoneyBeneficiaryLookupRepository?
+      mobileMoneyBeneficiaryLookupRepository;
   final SubscriptionRepository? subscriptionRepository;
   final String? afWalId;
   final VoidCallback? onSend;
   final VoidCallback? onReceive;
   final VoidCallback? onQr;
+  final VoidCallback? onMobileMoney;
   final VoidCallback? onSubscriptions;
   final VoidCallback? onContinue;
 
@@ -77,6 +85,25 @@ class _WalletHomePageState extends State<WalletHomePage> {
         ),
       ),
     );
+  }
+
+  void _openMobileMoney() {
+    final repository = widget.mobileMoneyBeneficiaryLookupRepository;
+    if (repository == null) return;
+
+    final controller = MobileMoneyBeneficiarySearchController(
+      repository: repository,
+    );
+    Navigator.of(context)
+        .push<void>(
+          MaterialPageRoute<void>(
+            builder: (context) => MobileMoneyBeneficiarySearchPage(
+              controller: controller,
+              onBack: () => Navigator.of(context).pop(),
+            ),
+          ),
+        )
+        .whenComplete(controller.dispose);
   }
 
   void _openQrPayments() {
@@ -156,6 +183,10 @@ class _WalletHomePageState extends State<WalletHomePage> {
                 _WalletQuickActions(
                   onSend: widget.onSend ?? widget.onContinue,
                   onReceive: widget.onReceive ?? widget.onContinue,
+                  onMobileMoney: widget.onMobileMoney ??
+                      (widget.mobileMoneyBeneficiaryLookupRepository == null
+                          ? null
+                          : _openMobileMoney),
                   onQr: widget.onQr ?? _openQrPayments,
                   onSubscriptions: widget.onSubscriptions ?? _openSubscriptions,
                 ),
@@ -183,12 +214,14 @@ class _WalletQuickActions extends StatelessWidget {
   const _WalletQuickActions({
     required this.onSend,
     required this.onReceive,
+    required this.onMobileMoney,
     required this.onQr,
     required this.onSubscriptions,
   });
 
   final VoidCallback? onSend;
   final VoidCallback? onReceive;
+  final VoidCallback? onMobileMoney;
   final VoidCallback? onQr;
   final VoidCallback? onSubscriptions;
 
@@ -218,6 +251,14 @@ class _WalletQuickActions extends StatelessWidget {
           semanticsLabel: 'Recevoir de l’argent',
           semanticsHint: 'Afficher les options pour recevoir',
           onPressed: onReceive,
+        ),
+        _WalletQuickAction(
+          actionKey: const Key('wallet-quick-action-mobile-money'),
+          icon: Icons.phone_android,
+          label: 'Mobile Money',
+          semanticsLabel: 'Mobile Money',
+          semanticsHint: 'Rechercher un bénéficiaire Mobile Money',
+          onPressed: onMobileMoney,
         ),
         _WalletQuickAction(
           actionKey: const Key('wallet-quick-action-qr'),

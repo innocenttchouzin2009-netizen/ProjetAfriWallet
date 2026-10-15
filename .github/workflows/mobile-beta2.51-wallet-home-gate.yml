@@ -1,0 +1,58 @@
+name: Mobile Beta2.51 Wallet Home Gate
+
+on:
+  push:
+    branches:
+      - ci/mobile-beta2.51-wallet-home-gate
+    paths:
+      - '.github/workflows/mobile-beta2.51-wallet-home-gate.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  wallet-home-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      TARGET_SHA: 11c02b3724c15ca1c322794776ecb3dc386e45c6
+
+    defaults:
+      run:
+        working-directory: apps/mobile_app
+
+    steps:
+      - name: Checkout exact Beta2.51 candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 0
+
+      - name: Assert exact target SHA
+        working-directory: .
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual_sha="$(git rev-parse HEAD)"
+          echo "target_sha=${TARGET_SHA}"
+          echo "checked_out_sha=${actual_sha}"
+          test "${actual_sha}" = "${TARGET_SHA}"
+
+      - name: Set up Flutter 3.47.2
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.2'
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Generate localizations
+        run: flutter gen-l10n
+
+      - name: Targeted wallet home test
+        run: flutter test test/wallet_home_page_test.dart
+
+      - name: Complete Flutter suite
+        run: flutter test

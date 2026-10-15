@@ -216,7 +216,7 @@ class _TimelineLoadResult {
   bool get hasError => error != null;
 }
 
-class _PrimaryBalanceCard extends StatelessWidget {
+class _PrimaryBalanceCard extends StatefulWidget {
   const _PrimaryBalanceCard({
     required this.wallet,
     this.afWalId,
@@ -226,39 +226,164 @@ class _PrimaryBalanceCard extends StatelessWidget {
   final String? afWalId;
 
   @override
-  Widget build(BuildContext context) {
-    final normalizedAfWalId = afWalId?.trim();
-    final hasAfWalId = normalizedAfWalId != null && normalizedAfWalId.isNotEmpty;
+  State<_PrimaryBalanceCard> createState() => _PrimaryBalanceCardState();
+}
 
-    return Card(
-      key: const Key('wallet-home-primary-balance'),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Solde disponible'),
-            const SizedBox(height: 8),
-            Text(
-              wallet.formattedAmount,
-              key: const Key('wallet-home-primary-balance-amount'),
-              style: Theme.of(context).textTheme.headlineMedium,
+class _PrimaryBalanceCardState extends State<_PrimaryBalanceCard> {
+  static const _transitionDuration = Duration(milliseconds: 320);
+
+  bool _showAfWalId = false;
+
+  String? get _normalizedAfWalId {
+    final value = widget.afWalId?.trim();
+    return value != null && value.isNotEmpty ? value : null;
+  }
+
+  void _toggleHero() {
+    if (_normalizedAfWalId == null) return;
+    setState(() => _showAfWalId = !_showAfWalId);
+  }
+
+  @override
+  void didUpdateWidget(covariant _PrimaryBalanceCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final previous = oldWidget.afWalId?.trim();
+    if (previous != _normalizedAfWalId && _showAfWalId) {
+      _showAfWalId = false;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final normalizedAfWalId = _normalizedAfWalId;
+    final hasAfWalId = normalizedAfWalId != null;
+    final showAfWalId = hasAfWalId && _showAfWalId;
+
+    final semanticLabel = showAfWalId
+        ? 'AfWal ID $normalizedAfWalId'
+        : 'Solde disponible ${widget.wallet.formattedAmount}';
+    final semanticHint = hasAfWalId
+        ? showAfWalId
+            ? 'Touchez pour afficher votre solde'
+            : 'Touchez pour afficher votre AfWal ID'
+        : null;
+
+    return Semantics(
+      button: hasAfWalId,
+      label: semanticLabel,
+      hint: semanticHint,
+      child: Card(
+        key: const Key('wallet-home-primary-balance'),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: hasAfWalId ? _toggleHero : null,
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: AnimatedSwitcher(
+              duration: _transitionDuration,
+              switchInCurve: Curves.easeOutCubic,
+              switchOutCurve: Curves.easeInCubic,
+              transitionBuilder: (child, animation) {
+                final offset = Tween<Offset>(
+                  begin: const Offset(0, 0.08),
+                  end: Offset.zero,
+                ).animate(
+                  CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeOutCubic,
+                  ),
+                );
+                return FadeTransition(
+                  opacity: animation,
+                  child: SlideTransition(position: offset, child: child),
+                );
+              },
+              child: showAfWalId
+                  ? _AfWalIdHeroState(
+                      key: const ValueKey('wallet-home-hero-afwal-id'),
+                      afWalId: normalizedAfWalId,
+                    )
+                  : _BalanceHeroState(
+                      key: const ValueKey('wallet-home-hero-balance'),
+                      wallet: widget.wallet,
+                      canRevealAfWalId: hasAfWalId,
+                    ),
             ),
-            const SizedBox(height: 4),
-            Text('Wallet ${wallet.currency}'),
-            if (hasAfWalId) ...[
-              const SizedBox(height: 16),
-              const Text('AfWal ID'),
-              const SizedBox(height: 4),
-              Text(
-                normalizedAfWalId,
-                key: const Key('wallet-home-afwal-id'),
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-            ],
-          ],
+          ),
         ),
       ),
+    );
+  }
+}
+
+class _BalanceHeroState extends StatelessWidget {
+  const _BalanceHeroState({
+    super.key,
+    required this.wallet,
+    required this.canRevealAfWalId,
+  });
+
+  final WalletBalance wallet;
+  final bool canRevealAfWalId;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      key: const Key('wallet-home-hero-balance-state'),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Solde disponible'),
+        const SizedBox(height: 8),
+        Text(
+          wallet.formattedAmount,
+          key: const Key('wallet-home-primary-balance-amount'),
+          style: Theme.of(context).textTheme.headlineMedium,
+        ),
+        const SizedBox(height: 4),
+        Text('Wallet ${wallet.currency}'),
+        if (canRevealAfWalId) ...[
+          const SizedBox(height: 16),
+          Text(
+            'Touchez pour afficher votre AfWal ID',
+            key: const Key('wallet-home-hero-toggle-hint'),
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _AfWalIdHeroState extends StatelessWidget {
+  const _AfWalIdHeroState({
+    super.key,
+    required this.afWalId,
+  });
+
+  final String afWalId;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      key: const Key('wallet-home-hero-afwal-id-state'),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('AfWal ID'),
+        const SizedBox(height: 8),
+        Text(
+          afWalId,
+          key: const Key('wallet-home-afwal-id'),
+          style: Theme.of(context).textTheme.headlineSmall,
+        ),
+        const SizedBox(height: 4),
+        const Text('Votre identité publique AfrikaWallet'),
+        const SizedBox(height: 16),
+        Text(
+          'Touchez pour afficher votre solde',
+          key: const Key('wallet-home-hero-toggle-hint'),
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+      ],
     );
   }
 }

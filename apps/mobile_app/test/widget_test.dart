@@ -172,6 +172,17 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Wallet Home'), findsOneWidget);
+      expect(
+        find.byKey(const Key('wallet-home-primary-balance')),
+        findsOneWidget,
+      );
+      expect(find.byKey(const Key('wallet-home-afwal-id')), findsNothing);
+
+      await tester.tap(
+        find.byKey(const Key('wallet-home-primary-balance')),
+      );
+      await tester.pumpAndSettle();
+
       expect(find.byKey(const Key('wallet-home-afwal-id')), findsOneWidget);
       expect(find.text('@premium-user'), findsOneWidget);
     },

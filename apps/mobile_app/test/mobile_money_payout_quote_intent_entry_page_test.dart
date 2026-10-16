@@ -3,13 +3,17 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile_app/models/mobile_money_beneficiary_lookup.dart';
 import 'package:mobile_app/models/mobile_money_beneficiary_operator.dart';
 import 'package:mobile_app/models/mobile_money_payout.dart';
+import 'package:mobile_app/models/mobile_money_payout_funding_intent.dart';
+import 'package:mobile_app/models/mobile_money_payout_funding_plan.dart';
 import 'package:mobile_app/models/mobile_money_payout_quote.dart';
 import 'package:mobile_app/models/mobile_money_payout_quote_intent.dart';
 import 'package:mobile_app/models/wallet_balance.dart';
+import 'package:mobile_app/pages/mobile_money_payout_funding_planning_page.dart';
 import 'package:mobile_app/pages/mobile_money_payout_funding_selection_page.dart';
 import 'package:mobile_app/pages/mobile_money_payout_quote_intent_entry_page.dart';
 import 'package:mobile_app/presentation/mobile_money_payout_funding_selection_controller.dart';
 import 'package:mobile_app/services/mobile_money_beneficiary_lookup_repository.dart';
+import 'package:mobile_app/services/mobile_money_payout_funding_repository.dart';
 import 'package:mobile_app/services/mobile_money_payout_quote_repository.dart';
 
 class _CapturingQuoteRepository implements MobileMoneyPayoutQuoteRepository {
@@ -56,6 +60,40 @@ class _CapturingQuoteRepository implements MobileMoneyPayoutQuoteRepository {
   }
 }
 
+
+class _CapturingFundingRepository implements MobileMoneyPayoutFundingRepository {
+  _CapturingFundingRepository({this.failFirst = false});
+
+  final bool failFirst;
+  final List<String> correlationIds = <String>[];
+  final List<DateTime> requestedAtUtcValues = <DateTime>[];
+  final List<MobileMoneyPayoutFundingIntent> intents =
+      <MobileMoneyPayoutFundingIntent>[];
+
+  @override
+  Future<MobileMoneyPayoutFundingPlan> planFunding({
+    required String correlationId,
+    required MobileMoneyPayoutFundingIntent intent,
+    required DateTime requestedAtUtc,
+  }) async {
+    correlationIds.add(correlationId);
+    requestedAtUtcValues.add(requestedAtUtc);
+    intents.add(intent);
+
+    if (failFirst && correlationIds.length == 1) {
+      throw StateError('temporary planning failure');
+    }
+
+    return MobileMoneyPayoutFundingPlan(
+      correlationId: correlationId,
+      requiredAmountMinor: intent.totalSourceDebitMinor,
+      currencyCode: intent.sourceCurrencyCode,
+      allocations: intent.fundingAllocations,
+      plannedAtUtc: requestedAtUtc.add(const Duration(seconds: 1)),
+    );
+  }
+}
+
 const _resolvedBeneficiary = MobileMoneyBeneficiarySearchResult(
   lookup: MobileMoneyBeneficiaryLookup(
     normalizedPhoneNumber: '+237670123456',
@@ -80,12 +118,18 @@ Widget _app({
   required WalletBalance sourceWallet,
   required MobileMoneyBeneficiarySearchResult beneficiary,
   required MobileMoneyPayoutQuoteRepository quoteRepository,
+  MobileMoneyPayoutFundingRepository? fundingRepository,
+  String Function()? correlationIdFactory,
+  DateTime Function()? nowUtc,
 }) {
   return MaterialApp(
     home: MobileMoneyPayoutQuoteIntentEntryPage(
       sourceWallet: sourceWallet,
       beneficiary: beneficiary,
       quoteRepository: quoteRepository,
+      fundingRepository: fundingRepository,
+      correlationIdFactory: correlationIdFactory,
+      nowUtc: nowUtc,
     ),
   );
 }
@@ -441,6 +485,202 @@ void main() {
         );
         expect(repository.calls, 0);
       }
+    },
+  );
+
+
+  testWidgets(
+    'wallet selection opens authenticated planning with stable correlation and UTC timestamp across retry',
+    (tester) async {
+      await _useLargeSurface(tester);
+      final quoteRepository = _CapturingQuoteRepository();
+      final fundingRepository = _CapturingFundingRepository(failFirst: true);
+      final requestedAtUtc = DateTime.utc(2026, 10, 16, 12, 34, 56);
+      const correlationId = '11111111-2222-4333-8444-555555555555';
+
+      await tester.pumpWidget(
+        _app(
+          sourceWallet: _sourceWallet,
+          beneficiary: _resolvedBeneficiary,
+          quoteRepository: quoteRepository,
+          fundingRepository: fundingRepository,
+          correlationIdFactory: () => correlationId,
+          nowUtc: () => requestedAtUtc,
+        ),
+      );
+
+      await tester.enterText(
+        find.byKey(const Key('momo-quote-intent-amount')),
+        '10.00',
+      );
+      await tester.tap(
+        find.byKey(const Key('momo-quote-intent-continue')),
+      );
+      await tester.pumpAndSettle();
+      await tester.drag(
+        find.byKey(const Key('momo-quote-ready')),
+        const Offset(0, -600),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('momo-quote-continue')));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('momo-funding-wallet')));
+      await tester.pump();
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('momo-funding-continue')),
+        150,
+      );
+      await tester.tap(find.byKey(const Key('momo-funding-continue')));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byType(MobileMoneyPayoutFundingPlanningPage),
+        findsOneWidget,
+      );
+      expect(find.byKey(const Key('momo-funding-plan-failed')), findsOneWidget);
+      expect(fundingRepository.correlationIds, <String>[correlationId]);
+      expect(
+        fundingRepository.requestedAtUtcValues,
+        <DateTime>[requestedAtUtc],
+      );
+      expect(fundingRepository.intents.single.fundingAllocations, hasLength(1));
+      expect(
+        fundingRepository.intents.single.fundingAllocations.single.sourceId,
+        'wallet-eur-primary',
+      );
+
+      await tester.tap(find.text('Réessayer'));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('momo-funding-plan-ready')), findsOneWidget);
+      expect(
+        fundingRepository.correlationIds,
+        <String>[correlationId, correlationId],
+      );
+      expect(
+        fundingRepository.requestedAtUtcValues,
+        <DateTime>[requestedAtUtc, requestedAtUtc],
+      );
+      expect(find.byKey(const Key('momo-funding-plan-continue')), findsNothing);
+
+      await tester.tap(find.byKey(const Key('momo-funding-plan-back')));
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const Key('momo-funding-selection-page')),
+        findsOneWidget,
+      );
+    },
+  );
+
+  testWidgets(
+    'expired quote blocks planning before repository call',
+    (tester) async {
+      await _useLargeSurface(tester);
+      final quoteRepository = _CapturingQuoteRepository();
+      final fundingRepository = _CapturingFundingRepository();
+
+      await tester.pumpWidget(
+        _app(
+          sourceWallet: _sourceWallet,
+          beneficiary: _resolvedBeneficiary,
+          quoteRepository: quoteRepository,
+          fundingRepository: fundingRepository,
+          correlationIdFactory: () =>
+              '11111111-2222-4333-8444-555555555555',
+          nowUtc: () => DateTime.utc(2100),
+        ),
+      );
+
+      await tester.enterText(
+        find.byKey(const Key('momo-quote-intent-amount')),
+        '10.00',
+      );
+      await tester.tap(
+        find.byKey(const Key('momo-quote-intent-continue')),
+      );
+      await tester.pumpAndSettle();
+      await tester.drag(
+        find.byKey(const Key('momo-quote-ready')),
+        const Offset(0, -600),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('momo-quote-continue')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('momo-funding-wallet')));
+      await tester.pump();
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('momo-funding-continue')),
+        150,
+      );
+      await tester.tap(find.byKey(const Key('momo-funding-continue')));
+      await tester.pump();
+
+      expect(fundingRepository.correlationIds, isEmpty);
+      expect(
+        find.byKey(const Key('momo-funding-plan-expired-snackbar')),
+        findsOneWidget,
+      );
+      expect(
+        find.byType(MobileMoneyPayoutFundingPlanningPage),
+        findsNothing,
+      );
+    },
+  );
+
+  testWidgets(
+    'generated correlation ID is a canonical version-4 GUID and is not derived from user identifiers',
+    (tester) async {
+      await _useLargeSurface(tester);
+      final quoteRepository = _CapturingQuoteRepository();
+      final fundingRepository = _CapturingFundingRepository();
+
+      await tester.pumpWidget(
+        _app(
+          sourceWallet: _sourceWallet,
+          beneficiary: _resolvedBeneficiary,
+          quoteRepository: quoteRepository,
+          fundingRepository: fundingRepository,
+          nowUtc: () => DateTime.utc(2026, 10, 16, 12),
+        ),
+      );
+
+      await tester.enterText(
+        find.byKey(const Key('momo-quote-intent-amount')),
+        '10.00',
+      );
+      await tester.tap(
+        find.byKey(const Key('momo-quote-intent-continue')),
+      );
+      await tester.pumpAndSettle();
+      await tester.drag(
+        find.byKey(const Key('momo-quote-ready')),
+        const Offset(0, -600),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('momo-quote-continue')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('momo-funding-wallet')));
+      await tester.pump();
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('momo-funding-continue')),
+        150,
+      );
+      await tester.tap(find.byKey(const Key('momo-funding-continue')));
+      await tester.pumpAndSettle();
+
+      final correlationId = fundingRepository.correlationIds.single;
+      expect(
+        correlationId,
+        matches(
+          RegExp(
+            r'^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$',
+          ),
+        ),
+      );
+      expect(correlationId.contains('wallet-eur-primary'), isFalse);
+      expect(correlationId.contains('237670123456'), isFalse);
+      expect(fundingRepository.requestedAtUtcValues.single.isUtc, isTrue);
     },
   );
 

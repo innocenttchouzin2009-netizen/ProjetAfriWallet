@@ -1,14 +1,21 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../models/mobile_money_payout.dart';
+import '../models/mobile_money_payout_funding_intent.dart';
 import '../models/mobile_money_payout_quote.dart';
 import '../models/mobile_money_payout_quote_intent.dart';
 import '../models/wallet_balance.dart';
+import '../presentation/mobile_money_payout_funding_planning_controller.dart';
 import '../presentation/mobile_money_payout_funding_selection_controller.dart';
 import '../presentation/mobile_money_payout_quote_controller.dart';
 import '../services/mobile_money_beneficiary_lookup_repository.dart';
+import '../services/mobile_money_payout_funding_repository.dart';
+import '../services/mobile_money_payout_quote_freshness_policy.dart';
 import '../services/mobile_money_payout_quote_intent_mapper.dart';
 import '../services/mobile_money_payout_quote_repository.dart';
+import 'mobile_money_payout_funding_planning_page.dart';
 import 'mobile_money_payout_funding_selection_page.dart';
 import 'mobile_money_payout_quote_page.dart';
 
@@ -18,12 +25,18 @@ class MobileMoneyPayoutQuoteIntentEntryPage extends StatefulWidget {
     required this.sourceWallet,
     required this.beneficiary,
     required this.quoteRepository,
+    this.fundingRepository,
+    this.correlationIdFactory,
+    this.nowUtc,
     this.onBack,
   });
 
   final WalletBalance sourceWallet;
   final MobileMoneyBeneficiarySearchResult beneficiary;
   final MobileMoneyPayoutQuoteRepository quoteRepository;
+  final MobileMoneyPayoutFundingRepository? fundingRepository;
+  final String Function()? correlationIdFactory;
+  final DateTime Function()? nowUtc;
   final VoidCallback? onBack;
 
   @override
@@ -171,6 +184,13 @@ class _MobileMoneyPayoutQuoteIntentEntryPageState
               builder: (fundingContext) =>
                   MobileMoneyPayoutFundingSelectionPage(
                 controller: controller,
+                onContinue: widget.fundingRepository == null
+                    ? null
+                    : (intent) => _openFundingPlanning(
+                          fundingContext,
+                          quote,
+                          intent,
+                        ),
                 onBack: () => Navigator.of(fundingContext).pop(),
               ),
             ),
@@ -182,6 +202,75 @@ class _MobileMoneyPayoutQuoteIntentEntryPageState
           content: Text(
             'Le wallet source ne peut pas financer ce devis.',
             key: Key('momo-funding-source-invalid-snackbar'),
+          ),
+        ),
+      );
+    }
+  }
+
+
+  void _openFundingPlanning(
+    BuildContext fundingContext,
+    MobileMoneyPayoutQuote quote,
+    MobileMoneyPayoutFundingIntent intent,
+  ) {
+    final repository = widget.fundingRepository;
+    if (repository == null) return;
+
+    final requestedAtUtc =
+        (widget.nowUtc?.call() ?? DateTime.now()).toUtc();
+    final freshness = const MobileMoneyPayoutQuoteFreshnessPolicy().evaluate(
+      quote: quote,
+      atUtc: requestedAtUtc,
+    );
+    if (!freshness.isFresh) {
+      ScaffoldMessenger.of(fundingContext).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Le devis a expiré. Actualisez-le avant de planifier le paiement.',
+            key: Key('momo-funding-plan-expired-snackbar'),
+          ),
+        ),
+      );
+      return;
+    }
+
+    try {
+      intent.validate();
+      final correlationId =
+          widget.correlationIdFactory?.call() ?? _generateCorrelationId();
+      if (!_canonicalGuidPattern.hasMatch(correlationId)) {
+        throw ArgumentError.value(
+          correlationId,
+          'correlationId',
+          'must be a canonical GUID',
+        );
+      }
+
+      final controller = MobileMoneyPayoutFundingPlanningController(
+        repository: repository,
+      );
+
+      Navigator.of(fundingContext)
+          .push<void>(
+            MaterialPageRoute<void>(
+              builder: (planningContext) =>
+                  MobileMoneyPayoutFundingPlanningPage(
+                controller: controller,
+                correlationId: correlationId,
+                intent: intent,
+                requestedAtUtc: requestedAtUtc,
+                onBack: () => Navigator.of(planningContext).pop(),
+              ),
+            ),
+          )
+          .whenComplete(controller.dispose);
+    } on Object {
+      ScaffoldMessenger.of(fundingContext).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Impossible de préparer le plan de paiement.',
+            key: Key('momo-funding-plan-invalid-snackbar'),
           ),
         ),
       );
@@ -294,6 +383,26 @@ class _MobileMoneyPayoutQuoteIntentEntryPageState
       ),
     );
   }
+}
+
+final RegExp _canonicalGuidPattern = RegExp(
+  r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
+);
+
+String _generateCorrelationId() {
+  final random = math.Random.secure();
+  final bytes = List<int>.generate(16, (_) => random.nextInt(256));
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+
+  final hex = bytes
+      .map((value) => value.toRadixString(16).padLeft(2, '0'))
+      .join();
+  return '${hex.substring(0, 8)}-'
+      '${hex.substring(8, 12)}-'
+      '${hex.substring(12, 16)}-'
+      '${hex.substring(16, 20)}-'
+      '${hex.substring(20)}';
 }
 
 int? _parseMinorUnits(String raw) {

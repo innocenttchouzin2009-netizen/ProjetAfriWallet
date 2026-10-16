@@ -4,6 +4,7 @@ import '../models/transaction_history.dart';
 import '../models/wallet_balance.dart';
 import '../presentation/mobile_money_beneficiary_search_controller.dart';
 import '../services/mobile_money_beneficiary_lookup_repository.dart';
+import '../services/mobile_money_payout_funding_repository.dart';
 import '../services/mobile_money_payout_quote_repository.dart';
 import '../services/qr_payment_repository.dart';
 import '../services/subscription_repository.dart';
@@ -23,6 +24,7 @@ class WalletHomePage extends StatefulWidget {
     this.qrPaymentRepository = const UnavailableQrPaymentRepository(),
     this.mobileMoneyBeneficiaryLookupRepository,
     this.mobileMoneyPayoutQuoteRepository,
+    this.mobileMoneyPayoutFundingRepository,
     this.subscriptionRepository,
     this.afWalId,
     this.onSend,
@@ -39,6 +41,7 @@ class WalletHomePage extends StatefulWidget {
   final MobileMoneyBeneficiaryLookupRepository?
       mobileMoneyBeneficiaryLookupRepository;
   final MobileMoneyPayoutQuoteRepository? mobileMoneyPayoutQuoteRepository;
+  final MobileMoneyPayoutFundingRepository? mobileMoneyPayoutFundingRepository;
   final SubscriptionRepository? subscriptionRepository;
   final String? afWalId;
   final VoidCallback? onSend;
@@ -115,6 +118,8 @@ class _WalletHomePageState extends State<WalletHomePage> {
                             sourceWallet: sourceWallet,
                             beneficiary: result,
                             quoteRepository: quoteRepository,
+                            fundingRepository:
+                                widget.mobileMoneyPayoutFundingRepository,
                             onBack: () => Navigator.of(entryContext).pop(),
                           ),
                         ),

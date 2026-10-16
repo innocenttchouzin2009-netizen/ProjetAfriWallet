@@ -18,6 +18,7 @@ import 'services/auth_production_wiring.dart';
 import 'services/authenticated_production_wiring.dart';
 import 'services/identity_read_repository.dart';
 import 'services/mobile_money_beneficiary_lookup_repository.dart';
+import 'services/mobile_money_payout_execution_repository.dart';
 import 'services/mobile_money_payout_funding_repository.dart';
 import 'services/mobile_money_payout_quote_repository.dart';
 import 'services/qr_payment_repository.dart';
@@ -48,6 +49,7 @@ class AfriWalletApp extends StatefulWidget {
     this.mobileMoneyBeneficiaryLookupRepository,
     this.mobileMoneyPayoutQuoteRepository,
     this.mobileMoneyPayoutFundingRepository,
+    this.mobileMoneyPayoutExecutionRepository,
   });
 
   final SubscriptionRepository? repository;
@@ -62,6 +64,8 @@ class AfriWalletApp extends StatefulWidget {
       mobileMoneyBeneficiaryLookupRepository;
   final MobileMoneyPayoutQuoteRepository? mobileMoneyPayoutQuoteRepository;
   final MobileMoneyPayoutFundingRepository? mobileMoneyPayoutFundingRepository;
+  final MobileMoneyPayoutExecutionRepository?
+      mobileMoneyPayoutExecutionRepository;
 
   @override
   State<AfriWalletApp> createState() => _AfriWalletAppState();
@@ -94,6 +98,8 @@ class _AfriWalletAppState extends State<AfriWalletApp> {
       _mobileMoneyPayoutQuoteRepository;
   late final MobileMoneyPayoutFundingRepository?
       _mobileMoneyPayoutFundingRepository;
+  late final MobileMoneyPayoutExecutionRepository?
+      _mobileMoneyPayoutExecutionRepository;
 
   @override
   void initState() {
@@ -125,6 +131,9 @@ class _AfriWalletAppState extends State<AfriWalletApp> {
       _mobileMoneyPayoutFundingRepository =
           widget.mobileMoneyPayoutFundingRepository ??
               wiring.mobileMoneyPayoutFundingRepository;
+      _mobileMoneyPayoutExecutionRepository =
+          widget.mobileMoneyPayoutExecutionRepository ??
+              wiring.mobileMoneyPayoutExecutionRepository;
       return;
     }
 
@@ -144,6 +153,8 @@ class _AfriWalletAppState extends State<AfriWalletApp> {
         widget.mobileMoneyPayoutQuoteRepository;
     _mobileMoneyPayoutFundingRepository =
         widget.mobileMoneyPayoutFundingRepository;
+    _mobileMoneyPayoutExecutionRepository =
+        widget.mobileMoneyPayoutExecutionRepository;
   }
 
   void _wireAuthProduction() {
@@ -230,6 +241,8 @@ class _AfriWalletAppState extends State<AfriWalletApp> {
             _mobileMoneyPayoutQuoteRepository,
         mobileMoneyPayoutFundingRepository:
             _mobileMoneyPayoutFundingRepository,
+        mobileMoneyPayoutExecutionRepository:
+            _mobileMoneyPayoutExecutionRepository,
         subscriptionRepository: widget.repository,
         afWalId: _currentAfWalId,
         onSend: () => _openSendReceive(SendReceiveMode.send),

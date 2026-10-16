@@ -3,16 +3,20 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile_app/models/mobile_money_beneficiary_lookup.dart';
 import 'package:mobile_app/models/mobile_money_beneficiary_operator.dart';
 import 'package:mobile_app/models/mobile_money_payout.dart';
+import 'package:mobile_app/models/mobile_money_payout_execution_handoff.dart';
+import 'package:mobile_app/models/mobile_money_payout_execution_preparation.dart';
 import 'package:mobile_app/models/mobile_money_payout_funding_intent.dart';
 import 'package:mobile_app/models/mobile_money_payout_funding_plan.dart';
 import 'package:mobile_app/models/mobile_money_payout_quote.dart';
 import 'package:mobile_app/models/mobile_money_payout_quote_intent.dart';
 import 'package:mobile_app/models/wallet_balance.dart';
+import 'package:mobile_app/pages/mobile_money_payout_execution_preparation_page.dart';
 import 'package:mobile_app/pages/mobile_money_payout_funding_planning_page.dart';
 import 'package:mobile_app/pages/mobile_money_payout_funding_selection_page.dart';
 import 'package:mobile_app/pages/mobile_money_payout_quote_intent_entry_page.dart';
 import 'package:mobile_app/presentation/mobile_money_payout_funding_selection_controller.dart';
 import 'package:mobile_app/services/mobile_money_beneficiary_lookup_repository.dart';
+import 'package:mobile_app/services/mobile_money_payout_execution_repository.dart';
 import 'package:mobile_app/services/mobile_money_payout_funding_repository.dart';
 import 'package:mobile_app/services/mobile_money_payout_quote_repository.dart';
 
@@ -94,6 +98,43 @@ class _CapturingFundingRepository implements MobileMoneyPayoutFundingRepository 
   }
 }
 
+
+class _CapturingExecutionRepository
+    implements MobileMoneyPayoutExecutionRepository {
+  _CapturingExecutionRepository({this.failFirst = false});
+
+  final bool failFirst;
+  final List<String> fundingCorrelationIds = <String>[];
+  final List<String> idempotencyKeys = <String>[];
+  final List<MobileMoneyPayoutExecutionHandoff> handoffs =
+      <MobileMoneyPayoutExecutionHandoff>[];
+
+  @override
+  Future<MobileMoneyPayoutExecutionPreparation> prepareExecution({
+    required String fundingCorrelationId,
+    required String idempotencyKey,
+    required MobileMoneyPayoutExecutionHandoff handoff,
+  }) async {
+    fundingCorrelationIds.add(fundingCorrelationId);
+    idempotencyKeys.add(idempotencyKey);
+    handoffs.add(handoff);
+
+    if (failFirst && fundingCorrelationIds.length == 1) {
+      throw StateError('temporary execution preparation failure');
+    }
+
+    return MobileMoneyPayoutExecutionPreparation(
+      bindingId: '33333333-3333-4333-8333-333333333333',
+      quoteId: handoff.quoteId,
+      fundingCorrelationId: fundingCorrelationId,
+      idempotencyKey: idempotencyKey,
+      status: 'Prepared',
+      isReplay: fundingCorrelationIds.length > 1,
+      preparedAtUtc: handoff.preparedAtUtc.add(const Duration(seconds: 1)),
+    );
+  }
+}
+
 const _resolvedBeneficiary = MobileMoneyBeneficiarySearchResult(
   lookup: MobileMoneyBeneficiaryLookup(
     normalizedPhoneNumber: '+237670123456',
@@ -119,7 +160,9 @@ Widget _app({
   required MobileMoneyBeneficiarySearchResult beneficiary,
   required MobileMoneyPayoutQuoteRepository quoteRepository,
   MobileMoneyPayoutFundingRepository? fundingRepository,
+  MobileMoneyPayoutExecutionRepository? executionRepository,
   String Function()? correlationIdFactory,
+  String Function()? idempotencyKeyFactory,
   DateTime Function()? nowUtc,
 }) {
   return MaterialApp(
@@ -128,7 +171,9 @@ Widget _app({
       beneficiary: beneficiary,
       quoteRepository: quoteRepository,
       fundingRepository: fundingRepository,
+      executionRepository: executionRepository,
       correlationIdFactory: correlationIdFactory,
+      idempotencyKeyFactory: idempotencyKeyFactory,
       nowUtc: nowUtc,
     ),
   );
@@ -681,6 +726,194 @@ void main() {
       expect(correlationId.contains('wallet-eur-primary'), isFalse);
       expect(correlationId.contains('237670123456'), isFalse);
       expect(fundingRepository.requestedAtUtcValues.single.isUtc, isTrue);
+    },
+  );
+
+
+  testWidgets(
+    'confirmed funding plan opens execution preparation with stable opaque idempotency across retry',
+    (tester) async {
+      await _useLargeSurface(tester);
+      final quoteRepository = _CapturingQuoteRepository();
+      final fundingRepository = _CapturingFundingRepository();
+      final executionRepository = _CapturingExecutionRepository(failFirst: true);
+      const correlationId = '11111111-2222-4333-8444-555555555555';
+      final transitionAtUtc = DateTime.utc(2026, 10, 16, 12, 34, 56);
+
+      await tester.pumpWidget(
+        _app(
+          sourceWallet: _sourceWallet,
+          beneficiary: _resolvedBeneficiary,
+          quoteRepository: quoteRepository,
+          fundingRepository: fundingRepository,
+          executionRepository: executionRepository,
+          correlationIdFactory: () => correlationId,
+          nowUtc: () => transitionAtUtc,
+        ),
+      );
+
+      await tester.enterText(
+        find.byKey(const Key('momo-quote-intent-amount')),
+        '10.00',
+      );
+      await tester.tap(
+        find.byKey(const Key('momo-quote-intent-continue')),
+      );
+      await tester.pumpAndSettle();
+      await tester.drag(
+        find.byKey(const Key('momo-quote-ready')),
+        const Offset(0, -600),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('momo-quote-continue')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('momo-funding-wallet')));
+      await tester.pump();
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('momo-funding-continue')),
+        150,
+      );
+      await tester.tap(find.byKey(const Key('momo-funding-continue')));
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('momo-funding-plan-continue')),
+        150,
+      );
+      await tester.tap(find.byKey(const Key('momo-funding-plan-continue')));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byType(MobileMoneyPayoutExecutionPreparationPage),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('momo-execution-preparation-failed')),
+        findsOneWidget,
+      );
+      expect(executionRepository.fundingCorrelationIds, <String>[correlationId]);
+      expect(executionRepository.idempotencyKeys, hasLength(1));
+      final generatedKey = executionRepository.idempotencyKeys.single;
+      expect(
+        generatedKey,
+        matches(
+          RegExp(
+            r'^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$',
+          ),
+        ),
+      );
+      expect(generatedKey.contains('wallet-eur-primary'), isFalse);
+      expect(generatedKey.contains('237670123456'), isFalse);
+      expect(executionRepository.handoffs.single.quoteId, 'quote-entry');
+      expect(
+        executionRepository.handoffs.single.fundingAllocations.single.sourceId,
+        'wallet-eur-primary',
+      );
+
+      await tester.tap(
+        find.byKey(const Key('momo-execution-preparation-retry')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const Key('momo-execution-preparation-ready')),
+        findsOneWidget,
+      );
+      expect(
+        executionRepository.fundingCorrelationIds,
+        <String>[correlationId, correlationId],
+      );
+      expect(
+        executionRepository.idempotencyKeys,
+        <String>[generatedKey, generatedKey],
+      );
+      expect(
+        identical(
+          executionRepository.handoffs[0],
+          executionRepository.handoffs[1],
+        ),
+        isTrue,
+      );
+      expect(
+        find.byKey(const Key('momo-execution-preparation-continue')),
+        findsNothing,
+      );
+
+      await tester.tap(
+        find.byKey(const Key('momo-execution-preparation-back')),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('momo-funding-plan-ready')), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'expired quote blocks execution preparation before repository call',
+    (tester) async {
+      await _useLargeSurface(tester);
+      final quoteRepository = _CapturingQuoteRepository();
+      final fundingRepository = _CapturingFundingRepository();
+      final executionRepository = _CapturingExecutionRepository();
+      var nowCalls = 0;
+
+      await tester.pumpWidget(
+        _app(
+          sourceWallet: _sourceWallet,
+          beneficiary: _resolvedBeneficiary,
+          quoteRepository: quoteRepository,
+          fundingRepository: fundingRepository,
+          executionRepository: executionRepository,
+          correlationIdFactory: () =>
+              '11111111-2222-4333-8444-555555555555',
+          idempotencyKeyFactory: () =>
+              '44444444-4444-4444-8444-444444444444',
+          nowUtc: () {
+            nowCalls += 1;
+            return nowCalls == 1
+                ? DateTime.utc(2026, 10, 16, 12)
+                : DateTime.utc(2100);
+          },
+        ),
+      );
+
+      await tester.enterText(
+        find.byKey(const Key('momo-quote-intent-amount')),
+        '10.00',
+      );
+      await tester.tap(
+        find.byKey(const Key('momo-quote-intent-continue')),
+      );
+      await tester.pumpAndSettle();
+      await tester.drag(
+        find.byKey(const Key('momo-quote-ready')),
+        const Offset(0, -600),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('momo-quote-continue')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('momo-funding-wallet')));
+      await tester.pump();
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('momo-funding-continue')),
+        150,
+      );
+      await tester.tap(find.byKey(const Key('momo-funding-continue')));
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('momo-funding-plan-continue')),
+        150,
+      );
+      await tester.tap(find.byKey(const Key('momo-funding-plan-continue')));
+      await tester.pump();
+
+      expect(executionRepository.fundingCorrelationIds, isEmpty);
+      expect(
+        find.byKey(const Key('momo-execution-preparation-invalid-snackbar')),
+        findsOneWidget,
+      );
+      expect(
+        find.byType(MobileMoneyPayoutExecutionPreparationPage),
+        findsNothing,
+      );
     },
   );
 

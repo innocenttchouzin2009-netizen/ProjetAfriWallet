@@ -8,6 +8,8 @@ import 'package:mobile_app/models/current_identity_profile.dart';
 import 'package:mobile_app/models/mobile_money_beneficiary_lookup.dart';
 import 'package:mobile_app/models/mobile_money_beneficiary_operator.dart';
 import 'package:mobile_app/models/mobile_money_payout.dart';
+import 'package:mobile_app/models/mobile_money_payout_funding_intent.dart';
+import 'package:mobile_app/models/mobile_money_payout_funding_plan.dart';
 import 'package:mobile_app/models/mobile_money_payout_quote.dart';
 import 'package:mobile_app/models/mobile_money_payout_quote_intent.dart';
 import 'package:mobile_app/models/payment_transfer.dart';
@@ -16,11 +18,13 @@ import 'package:mobile_app/models/transaction_history.dart';
 import 'package:mobile_app/models/wallet_balance.dart';
 import 'package:mobile_app/models/subscription_models.dart';
 import 'package:mobile_app/network/api_client.dart';
+import 'package:mobile_app/pages/mobile_money_payout_funding_planning_page.dart';
 import 'package:mobile_app/pages/mobile_money_payout_funding_selection_page.dart';
 import 'package:mobile_app/presentation/mobile_money_payout_funding_selection_controller.dart';
 import 'package:mobile_app/services/auth_production_wiring.dart';
 import 'package:mobile_app/services/identity_read_repository.dart';
 import 'package:mobile_app/services/mobile_money_beneficiary_lookup_repository.dart';
+import 'package:mobile_app/services/mobile_money_payout_funding_repository.dart';
 import 'package:mobile_app/services/mobile_money_payout_quote_repository.dart';
 import 'package:mobile_app/services/secure_storage_adapter.dart';
 import 'package:mobile_app/services/subscription_repository.dart';
@@ -173,6 +177,8 @@ void main() {
               _ReadyMobileMoneyBeneficiaryLookupRepository(),
           mobileMoneyPayoutQuoteRepository:
               _ReadyMobileMoneyPayoutQuoteRepository(),
+          mobileMoneyPayoutFundingRepository:
+              _ReadyMobileMoneyPayoutFundingRepository(),
         ),
       );
       await tester.pumpAndSettle();
@@ -272,7 +278,29 @@ void main() {
       );
       expect(
         find.byKey(const Key('momo-funding-continue')),
-        findsNothing,
+        findsOneWidget,
+      );
+
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('momo-funding-continue')),
+        150,
+      );
+      await tester.tap(find.byKey(const Key('momo-funding-continue')));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byType(MobileMoneyPayoutFundingPlanningPage),
+        findsOneWidget,
+      );
+      expect(find.byKey(const Key('momo-funding-plan-ready')), findsOneWidget);
+      expect(find.text('Plan de paiement confirmé'), findsOneWidget);
+      expect(find.byKey(const Key('momo-funding-plan-continue')), findsNothing);
+
+      await tester.tap(find.byKey(const Key('momo-funding-plan-back')));
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const Key('momo-funding-selection-page')),
+        findsOneWidget,
       );
 
       await tester.tap(find.byKey(const Key('momo-funding-back')));
@@ -394,6 +422,25 @@ class _ReadyMobileMoneyPayoutQuoteRepository
     required int sourceAmountMinor,
   }) {
     throw StateError('The integrated handoff must use a quote intent.');
+  }
+}
+
+
+class _ReadyMobileMoneyPayoutFundingRepository
+    implements MobileMoneyPayoutFundingRepository {
+  @override
+  Future<MobileMoneyPayoutFundingPlan> planFunding({
+    required String correlationId,
+    required MobileMoneyPayoutFundingIntent intent,
+    required DateTime requestedAtUtc,
+  }) async {
+    return MobileMoneyPayoutFundingPlan(
+      correlationId: correlationId,
+      requiredAmountMinor: intent.totalSourceDebitMinor,
+      currencyCode: intent.sourceCurrencyCode,
+      allocations: intent.fundingAllocations,
+      plannedAtUtc: requestedAtUtc.add(const Duration(seconds: 1)),
+    );
   }
 }
 

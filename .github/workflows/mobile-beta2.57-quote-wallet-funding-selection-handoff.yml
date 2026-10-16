@@ -1,0 +1,175 @@
+name: Mobile Beta2.57 Quote Wallet Funding Selection Certification
+
+on:
+  push:
+    branches:
+      - feature/mobile-beta2.57
+    paths:
+      - '.github/workflows/mobile-beta2.57-quote-wallet-funding-selection-handoff.yml'
+      - 'apps/mobile_app/lib/pages/mobile_money_payout_quote_intent_entry_page.dart'
+      - 'apps/mobile_app/test/mobile_money_payout_quote_intent_entry_page_test.dart'
+      - 'apps/mobile_app/test/widget_test.dart'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  statuses: write
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      WORKFLOW_SHA: ${{ github.sha }}
+      PRODUCT_CANDIDATE_SHA: 3ffb6161d0f2d168ff80a82a587a827f6471e100
+      BASE_SHA: 34e477c64fa852e88f47ec4e8097eec93cea0e16
+      STATUS_CONTEXT: mobile-beta2.57/quote-wallet-funding-selection-certification
+
+    defaults:
+      run:
+        working-directory: apps/mobile_app
+
+    steps:
+      - name: Checkout exact Beta2.57 certification head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.WORKFLOW_SHA }}
+          fetch-depth: 0
+
+      - name: Assert exact Beta2.56 baseline and Beta2.57 lineage
+        working-directory: .
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${WORKFLOW_SHA}"
+          git cat-file -e "${BASE_SHA}^{commit}"
+          git cat-file -e "${PRODUCT_CANDIDATE_SHA}^{commit}"
+          test "$(git merge-base "${BASE_SHA}" "${PRODUCT_CANDIDATE_SHA}")" = "${BASE_SHA}"
+          test "$(git rev-list --count "${BASE_SHA}..${PRODUCT_CANDIDATE_SHA}")" -eq 1
+          test "$(git rev-list --count "${PRODUCT_CANDIDATE_SHA}..${WORKFLOW_SHA}")" -eq 1
+          git merge-base --is-ancestor "${PRODUCT_CANDIDATE_SHA}" "${WORKFLOW_SHA}"
+
+      - name: Mark Beta2.57 product candidate pending
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: process.env.PRODUCT_CANDIDATE_SHA,
+              state: 'pending',
+              context: process.env.STATUS_CONTEXT,
+              description: 'Beta2.57 quote to wallet funding selection certification in progress',
+              target_url: `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+            });
+
+      - name: Verify exact Beta2.57 product allowlist
+        working-directory: .
+        shell: bash
+        run: |
+          set -euo pipefail
+          allowed=(
+            "apps/mobile_app/lib/pages/mobile_money_payout_quote_intent_entry_page.dart"
+            "apps/mobile_app/test/mobile_money_payout_quote_intent_entry_page_test.dart"
+            "apps/mobile_app/test/widget_test.dart"
+          )
+          mapfile -t changed_files < <(git diff --name-only "${BASE_SHA}...${PRODUCT_CANDIDATE_SHA}" | sort)
+          test "${#changed_files[@]}" -eq 3
+          for file in "${changed_files[@]}"; do
+            printf '%s\n' "${allowed[@]}" | grep -Fxq "${file}"
+          done
+          for required in "${allowed[@]}"; do
+            printf '%s\n' "${changed_files[@]}" | grep -Fxq "${required}"
+          done
+
+      - name: Verify certification harness allowlist
+        working-directory: .
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t changed_files < <(git diff --name-only "${PRODUCT_CANDIDATE_SHA}...${WORKFLOW_SHA}" | sort)
+          test "${#changed_files[@]}" -eq 1
+          test "${changed_files[0]}" = ".github/workflows/mobile-beta2.57-quote-wallet-funding-selection-handoff.yml"
+
+      - name: Set up Flutter 3.47.2
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.2'
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Generate localizations
+        run: flutter gen-l10n
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test Beta2.57 quote to authoritative wallet funding handoff
+        run: flutter test test/mobile_money_payout_quote_intent_entry_page_test.dart
+
+      - name: Re-test quote freshness gate
+        run: flutter test test/mobile_money_payout_quote_page_test.dart
+
+      - name: Re-test funding selection behavior
+        run: |
+          flutter test test/mobile_money_payout_funding_selection_controller_test.dart
+          flutter test test/mobile_money_payout_funding_selection_page_test.dart
+          flutter test test/mobile_money_payout_funding_intent_test.dart
+          flutter test test/mobile_money_payout_funding_allocation_planner_test.dart
+
+      - name: Test integrated Wallet Home to wallet funding journey
+        run: flutter test test/widget_test.dart
+
+      - name: Re-test Wallet Home Mobile Money regressions
+        run: flutter test test/wallet_home_page_test.dart
+
+      - name: Run complete Flutter suite
+        run: flutter test
+
+      - name: Verify Beta2.57 diffs
+        working-directory: .
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check "${BASE_SHA}...${PRODUCT_CANDIDATE_SHA}"
+          git diff --check "${PRODUCT_CANDIDATE_SHA}...${WORKFLOW_SHA}"
+
+      - name: Write certification summary
+        if: always()
+        working-directory: .
+        shell: bash
+        run: |
+          {
+            echo "## Mobile Beta2.57 Authenticated Quote → Wallet Funding Selection"
+            echo
+            echo "- Base Beta2.56: ${BASE_SHA}"
+            echo "- Product candidate: ${PRODUCT_CANDIDATE_SHA}"
+            echo "- Certification head: ${WORKFLOW_SHA}"
+            echo "- Scope: fresh authenticated quote → exact authoritative wallet funding selection"
+            echo "- External funding sources: none injected or activated"
+            echo "- Funding planning/execution: not invoked"
+            echo "- Job status: **${{ job.status }}**"
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Report Beta2.57 product candidate certification
+        if: always()
+        uses: actions/github-script@v7
+        env:
+          CERTIFICATION_JOB_STATUS: ${{ job.status }}
+        with:
+          script: |
+            const succeeded = process.env.CERTIFICATION_JOB_STATUS === 'success';
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: process.env.PRODUCT_CANDIDATE_SHA,
+              state: succeeded ? 'success' : 'failure',
+              context: process.env.STATUS_CONTEXT,
+              description: succeeded
+                ? 'Beta2.57 quote to wallet funding selection candidate certified'
+                : 'Beta2.57 quote to wallet funding selection certification failed',
+              target_url: `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+            });

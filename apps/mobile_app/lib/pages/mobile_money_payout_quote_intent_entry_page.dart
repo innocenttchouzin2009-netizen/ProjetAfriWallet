@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 
+import '../models/mobile_money_payout.dart';
+import '../models/mobile_money_payout_quote.dart';
 import '../models/mobile_money_payout_quote_intent.dart';
 import '../models/wallet_balance.dart';
+import '../presentation/mobile_money_payout_funding_selection_controller.dart';
 import '../presentation/mobile_money_payout_quote_controller.dart';
 import '../services/mobile_money_beneficiary_lookup_repository.dart';
 import '../services/mobile_money_payout_quote_intent_mapper.dart';
 import '../services/mobile_money_payout_quote_repository.dart';
+import 'mobile_money_payout_funding_selection_page.dart';
 import 'mobile_money_payout_quote_page.dart';
 
 class MobileMoneyPayoutQuoteIntentEntryPage extends StatefulWidget {
@@ -43,6 +47,12 @@ class _MobileMoneyPayoutQuoteIntentEntryPageState
     final sourceCountryCode = sourceWallet.countryCode?.trim().toUpperCase();
     final sourceCurrencyCode = sourceWallet.currency.trim().toUpperCase();
 
+    if (sourceWallet.walletId.trim().isEmpty) {
+      return 'L’identifiant du wallet source est indisponible.';
+    }
+    if (sourceWallet.availableMinor < 0) {
+      return 'Le solde disponible du wallet source est invalide.';
+    }
     if (!sourceWallet.isAvailable) {
       return 'Le wallet source principal n’est pas disponible.';
     }
@@ -102,6 +112,8 @@ class _MobileMoneyPayoutQuoteIntentEntryPageState
               builder: (quoteContext) => MobileMoneyPayoutQuotePage(
                 controller: controller,
                 intent: intent,
+                onContinue: (quote) =>
+                    _openFundingSelection(quoteContext, quote),
                 onBack: () => Navigator.of(quoteContext).pop(),
               ),
             ),
@@ -112,6 +124,67 @@ class _MobileMoneyPayoutQuoteIntentEntryPageState
         _amountError =
             'Impossible de préparer ce devis avec les données disponibles.';
       });
+    }
+  }
+
+
+  void _openFundingSelection(
+    BuildContext quoteContext,
+    MobileMoneyPayoutQuote quote,
+  ) {
+    final sourceError = _sourceContextError();
+    final sourceWallet = widget.sourceWallet;
+    final sourceCurrencyCode = sourceWallet.currency.trim().toUpperCase();
+    final quoteCurrencyCode = quote.sourceCurrencyCode.trim().toUpperCase();
+
+    if (sourceError != null || quoteCurrencyCode != sourceCurrencyCode) {
+      ScaffoldMessenger.of(quoteContext).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Le wallet source ne peut pas financer ce devis.',
+            key: Key('momo-funding-source-invalid-snackbar'),
+          ),
+        ),
+      );
+      return;
+    }
+
+    try {
+      final walletSource = FundingSource(
+        id: sourceWallet.walletId,
+        type: FundingSourceType.wallet,
+        displayLabel: 'Solde AfrikaWallet',
+        currencyCode: sourceCurrencyCode,
+        isAvailable: sourceWallet.isAvailable,
+        availableMinor: sourceWallet.availableMinor,
+      );
+      walletSource.validate();
+
+      final controller = MobileMoneyPayoutFundingSelectionController(
+        quote: quote,
+        fundingSources: <FundingSource>[walletSource],
+      );
+
+      Navigator.of(quoteContext)
+          .push<void>(
+            MaterialPageRoute<void>(
+              builder: (fundingContext) =>
+                  MobileMoneyPayoutFundingSelectionPage(
+                controller: controller,
+                onBack: () => Navigator.of(fundingContext).pop(),
+              ),
+            ),
+          )
+          .whenComplete(controller.dispose);
+    } on Object {
+      ScaffoldMessenger.of(quoteContext).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Le wallet source ne peut pas financer ce devis.',
+            key: Key('momo-funding-source-invalid-snackbar'),
+          ),
+        ),
+      );
     }
   }
 

@@ -7,6 +7,7 @@ import 'package:mobile_app/models/auth_session.dart';
 import 'package:mobile_app/models/current_identity_profile.dart';
 import 'package:mobile_app/models/mobile_money_beneficiary_lookup.dart';
 import 'package:mobile_app/models/mobile_money_beneficiary_operator.dart';
+import 'package:mobile_app/models/mobile_money_payout.dart';
 import 'package:mobile_app/models/mobile_money_payout_quote.dart';
 import 'package:mobile_app/models/mobile_money_payout_quote_intent.dart';
 import 'package:mobile_app/models/payment_transfer.dart';
@@ -15,6 +16,8 @@ import 'package:mobile_app/models/transaction_history.dart';
 import 'package:mobile_app/models/wallet_balance.dart';
 import 'package:mobile_app/models/subscription_models.dart';
 import 'package:mobile_app/network/api_client.dart';
+import 'package:mobile_app/pages/mobile_money_payout_funding_selection_page.dart';
+import 'package:mobile_app/presentation/mobile_money_payout_funding_selection_controller.dart';
 import 'package:mobile_app/services/auth_production_wiring.dart';
 import 'package:mobile_app/services/identity_read_repository.dart';
 import 'package:mobile_app/services/mobile_money_beneficiary_lookup_repository.dart';
@@ -234,6 +237,47 @@ void main() {
 
       expect(find.text('Votre estimation'), findsOneWidget);
       expect(find.text('Ada N.'), findsOneWidget);
+
+      await tester.drag(
+        find.byKey(const Key('momo-quote-ready')),
+        const Offset(0, -600),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('momo-quote-continue')), findsOneWidget);
+      await tester.tap(find.byKey(const Key('momo-quote-continue')));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byType(MobileMoneyPayoutFundingSelectionPage),
+        findsOneWidget,
+      );
+      final fundingPage = tester.widget<MobileMoneyPayoutFundingSelectionPage>(
+        find.byType(MobileMoneyPayoutFundingSelectionPage),
+      );
+      final fundingController = fundingPage.controller;
+      final fundingWallet = fundingController.fundingSources.single;
+      expect(fundingWallet.id, 'wallet-premium-eur');
+      expect(fundingWallet.type, FundingSourceType.wallet);
+      expect(fundingWallet.currencyCode, 'EUR');
+      expect(fundingWallet.availableMinor, 12345);
+      expect(fundingController.availableExternalSources, isEmpty);
+      expect(fundingController.canUseSplit, isFalse);
+      expect(fundingController.canUseWalletOnly, isTrue);
+
+      await tester.tap(find.byKey(const Key('momo-funding-wallet')));
+      await tester.pump();
+      expect(
+        fundingController.selectedMode,
+        MobileMoneyPayoutFundingSelectionMode.walletOnly,
+      );
+      expect(
+        find.byKey(const Key('momo-funding-continue')),
+        findsNothing,
+      );
+
+      await tester.tap(find.byKey(const Key('momo-funding-back')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('momo-quote-ready')), findsOneWidget);
 
       await tester.tap(find.byKey(const Key('momo-quote-back')));
       await tester.pumpAndSettle();

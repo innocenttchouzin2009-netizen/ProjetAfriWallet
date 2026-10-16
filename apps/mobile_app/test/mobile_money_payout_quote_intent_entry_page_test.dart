@@ -2,14 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile_app/models/mobile_money_beneficiary_lookup.dart';
 import 'package:mobile_app/models/mobile_money_beneficiary_operator.dart';
+import 'package:mobile_app/models/mobile_money_payout.dart';
 import 'package:mobile_app/models/mobile_money_payout_quote.dart';
 import 'package:mobile_app/models/mobile_money_payout_quote_intent.dart';
 import 'package:mobile_app/models/wallet_balance.dart';
+import 'package:mobile_app/pages/mobile_money_payout_funding_selection_page.dart';
 import 'package:mobile_app/pages/mobile_money_payout_quote_intent_entry_page.dart';
+import 'package:mobile_app/presentation/mobile_money_payout_funding_selection_controller.dart';
 import 'package:mobile_app/services/mobile_money_beneficiary_lookup_repository.dart';
 import 'package:mobile_app/services/mobile_money_payout_quote_repository.dart';
 
 class _CapturingQuoteRepository implements MobileMoneyPayoutQuoteRepository {
+  _CapturingQuoteRepository({
+    this.quoteSourceCurrencyCode,
+  });
+
+  final String? quoteSourceCurrencyCode;
   MobileMoneyPayoutQuoteIntent? lastIntent;
   int calls = 0;
 
@@ -21,7 +29,8 @@ class _CapturingQuoteRepository implements MobileMoneyPayoutQuoteRepository {
     lastIntent = intent;
     return MobileMoneyPayoutQuote(
       quoteId: 'quote-entry',
-      sourceCurrencyCode: intent.sourceCurrencyCode,
+      sourceCurrencyCode:
+          quoteSourceCurrencyCode ?? intent.sourceCurrencyCode,
       sourceAmountMinor: intent.sourceAmountMinor,
       fees: const <MobileMoneyPayoutQuoteFee>[],
       totalFeeMinor: 0,
@@ -211,4 +220,228 @@ void main() {
     expect(button.onPressed, isNull);
     expect(repository.calls, 0);
   });
+
+  testWidgets(
+    'fresh quote continues to funding selection with the exact authoritative wallet only',
+    (tester) async {
+      await _useLargeSurface(tester);
+      final repository = _CapturingQuoteRepository();
+
+      await tester.pumpWidget(
+        _app(
+          sourceWallet: _sourceWallet,
+          beneficiary: _resolvedBeneficiary,
+          quoteRepository: repository,
+        ),
+      );
+      await tester.enterText(
+        find.byKey(const Key('momo-quote-intent-amount')),
+        '12.34',
+      );
+      await tester.tap(
+        find.byKey(const Key('momo-quote-intent-continue')),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.drag(
+        find.byKey(const Key('momo-quote-ready')),
+        const Offset(0, -600),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('momo-quote-continue')));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byType(MobileMoneyPayoutFundingSelectionPage),
+        findsOneWidget,
+      );
+      final fundingPage = tester.widget<MobileMoneyPayoutFundingSelectionPage>(
+        find.byType(MobileMoneyPayoutFundingSelectionPage),
+      );
+      final controller = fundingPage.controller;
+      final walletSource = controller.fundingSources.single;
+
+      expect(walletSource.id, 'wallet-eur-primary');
+      expect(walletSource.type, FundingSourceType.wallet);
+      expect(walletSource.displayLabel, 'Solde AfrikaWallet');
+      expect(walletSource.currencyCode, 'EUR');
+      expect(walletSource.isAvailable, isTrue);
+      expect(walletSource.availableMinor, 25000);
+      expect(controller.availableExternalSources, isEmpty);
+      expect(controller.canUseSplit, isFalse);
+      expect(controller.canUseWalletOnly, isTrue);
+      expect(
+        find.byKey(const Key('momo-funding-continue')),
+        findsNothing,
+      );
+
+      await tester.tap(find.byKey(const Key('momo-funding-wallet')));
+      await tester.pump();
+      expect(
+        controller.selectedMode,
+        MobileMoneyPayoutFundingSelectionMode.walletOnly,
+      );
+      expect(
+        controller.selectedIntent!.fundingAllocations.single.sourceId,
+        'wallet-eur-primary',
+      );
+
+      await tester.tap(find.byKey(const Key('momo-funding-back')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('momo-quote-ready')), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'insufficient wallet remains fail closed without external or split funding',
+    (tester) async {
+      await _useLargeSurface(tester);
+      final repository = _CapturingQuoteRepository();
+      const lowBalanceWallet = WalletBalance(
+        walletId: 'wallet-low-eur',
+        currency: 'EUR',
+        availableMinor: 500,
+        status: 'ACTIVE',
+        countryCode: 'DE',
+      );
+
+      await tester.pumpWidget(
+        _app(
+          sourceWallet: lowBalanceWallet,
+          beneficiary: _resolvedBeneficiary,
+          quoteRepository: repository,
+        ),
+      );
+      await tester.enterText(
+        find.byKey(const Key('momo-quote-intent-amount')),
+        '10.00',
+      );
+      await tester.tap(
+        find.byKey(const Key('momo-quote-intent-continue')),
+      );
+      await tester.pumpAndSettle();
+      await tester.drag(
+        find.byKey(const Key('momo-quote-ready')),
+        const Offset(0, -600),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('momo-quote-continue')));
+      await tester.pumpAndSettle();
+
+      final fundingPage = tester.widget<MobileMoneyPayoutFundingSelectionPage>(
+        find.byType(MobileMoneyPayoutFundingSelectionPage),
+      );
+      final controller = fundingPage.controller;
+      expect(controller.canUseWalletOnly, isFalse);
+      expect(controller.availableExternalSources, isEmpty);
+      expect(controller.canUseSplit, isFalse);
+      expect(
+        tester.widget<ListTile>(
+          find.byKey(const Key('momo-funding-wallet')),
+        ).enabled,
+        isFalse,
+      );
+      expect(
+        find.byKey(const Key('momo-funding-continue')),
+        findsNothing,
+      );
+    },
+  );
+
+  testWidgets(
+    'quote currency mismatch fails closed before funding selection',
+    (tester) async {
+      await _useLargeSurface(tester);
+      final repository = _CapturingQuoteRepository(
+        quoteSourceCurrencyCode: 'USD',
+      );
+
+      await tester.pumpWidget(
+        _app(
+          sourceWallet: _sourceWallet,
+          beneficiary: _resolvedBeneficiary,
+          quoteRepository: repository,
+        ),
+      );
+      await tester.enterText(
+        find.byKey(const Key('momo-quote-intent-amount')),
+        '10.00',
+      );
+      await tester.tap(
+        find.byKey(const Key('momo-quote-intent-continue')),
+      );
+      await tester.pumpAndSettle();
+      await tester.drag(
+        find.byKey(const Key('momo-quote-ready')),
+        const Offset(0, -600),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('momo-quote-continue')));
+      await tester.pump();
+
+      expect(
+        find.byType(MobileMoneyPayoutFundingSelectionPage),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const Key('momo-funding-source-invalid-snackbar')),
+        findsOneWidget,
+      );
+    },
+  );
+
+  testWidgets(
+    'blank inactive or negative-balance source wallet fails closed before quote',
+    (tester) async {
+      await _useLargeSurface(tester);
+      final repository = _CapturingQuoteRepository();
+      const invalidWallets = <WalletBalance>[
+        WalletBalance(
+          walletId: '   ',
+          currency: 'EUR',
+          availableMinor: 25000,
+          status: 'ACTIVE',
+          countryCode: 'DE',
+        ),
+        WalletBalance(
+          walletId: 'wallet-inactive',
+          currency: 'EUR',
+          availableMinor: 25000,
+          status: 'INACTIVE',
+          countryCode: 'DE',
+        ),
+        WalletBalance(
+          walletId: 'wallet-negative',
+          currency: 'EUR',
+          availableMinor: -1,
+          status: 'ACTIVE',
+          countryCode: 'DE',
+        ),
+      ];
+
+      for (final wallet in invalidWallets) {
+        await tester.pumpWidget(
+          _app(
+            sourceWallet: wallet,
+            beneficiary: _resolvedBeneficiary,
+            quoteRepository: repository,
+          ),
+        );
+        await tester.pump();
+
+        expect(
+          find.byKey(const Key('momo-quote-intent-source-unavailable')),
+          findsOneWidget,
+        );
+        expect(
+          tester.widget<FilledButton>(
+            find.byKey(const Key('momo-quote-intent-continue')),
+          ).onPressed,
+          isNull,
+        );
+        expect(repository.calls, 0);
+      }
+    },
+  );
+
 }

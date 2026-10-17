@@ -1,12 +1,10 @@
 name: Mobile Beta2.13 Candidate Certification
 
 on:
+  push:
+    branches:
+      - cert/mobile-auth-session-lifecycle-invariants-1
   workflow_dispatch:
-    inputs:
-      candidate_sha:
-        description: Full 40-character commit SHA to certify
-        required: true
-        type: string
 
 permissions:
   contents: read
@@ -18,7 +16,7 @@ jobs:
     timeout-minutes: 30
 
     env:
-      CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+      CANDIDATE_SHA: ${{ github.sha }}
       BASE_SHA: 9718a1cc762139145b031dbed208e4f82140093f
       STATUS_CONTEXT: mobile-beta2.13/candidate-certification
 
@@ -27,20 +25,20 @@ jobs:
         working-directory: apps/mobile_app
 
     steps:
-      - name: Validate candidate SHA input
+      - name: Validate run candidate SHA
         working-directory: .
         shell: bash
         run: |
           set -euo pipefail
           if [[ ! "${CANDIDATE_SHA}" =~ ^[0-9a-f]{40}$ ]]; then
-            echo "candidate_sha must be a full lowercase 40-character Git SHA."
+            echo "github.sha must resolve to a full lowercase 40-character Git SHA."
             exit 1
           fi
 
-      - name: Checkout exact candidate
+      - name: Checkout exact run candidate
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.candidate_sha }}
+          ref: ${{ github.sha }}
           fetch-depth: 0
 
       - name: Assert exact candidate checkout

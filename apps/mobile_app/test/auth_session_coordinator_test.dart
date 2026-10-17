@@ -30,6 +30,34 @@ void main() {
       expect(repository.refreshCalls, 0);
     });
 
+    test('treats access token as expired at the exact expiry instant', () async {
+      final store = _MemorySessionStore()
+        ..value = _session(
+          accessToken: 'access-at-boundary',
+          expiresAtUtc: DateTime.parse('2026-09-28T10:00:00Z'),
+        );
+      final refreshed = _session(
+        accessToken: 'access-after-boundary',
+        refreshToken: 'refresh-after-boundary',
+        expiresAtUtc: DateTime.parse('2026-09-28T10:15:00Z'),
+      );
+      final repository = _FakeAuthRepository()
+        ..refreshHandler = () async {
+          store.value = refreshed;
+          return refreshed;
+        };
+      final coordinator = AuthSessionCoordinator(
+        repository,
+        store,
+        utcNow: () => DateTime.parse('2026-09-28T10:00:00Z'),
+      );
+
+      final resolved = await coordinator.restoreValidSession();
+
+      expect(resolved?.accessToken, 'access-after-boundary');
+      expect(repository.refreshCalls, 1);
+    });
+
     test('refreshes an expired access token before restoring auth state',
         () async {
       final store = _MemorySessionStore()
@@ -77,6 +105,7 @@ void main() {
 
       final first = coordinator.restoreValidSession();
       final second = coordinator.restoreValidSession();
+      final explicit = coordinator.refreshSession();
 
       await Future<void>.delayed(Duration.zero);
       expect(repository.refreshCalls, 1);
@@ -91,6 +120,7 @@ void main() {
 
       expect((await first)?.accessToken, 'access-new');
       expect((await second)?.accessToken, 'access-new');
+      expect((await explicit)?.accessToken, 'access-new');
       expect(repository.refreshCalls, 1);
     });
 
@@ -114,6 +144,38 @@ void main() {
       expect(repository.refreshCalls, 1);
     });
 
+    for (final code in <AuthErrorCode>[
+      AuthErrorCode.sessionExpired,
+      AuthErrorCode.sessionRevoked,
+      AuthErrorCode.refreshInvalid,
+      AuthErrorCode.refreshExpired,
+      AuthErrorCode.refreshReused,
+      AuthErrorCode.tokenInvalid,
+      AuthErrorCode.tokenExpired,
+      AuthErrorCode.userDisabled,
+    ]) {
+      test('terminal refresh error ${code.name} invalidates local session',
+          () async {
+        final store = _MemorySessionStore()..value = _session();
+        final repository = _FakeAuthRepository()
+          ..refreshHandler = () async {
+            throw AuthRepositoryException(
+              AuthError(
+                code: code,
+                message: 'Terminal authentication failure.',
+              ),
+            );
+          };
+        final coordinator = AuthSessionCoordinator(repository, store);
+
+        final resolved = await coordinator.refreshSession();
+
+        expect(resolved, isNull);
+        expect(store.value, isNull);
+        expect(store.clearCalls, 1);
+      });
+    }
+
     test('keeps stored refresh material on retryable refresh failure', () async {
       final original = _session();
       final store = _MemorySessionStore()..value = original;
@@ -134,6 +196,8 @@ void main() {
       );
 
       expect(store.value, same(original));
+      expect(store.value?.refreshToken, original.refreshToken);
+      expect(store.clearCalls, 0);
     });
 
     test('returns unauthenticated without attempting refresh when empty',
@@ -169,6 +233,7 @@ StoredAuthSession _session({
 
 class _MemorySessionStore implements AuthSessionStore {
   StoredAuthSession? value;
+  int clearCalls = 0;
 
   @override
   Future<void> save(StoredAuthSession session) async {
@@ -180,6 +245,7 @@ class _MemorySessionStore implements AuthSessionStore {
 
   @override
   Future<void> clear() async {
+    clearCalls += 1;
     value = null;
   }
 }

@@ -4,17 +4,22 @@ import 'package:flutter/material.dart';
 
 import '../models/mobile_money_payout.dart';
 import '../models/mobile_money_payout_funding_intent.dart';
+import '../models/mobile_money_payout_funding_plan.dart';
 import '../models/mobile_money_payout_quote.dart';
 import '../models/mobile_money_payout_quote_intent.dart';
 import '../models/wallet_balance.dart';
+import '../presentation/mobile_money_payout_execution_preparation_controller.dart';
 import '../presentation/mobile_money_payout_funding_planning_controller.dart';
 import '../presentation/mobile_money_payout_funding_selection_controller.dart';
 import '../presentation/mobile_money_payout_quote_controller.dart';
 import '../services/mobile_money_beneficiary_lookup_repository.dart';
+import '../services/mobile_money_payout_execution_handoff_policy.dart';
+import '../services/mobile_money_payout_execution_repository.dart';
 import '../services/mobile_money_payout_funding_repository.dart';
 import '../services/mobile_money_payout_quote_freshness_policy.dart';
 import '../services/mobile_money_payout_quote_intent_mapper.dart';
 import '../services/mobile_money_payout_quote_repository.dart';
+import 'mobile_money_payout_execution_preparation_page.dart';
 import 'mobile_money_payout_funding_planning_page.dart';
 import 'mobile_money_payout_funding_selection_page.dart';
 import 'mobile_money_payout_quote_page.dart';
@@ -26,7 +31,9 @@ class MobileMoneyPayoutQuoteIntentEntryPage extends StatefulWidget {
     required this.beneficiary,
     required this.quoteRepository,
     this.fundingRepository,
+    this.executionRepository,
     this.correlationIdFactory,
+    this.idempotencyKeyFactory,
     this.nowUtc,
     this.onBack,
   });
@@ -35,7 +42,9 @@ class MobileMoneyPayoutQuoteIntentEntryPage extends StatefulWidget {
   final MobileMoneyBeneficiarySearchResult beneficiary;
   final MobileMoneyPayoutQuoteRepository quoteRepository;
   final MobileMoneyPayoutFundingRepository? fundingRepository;
+  final MobileMoneyPayoutExecutionRepository? executionRepository;
   final String Function()? correlationIdFactory;
+  final String Function()? idempotencyKeyFactory;
   final DateTime Function()? nowUtc;
   final VoidCallback? onBack;
 
@@ -260,6 +269,14 @@ class _MobileMoneyPayoutQuoteIntentEntryPageState
                 correlationId: correlationId,
                 intent: intent,
                 requestedAtUtc: requestedAtUtc,
+                onContinue: widget.executionRepository == null
+                    ? null
+                    : (plan) => _openExecutionPreparation(
+                          planningContext,
+                          quote,
+                          intent,
+                          plan,
+                        ),
                 onBack: () => Navigator.of(planningContext).pop(),
               ),
             ),
@@ -274,6 +291,105 @@ class _MobileMoneyPayoutQuoteIntentEntryPageState
           ),
         ),
       );
+    }
+  }
+
+
+  void _openExecutionPreparation(
+    BuildContext planningContext,
+    MobileMoneyPayoutQuote quote,
+    MobileMoneyPayoutFundingIntent intent,
+    MobileMoneyPayoutFundingPlan plan,
+  ) {
+    final repository = widget.executionRepository;
+    if (repository == null) return;
+
+    try {
+      _validateConfirmedFundingPlan(intent, plan);
+
+      final transitionAtUtc =
+          (widget.nowUtc?.call() ?? DateTime.now()).toUtc();
+      final handoff = const MobileMoneyPayoutExecutionHandoffPolicy().prepare(
+        quote: quote,
+        fundingIntent: intent,
+        atUtc: transitionAtUtc,
+      );
+
+      if (!_canonicalGuidPattern.hasMatch(plan.correlationId)) {
+        throw ArgumentError.value(
+          plan.correlationId,
+          'plan.correlationId',
+          'must be a canonical GUID',
+        );
+      }
+
+      final idempotencyKey =
+          widget.idempotencyKeyFactory?.call() ?? _generateCorrelationId();
+      if (!_canonicalGuidPattern.hasMatch(idempotencyKey)) {
+        throw ArgumentError.value(
+          idempotencyKey,
+          'idempotencyKey',
+          'must be a canonical GUID',
+        );
+      }
+
+      final controller = MobileMoneyPayoutExecutionPreparationController(
+        repository: repository,
+      );
+
+      Navigator.of(planningContext)
+          .push<void>(
+            MaterialPageRoute<void>(
+              builder: (preparationContext) =>
+                  MobileMoneyPayoutExecutionPreparationPage(
+                controller: controller,
+                fundingCorrelationId: plan.correlationId,
+                idempotencyKey: idempotencyKey,
+                handoff: handoff,
+                onBack: () => Navigator.of(preparationContext).pop(),
+              ),
+            ),
+          )
+          .whenComplete(controller.dispose);
+    } on Object {
+      ScaffoldMessenger.of(planningContext).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Impossible de préparer l’exécution. Vérifiez le devis et le plan de paiement.',
+            key: Key('momo-execution-preparation-invalid-snackbar'),
+          ),
+        ),
+      );
+    }
+  }
+
+  void _validateConfirmedFundingPlan(
+    MobileMoneyPayoutFundingIntent intent,
+    MobileMoneyPayoutFundingPlan plan,
+  ) {
+    if (plan.requiredAmountMinor != intent.totalSourceDebitMinor ||
+        plan.currencyCode != intent.sourceCurrencyCode ||
+        plan.allocations.length != intent.fundingAllocations.length) {
+      throw const MobileMoneyPayoutExecutionPreparationMismatchException(
+        'The confirmed funding plan does not match the selected funding intent.',
+      );
+    }
+
+    final expectedBySourceId = <String, FundingAllocation>{
+      for (final allocation in intent.fundingAllocations)
+        allocation.sourceId: allocation,
+    };
+
+    for (final actual in plan.allocations) {
+      final expected = expectedBySourceId[actual.sourceId];
+      if (expected == null ||
+          actual.sourceType != expected.sourceType ||
+          actual.amountMinor != expected.amountMinor ||
+          actual.currencyCode != expected.currencyCode) {
+        throw const MobileMoneyPayoutExecutionPreparationMismatchException(
+          'The confirmed funding plan allocations do not match the selected funding intent.',
+        );
+      }
     }
   }
 

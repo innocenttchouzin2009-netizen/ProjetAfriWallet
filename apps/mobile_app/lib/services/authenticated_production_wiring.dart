@@ -69,7 +69,7 @@ class AuthenticatedProductionWiring {
     mobileMoneyPayoutExecutionRepository =
         RemoteMobileMoneyPayoutExecutionRepository(
       MobileMoneyPayoutExecutionRemoteDataSource(_apiClient),
-      auth.sessionStore,
+      auth.requestExecutor,
     );
   }
 

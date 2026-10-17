@@ -1,0 +1,228 @@
+name: Mobile Beta2.61 Authoritative Wallet Ownership Binding Certification
+
+on:
+  push:
+    branches:
+      - feature/mobile-beta2.61
+    paths:
+      - '.github/workflows/mobile-beta2.61-authoritative-wallet-ownership-binding.yml'
+      - 'backend/src/MobileMoney/MobileMoney.Api/MobileMoney.Api.csproj'
+      - 'backend/src/MobileMoney/MobileMoney.Api/Payout/Execution/Abstractions/IMobileMoneyPayoutExecutionBindingStore.cs'
+      - 'backend/src/MobileMoney/MobileMoney.Api/Payout/Execution/Abstractions/IMobileMoneyPayoutExecutionOwnershipReader.cs'
+      - 'backend/src/MobileMoney/MobileMoney.Api/Payout/Execution/Application/MobileMoneyPayoutExecutionOrchestrator.cs'
+      - 'backend/src/MobileMoney/MobileMoney.Api/Payout/Execution/Extensions/MobileMoneyPayoutExecutionEndpointExtensions.cs'
+      - 'backend/src/MobileMoney/MobileMoney.Api/Payout/Execution/Extensions/MobileMoneyPayoutExecutionServiceCollectionExtensions.cs'
+      - 'backend/src/MobileMoney/MobileMoney.Api/Payout/Execution/Infrastructure/Persistence/EfMobileMoneyPayoutExecutionBindingStore.cs'
+      - 'backend/src/MobileMoney/MobileMoney.Api/Payout/Execution/Infrastructure/Persistence/MobileMoneyPayoutExecutionBindingEntity.cs'
+      - 'backend/src/MobileMoney/MobileMoney.Api/Payout/Execution/Infrastructure/StoreBackedMobileMoneyPayoutExecutionOwnershipReader.cs'
+      - 'backend/src/MobileMoney/MobileMoney.Api/Payout/Funding/Abstractions/FundingOrchestrationPorts.cs'
+      - 'backend/src/MobileMoney/MobileMoney.Api/Payout/Funding/Application/FundingOrchestrationContracts.cs'
+      - 'backend/src/MobileMoney/MobileMoney.Api/Payout/Funding/Application/MobileMoneyPayoutFundingPlanningService.cs'
+      - 'backend/src/MobileMoney/MobileMoney.Api/Payout/Funding/Extensions/MobileMoneyPayoutFundingEndpointExtensions.cs'
+      - 'backend/src/MobileMoney/MobileMoney.Api/Payout/Funding/Extensions/MobileMoneyPayoutFundingServiceCollectionExtensions.cs'
+      - 'backend/src/MobileMoney/MobileMoney.Api/Payout/Funding/Infrastructure/AuthoritativeMobileMoneyPayoutWalletSourceReader.cs'
+      - 'backend/src/MobileMoney/MobileMoney.Api/Payout/Funding/Infrastructure/Persistence/EfMobileMoneyPayoutFundingAttemptStore.cs'
+      - 'backend/src/MobileMoney/MobileMoney.Api/Payout/Funding/Infrastructure/Persistence/MobileMoneyPayoutFundingPlanEntity.cs'
+      - 'backend/src/MobileMoney/MobileMoney.Api/Payout/Quote/Abstractions/IMobileMoneyPayoutQuoteStore.cs'
+      - 'backend/src/MobileMoney/MobileMoney.Api/Payout/Quote/Application/MobileMoneyPayoutQuoteOrchestrator.cs'
+      - 'backend/src/MobileMoney/MobileMoney.Api/Payout/Quote/Extensions/MobileMoneyPayoutQuoteEndpointExtensions.cs'
+      - 'backend/src/MobileMoney/MobileMoney.Api/Payout/Quote/Infrastructure/Persistence/EfMobileMoneyPayoutQuoteStore.cs'
+      - 'backend/src/MobileMoney/MobileMoney.Api/Payout/Quote/Infrastructure/Persistence/MobileMoneyPayoutQuoteEntity.cs'
+      - 'backend/tests/MobileMoney.Payout.Ownership.Scenarios/MobileMoney.Payout.Ownership.Scenarios.csproj'
+      - 'backend/tests/MobileMoney.Payout.Ownership.Scenarios/Program.cs'
+      - 'backend/tests/MobileMoney.Payout.Execution.Contracts.Scenarios/HttpEndpointScenarios.cs'
+      - 'backend/tests/MobileMoney.Payout.Funding.Scenarios/ApiScenarios.cs'
+      - 'backend/tests/MobileMoney.Payout.Quote.Scenarios/ApiScenarios.cs'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  statuses: write
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+
+    env:
+      WORKFLOW_SHA: ${{ github.sha }}
+      PRODUCT_CANDIDATE_SHA: 6372f05bf4d111be89c44935381f9c89451a60a4
+      BASE_SHA: 880884dc13fe34e516fc387aae622d47985eed66
+      STATUS_CONTEXT: mobile-beta2.61/authoritative-wallet-ownership-binding-certification
+
+    steps:
+      - name: Checkout exact Beta2.61 certification head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.WORKFLOW_SHA }}
+          fetch-depth: 0
+
+      - name: Assert exact Beta2.60 baseline and Beta2.61 lineage
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${WORKFLOW_SHA}"
+          git cat-file -e "${BASE_SHA}^{commit}"
+          git cat-file -e "${PRODUCT_CANDIDATE_SHA}^{commit}"
+          test "$(git merge-base "${BASE_SHA}" "${PRODUCT_CANDIDATE_SHA}")" = "${BASE_SHA}"
+          test "$(git rev-list --count "${BASE_SHA}..${PRODUCT_CANDIDATE_SHA}")" -eq 1
+          test "$(git rev-list --count "${PRODUCT_CANDIDATE_SHA}..${WORKFLOW_SHA}")" -eq 1
+          git merge-base --is-ancestor "${PRODUCT_CANDIDATE_SHA}" "${WORKFLOW_SHA}"
+
+      - name: Mark Beta2.61 product candidate pending
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: process.env.PRODUCT_CANDIDATE_SHA,
+              state: 'pending',
+              context: process.env.STATUS_CONTEXT,
+              description: 'Beta2.61 authoritative wallet ownership certification in progress',
+              target_url: `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+            });
+
+      - name: Verify exact Beta2.61 product allowlist
+        shell: bash
+        run: |
+          set -euo pipefail
+          allowed=(
+            "backend/src/MobileMoney/MobileMoney.Api/MobileMoney.Api.csproj"
+            "backend/src/MobileMoney/MobileMoney.Api/Payout/Execution/Abstractions/IMobileMoneyPayoutExecutionBindingStore.cs"
+            "backend/src/MobileMoney/MobileMoney.Api/Payout/Execution/Abstractions/IMobileMoneyPayoutExecutionOwnershipReader.cs"
+            "backend/src/MobileMoney/MobileMoney.Api/Payout/Execution/Application/MobileMoneyPayoutExecutionOrchestrator.cs"
+            "backend/src/MobileMoney/MobileMoney.Api/Payout/Execution/Extensions/MobileMoneyPayoutExecutionEndpointExtensions.cs"
+            "backend/src/MobileMoney/MobileMoney.Api/Payout/Execution/Extensions/MobileMoneyPayoutExecutionServiceCollectionExtensions.cs"
+            "backend/src/MobileMoney/MobileMoney.Api/Payout/Execution/Infrastructure/Persistence/EfMobileMoneyPayoutExecutionBindingStore.cs"
+            "backend/src/MobileMoney/MobileMoney.Api/Payout/Execution/Infrastructure/Persistence/MobileMoneyPayoutExecutionBindingEntity.cs"
+            "backend/src/MobileMoney/MobileMoney.Api/Payout/Execution/Infrastructure/StoreBackedMobileMoneyPayoutExecutionOwnershipReader.cs"
+            "backend/src/MobileMoney/MobileMoney.Api/Payout/Funding/Abstractions/FundingOrchestrationPorts.cs"
+            "backend/src/MobileMoney/MobileMoney.Api/Payout/Funding/Application/FundingOrchestrationContracts.cs"
+            "backend/src/MobileMoney/MobileMoney.Api/Payout/Funding/Application/MobileMoneyPayoutFundingPlanningService.cs"
+            "backend/src/MobileMoney/MobileMoney.Api/Payout/Funding/Extensions/MobileMoneyPayoutFundingEndpointExtensions.cs"
+            "backend/src/MobileMoney/MobileMoney.Api/Payout/Funding/Extensions/MobileMoneyPayoutFundingServiceCollectionExtensions.cs"
+            "backend/src/MobileMoney/MobileMoney.Api/Payout/Funding/Infrastructure/AuthoritativeMobileMoneyPayoutWalletSourceReader.cs"
+            "backend/src/MobileMoney/MobileMoney.Api/Payout/Funding/Infrastructure/Persistence/EfMobileMoneyPayoutFundingAttemptStore.cs"
+            "backend/src/MobileMoney/MobileMoney.Api/Payout/Funding/Infrastructure/Persistence/MobileMoneyPayoutFundingPlanEntity.cs"
+            "backend/src/MobileMoney/MobileMoney.Api/Payout/Quote/Abstractions/IMobileMoneyPayoutQuoteStore.cs"
+            "backend/src/MobileMoney/MobileMoney.Api/Payout/Quote/Application/MobileMoneyPayoutQuoteOrchestrator.cs"
+            "backend/src/MobileMoney/MobileMoney.Api/Payout/Quote/Extensions/MobileMoneyPayoutQuoteEndpointExtensions.cs"
+            "backend/src/MobileMoney/MobileMoney.Api/Payout/Quote/Infrastructure/Persistence/EfMobileMoneyPayoutQuoteStore.cs"
+            "backend/src/MobileMoney/MobileMoney.Api/Payout/Quote/Infrastructure/Persistence/MobileMoneyPayoutQuoteEntity.cs"
+            "backend/tests/MobileMoney.Payout.Ownership.Scenarios/MobileMoney.Payout.Ownership.Scenarios.csproj"
+            "backend/tests/MobileMoney.Payout.Ownership.Scenarios/Program.cs"
+            "backend/tests/MobileMoney.Payout.Execution.Contracts.Scenarios/HttpEndpointScenarios.cs"
+            "backend/tests/MobileMoney.Payout.Funding.Scenarios/ApiScenarios.cs"
+            "backend/tests/MobileMoney.Payout.Quote.Scenarios/ApiScenarios.cs"
+          )
+          mapfile -t changed_files < <(git diff --name-only "${BASE_SHA}...${PRODUCT_CANDIDATE_SHA}" | sort)
+          test "${#changed_files[@]}" -eq 27
+          for file in "${changed_files[@]}"; do
+            printf '%s\n' "${allowed[@]}" | grep -Fxq "${file}"
+          done
+          for required in "${allowed[@]}"; do
+            printf '%s\n' "${changed_files[@]}" | grep -Fxq "${required}"
+          done
+
+      - name: Verify certification harness allowlist
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t changed_files < <(git diff --name-only "${PRODUCT_CANDIDATE_SHA}...${WORKFLOW_SHA}" | sort)
+          test "${#changed_files[@]}" -eq 1
+          test "${changed_files[0]}" = ".github/workflows/mobile-beta2.61-authoritative-wallet-ownership-binding.yml"
+
+      - name: Set up .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore backend and scenarios
+        run: |
+          dotnet restore backend/src/MobileMoney/MobileMoney.Api/MobileMoney.Api.csproj
+          dotnet restore backend/tests/MobileMoney.Payout.Ownership.Scenarios/MobileMoney.Payout.Ownership.Scenarios.csproj
+          dotnet restore backend/tests/MobileMoney.Payout.Quote.Scenarios/MobileMoney.Payout.Quote.Scenarios.csproj
+          dotnet restore backend/tests/MobileMoney.Payout.Funding.Scenarios/MobileMoney.Payout.Funding.Scenarios.csproj
+          dotnet restore backend/tests/MobileMoney.Payout.Execution.Contracts.Scenarios/MobileMoney.Payout.Execution.Contracts.Scenarios.csproj
+          dotnet restore backend/tests/Wallet.Http.Scenarios/Wallet.Http.Scenarios.csproj
+          dotnet restore backend/tests/Transfer.Infrastructure.Scenarios/Transfer.Infrastructure.Scenarios.csproj
+
+      - name: Build MobileMoney backend
+        run: dotnet build backend/src/MobileMoney/MobileMoney.Api/MobileMoney.Api.csproj --configuration Release --no-restore
+
+      - name: Build Beta2.61 ownership scenarios
+        run: dotnet build backend/tests/MobileMoney.Payout.Ownership.Scenarios/MobileMoney.Payout.Ownership.Scenarios.csproj --configuration Release --no-restore
+
+      - name: Run Beta2.61 owner wallet and restart scenarios
+        run: dotnet run --project backend/tests/MobileMoney.Payout.Ownership.Scenarios/MobileMoney.Payout.Ownership.Scenarios.csproj --configuration Release --no-build
+
+      - name: Re-test durable quote funding and execution scenarios
+        run: |
+          dotnet run --project backend/tests/MobileMoney.Payout.Quote.Scenarios/MobileMoney.Payout.Quote.Scenarios.csproj --configuration Release --no-restore
+          dotnet run --project backend/tests/MobileMoney.Payout.Funding.Scenarios/MobileMoney.Payout.Funding.Scenarios.csproj --configuration Release --no-restore
+          dotnet run --project backend/tests/MobileMoney.Payout.Execution.Contracts.Scenarios/MobileMoney.Payout.Execution.Contracts.Scenarios.csproj --configuration Release --no-restore
+
+      - name: Re-test wallet and ledger-backed balance regressions
+        run: |
+          dotnet run --project backend/tests/Wallet.Http.Scenarios/Wallet.Http.Scenarios.csproj --configuration Release --no-restore
+          dotnet run --project backend/tests/Transfer.Infrastructure.Scenarios/Transfer.Infrastructure.Scenarios.csproj --configuration Release --no-restore
+
+      - name: Set up Flutter 3.47.2
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.2'
+          cache: true
+
+      - name: Re-test untouched Flutter application
+        working-directory: apps/mobile_app
+        run: |
+          flutter pub get
+          flutter gen-l10n
+          flutter analyze
+          flutter test
+
+      - name: Verify Beta2.61 diffs
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check "${BASE_SHA}...${PRODUCT_CANDIDATE_SHA}"
+          git diff --check "${PRODUCT_CANDIDATE_SHA}...${WORKFLOW_SHA}"
+
+      - name: Write certification summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "## Mobile Beta2.61 Authoritative Wallet Ownership Binding"
+            echo
+            echo "- Base Beta2.60: ${BASE_SHA}"
+            echo "- Product candidate: ${PRODUCT_CANDIDATE_SHA}"
+            echo "- Certification head: ${WORKFLOW_SHA}"
+            echo "- Quote/funding/Prepared ownership: server-derived authenticated user"
+            echo "- Wallet funding source: authoritative wallet registry + ledger-backed available balance"
+            echo "- Same-user replay: durable and restart-safe"
+            echo "- Cross-user quote/funding/execution replay: fail-closed"
+            echo "- Reservation / debit / provider submission: not introduced"
+            echo "- Job status: **${{ job.status }}**"
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Report Beta2.61 product candidate certification
+        if: always()
+        uses: actions/github-script@v7
+        env:
+          CERTIFICATION_JOB_STATUS: ${{ job.status }}
+        with:
+          script: |
+            const succeeded = process.env.CERTIFICATION_JOB_STATUS === 'success';
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: process.env.PRODUCT_CANDIDATE_SHA,
+              state: succeeded ? 'success' : 'failure',
+              context: process.env.STATUS_CONTEXT,
+              description: succeeded
+                ? 'Beta2.61 authoritative wallet ownership candidate certified'
+                : 'Beta2.61 authoritative wallet ownership certification failed',
+              target_url: `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+            });

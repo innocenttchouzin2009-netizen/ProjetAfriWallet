@@ -1,0 +1,28 @@
+openapi: 3.0.3
+info:
+  title: AfriWallet Reporting Platform API
+  version: 1.0.0
+paths:
+  /health/live:
+    get:
+      summary: Live health check
+      responses:
+        '200':
+          description: Healthy
+  /api/v1/reporting/dashboard/executive:
+    get:
+      summary: Executive dashboard snapshot
+      responses:
+        '200':
+          description: Dashboard snapshot
+  /api/v1/reporting/reports:
+    get:
+      summary: List reports
+      responses:
+        '200':
+          description: Reports list
+    post:
+      summary: Create a report shell
+      responses:
+        '202':
+          description: Accepted

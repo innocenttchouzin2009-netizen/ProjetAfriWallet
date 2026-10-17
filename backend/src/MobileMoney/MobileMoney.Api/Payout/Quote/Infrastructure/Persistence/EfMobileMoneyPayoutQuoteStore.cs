@@ -13,9 +13,26 @@ public sealed class EfMobileMoneyPayoutQuoteStore(
     private static readonly JsonSerializerOptions SerializerOptions =
         new(JsonSerializerDefaults.Web);
 
-    public async Task SaveAsync(
+    public Task SaveAsync(
+        MobileMoneyPayoutQuote quote,
+        CancellationToken cancellationToken = default) =>
+        SaveCoreAsync(null, quote, cancellationToken);
+
+    public Task SaveOwnedAsync(
+        Guid ownerUserId,
         MobileMoneyPayoutQuote quote,
         CancellationToken cancellationToken = default)
+    {
+        if (ownerUserId == Guid.Empty)
+            throw new ArgumentException("Owner user id cannot be empty.", nameof(ownerUserId));
+
+        return SaveCoreAsync(ownerUserId, quote, cancellationToken);
+    }
+
+    private async Task SaveCoreAsync(
+        Guid? ownerUserId,
+        MobileMoneyPayoutQuote quote,
+        CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(quote);
         cancellationToken.ThrowIfCancellationRequested();
@@ -30,8 +47,29 @@ public sealed class EfMobileMoneyPayoutQuoteStore(
                 $"Payout quote '{quote.QuoteId}' already exists.");
         }
 
-        dbContext.Quotes.Add(ToEntity(quote));
+        dbContext.Quotes.Add(ToEntity(ownerUserId, quote));
         await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<Guid?> FindOwnerUserIdAsync(
+        Guid quoteId,
+        CancellationToken cancellationToken = default)
+    {
+        if (quoteId == Guid.Empty)
+            throw new ArgumentException("Quote id cannot be empty.", nameof(quoteId));
+
+        await EnsureCreatedAsync(cancellationToken);
+
+        var owner = await dbContext.Quotes
+            .AsNoTracking()
+            .Where(x => x.QuoteId == quoteId)
+            .Select(x => x.OwnerUserId)
+            .SingleOrDefaultAsync(cancellationToken);
+
+        if (owner == Guid.Empty)
+            throw new InvalidOperationException("Persisted payout quote owner is invalid.");
+
+        return owner;
     }
 
     public async Task<MobileMoneyPayoutQuote?> FindByIdAsync(
@@ -141,10 +179,12 @@ public sealed class EfMobileMoneyPayoutQuoteStore(
         dbContext.Database.EnsureCreatedAsync(cancellationToken);
 
     private static MobileMoneyPayoutQuoteEntity ToEntity(
+        Guid? ownerUserId,
         MobileMoneyPayoutQuote quote) =>
         new()
         {
             QuoteId = quote.QuoteId,
+            OwnerUserId = ownerUserId,
             SourceCountryCode = quote.Corridor.SourceCountryCode,
             SourceCurrency = quote.Corridor.SourceCurrency,
             DestinationCountryCode = quote.Corridor.DestinationCountryCode,

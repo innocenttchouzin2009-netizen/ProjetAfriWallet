@@ -3,6 +3,7 @@ namespace MobileMoney.Production.Payout.Quote.Infrastructure.Persistence;
 public sealed class MobileMoneyPayoutQuoteEntity
 {
     public Guid QuoteId { get; set; }
+    public Guid? OwnerUserId { get; set; }
     public string SourceCountryCode { get; set; } = string.Empty;
     public string SourceCurrency { get; set; } = string.Empty;
     public string DestinationCountryCode { get; set; } = string.Empty;

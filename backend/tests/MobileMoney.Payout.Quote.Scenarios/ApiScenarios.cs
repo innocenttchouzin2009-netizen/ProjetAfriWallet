@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
+using MobileMoney.Production.Authentication;
 using MobileMoney.Production.Payout.Abstractions;
 using MobileMoney.Production.Payout.Application;
 using MobileMoney.Production.Payout.Domain;
@@ -26,7 +27,7 @@ internal static class ApiScenarios
         var result = await MobileMoneyPayoutQuoteEndpointExtensions.HandleAsync(
             ValidRequest(),
             CreateOrchestrator(),
-            new DefaultHttpContext(),
+            AuthenticatedContext(),
             CancellationToken.None);
 
         var ok = result as Ok<MobileMoneyPayoutQuoteResponse>
@@ -46,7 +47,7 @@ internal static class ApiScenarios
         var result = await MobileMoneyPayoutQuoteEndpointExtensions.HandleAsync(
             invalid,
             CreateOrchestrator(),
-            new DefaultHttpContext(),
+            AuthenticatedContext(),
             CancellationToken.None);
 
         AssertError(
@@ -64,7 +65,7 @@ internal static class ApiScenarios
         var result = await MobileMoneyPayoutQuoteEndpointExtensions.HandleAsync(
             ValidRequest(),
             orchestrator,
-            new DefaultHttpContext(),
+            AuthenticatedContext(),
             CancellationToken.None);
 
         AssertError(
@@ -80,7 +81,7 @@ internal static class ApiScenarios
         var fxResult = await MobileMoneyPayoutQuoteEndpointExtensions.HandleAsync(
             ValidRequest(),
             unavailableFx,
-            new DefaultHttpContext(),
+            AuthenticatedContext(),
             CancellationToken.None);
 
         AssertError(
@@ -94,7 +95,7 @@ internal static class ApiScenarios
         var feeResult = await MobileMoneyPayoutQuoteEndpointExtensions.HandleAsync(
             ValidRequest(),
             missingFeePolicy,
-            new DefaultHttpContext(),
+            AuthenticatedContext(),
             CancellationToken.None);
 
         AssertError(
@@ -129,6 +130,19 @@ internal static class ApiScenarios
                     TimeSpan.Zero)),
             new StubQuoteStore(),
             TimeSpan.FromMinutes(10));
+    }
+
+    private static DefaultHttpContext AuthenticatedContext()
+    {
+        var context = new DefaultHttpContext();
+        context.Items[AfWalValidatedSession.HttpContextItemKey] =
+            new AfWalValidatedSession(
+                Guid.Parse("11111111-1111-4111-8111-111111111111"),
+                Guid.Parse("22222222-2222-4222-8222-222222222222"),
+                "scenario-device",
+                DateTimeOffset.UtcNow.AddHours(1),
+                1);
+        return context;
     }
 
     private static CreateMobileMoneyPayoutQuoteRequest ValidRequest() =>

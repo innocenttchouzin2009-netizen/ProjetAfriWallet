@@ -7,6 +7,16 @@
   <ItemGroup>
     <ProjectReference Include="../../Fx/Fx.Application/Fx.Application.csproj" />
     <ProjectReference Include="../../Fx/Fx.Infrastructure/Fx.Infrastructure.csproj" />
+    <ProjectReference Include="../../Balance/Balance.Application/Balance.Application.csproj" />
+    <ProjectReference Include="../../Balance/Balance.Infrastructure/Balance.Infrastructure.csproj" />
+    <ProjectReference Include="../../Ledger/Ledger.Application/Ledger.Application.csproj" />
+    <ProjectReference Include="../../Ledger/Ledger.Domain/Ledger.Domain.csproj" />
+    <ProjectReference Include="../../Ledger/Ledger.Persistence/Ledger.Persistence.csproj" />
+    <ProjectReference Include="../../Transfer/Transfer.Application/Transfer.Application.csproj" />
+    <ProjectReference Include="../../Transfer/Transfer.Infrastructure/Transfer.Infrastructure.csproj" />
+    <ProjectReference Include="../../Wallet/Wallet.Application/Wallet.Application.csproj" />
+    <ProjectReference Include="../../Wallet/Wallet.Domain/Wallet.Domain.csproj" />
+    <ProjectReference Include="../../Wallet/Wallet.Persistence/Wallet.Persistence.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Using Include="Microsoft.Extensions.Logging" />

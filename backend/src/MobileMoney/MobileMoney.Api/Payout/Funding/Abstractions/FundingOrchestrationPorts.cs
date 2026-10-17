@@ -11,6 +11,15 @@ public interface IMobileMoneyPayoutFundingSourceReader
         CancellationToken cancellationToken = default);
 }
 
+public interface IMobileMoneyPayoutAuthoritativeWalletSourceReader
+{
+    Task<FundingSourceSnapshot?> GetAsync(
+        Guid ownerUserId,
+        string sourceId,
+        string currencyCode,
+        CancellationToken cancellationToken = default);
+}
+
 public interface IMobileMoneyPayoutFundingAttemptStore
 {
     Task SaveAsync(
@@ -41,4 +50,20 @@ public interface IMobileMoneyPayoutFundingAttemptStore
     Task<IReadOnlyList<FundingAttempt>> FindByCorrelationIdAsync(
         Guid correlationId,
         CancellationToken cancellationToken = default);
+
+    async Task<IReadOnlyList<FundingAttempt>> SavePlanForOwnerAsync(
+        Guid ownerUserId,
+        IReadOnlyList<FundingAttempt> attempts,
+        CancellationToken cancellationToken = default)
+    {
+        if (ownerUserId == Guid.Empty)
+            throw new ArgumentException("Owner user id cannot be empty.", nameof(ownerUserId));
+
+        return await SavePlanAsync(attempts, cancellationToken);
+    }
+
+    Task<Guid?> FindOwnerUserIdAsync(
+        Guid correlationId,
+        CancellationToken cancellationToken = default) =>
+        Task.FromResult<Guid?>(null);
 }

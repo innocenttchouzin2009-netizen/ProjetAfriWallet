@@ -13,12 +13,23 @@ public sealed class MobileMoneyPayoutExecutionOrchestrator
     private readonly IMobileMoneyPayoutExecutionFundingBindingReader _fundingReader;
     private readonly IMobileMoneyPayoutExecutionBindingStore _bindingStore;
     private readonly IMobileMoneyPayoutClock _clock;
+    private readonly IMobileMoneyPayoutExecutionOwnershipReader? _ownershipReader;
 
     public MobileMoneyPayoutExecutionOrchestrator(
         IMobileMoneyPayoutExecutionQuoteBindingReader quoteReader,
         IMobileMoneyPayoutExecutionFundingBindingReader fundingReader,
         IMobileMoneyPayoutExecutionBindingStore bindingStore,
         IMobileMoneyPayoutClock clock)
+        : this(quoteReader, fundingReader, bindingStore, clock, null)
+    {
+    }
+
+    public MobileMoneyPayoutExecutionOrchestrator(
+        IMobileMoneyPayoutExecutionQuoteBindingReader quoteReader,
+        IMobileMoneyPayoutExecutionFundingBindingReader fundingReader,
+        IMobileMoneyPayoutExecutionBindingStore bindingStore,
+        IMobileMoneyPayoutClock clock,
+        IMobileMoneyPayoutExecutionOwnershipReader? ownershipReader)
     {
         _quoteReader = quoteReader
             ?? throw new ArgumentNullException(nameof(quoteReader));
@@ -28,11 +39,29 @@ public sealed class MobileMoneyPayoutExecutionOrchestrator
             ?? throw new ArgumentNullException(nameof(bindingStore));
         _clock = clock
             ?? throw new ArgumentNullException(nameof(clock));
+        _ownershipReader = ownershipReader;
     }
 
-    public async Task<PrepareMobileMoneyPayoutExecutionResponse> PrepareAsync(
+    public Task<PrepareMobileMoneyPayoutExecutionResponse> PrepareAsync(
         PrepareMobileMoneyPayoutExecutionRequest request,
+        CancellationToken cancellationToken = default) =>
+        PrepareCoreAsync(request, Guid.Empty, cancellationToken);
+
+    public Task<PrepareMobileMoneyPayoutExecutionResponse> PrepareAsync(
+        PrepareMobileMoneyPayoutExecutionRequest request,
+        Guid ownerUserId,
         CancellationToken cancellationToken = default)
+    {
+        if (ownerUserId == Guid.Empty)
+            throw new ArgumentException("Owner user id cannot be empty.", nameof(ownerUserId));
+
+        return PrepareCoreAsync(request, ownerUserId, cancellationToken);
+    }
+
+    private async Task<PrepareMobileMoneyPayoutExecutionResponse> PrepareCoreAsync(
+        PrepareMobileMoneyPayoutExecutionRequest request,
+        Guid ownerUserId,
+        CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
 
@@ -50,6 +79,20 @@ public sealed class MobileMoneyPayoutExecutionOrchestrator
 
         if (existing is not null)
         {
+            if (ownerUserId != Guid.Empty)
+            {
+                var bindingOwner = await _bindingStore.FindOwnerUserIdAsync(
+                    idempotencyKey,
+                    cancellationToken);
+
+                if (bindingOwner is null || bindingOwner != ownerUserId)
+                {
+                    throw new MobileMoneyPayoutExecutionPreparationException(
+                        MobileMoneyPayoutExecutionErrorCodes.BindingInvalid,
+                        "The payout execution binding is not available for the authenticated user.");
+                }
+            }
+
             if (existing.Quote.QuoteId != request.QuoteId
                 || existing.Funding.CorrelationId != request.FundingCorrelationId)
             {
@@ -59,6 +102,32 @@ public sealed class MobileMoneyPayoutExecutionOrchestrator
             }
 
             return ToResponse(existing, isReplay: true);
+        }
+
+        if (ownerUserId != Guid.Empty)
+        {
+            var ownershipReader = _ownershipReader
+                ?? throw new MobileMoneyPayoutExecutionPreparationException(
+                    MobileMoneyPayoutExecutionErrorCodes.BindingInvalid,
+                    "Execution ownership validation is unavailable.");
+
+            var quoteOwner = await ownershipReader.FindQuoteOwnerUserIdAsync(
+                request.QuoteId,
+                cancellationToken);
+            var fundingOwner = await ownershipReader.FindFundingOwnerUserIdAsync(
+                request.FundingCorrelationId,
+                cancellationToken);
+
+            if (quoteOwner is null
+                || fundingOwner is null
+                || quoteOwner != ownerUserId
+                || fundingOwner != ownerUserId
+                || quoteOwner != fundingOwner)
+            {
+                throw new MobileMoneyPayoutExecutionPreparationException(
+                    MobileMoneyPayoutExecutionErrorCodes.BindingInvalid,
+                    "The payout execution material is not available for the authenticated user.");
+            }
         }
 
         var quote = await _quoteReader.FindByIdAsync(
@@ -107,13 +176,30 @@ public sealed class MobileMoneyPayoutExecutionOrchestrator
                 exception);
         }
 
-        await _bindingStore.SaveAsync(binding, cancellationToken);
+        if (ownerUserId == Guid.Empty)
+            await _bindingStore.SaveAsync(binding, cancellationToken);
+        else
+            await _bindingStore.SaveOwnedAsync(ownerUserId, binding, cancellationToken);
 
         var authoritative = await _bindingStore.FindByIdempotencyKeyAsync(
             idempotencyKey,
             cancellationToken)
             ?? throw new InvalidOperationException(
                 "Prepared execution binding was not durably persisted.");
+
+        if (ownerUserId != Guid.Empty)
+        {
+            var authoritativeOwner = await _bindingStore.FindOwnerUserIdAsync(
+                idempotencyKey,
+                cancellationToken);
+
+            if (authoritativeOwner is null || authoritativeOwner != ownerUserId)
+            {
+                throw new MobileMoneyPayoutExecutionPreparationException(
+                    MobileMoneyPayoutExecutionErrorCodes.BindingInvalid,
+                    "The payout execution binding is not available for the authenticated user.");
+            }
+        }
 
         if (authoritative.Quote.QuoteId != request.QuoteId
             || authoritative.Funding.CorrelationId != request.FundingCorrelationId)

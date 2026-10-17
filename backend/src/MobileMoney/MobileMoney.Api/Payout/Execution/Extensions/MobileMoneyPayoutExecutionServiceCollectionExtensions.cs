@@ -23,6 +23,10 @@ public static class MobileMoneyPayoutExecutionServiceCollectionExtensions
             IMobileMoneyPayoutExecutionFundingBindingReader,
             StoreBackedMobileMoneyPayoutExecutionFundingBindingReader>();
 
+        services.TryAddScoped<
+            IMobileMoneyPayoutExecutionOwnershipReader,
+            StoreBackedMobileMoneyPayoutExecutionOwnershipReader>();
+
         var connectionString =
             configuration?.GetConnectionString("MobileMoneyPayoutExecution")
             ?? "Data Source=mobile-money-payout-execution.db";

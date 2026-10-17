@@ -33,9 +33,26 @@ public sealed class EfMobileMoneyPayoutFundingAttemptStore(
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task<IReadOnlyList<FundingAttempt>> SavePlanAsync(
+    public Task<IReadOnlyList<FundingAttempt>> SavePlanAsync(
+        IReadOnlyList<FundingAttempt> attempts,
+        CancellationToken cancellationToken = default) =>
+        SavePlanCoreAsync(null, attempts, cancellationToken);
+
+    public Task<IReadOnlyList<FundingAttempt>> SavePlanForOwnerAsync(
+        Guid ownerUserId,
         IReadOnlyList<FundingAttempt> attempts,
         CancellationToken cancellationToken = default)
+    {
+        if (ownerUserId == Guid.Empty)
+            throw new ArgumentException("Owner user id cannot be empty.", nameof(ownerUserId));
+
+        return SavePlanCoreAsync(ownerUserId, attempts, cancellationToken);
+    }
+
+    private async Task<IReadOnlyList<FundingAttempt>> SavePlanCoreAsync(
+        Guid? ownerUserId,
+        IReadOnlyList<FundingAttempt> attempts,
+        CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(attempts);
 
@@ -64,6 +81,7 @@ public sealed class EfMobileMoneyPayoutFundingAttemptStore(
         dbContext.Plans.Add(new MobileMoneyPayoutFundingPlanEntity
         {
             CorrelationId = correlationId,
+            OwnerUserId = ownerUserId,
             RequiredAmountMinor = attempts.Sum(x => x.Allocation.AmountMinor),
             CurrencyCode = currencyCode,
             AllocationCount = attempts.Count,
@@ -93,6 +111,27 @@ public sealed class EfMobileMoneyPayoutFundingAttemptStore(
 
             throw;
         }
+    }
+
+    public async Task<Guid?> FindOwnerUserIdAsync(
+        Guid correlationId,
+        CancellationToken cancellationToken = default)
+    {
+        if (correlationId == Guid.Empty)
+            throw new ArgumentException("Correlation id cannot be empty.", nameof(correlationId));
+
+        await EnsureCreatedAsync(cancellationToken);
+
+        var owner = await dbContext.Plans
+            .AsNoTracking()
+            .Where(x => x.CorrelationId == correlationId)
+            .Select(x => x.OwnerUserId)
+            .SingleOrDefaultAsync(cancellationToken);
+
+        if (owner == Guid.Empty)
+            throw new InvalidOperationException("Persisted funding owner is invalid.");
+
+        return owner;
     }
 
     public async Task<IReadOnlyList<FundingAttempt>> FindByCorrelationIdAsync(
@@ -138,6 +177,7 @@ public sealed class EfMobileMoneyPayoutFundingAttemptStore(
         }
 
         if (plan.CorrelationId == Guid.Empty
+            || plan.OwnerUserId == Guid.Empty
             || plan.RequiredAmountMinor <= 0
             || plan.AllocationCount <= 0
             || plan.PlannedAtUtc.Offset != TimeSpan.Zero

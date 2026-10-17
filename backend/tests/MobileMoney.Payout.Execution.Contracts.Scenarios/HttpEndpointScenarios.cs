@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Http;
+using MobileMoney.Production.Authentication;
 using MobileMoney.Production.Payout.Abstractions;
 using MobileMoney.Production.Payout.Contracts;
 using MobileMoney.Production.Payout.Execution.Abstractions;
@@ -10,6 +11,9 @@ using MobileMoney.Production.Payout.Funding.Domain;
 
 internal static class HttpEndpointScenarios
 {
+    private static readonly Guid ScenarioUserId =
+        Guid.Parse("11111111-1111-4111-8111-111111111111");
+
     public static async Task RunAsync()
     {
         RouteIsVersioned();
@@ -35,7 +39,7 @@ internal static class HttpEndpointScenarios
                 fixture.Quote.QuoteId,
                 fixture.Funding.CorrelationId),
             fixture.Orchestrator,
-            new DefaultHttpContext(),
+            AuthenticatedContext(),
             CancellationToken.None);
 
         AssertStatus(result, StatusCodes.Status400BadRequest);
@@ -135,14 +139,28 @@ internal static class HttpEndpointScenarios
             new StubQuoteReader(quote),
             new StubFundingReader(funding),
             new RecordingBindingStore(),
-            new FixedClock(now));
+            new FixedClock(now),
+            new StubOwnershipReader(quote.QuoteId, funding.CorrelationId));
 
         return new Fixture(quote, funding, orchestrator);
     }
 
-    private static DefaultHttpContext ContextWithIdempotencyKey(string value)
+    private static DefaultHttpContext AuthenticatedContext()
     {
         var context = new DefaultHttpContext();
+        context.Items[AfWalValidatedSession.HttpContextItemKey] =
+            new AfWalValidatedSession(
+                ScenarioUserId,
+                Guid.Parse("22222222-2222-4222-8222-222222222222"),
+                "scenario-device",
+                DateTimeOffset.UtcNow.AddHours(1),
+                1);
+        return context;
+    }
+
+    private static DefaultHttpContext ContextWithIdempotencyKey(string value)
+    {
+        var context = AuthenticatedContext();
         context.Request.Headers[
             MobileMoneyPayoutExecutionEndpointExtensions.IdempotencyHeaderName] = value;
         return context;
@@ -213,9 +231,29 @@ internal static class HttpEndpointScenarios
         }
     }
 
+    private sealed class StubOwnershipReader(Guid quoteId, Guid fundingCorrelationId)
+        : IMobileMoneyPayoutExecutionOwnershipReader
+    {
+        public Task<Guid?> FindQuoteOwnerUserIdAsync(
+            Guid requestedQuoteId,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult<Guid?>(
+                requestedQuoteId == quoteId ? ScenarioUserId : null);
+
+        public Task<Guid?> FindFundingOwnerUserIdAsync(
+            Guid requestedFundingCorrelationId,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult<Guid?>(
+                requestedFundingCorrelationId == fundingCorrelationId
+                    ? ScenarioUserId
+                    : null);
+    }
+
     private sealed class RecordingBindingStore : IMobileMoneyPayoutExecutionBindingStore
     {
         private readonly Dictionary<string, MobileMoneyPayoutExecutionBinding> _items =
+            new(StringComparer.Ordinal);
+        private readonly Dictionary<string, Guid> _owners =
             new(StringComparer.Ordinal);
 
         public Task<MobileMoneyPayoutExecutionBinding?> FindByIdempotencyKeyAsync(
@@ -235,6 +273,25 @@ internal static class HttpEndpointScenarios
             _items[binding.IdempotencyKey.Value] = binding;
             return Task.CompletedTask;
         }
+
+        public Task SaveOwnedAsync(
+            Guid ownerUserId,
+            MobileMoneyPayoutExecutionBinding binding,
+            CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            _items[binding.IdempotencyKey.Value] = binding;
+            _owners[binding.IdempotencyKey.Value] = ownerUserId;
+            return Task.CompletedTask;
+        }
+
+        public Task<Guid?> FindOwnerUserIdAsync(
+            MobileMoneyPayoutExecutionIdempotencyKey idempotencyKey,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult(
+                _owners.TryGetValue(idempotencyKey.Value, out var owner)
+                    ? (Guid?)owner
+                    : null);
     }
 
     private sealed class FixedClock(DateTimeOffset now) : IMobileMoneyPayoutClock

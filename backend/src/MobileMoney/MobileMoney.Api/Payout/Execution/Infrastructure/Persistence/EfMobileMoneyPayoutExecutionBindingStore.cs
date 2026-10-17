@@ -29,9 +29,26 @@ public sealed class EfMobileMoneyPayoutExecutionBindingStore(
         return entity is null ? null : ToDomain(entity);
     }
 
-    public async Task SaveAsync(
+    public Task SaveAsync(
+        MobileMoneyPayoutExecutionBinding binding,
+        CancellationToken cancellationToken = default) =>
+        SaveCoreAsync(null, binding, cancellationToken);
+
+    public Task SaveOwnedAsync(
+        Guid ownerUserId,
         MobileMoneyPayoutExecutionBinding binding,
         CancellationToken cancellationToken = default)
+    {
+        if (ownerUserId == Guid.Empty)
+            throw new ArgumentException("Owner user id cannot be empty.", nameof(ownerUserId));
+
+        return SaveCoreAsync(ownerUserId, binding, cancellationToken);
+    }
+
+    private async Task SaveCoreAsync(
+        Guid? ownerUserId,
+        MobileMoneyPayoutExecutionBinding binding,
+        CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(binding);
         await EnsureCreatedAsync(cancellationToken);
@@ -45,7 +62,7 @@ public sealed class EfMobileMoneyPayoutExecutionBindingStore(
         if (existing is not null)
             return;
 
-        dbContext.Bindings.Add(ToEntity(binding));
+        dbContext.Bindings.Add(ToEntity(ownerUserId, binding));
 
         try
         {
@@ -68,11 +85,32 @@ public sealed class EfMobileMoneyPayoutExecutionBindingStore(
         }
     }
 
+    public async Task<Guid?> FindOwnerUserIdAsync(
+        MobileMoneyPayoutExecutionIdempotencyKey idempotencyKey,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(idempotencyKey);
+        await EnsureCreatedAsync(cancellationToken);
+
+        var owner = await dbContext.Bindings
+            .AsNoTracking()
+            .Where(x => x.IdempotencyKey == idempotencyKey.Value)
+            .Select(x => x.OwnerUserId)
+            .SingleOrDefaultAsync(cancellationToken);
+
+        if (owner == Guid.Empty)
+            throw new InvalidOperationException("Persisted execution binding owner is invalid.");
+
+        return owner;
+    }
+
     private static MobileMoneyPayoutExecutionBindingEntity ToEntity(
+        Guid? ownerUserId,
         MobileMoneyPayoutExecutionBinding binding) =>
         new()
         {
             BindingId = binding.BindingId,
+            OwnerUserId = ownerUserId,
             IdempotencyKey = binding.IdempotencyKey.Value,
             QuoteId = binding.Quote.QuoteId,
             QuoteSourceCurrency = binding.Quote.SourceCurrency,

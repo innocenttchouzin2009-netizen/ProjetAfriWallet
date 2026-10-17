@@ -14,7 +14,8 @@ public sealed record PlanMobileMoneyPayoutFundingCommand(
     long RequiredAmountMinor,
     string CurrencyCode,
     IReadOnlyList<FundingAllocation> Allocations,
-    DateTimeOffset RequestedAtUtc);
+    DateTimeOffset RequestedAtUtc,
+    Guid UserId = default);
 
 public sealed record MobileMoneyPayoutFundingPlan(
     Guid CorrelationId,

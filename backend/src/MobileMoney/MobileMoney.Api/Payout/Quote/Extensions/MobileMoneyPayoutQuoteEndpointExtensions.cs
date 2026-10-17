@@ -32,10 +32,22 @@ public static class MobileMoneyPayoutQuoteEndpointExtensions
         ArgumentNullException.ThrowIfNull(orchestrator);
         ArgumentNullException.ThrowIfNull(httpContext);
 
+        if (httpContext.Items[AfWalValidatedSession.HttpContextItemKey]
+            is not AfWalValidatedSession session
+            || session.UserId == Guid.Empty)
+        {
+            return Error(
+                httpContext,
+                StatusCodes.Status401Unauthorized,
+                "PAYOUT_QUOTE_UNAUTHORIZED",
+                "The payout quote request is unauthorized.");
+        }
+
         try
         {
             var response = await orchestrator.CreateAsync(
                 request,
+                session.UserId,
                 cancellationToken);
 
             return TypedResults.Ok(response);

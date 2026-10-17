@@ -32,6 +32,17 @@ public static class MobileMoneyPayoutExecutionEndpointExtensions
         ArgumentNullException.ThrowIfNull(orchestrator);
         ArgumentNullException.ThrowIfNull(httpContext);
 
+        if (httpContext.Items[AfWalValidatedSession.HttpContextItemKey]
+            is not AfWalValidatedSession session
+            || session.UserId == Guid.Empty)
+        {
+            return Error(
+                httpContext,
+                StatusCodes.Status401Unauthorized,
+                MobileMoneyPayoutExecutionErrorCodes.InvalidRequest,
+                "The payout execution request is unauthorized.");
+        }
+
         var idempotencyValues =
             httpContext.Request.Headers[IdempotencyHeaderName];
 
@@ -52,6 +63,7 @@ public static class MobileMoneyPayoutExecutionEndpointExtensions
                     request.QuoteId,
                     request.FundingCorrelationId,
                     idempotencyValues[0]!.Trim()),
+                session.UserId,
                 cancellationToken);
 
             return TypedResults.Ok(response);

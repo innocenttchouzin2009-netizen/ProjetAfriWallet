@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
+using MobileMoney.Production.Authentication;
 using MobileMoney.Production.Payout.Contracts;
 using MobileMoney.Production.Payout.Funding.Abstractions;
 using MobileMoney.Production.Payout.Funding.Application;
@@ -20,24 +21,10 @@ internal static class ApiScenarios
 
     public static async Task ReturnsFundingPlan()
     {
-        var sources = new StubFundingSourceReader(
-            new FundingSourceSnapshot(
-                "wallet-main",
-                FundingSourceType.Wallet,
-                "EUR",
-                true,
-                5_000),
-            new FundingSourceSnapshot(
-                "apple-pay",
-                FundingSourceType.ApplePay,
-                "EUR",
-                true,
-                null));
-
         var result = await MobileMoneyPayoutFundingEndpointExtensions.HandleAsync(
             ValidRequest(),
-            CreateService(sources),
-            new DefaultHttpContext(),
+            CreateService(new StubFundingSourceReader()),
+            AuthenticatedContext(),
             CancellationToken.None);
 
         var ok = result as Ok<MobileMoneyPayoutFundingPlanResponse>
@@ -47,7 +34,7 @@ internal static class ApiScenarios
         Assert(ok.Value is not null, "Funding plan response is required.");
         AssertEqual(10_000L, ok.Value!.RequiredAmountMinor);
         AssertEqual("EUR", ok.Value.CurrencyCode);
-        AssertEqual(2, ok.Value.Allocations.Count);
+        AssertEqual(1, ok.Value.Allocations.Count);
         AssertEqual(10_000L, ok.Value.Allocations.Sum(x => x.AmountMinor));
     }
 
@@ -68,7 +55,7 @@ internal static class ApiScenarios
         var result = await MobileMoneyPayoutFundingEndpointExtensions.HandleAsync(
             request,
             CreateService(new StubFundingSourceReader()),
-            new DefaultHttpContext(),
+            AuthenticatedContext(),
             CancellationToken.None);
 
         AssertError(
@@ -84,24 +71,10 @@ internal static class ApiScenarios
             RequiredAmountMinor = 11_000
         };
 
-        var sources = new StubFundingSourceReader(
-            new FundingSourceSnapshot(
-                "wallet-main",
-                FundingSourceType.Wallet,
-                "EUR",
-                true,
-                5_000),
-            new FundingSourceSnapshot(
-                "apple-pay",
-                FundingSourceType.ApplePay,
-                "EUR",
-                true,
-                null));
-
         var result = await MobileMoneyPayoutFundingEndpointExtensions.HandleAsync(
             request,
-            CreateService(sources),
-            new DefaultHttpContext(),
+            CreateService(new StubFundingSourceReader()),
+            AuthenticatedContext(),
             CancellationToken.None);
 
         AssertError(
@@ -117,14 +90,9 @@ internal static class ApiScenarios
             "EUR",
             [
                 new MobileMoneyPayoutFundingAllocationRequest(
-                    "wallet-main",
+                    "33333333-3333-4333-8333-333333333333",
                     FundingSourceType.Wallet,
-                    4_000,
-                    "EUR"),
-                new MobileMoneyPayoutFundingAllocationRequest(
-                    "apple-pay",
-                    FundingSourceType.ApplePay,
-                    6_000,
+                    10_000,
                     "EUR")
             ],
             new DateTimeOffset(
@@ -141,7 +109,21 @@ internal static class ApiScenarios
         new(
             sources,
             new StubFundingAttemptStore(),
-            new MobileMoneyPayoutSplitFundingValidator());
+            new MobileMoneyPayoutSplitFundingValidator(),
+            new StubAuthoritativeWalletSourceReader());
+
+    private static DefaultHttpContext AuthenticatedContext()
+    {
+        var context = new DefaultHttpContext();
+        context.Items[AfWalValidatedSession.HttpContextItemKey] =
+            new AfWalValidatedSession(
+                Guid.Parse("11111111-1111-4111-8111-111111111111"),
+                Guid.Parse("22222222-2222-4222-8222-222222222222"),
+                "scenario-device",
+                DateTimeOffset.UtcNow.AddHours(1),
+                1);
+        return context;
+    }
 
     private static void AssertError(
         IResult result,
@@ -192,6 +174,33 @@ internal static class ApiScenarios
         }
     }
 
+    private sealed class StubAuthoritativeWalletSourceReader
+        : IMobileMoneyPayoutAuthoritativeWalletSourceReader
+    {
+        public Task<FundingSourceSnapshot?> GetAsync(
+            Guid ownerUserId,
+            string sourceId,
+            string currencyCode,
+            CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (sourceId != "33333333-3333-4333-8333-333333333333"
+                || currencyCode != "EUR")
+            {
+                return Task.FromResult<FundingSourceSnapshot?>(null);
+            }
+
+            return Task.FromResult<FundingSourceSnapshot?>(
+                new FundingSourceSnapshot(
+                    sourceId,
+                    FundingSourceType.Wallet,
+                    "EUR",
+                    true,
+                    10_000));
+        }
+    }
+
     private sealed class StubFundingAttemptStore
         : IMobileMoneyPayoutFundingAttemptStore
     {
@@ -205,6 +214,26 @@ internal static class ApiScenarios
             _items.Add(attempt);
             return Task.CompletedTask;
         }
+
+        private readonly Dictionary<Guid, Guid> _owners = [];
+
+        public async Task<IReadOnlyList<FundingAttempt>> SavePlanForOwnerAsync(
+            Guid ownerUserId,
+            IReadOnlyList<FundingAttempt> attempts,
+            CancellationToken cancellationToken = default)
+        {
+            _owners[attempts[0].CorrelationId] = ownerUserId;
+            return await ((IMobileMoneyPayoutFundingAttemptStore)this)
+                .SavePlanAsync(attempts, cancellationToken);
+        }
+
+        public Task<Guid?> FindOwnerUserIdAsync(
+            Guid correlationId,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult(
+                _owners.TryGetValue(correlationId, out var owner)
+                    ? (Guid?)owner
+                    : null);
 
         public Task<IReadOnlyList<FundingAttempt>> FindByCorrelationIdAsync(
             Guid correlationId,

@@ -32,6 +32,17 @@ public static class MobileMoneyPayoutFundingEndpointExtensions
         ArgumentNullException.ThrowIfNull(service);
         ArgumentNullException.ThrowIfNull(httpContext);
 
+        if (httpContext.Items[AfWalValidatedSession.HttpContextItemKey]
+            is not AfWalValidatedSession session
+            || session.UserId == Guid.Empty)
+        {
+            return Error(
+                httpContext,
+                StatusCodes.Status401Unauthorized,
+                "PAYOUT_FUNDING_UNAUTHORIZED",
+                "The payout funding request is unauthorized.");
+        }
+
         try
         {
             var allocations = request.Allocations
@@ -48,7 +59,8 @@ public static class MobileMoneyPayoutFundingEndpointExtensions
                     request.RequiredAmountMinor,
                     request.CurrencyCode,
                     allocations,
-                    request.RequestedAtUtc),
+                    request.RequestedAtUtc,
+                    session.UserId),
                 cancellationToken);
 
             return TypedResults.Ok(

@@ -3,6 +3,7 @@ namespace MobileMoney.Production.Payout.Execution.Infrastructure.Persistence;
 public sealed class MobileMoneyPayoutExecutionBindingEntity
 {
     public Guid BindingId { get; set; }
+    public Guid? OwnerUserId { get; set; }
     public string IdempotencyKey { get; set; } = string.Empty;
 
     public Guid QuoteId { get; set; }

@@ -41,9 +41,26 @@ public sealed class MobileMoneyPayoutQuoteOrchestrator
         _quoteLifetime = quoteLifetime;
     }
 
-    public async Task<MobileMoneyPayoutQuoteResponse> CreateAsync(
+    public Task<MobileMoneyPayoutQuoteResponse> CreateAsync(
         CreateMobileMoneyPayoutQuoteRequest request,
+        CancellationToken cancellationToken = default) =>
+        CreateCoreAsync(request, null, cancellationToken);
+
+    public Task<MobileMoneyPayoutQuoteResponse> CreateAsync(
+        CreateMobileMoneyPayoutQuoteRequest request,
+        Guid ownerUserId,
         CancellationToken cancellationToken = default)
+    {
+        if (ownerUserId == Guid.Empty)
+            throw new ArgumentException("Owner user id cannot be empty.", nameof(ownerUserId));
+
+        return CreateCoreAsync(request, ownerUserId, cancellationToken);
+    }
+
+    private async Task<MobileMoneyPayoutQuoteResponse> CreateCoreAsync(
+        CreateMobileMoneyPayoutQuoteRequest request,
+        Guid? ownerUserId,
+        CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
 
@@ -102,7 +119,10 @@ public sealed class MobileMoneyPayoutQuoteOrchestrator
             createdAtUtc,
             createdAtUtc.Add(_quoteLifetime));
 
-        await _quoteStore.SaveAsync(quote, cancellationToken);
+        if (ownerUserId is Guid owner)
+            await _quoteStore.SaveOwnedAsync(owner, quote, cancellationToken);
+        else
+            await _quoteStore.SaveAsync(quote, cancellationToken);
 
         return ToResponse(quote);
     }

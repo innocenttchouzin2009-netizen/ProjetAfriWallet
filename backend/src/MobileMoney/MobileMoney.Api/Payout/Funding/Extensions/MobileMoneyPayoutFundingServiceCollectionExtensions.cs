@@ -1,7 +1,9 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using MobileMoney.Production.Payout.Funding.Abstractions;
 using MobileMoney.Production.Payout.Funding.Application;
 using MobileMoney.Production.Payout.Funding.Infrastructure;
+using MobileMoney.Production.Payout.Funding.Infrastructure.Persistence;
 
 namespace MobileMoney.Production.Payout.Funding.Extensions;
 
@@ -17,12 +19,19 @@ public static class MobileMoneyPayoutFundingServiceCollectionExtensions
         services.TryAddSingleton<IMobileMoneyPayoutFundingSourceReader>(
             new ConfiguredMobileMoneyPayoutFundingSourceReader(configuration));
 
-        services.TryAddSingleton<
+        var connectionString =
+            configuration.GetConnectionString("MobileMoneyPayoutFunding")
+            ?? "Data Source=mobile-money-payout-funding.db";
+
+        services.AddDbContext<MobileMoneyPayoutFundingDbContext>(dbOptions =>
+            dbOptions.UseSqlite(connectionString));
+
+        services.TryAddScoped<
             IMobileMoneyPayoutFundingAttemptStore,
-            InMemoryMobileMoneyPayoutFundingAttemptStore>();
+            EfMobileMoneyPayoutFundingAttemptStore>();
 
         services.TryAddSingleton<MobileMoneyPayoutSplitFundingValidator>();
-        services.TryAddSingleton<MobileMoneyPayoutFundingPlanningService>();
+        services.TryAddScoped<MobileMoneyPayoutFundingPlanningService>();
 
         return services;
     }

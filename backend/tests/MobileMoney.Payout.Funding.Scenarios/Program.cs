@@ -324,6 +324,8 @@ await RunAsync(
         "Cancellation token must reach attempt store.");
 });
 
+await FundingDurabilityScenarios.RunAsync();
+
 await RunAsync("funding API route is stable", ApiScenarios.RouteIsStable);
 await RunAsync("funding API returns planned funding", ApiScenarios.ReturnsFundingPlan);
 await RunAsync("funding API maps invalid request", ApiScenarios.MapsInvalidRequest);

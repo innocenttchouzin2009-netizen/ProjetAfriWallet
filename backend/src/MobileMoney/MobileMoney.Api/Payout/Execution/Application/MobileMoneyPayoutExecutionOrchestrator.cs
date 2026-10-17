@@ -109,7 +109,23 @@ public sealed class MobileMoneyPayoutExecutionOrchestrator
 
         await _bindingStore.SaveAsync(binding, cancellationToken);
 
-        return ToResponse(binding, isReplay: false);
+        var authoritative = await _bindingStore.FindByIdempotencyKeyAsync(
+            idempotencyKey,
+            cancellationToken)
+            ?? throw new InvalidOperationException(
+                "Prepared execution binding was not durably persisted.");
+
+        if (authoritative.Quote.QuoteId != request.QuoteId
+            || authoritative.Funding.CorrelationId != request.FundingCorrelationId)
+        {
+            throw new MobileMoneyPayoutExecutionPreparationException(
+                MobileMoneyPayoutExecutionErrorCodes.IdempotencyConflict,
+                "The idempotency key is already bound to a different payout execution.");
+        }
+
+        return ToResponse(
+            authoritative,
+            isReplay: authoritative.BindingId != binding.BindingId);
     }
 
     private static PrepareMobileMoneyPayoutExecutionResponse ToResponse(

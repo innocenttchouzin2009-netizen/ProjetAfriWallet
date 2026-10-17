@@ -1,0 +1,204 @@
+name: Mobile Beta2.60 Durable Prepared Execution Context Certification
+
+on:
+  push:
+    branches:
+      - feature/mobile-beta2.60
+    paths:
+      - '.github/workflows/mobile-beta2.60-durable-prepared-execution-context.yml'
+      - 'backend/src/MobileMoney/MobileMoney.Api/Payout/Execution/Application/MobileMoneyPayoutExecutionOrchestrator.cs'
+      - 'backend/src/MobileMoney/MobileMoney.Api/Payout/Execution/Extensions/MobileMoneyPayoutExecutionServiceCollectionExtensions.cs'
+      - 'backend/src/MobileMoney/MobileMoney.Api/Payout/Execution/Infrastructure/Persistence/EfMobileMoneyPayoutExecutionBindingStore.cs'
+      - 'backend/src/MobileMoney/MobileMoney.Api/Payout/Execution/Infrastructure/Persistence/MobileMoneyPayoutExecutionBindingEntity.cs'
+      - 'backend/src/MobileMoney/MobileMoney.Api/Payout/Execution/Infrastructure/Persistence/MobileMoneyPayoutExecutionDbContext.cs'
+      - 'backend/src/MobileMoney/MobileMoney.Api/Payout/Funding/Abstractions/FundingOrchestrationPorts.cs'
+      - 'backend/src/MobileMoney/MobileMoney.Api/Payout/Funding/Application/MobileMoneyPayoutFundingPlanningService.cs'
+      - 'backend/src/MobileMoney/MobileMoney.Api/Payout/Funding/Domain/FundingAttempt.cs'
+      - 'backend/src/MobileMoney/MobileMoney.Api/Payout/Funding/Extensions/MobileMoneyPayoutFundingServiceCollectionExtensions.cs'
+      - 'backend/src/MobileMoney/MobileMoney.Api/Payout/Funding/Infrastructure/Persistence/EfMobileMoneyPayoutFundingAttemptStore.cs'
+      - 'backend/src/MobileMoney/MobileMoney.Api/Payout/Funding/Infrastructure/Persistence/MobileMoneyPayoutFundingAttemptEntity.cs'
+      - 'backend/src/MobileMoney/MobileMoney.Api/Payout/Funding/Infrastructure/Persistence/MobileMoneyPayoutFundingDbContext.cs'
+      - 'backend/src/MobileMoney/MobileMoney.Api/Payout/Funding/Infrastructure/Persistence/MobileMoneyPayoutFundingPlanEntity.cs'
+      - 'backend/src/MobileMoney/MobileMoney.Api/Program.cs'
+      - 'backend/tests/MobileMoney.Payout.Execution.Contracts.Scenarios/ExecutionDurabilityScenarios.cs'
+      - 'backend/tests/MobileMoney.Payout.Execution.Contracts.Scenarios/Program.cs'
+      - 'backend/tests/MobileMoney.Payout.Funding.Scenarios/FundingDurabilityScenarios.cs'
+      - 'backend/tests/MobileMoney.Payout.Funding.Scenarios/Program.cs'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  statuses: write
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    env:
+      WORKFLOW_SHA: ${{ github.sha }}
+      PRODUCT_CANDIDATE_SHA: 9760a7e4dbaa2ead36f1b7b0ce0df988ce2851dc
+      BASE_SHA: 8b1cd0af88e9e8ab5208ff241e023a1de1da85f7
+      STATUS_CONTEXT: mobile-beta2.60/durable-prepared-execution-context-certification
+
+    steps:
+      - name: Checkout exact Beta2.60 certification head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.WORKFLOW_SHA }}
+          fetch-depth: 0
+
+      - name: Assert exact Beta2.59 baseline and Beta2.60 lineage
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${WORKFLOW_SHA}"
+          git cat-file -e "${BASE_SHA}^{commit}"
+          git cat-file -e "${PRODUCT_CANDIDATE_SHA}^{commit}"
+          test "$(git merge-base "${BASE_SHA}" "${PRODUCT_CANDIDATE_SHA}")" = "${BASE_SHA}"
+          test "$(git rev-list --count "${BASE_SHA}..${PRODUCT_CANDIDATE_SHA}")" -eq 1
+          test "$(git rev-list --count "${PRODUCT_CANDIDATE_SHA}..${WORKFLOW_SHA}")" -eq 1
+          git merge-base --is-ancestor "${PRODUCT_CANDIDATE_SHA}" "${WORKFLOW_SHA}"
+
+      - name: Mark Beta2.60 product candidate pending
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: process.env.PRODUCT_CANDIDATE_SHA,
+              state: 'pending',
+              context: process.env.STATUS_CONTEXT,
+              description: 'Beta2.60 durable funding/execution context certification in progress',
+              target_url: `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+            });
+
+      - name: Verify exact Beta2.60 product allowlist
+        shell: bash
+        run: |
+          set -euo pipefail
+          allowed=(
+            "backend/src/MobileMoney/MobileMoney.Api/Payout/Execution/Application/MobileMoneyPayoutExecutionOrchestrator.cs"
+            "backend/src/MobileMoney/MobileMoney.Api/Payout/Execution/Extensions/MobileMoneyPayoutExecutionServiceCollectionExtensions.cs"
+            "backend/src/MobileMoney/MobileMoney.Api/Payout/Execution/Infrastructure/Persistence/EfMobileMoneyPayoutExecutionBindingStore.cs"
+            "backend/src/MobileMoney/MobileMoney.Api/Payout/Execution/Infrastructure/Persistence/MobileMoneyPayoutExecutionBindingEntity.cs"
+            "backend/src/MobileMoney/MobileMoney.Api/Payout/Execution/Infrastructure/Persistence/MobileMoneyPayoutExecutionDbContext.cs"
+            "backend/src/MobileMoney/MobileMoney.Api/Payout/Funding/Abstractions/FundingOrchestrationPorts.cs"
+            "backend/src/MobileMoney/MobileMoney.Api/Payout/Funding/Application/MobileMoneyPayoutFundingPlanningService.cs"
+            "backend/src/MobileMoney/MobileMoney.Api/Payout/Funding/Domain/FundingAttempt.cs"
+            "backend/src/MobileMoney/MobileMoney.Api/Payout/Funding/Extensions/MobileMoneyPayoutFundingServiceCollectionExtensions.cs"
+            "backend/src/MobileMoney/MobileMoney.Api/Payout/Funding/Infrastructure/Persistence/EfMobileMoneyPayoutFundingAttemptStore.cs"
+            "backend/src/MobileMoney/MobileMoney.Api/Payout/Funding/Infrastructure/Persistence/MobileMoneyPayoutFundingAttemptEntity.cs"
+            "backend/src/MobileMoney/MobileMoney.Api/Payout/Funding/Infrastructure/Persistence/MobileMoneyPayoutFundingDbContext.cs"
+            "backend/src/MobileMoney/MobileMoney.Api/Payout/Funding/Infrastructure/Persistence/MobileMoneyPayoutFundingPlanEntity.cs"
+            "backend/src/MobileMoney/MobileMoney.Api/Program.cs"
+            "backend/tests/MobileMoney.Payout.Execution.Contracts.Scenarios/ExecutionDurabilityScenarios.cs"
+            "backend/tests/MobileMoney.Payout.Execution.Contracts.Scenarios/Program.cs"
+            "backend/tests/MobileMoney.Payout.Funding.Scenarios/FundingDurabilityScenarios.cs"
+            "backend/tests/MobileMoney.Payout.Funding.Scenarios/Program.cs"
+          )
+          mapfile -t changed_files < <(git diff --name-only "${BASE_SHA}...${PRODUCT_CANDIDATE_SHA}" | sort)
+          test "${#changed_files[@]}" -eq 18
+          for file in "${changed_files[@]}"; do
+            printf '%s\n' "${allowed[@]}" | grep -Fxq "${file}"
+          done
+          for required in "${allowed[@]}"; do
+            printf '%s\n' "${changed_files[@]}" | grep -Fxq "${required}"
+          done
+
+      - name: Verify certification harness allowlist
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t changed_files < <(git diff --name-only "${PRODUCT_CANDIDATE_SHA}...${WORKFLOW_SHA}" | sort)
+          test "${#changed_files[@]}" -eq 1
+          test "${changed_files[0]}" = ".github/workflows/mobile-beta2.60-durable-prepared-execution-context.yml"
+
+      - name: Set up .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore backend and scenario projects
+        run: |
+          dotnet restore backend/src/MobileMoney/MobileMoney.Api/MobileMoney.Api.csproj
+          dotnet restore backend/tests/MobileMoney.Payout.Quote.Scenarios/MobileMoney.Payout.Quote.Scenarios.csproj
+          dotnet restore backend/tests/MobileMoney.Payout.Funding.Scenarios/MobileMoney.Payout.Funding.Scenarios.csproj
+          dotnet restore backend/tests/MobileMoney.Payout.Execution.Contracts.Scenarios/MobileMoney.Payout.Execution.Contracts.Scenarios.csproj
+
+      - name: Build MobileMoney backend
+        run: dotnet build backend/src/MobileMoney/MobileMoney.Api/MobileMoney.Api.csproj --configuration Release --no-restore
+
+      - name: Build funding and execution scenarios
+        run: |
+          dotnet build backend/tests/MobileMoney.Payout.Funding.Scenarios/MobileMoney.Payout.Funding.Scenarios.csproj --configuration Release --no-restore
+          dotnet build backend/tests/MobileMoney.Payout.Execution.Contracts.Scenarios/MobileMoney.Payout.Execution.Contracts.Scenarios.csproj --configuration Release --no-restore
+
+      - name: Run funding durability and idempotency scenarios
+        run: dotnet run --project backend/tests/MobileMoney.Payout.Funding.Scenarios/MobileMoney.Payout.Funding.Scenarios.csproj --configuration Release --no-build
+
+      - name: Run execution persistence replay and contract scenarios
+        run: dotnet run --project backend/tests/MobileMoney.Payout.Execution.Contracts.Scenarios/MobileMoney.Payout.Execution.Contracts.Scenarios.csproj --configuration Release --no-build
+
+      - name: Re-test durable quote scenarios
+        run: dotnet run --project backend/tests/MobileMoney.Payout.Quote.Scenarios/MobileMoney.Payout.Quote.Scenarios.csproj --configuration Release --no-restore
+
+      - name: Set up Flutter 3.47.2
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.2'
+          cache: true
+
+      - name: Re-test untouched Flutter application
+        working-directory: apps/mobile_app
+        run: |
+          flutter pub get
+          flutter gen-l10n
+          flutter analyze
+          flutter test
+
+      - name: Verify Beta2.60 diffs
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check "${BASE_SHA}...${PRODUCT_CANDIDATE_SHA}"
+          git diff --check "${PRODUCT_CANDIDATE_SHA}...${WORKFLOW_SHA}"
+
+      - name: Write certification summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "## Mobile Beta2.60 Durable Funding + Prepared Execution Context"
+            echo
+            echo "- Base Beta2.59: ${BASE_SHA}"
+            echo "- Product candidate: ${PRODUCT_CANDIDATE_SHA}"
+            echo "- Certification head: ${WORKFLOW_SHA}"
+            echo "- Funding plan persistence: EF Core / SQLite"
+            echo "- Funding replay: correlation-id idempotent and restart-safe"
+            echo "- Execution binding persistence: EF Core / SQLite"
+            echo "- Execution replay: idempotency-key restart-safe and concurrency-protected"
+            echo "- Provider submission / wallet debit / reservation: not introduced"
+            echo "- Job status: **${{ job.status }}**"
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Report Beta2.60 product candidate certification
+        if: always()
+        uses: actions/github-script@v7
+        env:
+          CERTIFICATION_JOB_STATUS: ${{ job.status }}
+        with:
+          script: |
+            const succeeded = process.env.CERTIFICATION_JOB_STATUS === 'success';
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: process.env.PRODUCT_CANDIDATE_SHA,
+              state: succeeded ? 'success' : 'failure',
+              context: process.env.STATUS_CONTEXT,
+              description: succeeded
+                ? 'Beta2.60 durable prepared execution context certified'
+                : 'Beta2.60 durable prepared execution context certification failed',
+              target_url: `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+            });

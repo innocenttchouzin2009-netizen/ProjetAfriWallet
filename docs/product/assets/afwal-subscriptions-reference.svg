@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1435" viewBox="0 0 1000 1435" role="img" aria-labelledby="title desc">
+<title id="title">AfrikaWallet — Mes abonnements — référence visuelle</title>
+<desc id="desc">Maquette approuvée, reprenant l'en-tête, la recherche, les six catégories et les trois moyens de paiement de la capture du point 4 du 14 octobre 2026.</desc>
+<style>text{font-family:Arial,Helvetica,sans-serif} .emoji{font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif}</style>
+<rect width="1000" height="1435" fill="#ffffff"/>
+<rect x="35" y="36" width="930" height="1346" rx="39" fill="#ffffff" stroke="#e6e6e6" stroke-width="2.4"/>
+<text x="67" y="114" font-size="29" fill="#626262" font-weight="650" text-anchor="start">AFRIKAWALLET</text>
+<text x="67" y="192" font-size="47" fill="#101010" font-weight="740" text-anchor="start">Mes abonnements</text>
+<text x="67" y="243" font-size="29" fill="#626262" font-weight="500" text-anchor="start">Payez vos services numériques simplement</text>
+<rect x="846" y="86" width="94" height="96" rx="23" fill="#f2f2f2" stroke="none"/>
+<rect x="867" y="118" width="53" height="35" rx="5" fill="none" stroke="#121212" stroke-width="5"/>
+<path d="M868 130 H918" stroke="#121212" stroke-width="4"/>
+<path d="M896 142 h12" stroke="#121212" stroke-width="4"/>
+<rect x="67" y="281" width="868" height="116" rx="29" fill="#f2f2f2" stroke="none"/>
+<circle cx="117" cy="339" r="18" stroke="#606060" stroke-width="4" fill="none"/>
+<path d="M131 353 L148 370" stroke="#606060" stroke-width="4" stroke-linecap="round"/>
+<text x="165" y="349" font-size="31" fill="#919191" font-weight="500" text-anchor="start">Rechercher un abonnement…</text>
+<rect x="65" y="435" width="270" height="176" rx="26" fill="#f2f2f2" stroke="none"/><text x="200" y="513" font-size="36" fill="#111" font-weight="400" text-anchor="middle">🤖</text><text x="200" y="562" font-size="25" fill="#0c0c0c" font-weight="650" text-anchor="middle">IA</text>
+<rect x="350" y="435" width="270" height="176" rx="26" fill="#f2f2f2" stroke="none"/><text x="485" y="513" font-size="36" fill="#111" font-weight="400" text-anchor="middle">🎬</text><text x="485" y="562" font-size="25" fill="#0c0c0c" font-weight="650" text-anchor="middle">Streaming</text>
+<rect x="635" y="435" width="270" height="176" rx="26" fill="#f2f2f2" stroke="none"/><text x="770" y="513" font-size="36" fill="#111" font-weight="400" text-anchor="middle">🎓</text><text x="770" y="562" font-size="25" fill="#0c0c0c" font-weight="650" text-anchor="middle">Formation</text>
+<rect x="65" y="635" width="270" height="176" rx="26" fill="#f2f2f2" stroke="none"/><text x="200" y="713" font-size="36" fill="#111" font-weight="400" text-anchor="middle">💼</text><text x="200" y="762" font-size="25" fill="#0c0c0c" font-weight="650" text-anchor="middle">Business</text>
+<rect x="350" y="635" width="270" height="176" rx="26" fill="#f2f2f2" stroke="none"/><text x="485" y="713" font-size="36" fill="#111" font-weight="400" text-anchor="middle">🎮</text><text x="485" y="762" font-size="25" fill="#0c0c0c" font-weight="650" text-anchor="middle">Gaming</text>
+<rect x="635" y="635" width="270" height="176" rx="26" fill="#f2f2f2" stroke="none"/><text x="770" y="713" font-size="36" fill="#111" font-weight="400" text-anchor="middle">☁️</text><text x="770" y="762" font-size="25" fill="#0c0c0c" font-weight="650" text-anchor="middle">Cloud</text>
+<line x1="67" y1="847" x2="935" y2="847" stroke="#ededed" stroke-width="2"/>
+<text x="67" y="945" font-size="34" fill="#0d0d0d" font-weight="700" text-anchor="start">Choisissez votre mode de paiement</text>
+<!-- Mobile Money icon -->
+<rect x="74" y="996" width="21" height="40" rx="5" stroke="#101010" stroke-width="3.5" fill="none"/>
+<circle cx="85" cy="1029" r="2" fill="#101010"/>
+<text x="119" y="1026" font-size="30" fill="#111111" font-weight="610" text-anchor="start">Mobile Money</text>
+<circle cx="916" cy="1015" r="15" stroke="#226b34" stroke-width="3" fill="none"/>
+<path d="M910 1015 l5 6 9 -12" stroke="#226b34" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<!-- wallet -->
+<path d="M74 1085 h35 a5 5 0 0 1 5 5 v27 a5 5 0 0 1 -5 5 H74 a5 5 0 0 1 -5 -5 v-30 a4 4 0 0 1 5 -4 h34" fill="none" stroke="#161616" stroke-width="3.5"/>
+<rect x="95" y="1101" width="25" height="13" rx="4" stroke="#161616" stroke-width="3" fill="#fff"/>
+<text x="136" y="1116" font-size="30" fill="#111111" font-weight="610" text-anchor="start">Solde AfrikaWallet</text>
+<!-- card -->
+<rect x="70" y="1182" width="48" height="31" rx="5" stroke="#161616" stroke-width="3.5" fill="none"/>
+<path d="M72 1191 H117" stroke="#161616" stroke-width="3.5"/>
+<path d="M82 1205 H93" stroke="#161616" stroke-width="3.5"/>
+<text x="136" y="1207" font-size="30" fill="#111111" font-weight="610" text-anchor="start">Carte AfWal</text>
+<text x="67" y="1272" font-size="24" fill="#626262" font-weight="500" text-anchor="start">Maquette conceptuelle, pas un écran déjà développé.</text>
+<text x="67" y="1307" font-size="24" fill="#626262" font-weight="500" text-anchor="start">La disponibilité des paiements dépendra du pays</text>
+<text x="67" y="1342" font-size="24" fill="#626262" font-weight="500" text-anchor="start">et des partenaires.</text>
+</svg>

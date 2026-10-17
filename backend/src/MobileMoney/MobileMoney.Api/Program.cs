@@ -21,7 +21,7 @@ builder.Services.AddAfWalSessionValidation(builder.Configuration);
 builder.Services.AddMobileMoneyPayoutEligibility(builder.Configuration);
 builder.Services.AddMobileMoneyPayoutQuote(builder.Configuration);
 builder.Services.AddMobileMoneyPayoutFundingApi(builder.Configuration);
-builder.Services.AddMobileMoneyPayoutExecutionApi();
+builder.Services.AddMobileMoneyPayoutExecutionApi(builder.Configuration);
 builder.Services.AddMobileMoneyBeneficiaryLookup();
 builder.Services.AddSingleton<StructuredOperationLogger>();
 

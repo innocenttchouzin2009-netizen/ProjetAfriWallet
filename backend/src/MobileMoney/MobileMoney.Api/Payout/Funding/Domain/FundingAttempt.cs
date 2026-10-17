@@ -31,6 +31,87 @@ public sealed record FundingAttempt
         FundingAllocation allocation,
         DateTimeOffset createdAtUtc)
     {
+        ValidateIdentity(id, correlationId, allocation);
+        ValidateUtcTimestamp(createdAtUtc, nameof(createdAtUtc));
+
+        return new FundingAttempt(
+            id,
+            correlationId,
+            allocation,
+            FundingAttemptStatus.Planned,
+            createdAtUtc);
+    }
+
+    public static FundingAttempt Restore(
+        Guid id,
+        Guid correlationId,
+        FundingAllocation allocation,
+        FundingAttemptStatus status,
+        DateTimeOffset createdAtUtc,
+        DateTimeOffset updatedAtUtc,
+        string? statusReason)
+    {
+        ValidateIdentity(id, correlationId, allocation);
+
+        if (!Enum.IsDefined(typeof(FundingAttemptStatus), status))
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(status),
+                "Funding attempt status is not supported.");
+        }
+
+        ValidateUtcTimestamp(createdAtUtc, nameof(createdAtUtc));
+        ValidateUtcTimestamp(updatedAtUtc, nameof(updatedAtUtc));
+
+        if (updatedAtUtc < createdAtUtc)
+        {
+            throw new InvalidOperationException(
+                "Persisted funding attempt cannot be updated before it was created.");
+        }
+
+        var normalizedReason = statusReason;
+        if (status is FundingAttemptStatus.Failed or FundingAttemptStatus.Cancelled)
+        {
+            if (string.IsNullOrWhiteSpace(statusReason)
+                || !string.Equals(statusReason, statusReason.Trim(), StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    "Persisted terminal funding attempt reason is invalid.");
+            }
+
+            normalizedReason = statusReason;
+        }
+        else if (statusReason is not null)
+        {
+            throw new InvalidOperationException(
+                "Persisted non-terminal funding attempt cannot carry a status reason.");
+        }
+
+        if (status == FundingAttemptStatus.Planned && updatedAtUtc != createdAtUtc)
+        {
+            throw new InvalidOperationException(
+                "Persisted planned funding attempt timestamps must match.");
+        }
+
+        var restored = new FundingAttempt(
+            id,
+            correlationId,
+            allocation,
+            status,
+            createdAtUtc)
+        {
+            UpdatedAtUtc = updatedAtUtc,
+            StatusReason = normalizedReason
+        };
+
+        return restored;
+    }
+
+    private static void ValidateIdentity(
+        Guid id,
+        Guid correlationId,
+        FundingAllocation allocation)
+    {
         if (id == Guid.Empty)
         {
             throw new ArgumentException(
@@ -46,14 +127,6 @@ public sealed record FundingAttempt
         }
 
         ArgumentNullException.ThrowIfNull(allocation);
-        ValidateUtcTimestamp(createdAtUtc, nameof(createdAtUtc));
-
-        return new FundingAttempt(
-            id,
-            correlationId,
-            allocation,
-            FundingAttemptStatus.Planned,
-            createdAtUtc);
     }
 
     public void MarkProcessing(DateTimeOffset occurredAtUtc)
